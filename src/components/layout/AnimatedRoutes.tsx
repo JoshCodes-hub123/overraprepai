@@ -159,6 +159,10 @@ const AdminPaymentRequests = lazy(() => import("@/pages/admin/PaymentRequests"))
 const Opportunities = lazy(() => import("@/pages/opportunities/Opportunities"));
 const OpportunityDetail = lazy(() => import("@/pages/opportunities/OpportunityDetail"));
 const AdminOpportunities = lazy(() => import("@/pages/admin/AdminOpportunities"));
+const PostsFeed = lazy(() => import("@/pages/posts/PostsFeed"));
+const PostDetail = lazy(() => import("@/pages/posts/PostDetail"));
+const PostComposer = lazy(() => import("@/pages/posts/PostComposer"));
+const AdminPosts = lazy(() => import("@/pages/admin/AdminPosts"));
 const Spotlight = lazy(() => import("@/pages/student/Spotlight"));
 const AdminSpotlights = lazy(() => import("@/pages/admin/AdminSpotlights"));
 const ActivityFeed = lazy(() => import("@/pages/student/ActivityFeed"));
@@ -388,6 +392,10 @@ export const AnimatedRoutes = () => {
           <Route path="/spotlight" element={<PageTransition><Spotlight /></PageTransition>} />
           <Route path="/activity" element={<PageTransition><ActivityFeed /></PageTransition>} />
           <Route path="/admin/opportunities" element={<AdminRoute><PageTransition><AdminOpportunities /></PageTransition></AdminRoute>} />
+          <Route path="/feed" element={<PageTransition><PostsFeed /></PageTransition>} />
+          <Route path="/posts/new" element={<PageTransition><PostComposer /></PageTransition>} />
+          <Route path="/posts/:id" element={<PageTransition><PostDetail /></PageTransition>} />
+          <Route path="/admin/posts" element={<AdminRoute><PageTransition><AdminPosts /></PageTransition></AdminRoute>} />
           <Route path="/admin/spotlights" element={<AdminRoute><PageTransition><AdminSpotlights /></PageTransition></AdminRoute>} />
           <Route path="/courses" element={<PageTransition><CourseDirectory /></PageTransition>} />
           <Route path="/courses/:courseId" element={<PageTransition><CourseHub /></PageTransition>} />
