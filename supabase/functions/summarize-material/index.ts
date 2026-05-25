@@ -132,7 +132,7 @@ ${trimmed}`;
       await sb.from("analytics_events").insert({
         user_id: userId,
         event_name: "smart_summary_generated",
-        metadata: { style, title, source_chars: content.length, summary_chars: markdown.length },
+        properties: { style, title, source_chars: content.length, summary_chars: markdown.length },
       });
     } catch {
       /* ignore */
