@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, BookOpen, User, LucideIcon, School, ClipboardCheck, Wallet, Megaphone, Users, Target, MoreHorizontal, Brain, Library, Headphones, Sparkles, Crown, Gift, Layers } from "lucide-react";
+import { Home, BookOpen, User, LucideIcon, School, ClipboardCheck, Wallet, Megaphone, Users, Target, MoreHorizontal, Brain, Library, Headphones, Sparkles, Crown, Gift, Layers, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
@@ -24,6 +24,8 @@ const STUDENT_MORE: Tab[] = [
   { to: "/flashcards", label: "Flashcards", icon: Layers },
   { to: "/ai-tutor", label: "AI Tutor", icon: Brain },
   { to: "/audio-learning", label: "Audio Learning", icon: Headphones },
+  { to: "/review", label: "Review", icon: Target },
+  { to: "/sessions", label: "Sessions", icon: Calendar },
   { to: "/student/smart-summary", label: "Smart Summary", icon: Sparkles },
   { to: "/subscription", label: "Premium", icon: Crown },
   { to: "/wallet", label: "Wallet", icon: Wallet },
@@ -143,7 +145,7 @@ export const BottomTabBar = () => {
 
       {hasStudentMore && (
         <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-          <SheetContent side="bottom" className="rounded-t-3xl border-amber-100 pb-8">
+          <SheetContent side="bottom" className="z-[90] rounded-t-3xl border-amber-100 pb-8">
             <SheetHeader>
               <SheetTitle className="font-display text-left">Dashboard pages</SheetTitle>
             </SheetHeader>
