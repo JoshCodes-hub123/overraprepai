@@ -2425,7 +2425,6 @@ export type Database = {
         Row: {
           description: string | null
           id: string
-          is_public: boolean
           key: string
           updated_at: string
           updated_by: string | null
@@ -2434,7 +2433,6 @@ export type Database = {
         Insert: {
           description?: string | null
           id?: string
-          is_public?: boolean
           key: string
           updated_at?: string
           updated_by?: string | null
@@ -2443,7 +2441,6 @@ export type Database = {
         Update: {
           description?: string | null
           id?: string
-          is_public?: boolean
           key?: string
           updated_at?: string
           updated_by?: string | null

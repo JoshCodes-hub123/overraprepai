@@ -69,43 +69,26 @@ export default function TutorMatchingOnboarding() {
   };
 
   const handleFinish = async () => {
-    if (!user) {
-      toast.error("You're signed out. Please sign in again.");
-      navigate("/auth", { replace: true });
+    if (!user) return;
+    setSubmitting(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        tutor_match_prefs: prefs as any,
+        onboarding_completed: true,
+      } as any)
+      .eq("id", user.id);
+
+    if (error) {
+      toast.error("Couldn't save preferences. Try again.");
+      setSubmitting(false);
       return;
     }
-    if (submitting) return;
-    setSubmitting(true);
-    try {
-      // Upsert so it works whether or not a profile row exists yet.
-      const { error } = await supabase
-        .from("profiles")
-        .upsert(
-          {
-            id: user.id,
-            tutor_match_prefs: prefs as any,
-            onboarding_completed: true,
-          } as any,
-          { onConflict: "id" }
-        );
 
-      if (error) {
-        console.error("[onboarding] finish failed", error);
-        toast.error(error.message || "Couldn't save preferences. Try again.");
-        setSubmitting(false);
-        return;
-      }
-
-      toast.success("You're all set! Welcome aboard. ✨");
-      // Navigate first — don't let a slow profile refresh block the user.
-      navigate("/student/dashboard", { replace: true });
-      // Refresh in the background; failure here shouldn't matter.
-      refreshProfile().catch((e) => console.warn("[onboarding] refreshProfile failed", e));
-    } catch (e: any) {
-      console.error("[onboarding] unexpected error", e);
-      toast.error(e?.message || "Something went wrong. Try again.");
-      setSubmitting(false);
-    }
+    await refreshProfile();
+    toast.success("You're all set! Welcome aboard. ✨");
+    const role = profile?.academic_path;
+    navigate(role === "secondary" ? "/student/dashboard" : "/student/dashboard", { replace: true });
   };
 
   const next = () => {

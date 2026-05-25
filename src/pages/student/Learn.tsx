@@ -7,6 +7,7 @@ import { useUniversityScope } from "@/hooks/useUniversityScope";
 import { useRecentlyOpenedCourses } from "@/hooks/useRecentlyOpenedCourses";
 import { useCourseSearch } from "@/hooks/useCourseSearch";
 import DashboardNav from "@/components/layout/DashboardNav";
+import BottomTabBar from "@/components/app-shell/BottomTabBar";
 import { SEO } from "@/components/seo/SEO";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -241,6 +242,7 @@ const Learn = () => {
         </Section>
       </main>
 
+      <BottomTabBar />
     </div>
   );
 };

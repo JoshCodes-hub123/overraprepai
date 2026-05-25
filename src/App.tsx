@@ -14,7 +14,6 @@ import BottomTabBar from "@/components/app-shell/BottomTabBar";
 import NewStudyPackFAB from "@/components/student/NewStudyPackFAB";
 import MiniPlayerBar from "@/components/audio/MiniPlayerBar";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
-import EmailVerificationBanner from "@/components/auth/EmailVerificationBanner";
 import RoleBadge from "@/components/auth/RoleBadge";
 import { NetworkStatus } from "@/components/system/NetworkStatus";
 import ScrollToTop from "@/components/system/ScrollToTop";
@@ -70,7 +69,6 @@ const App = () => {
               <DeviceTracker />
               <BiometricUnlock>
                 <PaymentTestModeBanner />
-                <EmailVerificationBanner />
                 <div className="pb-16 md:pb-0">
                   <AnimatedRoutes />
                 </div>
