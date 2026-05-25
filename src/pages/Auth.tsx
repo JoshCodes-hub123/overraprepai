@@ -144,8 +144,8 @@ const Auth = () => {
     if (intent === "tutor") return "/apply-tutor";
     if (intent === "school_owner") return "/school/register";
     if (intent === "parent") return "/parent/dashboard";
-    // New students go through the onboarding wizard before the dashboard
-    if (justSignedUp) return "/onboarding/match";
+    // Skip onboarding — new students land straight on the dashboard
+    if (justSignedUp) return "/student/dashboard";
     if (primaryRole === "admin") return "/admin/dashboard";
     if (primaryRole === "tutor") return "/tutor/dashboard";
     if (primaryRole === "school_owner" || primaryRole === "school_admin" || primaryRole === "teacher") return "/school/dashboard";
