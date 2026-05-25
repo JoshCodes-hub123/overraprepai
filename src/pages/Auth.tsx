@@ -200,6 +200,19 @@ const Auth = () => {
         description: message,
       });
     } else {
+      // If email confirmation is required, there is no session yet. Tell the
+      // user to verify their inbox instead of pushing them into onboarding
+      // (which would fail because `user` is null there).
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        toast({
+          title: "Check your email to verify your account",
+          description: `We sent a confirmation link to ${data.email}. Click it, then sign in to continue.`,
+        });
+        setIsSubmitting(false);
+        setIsSignUp(false);
+        return;
+      }
       // Persist extra profile details (best-effort; profile row is created by trigger)
       try {
         const { data: { user: newUser } } = await supabase.auth.getUser();
