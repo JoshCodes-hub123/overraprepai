@@ -157,6 +157,7 @@ const AdminPosts = lazy(() => import("@/pages/admin/AdminPosts"));
 const Spotlight = lazy(() => import("@/pages/student/Spotlight"));
 const AdminSpotlights = lazy(() => import("@/pages/admin/AdminSpotlights"));
 const ActivityFeed = lazy(() => import("@/pages/student/ActivityFeed"));
+import { DashboardSkeleton } from "@/components/student/dashboard/DashboardSkeleton";
 
 export const AnimatedRoutes = () => {
   const location = useLocation();
@@ -193,7 +194,9 @@ export const AnimatedRoutes = () => {
             element={
               <RoleRoute allow={["student"]}>
                 <PageTransition>
-                  <StudentDashboard />
+                  <Suspense fallback={<DashboardSkeleton />}>
+                    <StudentDashboard />
+                  </Suspense>
                 </PageTransition>
               </RoleRoute>
             }
