@@ -6307,6 +6307,7 @@ export type Database = {
           uploads_count: number
         }[]
       }
+      get_session_meeting_url: { Args: { _slot_id: string }; Returns: string }
       get_student_leaderboard: {
         Args: { _limit?: number }
         Returns: {
