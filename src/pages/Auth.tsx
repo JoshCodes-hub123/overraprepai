@@ -36,13 +36,13 @@ const signUpSchema = z.object({
   email: z.string().trim().email("Please enter a valid email address").max(255),
   password: z.string().min(6, "Password must be at least 6 characters").max(72),
   confirmPassword: z.string(),
-  academicPath: z.enum(["secondary", "jamb", "university"], { required_error: "Select your academic path" }),
-  level: z.string().trim().min(1, "Level is required").max(40),
-  department: z.string().trim().min(2, "Department is required").max(120),
-  school: z.string().trim().min(2, "School is required").max(120),
-  phone: z.string().trim().min(7, "Enter a valid phone number").max(20),
+  academicPath: z.enum(["secondary", "jamb", "university"]).optional().or(z.literal("")),
+  level: z.string().trim().max(40).optional().or(z.literal("")),
+  department: z.string().trim().max(120).optional().or(z.literal("")),
+  school: z.string().trim().max(120).optional().or(z.literal("")),
+  phone: z.string().trim().max(20).optional().or(z.literal("")),
   matricNo: z.string().trim().max(40).optional().or(z.literal("")),
-  state: z.string().trim().min(2, "Select state of origin").max(60),
+  state: z.string().trim().max(60).optional().or(z.literal("")),
   referralCode: z.string().optional(),
 }).refine((d) => d.password === d.confirmPassword, {
   message: "Passwords don't match",
@@ -316,12 +316,12 @@ const Auth = () => {
           await supabase
             .from("profiles")
             .update({
-              academic_path: data.academicPath,
-              level: data.level,
-              department: data.department,
-              phone: data.phone,
-              matric_no: data.matricNo,
-              state_of_origin: data.state,
+              academic_path: (data.academicPath || null) as any,
+              level: data.level || null,
+              department: data.department || null,
+              phone: data.phone || null,
+              matric_no: data.matricNo || null,
+              state_of_origin: data.state || null,
               academic_metadata: meta,
               ...(uploadedAvatarUrl
                 ? { avatar_url: uploadedAvatarUrl, profile_image_url: uploadedAvatarUrl }
@@ -877,6 +877,7 @@ const Auth = () => {
                   setSignUpStep((s) => Math.max(0, s - 1));
                 };
                 return (
+                  <>
                   <div className="flex items-center gap-3">
                     {signUpStep > 0 && (
                       <Button type="button" variant="outline" size="lg" onClick={goBack} className="flex-1">
@@ -899,6 +900,16 @@ const Auth = () => {
                       </Button>
                     )}
                   </div>
+                  {!isLast && (
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="mt-3 block w-full text-center text-sm font-semibold text-primary hover:underline disabled:opacity-60"
+                    >
+                      {isSubmitting ? "Creating account…" : "Skip — create my account now"}
+                    </button>
+                  )}
+                  </>
                 );
               })()}
 
