@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
@@ -25,6 +25,7 @@ import { initPushNotifications } from "@/lib/native/push";
 import { Capacitor } from "@capacitor/core";
 import { useRecordDeviceLogin } from "@/hooks/useDeviceHistory";
 import { prefetchStudentDashboard } from "@/lib/routePrefetch";
+import { supabase } from "@/integrations/supabase/client";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -58,7 +59,36 @@ function DeviceTracker() {
 // Warm the student dashboard chunk during browser idle on every app load,
 // so the very first navigation after sign-in paints instantly.
 function DashboardWarmup() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
   useEffect(() => { prefetchStudentDashboard(); }, []);
+
+  // The moment a user is authenticated, prime the dashboard's first data
+  // queries into the React Query cache so the page paints with real
+  // content instead of section skeletons on first load.
+  useEffect(() => {
+    if (!user?.id) return;
+    const idle = (cb: () => void) => {
+      const w = window as any;
+      if (typeof w.requestIdleCallback === "function") w.requestIdleCallback(cb, { timeout: 1500 });
+      else setTimeout(cb, 0);
+    };
+    idle(() => {
+      // Recently opened courses (Continue Learning section)
+      qc.prefetchQuery({
+        queryKey: ["recent-courses", user.id, 8],
+        queryFn: async () => {
+          const { data } = await (supabase as any)
+            .from("recently_opened_courses")
+            .select("course_id, opened_at, courses(id, code, name, department, level)")
+            .order("opened_at", { ascending: false })
+            .limit(8);
+          return data ?? [];
+        },
+      }).catch(() => { /* noop */ });
+    });
+  }, [user?.id, qc]);
+
   return null;
 }
 
