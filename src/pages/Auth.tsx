@@ -427,7 +427,7 @@ const Auth = () => {
                     <p>
                       We sent a confirmation link to{" "}
                       <strong className="font-semibold">{pendingEmail}</strong>. Click it,
-                      then sign in below. You'll be taken straight to onboarding.
+                      then sign in below to continue.
                     </p>
                   </div>
                   <button
