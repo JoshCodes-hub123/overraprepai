@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -61,6 +62,21 @@ function DashboardWarmup() {
   return null;
 }
 
+// Persist the last meaningful in-app route for signed-in users so the next
+// login can resume exactly where they left off.
+const RESUME_SKIP_PREFIXES = ["/auth", "/install", "/r/", "/quiz/", "/reset-password", "/forgot-password"];
+function LastRouteTracker() {
+  const { user } = useAuth();
+  const location = useLocation();
+  useEffect(() => {
+    if (!user?.id) return;
+    const path = location.pathname + location.search;
+    if (path === "/" || RESUME_SKIP_PREFIXES.some((p) => path.startsWith(p))) return;
+    try { localStorage.setItem(`overra_last_route:${user.id}`, path); } catch { /* noop */ }
+  }, [user?.id, location.pathname, location.search]);
+  return null;
+}
+
 const App = () => {
   return (
     <ErrorBoundary>
@@ -79,6 +95,7 @@ const App = () => {
               <PushBootstrap />
               <DeviceTracker />
               <DashboardWarmup />
+              <LastRouteTracker />
               <BiometricUnlock>
                 <PaymentTestModeBanner />
                 <EmailVerificationBanner />
