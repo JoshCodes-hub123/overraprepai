@@ -363,11 +363,11 @@ const TutorDashboard = () => {
             <div className="flex items-center gap-2">
               <Button
                 size="sm"
-                onClick={() => setShowUnifiedQuizCreator(true)}
+                onClick={() => navigate("/tutor/courses")}
                 className="bg-white text-amber-700 hover:bg-amber-50 shadow-md font-semibold rounded-full px-4 sm:px-5"
               >
                 <Plus className="w-4 h-4 mr-1.5" />
-                New Quiz
+                Add to a course
               </Button>
               <SuggestOpportunityDialog
                 trigger={
@@ -409,31 +409,18 @@ const TutorDashboard = () => {
         {/* Onboarding Checklist */}
         <OnboardingChecklist
           onCreateCourse={() => setShowCreateCourse(true)}
-          onCreateQuiz={() => setShowUnifiedQuizCreator(true)}
+          onCreateQuiz={() => navigate("/tutor/courses")}
         />
 
         {/* Primary Actions (single, consolidated row) */}
         <div className="flex flex-wrap gap-2 sm:gap-3 mb-8">
-          <Button onClick={() => setShowUnifiedQuizCreator(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Create Quiz or Exam
-          </Button>
-          <Button variant="outline" onClick={() => setShowBulkQuizImport(true)}>
-            <FileText className="w-4 h-4 mr-2" />
-            Bulk Import
+          <Button onClick={() => navigate("/tutor/courses")} className="bg-amber-500 hover:bg-amber-600 text-white">
+            <BookOpen className="w-4 h-4 mr-2" />
+            Manage courses & upload quizzes
           </Button>
           <Button variant="outline" onClick={() => setShowCreateCourse(true)}>
-            <BookOpen className="w-4 h-4 mr-2" />
-            Add Course
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setShowUploadQuestions(true)}
-            disabled={courses.length === 0}
-            title={courses.length === 0 ? "Add a course first" : undefined}
-          >
             <Plus className="w-4 h-4 mr-2" />
-            Upload Questions
+            New course
           </Button>
         </div>
 
@@ -476,9 +463,9 @@ const TutorDashboard = () => {
           actions={[
             {
               icon: Plus,
-              label: "Create Quiz or Exam",
-              description: "Author a new CBT in minutes",
-              onClick: () => setShowUnifiedQuizCreator(true),
+              label: "Upload bulk quizzes",
+              description: "Open a course → Quizzes tab to upload or AI-generate",
+              onClick: () => navigate("/tutor/courses"),
               tone: "gold",
             },
             {
