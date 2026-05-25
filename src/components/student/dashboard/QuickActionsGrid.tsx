@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Layers, Target, Headphones, Sparkles, Bookmark, Crown, Wallet, Gift, FileDown, MoreHorizontal, type LucideIcon } from "lucide-react";
+import { Layers, Target, Headphones, Sparkles, Bookmark, Crown, Wallet, Gift, FileDown, MoreHorizontal, Rocket, type LucideIcon } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Tile {
   icon: LucideIcon;
@@ -11,13 +12,23 @@ interface Tile {
   hint?: string;
 }
 
-const PRIMARY: Tile[] = [
+// Path-aware "Quick Start" — recommends free quizzes based on saved track.
+function quickStartTile(path: string | null | undefined): Tile {
+  if (path === "secondary" || path === "jamb") {
+    return { icon: Rocket, label: "Quick Start", to: "/subjects", hint: "Free quizzes for you" };
+  }
+  if (path === "university") {
+    return { icon: Rocket, label: "Quick Start", to: "/courses", hint: "Free quizzes for you" };
+  }
+  return { icon: Rocket, label: "Quick Start", to: "/profile/preparation", hint: "Pick your track" };
+}
+
+const BASE_PRIMARY: Tile[] = [
   { icon: Target,     label: "Practice",      to: "/student/readiness", hint: "Test yourself" },
   { icon: Layers,     label: "Flashcards",    to: "/flashcards",        hint: "Quick review" },
   { icon: Sparkles,   label: "Ask AI",        to: "/ai-tutor",          hint: "Get help" },
   { icon: Headphones, label: "Listen",        to: "/audio-learning",    hint: "Audio notes" },
   { icon: FileDown,   label: "Summary",       to: "/student/smart-summary", hint: "TL;DR" },
-  { icon: Bookmark,   label: "Library",       to: "/library",           hint: "Saved" },
 ];
 
 const MORE: Tile[] = [
@@ -60,6 +71,11 @@ const Tile = ({ tile, index, onClick }: { tile: Tile; index: number; onClick: ()
 export const QuickActionsGrid = () => {
   const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
+  const { profile } = useAuth();
+  const PRIMARY = useMemo<Tile[]>(
+    () => [quickStartTile((profile as any)?.academic_path), ...BASE_PRIMARY],
+    [profile]
+  );
 
   return (
     <section aria-label="Quick actions" className="mb-7">
