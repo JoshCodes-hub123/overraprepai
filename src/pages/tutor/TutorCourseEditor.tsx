@@ -170,7 +170,7 @@ const ManageCourse = ({ courseId, userId, qc }: { courseId: string; userId?: str
         )}
       </Card>
 
-      <Tabs defaultValue="documents">
+      <Tabs defaultValue="quizzes">
         <TabsList className="w-full justify-start gap-1 h-auto p-1 overflow-x-auto bg-muted/50">
           <TabsTrigger value="quizzes" className="gap-1.5"><ListChecks className="w-3.5 h-3.5" /> Quizzes</TabsTrigger>
           <TabsTrigger value="documents" className="gap-1.5"><FileText className="w-3.5 h-3.5" /> Documents</TabsTrigger>
