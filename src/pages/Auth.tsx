@@ -17,6 +17,7 @@ import { SEO } from "@/components/seo/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import AuthBrandPanel from "@/components/auth/AuthBrandPanel";
 import { mapAuthError } from "@/lib/authErrors";
+import { prefetchStudentDashboard } from "@/lib/routePrefetch";
 
 const NIGERIAN_STATES = [
   "Abia","Adamawa","Akwa Ibom","Anambra","Bauchi","Bayelsa","Benue","Borno","Cross River","Delta",
@@ -194,6 +195,10 @@ const Auth = () => {
 
   const academicPath = signUpForm.watch("academicPath");
 
+  // Warm the dashboard JS chunk while the user is typing credentials,
+  // so navigation after sign-in feels instant.
+  useEffect(() => { prefetchStudentDashboard(); }, []);
+
   const handleSignIn = async (data: SignInFormData) => {
     setIsSubmitting(true);
     const { error } = await signIn(data.email, data.password);
@@ -210,6 +215,8 @@ const Auth = () => {
       });
     } else {
       setPendingEmail("");
+      // Kick off chunk + neighbor prefetch the moment auth succeeds.
+      prefetchStudentDashboard();
       toast({
         title: "Welcome back!",
         description: "You have successfully signed in.",
