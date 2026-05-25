@@ -104,10 +104,6 @@ export default function CourseQuizUploader({ courseId, userId }: CourseQuizUploa
     toast.success(`${imported.length} question${imported.length === 1 ? "" : "s"} added`);
   };
 
-  const removeQuestion = (i: number) => {
-    setQuestions((prev) => prev.filter((_, idx) => idx !== i));
-  };
-
   const publish = async () => {
     if (!userId) return;
     if (!title.trim()) {
