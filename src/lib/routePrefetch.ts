@@ -32,3 +32,18 @@ export function prefetchDashboardNeighbors() {
     leaderboard: () => import("@/pages/LeaderboardPage"),
   });
 }
+
+/**
+ * Warm the student dashboard chunk + its heaviest child sections
+ * so the first paint after login is essentially free.
+ * Safe to call multiple times — de-duped by `seen`.
+ */
+export function prefetchStudentDashboard() {
+  prefetchRoutes({
+    studentDashboard: () => import("@/pages/student/StudentDashboard"),
+    studyPackHero:    () => import("@/components/student/StudyPackHero"),
+    continueLearning: () => import("@/components/student/ContinueLearning"),
+    quickActions:     () => import("@/components/student/dashboard/QuickActionsGrid"),
+    topHeader:        () => import("@/components/student/dashboard/TopHeader"),
+  });
+}
