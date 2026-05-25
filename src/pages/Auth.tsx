@@ -316,7 +316,7 @@ const Auth = () => {
           await supabase
             .from("profiles")
             .update({
-              academic_path: data.academicPath || null,
+              academic_path: (data.academicPath || null) as any,
               level: data.level || null,
               department: data.department || null,
               phone: data.phone || null,
