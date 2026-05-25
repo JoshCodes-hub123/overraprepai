@@ -5,6 +5,7 @@ import { SEO } from "@/components/seo/SEO";
 import { useOpportunities, useOpportunityBookmarks, type OpportunityCategory } from "@/hooks/useOpportunities";
 import { OpportunityCard } from "@/components/opportunities/OpportunityCard";
 import RecommendedOpportunities from "@/components/opportunities/RecommendedOpportunities";
+import { SuggestOpportunityDialog } from "@/components/opportunities/SuggestOpportunityDialog";
 
 const CATEGORIES: { id: OpportunityCategory | "all"; label: string }[] = [
   { id: "all", label: "All" },
@@ -33,6 +34,9 @@ export default function Opportunities() {
           <div className="container mx-auto px-4 h-14 flex items-center gap-3">
             <Link to="/student/dashboard" className="text-muted-foreground"><ArrowLeft className="h-5 w-5" /></Link>
             <h1 className="font-display text-base font-bold">Opportunity Hub</h1>
+            <div className="ml-auto">
+              <SuggestOpportunityDialog />
+            </div>
           </div>
         </header>
 
