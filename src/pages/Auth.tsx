@@ -411,6 +411,43 @@ const Auth = () => {
           {!isSignUp ? (
             /* Sign In Form */
             <form onSubmit={signInForm.handleSubmit(handleSignIn)} className="space-y-4 sm:space-y-5">
+              {pendingEmail && (
+                <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs sm:text-sm text-amber-900 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <MailCheck className="w-4 h-4 mt-0.5 shrink-0" />
+                    <p>
+                      We sent a confirmation link to{" "}
+                      <strong className="font-semibold">{pendingEmail}</strong>. Click it,
+                      then sign in below. You'll be taken straight to onboarding.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    disabled={resending}
+                    className="inline-flex items-center gap-1 font-semibold underline underline-offset-2 disabled:opacity-50"
+                  >
+                    {resending && <Loader2 className="w-3 h-3 animate-spin" />}
+                    Resend verification email
+                  </button>
+                </div>
+              )}
+              {reason === "verified" && !pendingEmail && (
+                <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-xs sm:text-sm text-emerald-900 flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+                  <p>Email verified. Sign in to continue to your onboarding.</p>
+                </div>
+              )}
+              {(reason === "expired" || reason === "missing") && (
+                <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-xs sm:text-sm text-destructive flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                  <p>
+                    {reason === "expired"
+                      ? "Your session expired for security. Sign in again to pick up where you left off."
+                      : "You need to be signed in to view that page. Sign in to continue."}
+                  </p>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="signin-email" className="text-foreground text-xs sm:text-sm font-medium">
                   Email
