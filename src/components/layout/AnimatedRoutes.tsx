@@ -487,7 +487,21 @@ export const AnimatedRoutes = () => {
           <Route path="/admin/trust" element={<AdminRoute><PageTransition><AdminTrust /></PageTransition></AdminRoute>} />
           <Route path="/admin/broadcast" element={<AdminRoute><PageTransition><AdminBroadcast /></PageTransition></AdminRoute>} />
           <Route path="/search" element={<PageTransition><SmartSearch /></PageTransition>} />
-          <Route path="/live/:slotId" element={<PageTransition><LiveRoom /></PageTransition>} />
+          <Route
+            path="/live/:slotId"
+            element={
+              <PageTransition>
+                {FEATURES.liveClassrooms ? (
+                  <LiveRoom />
+                ) : (
+                  <ComingSoon
+                    title="Live classrooms"
+                    note="Live video sessions are launching soon. We'll notify you the moment they go live."
+                  />
+                )}
+              </PageTransition>
+            }
+          />
           <Route path="/copilot" element={<PageTransition><CopilotPage /></PageTransition>} />
           <Route path="/tutor/growth" element={<PageTransition><TutorGrowthStudio /></PageTransition>} />
           <Route path="/r/:slug" element={<AffiliateRedirect />} />
