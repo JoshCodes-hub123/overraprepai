@@ -49,7 +49,8 @@ interface Reply {
 
 const Community = () => {
   const navigate = useNavigate();
-  const { user, profile, isLoading: authLoading } = useAuth();
+  const { user, profile, isLoading: authLoading, hasRole } = useAuth();
+  const canStartDiscussion = hasRole("tutor") || hasRole("admin");
   const [discussions, setDiscussions] = useState<Discussion[]>([]);
   const [selectedDiscussion, setSelectedDiscussion] = useState<Discussion | null>(null);
   const [replies, setReplies] = useState<Reply[]>([]);
@@ -277,6 +278,7 @@ const Community = () => {
                 </span>
               </Link>
 
+              {canStartDiscussion && (
               <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
                 <DialogTrigger asChild>
                   <Button>
@@ -318,6 +320,7 @@ const Community = () => {
                   </div>
                 </DialogContent>
               </Dialog>
+              )}
             </div>
           </div>
         </header>
