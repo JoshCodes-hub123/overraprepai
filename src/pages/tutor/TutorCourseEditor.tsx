@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Plus, BookOpen, Layers, Image as ImageIcon, FileText, Loader2 } from "lucide-react";
+import { Plus, BookOpen, Layers, Image as ImageIcon, FileText, Loader2, ListChecks } from "lucide-react";
+import CourseQuizUploader from "@/components/tutor/CourseQuizUploader";
 
 const TutorCourseEditor = () => {
   const { courseId } = useParams();
@@ -169,12 +170,16 @@ const ManageCourse = ({ courseId, userId, qc }: { courseId: string; userId?: str
         )}
       </Card>
 
-      <Tabs defaultValue="documents">
+      <Tabs defaultValue="quizzes">
         <TabsList className="w-full justify-start gap-1 h-auto p-1 overflow-x-auto bg-muted/50">
+          <TabsTrigger value="quizzes" className="gap-1.5"><ListChecks className="w-3.5 h-3.5" /> Quizzes</TabsTrigger>
           <TabsTrigger value="documents" className="gap-1.5"><FileText className="w-3.5 h-3.5" /> Documents</TabsTrigger>
           <TabsTrigger value="flashcards" className="gap-1.5"><Layers className="w-3.5 h-3.5" /> Flashcards</TabsTrigger>
           <TabsTrigger value="images" className="gap-1.5"><ImageIcon className="w-3.5 h-3.5" /> Images</TabsTrigger>
         </TabsList>
+        <TabsContent value="quizzes" className="mt-3">
+          <CourseQuizUploader courseId={courseId} userId={userId} />
+        </TabsContent>
         <TabsContent value="documents" className="mt-3">
           <DocumentsUploader courseId={courseId} userId={userId} />
         </TabsContent>
