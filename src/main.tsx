@@ -56,19 +56,15 @@ window.addEventListener("unhandledrejection", (e) => {
   }
 });
 
-// Manually register the PWA service worker with an ABSOLUTE path so it works
-// regardless of the current route (vite `base: "./"` would otherwise resolve
-// `sw.js` relative to the path, e.g. `/student/sw.js` → 404).
+// PWA is intentionally manifest-only — do NOT register a service worker.
+// SW registration breaks the Lovable preview iframe and is not needed for
+// install-to-home-screen. Proactively unregister any stale SW from previous
+// deploys so returning users get the latest app shell.
 if ("serviceWorker" in navigator && !Capacitor.isNativePlatform()) {
-  window.addEventListener("load", () => {
-    const swUrl = import.meta.env.DEV ? "/dev-sw.js?dev-sw" : "/sw.js";
-    const swType: WorkerType = import.meta.env.DEV ? "module" : "classic";
-    navigator.serviceWorker
-      .register(swUrl, { scope: "/", type: swType })
-      .catch(() => {
-        // Silent — SW is a progressive enhancement
-      });
-  });
+  navigator.serviceWorker
+    .getRegistrations()
+    .then((regs) => regs.forEach((r) => r.unregister().catch(() => {})))
+    .catch(() => {});
 }
 
 
