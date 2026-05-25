@@ -47,17 +47,17 @@ const Tile = ({ tile, index, onClick }: { tile: Tile; index: number; onClick: ()
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: index * 0.04, ease: [0.22, 1, 0.36, 1] }}
       whileTap={{ scale: 0.96 }}
-      className="group relative flex flex-col items-start gap-2 rounded-2xl border border-amber-100/70 bg-card p-3.5 min-h-[100px] text-left shadow-[0_1px_2px_rgba(180,140,40,0.04)] hover:border-amber-200 hover:shadow-[0_6px_18px_-10px_rgba(180,140,40,0.25)] transition-all"
+      className="group relative flex flex-col items-start gap-2.5 rounded-2xl border border-neutral-100 bg-white p-4 min-h-[104px] text-left shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:border-amber-200 hover:shadow-[0_8px_22px_-12px_rgba(180,140,40,0.35)] hover:-translate-y-0.5 transition-all"
       aria-label={tile.label}
     >
-      <span className="h-11 w-11 rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100/70 border border-amber-100 flex items-center justify-center">
-        <Icon className="h-[22px] w-[22px] text-amber-700" strokeWidth={2.2} />
+      <span className="h-10 w-10 rounded-xl bg-amber-50 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+        <Icon className="h-5 w-5 text-amber-700" strokeWidth={1.8} />
       </span>
-      <span className="font-display text-[14px] font-bold text-foreground leading-tight">
+      <span className="font-display text-[13.5px] font-bold text-neutral-800 leading-tight">
         {tile.label}
       </span>
       {tile.hint && (
-        <span className="text-[11px] text-muted-foreground leading-tight">{tile.hint}</span>
+        <span className="text-[11px] text-neutral-400 leading-tight">{tile.hint}</span>
       )}
     </motion.button>
   );
@@ -79,10 +79,13 @@ export const QuickActionsGrid = () => {
 
   return (
     <section aria-label="Quick actions" className="mb-7">
-      <div className="flex items-end justify-between mb-3 px-0.5">
-        <h2 className="font-display text-[15px] sm:text-base font-bold tracking-tight text-foreground">
-          What would you like to do?
-        </h2>
+      <div className="flex items-center justify-between mb-3 px-0.5">
+        <div className="flex items-center gap-2">
+          <span className="h-3 w-0.5 rounded-full bg-amber-500" />
+          <h2 className="font-display text-[11px] font-bold tracking-[0.22em] uppercase text-neutral-500">
+            Quick actions
+          </h2>
+        </div>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3">
         {PRIMARY.map((t, i) => (
@@ -97,14 +100,14 @@ export const QuickActionsGrid = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: PRIMARY.length * 0.04, ease: [0.22, 1, 0.36, 1] }}
               whileTap={{ scale: 0.96 }}
-              className="flex flex-col items-start gap-2 rounded-2xl border border-dashed border-amber-200 bg-amber-50/40 p-3.5 min-h-[100px] text-left hover:bg-amber-50 transition-all"
+              className="flex flex-col items-start gap-2.5 rounded-2xl border border-dashed border-amber-200 bg-amber-50/30 p-4 min-h-[104px] text-left hover:bg-amber-50 hover:border-amber-300 transition-all"
               aria-label="More actions"
             >
-              <span className="h-11 w-11 rounded-2xl bg-white border border-amber-100 flex items-center justify-center">
-                <MoreHorizontal className="h-[22px] w-[22px] text-amber-700" strokeWidth={2.2} />
+              <span className="h-10 w-10 rounded-xl bg-white border border-amber-100 flex items-center justify-center">
+                <MoreHorizontal className="h-5 w-5 text-amber-700" strokeWidth={1.8} />
               </span>
-              <span className="font-display text-[14px] font-bold text-foreground leading-tight">More</span>
-              <span className="text-[11px] text-muted-foreground leading-tight">Wallet, premium…</span>
+              <span className="font-display text-[13.5px] font-bold text-neutral-800 leading-tight">More</span>
+              <span className="text-[11px] text-neutral-400 leading-tight">Wallet, premium…</span>
             </motion.button>
           </SheetTrigger>
           <SheetContent side="bottom" className="rounded-t-3xl border-amber-100">
