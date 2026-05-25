@@ -499,7 +499,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
     const callerId = claimsData.claims.sub as string;
 
-    const { type, to, data, userId }: EmailRequest = await req.json();
+    let { type, to, data, userId }: EmailRequest = await req.json();
     console.log(`Sending ${type} notification to ${to}`, userId ? `(user: ${userId})` : "");
 
     // Self-targeted "welcome" allowed; everything else requires admin role
@@ -517,6 +517,29 @@ const handler = async (req: Request): Promise<Response> => {
           headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       }
+    } else {
+      // Force the recipient to the caller's verified email and sanitize template data
+      // so the self-welcome path cannot be abused to send branded mail to arbitrary
+      // addresses or inject HTML via name/dashboardUrl.
+      const callerEmail = (claimsData.claims as any)?.email as string | undefined;
+      if (!callerEmail) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+      to = callerEmail;
+      const escapeHtml = (s: unknown) =>
+        String(s ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      const safeName = escapeHtml((data as any)?.name).slice(0, 120);
+      const rawUrl = String((data as any)?.dashboardUrl ?? "");
+      const safeUrl = /^https:\/\//i.test(rawUrl) ? encodeURI(rawUrl) : "";
+      data = { ...(data as any), name: safeName, dashboardUrl: safeUrl } as any;
     }
     // --- END AUTH GUARD ---
 

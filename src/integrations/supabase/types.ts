@@ -2425,6 +2425,7 @@ export type Database = {
         Row: {
           description: string | null
           id: string
+          is_public: boolean
           key: string
           updated_at: string
           updated_by: string | null
@@ -2433,6 +2434,7 @@ export type Database = {
         Insert: {
           description?: string | null
           id?: string
+          is_public?: boolean
           key: string
           updated_at?: string
           updated_by?: string | null
@@ -2441,6 +2443,7 @@ export type Database = {
         Update: {
           description?: string | null
           id?: string
+          is_public?: boolean
           key?: string
           updated_at?: string
           updated_by?: string | null
@@ -6307,6 +6310,7 @@ export type Database = {
           uploads_count: number
         }[]
       }
+      get_session_meeting_url: { Args: { _slot_id: string }; Returns: string }
       get_student_leaderboard: {
         Args: { _limit?: number }
         Returns: {
@@ -6320,6 +6324,13 @@ export type Database = {
           streak_days: number
           university: string
           user_id: string
+        }[]
+      }
+      get_student_parent_contact: {
+        Args: { _student_id: string }
+        Returns: {
+          parent_email: string
+          parent_phone: string
         }[]
       }
       get_trust_score: {
