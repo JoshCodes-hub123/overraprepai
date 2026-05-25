@@ -61,7 +61,7 @@ export const SubjectCombinationTracker = () => {
           <div className="text-sm text-muted-foreground space-y-2">
             <p>You haven't picked your 4 UTME subjects yet.</p>
             <Button asChild size="sm" variant="outline">
-              <Link to="/onboarding/refine">Pick subjects</Link>
+              <Link to="/profile/preparation">Pick subjects</Link>
             </Button>
           </div>
         ) : (

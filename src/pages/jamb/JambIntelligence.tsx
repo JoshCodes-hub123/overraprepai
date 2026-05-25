@@ -289,7 +289,7 @@ const JambIntelligence = () => {
                 {subjects.length === 0 ? (
                   <div className="text-sm text-muted-foreground space-y-2">
                     <p>You haven't picked your UTME subjects yet.</p>
-                    <Button size="sm" onClick={() => navigate("/onboarding/refine")}>Set subjects</Button>
+                    <Button size="sm" onClick={() => navigate("/profile/preparation")}>Set subjects</Button>
                   </div>
                 ) : (
                   <ul className="grid sm:grid-cols-2 gap-3">
