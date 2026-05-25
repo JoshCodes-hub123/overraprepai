@@ -38,11 +38,18 @@ Deno.serve(async (req) => {
         { user_id: user.id, role: a.role },
         { onConflict: "user_id,role" }
       );
-      // Ensure profile exists
-      await admin.from("profiles").upsert(
-        { id: user.id, email: a.email, full_name: a.full_name },
-        { onConflict: "id" }
-      );
+      // Ensure profile exists — pre-fill onboarding for test student so they
+      // land straight on the dashboard with no gates.
+      const profileRow: any = { id: user.id, email: a.email, full_name: a.full_name };
+      if (a.role === "student") {
+        profileRow.university = "Federal University of Technology, Akure";
+        profileRow.faculty = "School of Computing";
+        profileRow.department = "Computer Science";
+        profileRow.level = "200";
+        profileRow.academic_path = "university";
+        profileRow.onboarding_completed = true;
+      }
+      await admin.from("profiles").upsert(profileRow, { onConflict: "id" });
       results.push({ email: a.email, password: a.password, role: a.role, user_id: user.id });
     }
     return new Response(JSON.stringify({ accounts: results }, null, 2), {
