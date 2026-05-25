@@ -92,14 +92,17 @@ export const TopHeader = () => {
       aria-label="Student greeting"
     >
       <div className="min-w-0 flex-1">
-        <p className="text-[11px] font-semibold tracking-[0.18em] uppercase text-amber-700/90">
+        <p className="text-[10px] font-bold tracking-[0.22em] uppercase text-amber-700/90">
           {birthdayInfo?.isToday ? "🎂 Happy birthday" : greeting()}
         </p>
-        <h1 className="font-display text-[22px] sm:text-[26px] font-bold leading-tight tracking-tight text-foreground mt-0.5 truncate">
-          Welcome back, {firstName}
+        <h1 className="font-display text-[22px] sm:text-[26px] font-bold leading-tight tracking-tight text-foreground mt-1 truncate">
+          Welcome back,{" "}
+          <span className="bg-gradient-to-r from-amber-600 to-amber-500 bg-clip-text text-transparent">
+            {firstName}
+          </span>
         </h1>
-        <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200/70 text-[11px] font-bold text-amber-800">
+        <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200/60 text-[10.5px] font-bold tracking-wide uppercase text-amber-800">
             <GraduationCap className="w-3 h-3" /> {university}
           </span>
           {subline && (
@@ -115,7 +118,7 @@ export const TopHeader = () => {
 
       <div className="flex items-center gap-1.5 shrink-0">
         {streak > 0 && (
-          <span className="hidden xs:inline-flex items-center gap-1 h-9 px-2.5 rounded-full bg-gradient-to-br from-amber-50 to-amber-100/70 border border-amber-200/70 text-[12px] font-bold text-amber-800">
+          <span className="hidden xs:inline-flex items-center gap-1 h-9 px-2.5 rounded-full bg-gradient-to-br from-amber-50 to-amber-100/70 border border-amber-200/60 text-[12px] font-bold text-amber-800 shadow-sm shadow-amber-200/40">
             <Flame className="w-3.5 h-3.5" /> {streak}
           </span>
         )}
@@ -123,11 +126,11 @@ export const TopHeader = () => {
           type="button"
           onClick={() => navigate("/notifications")}
           aria-label={unread > 0 ? `Notifications (${unread} unread)` : "Notifications"}
-          className="relative h-11 w-11 rounded-full flex items-center justify-center hover:bg-amber-50 transition-colors"
+          className="relative h-11 w-11 rounded-2xl flex items-center justify-center bg-white border border-neutral-100 hover:border-amber-200 hover:bg-amber-50/50 transition-all"
         >
-          <Bell className="w-[22px] h-[22px] text-muted-foreground" strokeWidth={2} />
+          <Bell className="w-5 h-5 text-neutral-600" strokeWidth={1.6} />
           {unread > 0 && (
-            <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white shadow-sm">
               {unread > 9 ? "9+" : unread}
             </span>
           )}
@@ -135,11 +138,11 @@ export const TopHeader = () => {
         <Link
           to="/profile/edit"
           aria-label="Profile"
-          className="h-11 w-11 rounded-full flex items-center justify-center hover:bg-amber-50 transition-colors"
+          className="h-11 w-11 rounded-2xl flex items-center justify-center hover:bg-amber-50/50 transition-colors"
         >
-          <Avatar className="h-9 w-9 ring-2 ring-amber-100">
+          <Avatar className="h-10 w-10 ring-1 ring-amber-200/70 shadow-sm">
             <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "Profile"} />
-            <AvatarFallback className="bg-gradient-to-br from-amber-100 to-amber-200 text-amber-800 text-xs font-bold">
+            <AvatarFallback className="bg-gradient-to-br from-amber-100 to-amber-200 text-amber-800 text-sm font-bold">
               {firstName.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
