@@ -27,28 +27,20 @@ import {
   Wand2,
   FileText,
   ListChecks,
+  Eye,
 } from "lucide-react";
 import { BulkQuestionImport } from "./BulkQuestionImport";
 import { extractTextFromFile } from "@/lib/extractText";
+import DraftQuestionsList, { type DraftQuestion } from "./quiz-upload/DraftQuestionsList";
+import CBTPreviewDialog from "./quiz-upload/CBTPreviewDialog";
+import QuizUploadTemplates from "./quiz-upload/QuizUploadTemplates";
 
 interface CourseQuizUploaderProps {
   courseId: string;
   userId?: string;
 }
 
-interface ParsedQuestion {
-  question_text: string;
-  option_a: string;
-  option_b: string;
-  option_c: string;
-  option_d: string;
-  correct_option: "A" | "B" | "C" | "D";
-  explanation?: string;
-  difficulty?: "easy" | "medium" | "hard";
-  image_url?: string;
-  year?: number | null;
-  is_past_question?: boolean;
-}
+type ParsedQuestion = DraftQuestion;
 
 /**
  * The ONE unified quiz uploader, always scoped to the current course.
@@ -58,6 +50,7 @@ interface ParsedQuestion {
 export default function CourseQuizUploader({ courseId, userId }: CourseQuizUploaderProps) {
   const qc = useQueryClient();
   const [questions, setQuestions] = useState<ParsedQuestion[]>([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Quiz meta
   const [title, setTitle] = useState("");
@@ -109,10 +102,6 @@ export default function CourseQuizUploader({ courseId, userId }: CourseQuizUploa
     if (!imported.length) return;
     setQuestions((prev) => [...prev, ...imported]);
     toast.success(`${imported.length} question${imported.length === 1 ? "" : "s"} added`);
-  };
-
-  const removeQuestion = (i: number) => {
-    setQuestions((prev) => prev.filter((_, idx) => idx !== i));
   };
 
   const publish = async () => {
@@ -289,9 +278,10 @@ export default function CourseQuizUploader({ courseId, userId }: CourseQuizUploa
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="upload" className="mt-3">
-            <p className="text-xs text-muted-foreground mb-2">
-              CSV / Excel template, Word .docx, or paste questions. Each parsed question gets added to the draft below.
+          <TabsContent value="upload" className="mt-3 space-y-3">
+            <QuizUploadTemplates />
+            <p className="text-xs text-muted-foreground">
+              Upload your filled CSV / Excel / Word file, or paste questions. Each parsed item gets added to the draft below.
             </p>
             <BulkQuestionImport
               onImport={handleImported}
@@ -318,31 +308,25 @@ export default function CourseQuizUploader({ courseId, userId }: CourseQuizUploa
             Draft questions
             <Badge variant="secondary">{questions.length}</Badge>
           </h3>
-          {questions.length > 0 && (
-            <Button size="sm" variant="ghost" onClick={() => setQuestions([])}>
-              Clear all
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            {questions.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setPreviewOpen(true)}
+                className="gap-1.5"
+              >
+                <Eye className="w-4 h-4" /> Preview as student
+              </Button>
+            )}
+            {questions.length > 0 && (
+              <Button size="sm" variant="ghost" onClick={() => setQuestions([])}>
+                Clear all
+              </Button>
+            )}
+          </div>
         </div>
-        {questions.length === 0 ? (
-          <p className="text-xs text-muted-foreground">
-            No questions yet — use Upload, Paste, or AI Generate above to add some.
-          </p>
-        ) : (
-          <ul className="divide-y text-sm max-h-72 overflow-y-auto">
-            {questions.map((q, i) => (
-              <li key={i} className="py-2 flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{i + 1}. {q.question_text}</p>
-                  <p className="text-xs text-muted-foreground">Answer: {q.correct_option}</p>
-                </div>
-                <Button size="sm" variant="ghost" onClick={() => removeQuestion(i)}>
-                  <Trash2 className="w-4 h-4 text-rose-600" />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
+        <DraftQuestionsList questions={questions} onChange={setQuestions} />
         <div className="mt-3 flex justify-end">
           <Button
             disabled={!canPublish}
@@ -354,6 +338,14 @@ export default function CourseQuizUploader({ courseId, userId }: CourseQuizUploa
           </Button>
         </div>
       </Card>
+
+      <CBTPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        questions={questions}
+        title={title || "Untitled quiz"}
+        durationMinutes={parseInt(durationMinutes) || 30}
+      />
 
       {/* Existing quizzes */}
       {existingQuizzes.length > 0 && (
