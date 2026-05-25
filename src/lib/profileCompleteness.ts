@@ -31,3 +31,15 @@ export function getProfileCompleteness(profile: any | null | undefined): Complet
   const percent = Math.round((filled.length / REQUIRED_PROFILE_FIELDS.length) * 100);
   return { percent, missing, isComplete: missing.length === 0 };
 }
+
+/**
+ * "Verified student" = onboarding done + has a matric number + a university on record.
+ * This is the signal we use for trust-bearing UI like the branded Smart Summary PDF.
+ * Centralised so we can later swap it for a real `is_verified` flag without touching callers.
+ */
+export function isVerifiedStudent(profile: any | null | undefined): boolean {
+  if (!profile) return false;
+  const matric = String(profile.matric_no ?? "").trim();
+  const uni = String(profile.university ?? "").trim();
+  return !!profile.onboarding_completed && matric.length > 0 && uni.length > 0;
+}
