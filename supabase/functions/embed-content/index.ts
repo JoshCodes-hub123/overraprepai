@@ -34,12 +34,21 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+    const { data: roles } = await admin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userData.user.id);
+    const allowed = (roles ?? []).some((r: any) => r.role === 'admin' || r.role === 'tutor');
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     const body = await req.json();
     const items: Array<{ entity_type: string; entity_id: string; title: string; body?: string; url: string; owner_id?: string; is_public?: boolean }> = body.items ?? [];
     if (!Array.isArray(items) || items.length === 0) {
       return new Response(JSON.stringify({ error: 'items required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-    const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
     let ok = 0;
     for (const it of items.slice(0, 50)) {
