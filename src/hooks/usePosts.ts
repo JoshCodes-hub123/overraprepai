@@ -29,7 +29,17 @@ export interface Post {
   author?: { full_name: string | null; avatar_url: string | null; profile_image_url: string | null } | null;
 }
 
-const SELECT = `*, author:profiles!posts_author_id_fkey(full_name, avatar_url, profile_image_url)`;
+const SELECT = `*`;
+
+async function attachAuthors<T extends { author_id: string }>(rows: T[]): Promise<(T & { author: any })[]> {
+  const ids = Array.from(new Set(rows.map((r) => r.author_id)));
+  if (ids.length === 0) return rows.map((r) => ({ ...r, author: null }));
+  const { data } = await (supabase.from as any)("profiles")
+    .select("id, full_name, avatar_url, profile_image_url")
+    .in("id", ids);
+  const map = new Map<string, any>((data ?? []).map((p: any) => [p.id, p]));
+  return rows.map((r) => ({ ...r, author: map.get(r.author_id) ?? null }));
+}
 
 export function usePosts(filter?: { type?: PostType | "all"; limit?: number }) {
   return useQuery({
@@ -43,7 +53,7 @@ export function usePosts(filter?: { type?: PostType | "all"; limit?: number }) {
       if (filter?.limit) q = q.limit(filter.limit);
       const { data, error } = await q;
       if (error) throw error;
-      return (data ?? []) as Post[];
+      return await attachAuthors((data ?? []) as Post[]) as Post[];
     },
   });
 }
@@ -55,7 +65,9 @@ export function usePost(id: string | undefined) {
     queryFn: async () => {
       const { data, error } = await (supabase.from as any)("posts").select(SELECT).eq("id", id).maybeSingle();
       if (error) throw error;
-      return data as Post | null;
+      if (!data) return null;
+      const [withAuthor] = await attachAuthors([data] as Post[]);
+      return withAuthor as Post;
     },
   });
 }
@@ -69,7 +81,7 @@ export function usePendingPosts() {
         .in("status", ["pending", "draft"])
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as Post[];
+      return await attachAuthors((data ?? []) as Post[]) as Post[];
     },
   });
 }
@@ -136,11 +148,17 @@ export function usePostComments(postId: string | undefined) {
     enabled: !!postId,
     queryFn: async () => {
       const { data, error } = await (supabase.from as any)("post_comments")
-        .select(`*, author:profiles!post_comments_author_id_fkey(full_name, avatar_url, profile_image_url)`)
+        .select(`*`)
         .eq("post_id", postId)
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return data as any[];
+      const rows = (data ?? []) as any[];
+      const ids = Array.from(new Set(rows.map((r) => r.author_id)));
+      if (ids.length === 0) return rows;
+      const { data: profs } = await (supabase.from as any)("profiles")
+        .select("id, full_name, avatar_url, profile_image_url").in("id", ids);
+      const map = new Map<string, any>((profs ?? []).map((p: any) => [p.id, p]));
+      return rows.map((r) => ({ ...r, author: map.get(r.author_id) ?? null }));
     },
   });
 }
