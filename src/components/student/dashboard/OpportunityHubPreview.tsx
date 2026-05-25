@@ -1,33 +1,35 @@
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Briefcase, GraduationCap, Trophy, Compass, ArrowRight, type LucideIcon } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useOpportunities } from "@/hooks/useOpportunities";
-
-interface OpportunityCard {
-  icon: LucideIcon;
-  label: string;
-  hint: string;
-}
-
-const CARDS: OpportunityCard[] = [
-  { icon: Briefcase,      label: "Internships",  hint: "Build experience" },
-  { icon: GraduationCap,  label: "Scholarships", hint: "Fund your studies" },
-  { icon: Trophy,         label: "Hackathons",   hint: "Compete & learn" },
-  { icon: Compass,        label: "Opportunities", hint: "Discover more" },
-];
+import { OpportunityListItem } from "@/components/opportunities/OpportunityCard";
+import { supabase } from "@/integrations/supabase/client";
+import { Sparkles } from "lucide-react";
 
 interface Props {
   university?: string;
 }
 
-/**
- * Calm 2x2 grid placeholder for the Opportunity Hub.
- * Structured for future university-scoped filtering — no data fetching yet.
- */
 export const OpportunityHubPreview = ({ university = "FUTA" }: Props) => {
   const navigate = useNavigate();
   const { data: live = [] } = useOpportunities({ limit: 4 });
-  const hasLive = live.length > 0;
+  const qc = useQueryClient();
+
+  // Live updates — new opportunities appear instantly in the dashboard.
+  useEffect(() => {
+    const ch = supabase
+      .channel("opportunities-dashboard")
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: "opportunities" },
+        () => qc.invalidateQueries({ queryKey: ["opportunities"] })
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [qc]);
+
+  const now = Date.now();
+  const isFresh = (iso: string) => now - new Date(iso).getTime() < 1000 * 60 * 60 * 48;
 
   return (
     <section aria-label="Opportunity hub" className="mb-7">
@@ -52,47 +54,34 @@ export const OpportunityHubPreview = ({ university = "FUTA" }: Props) => {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-        {(hasLive
-          ? live.slice(0, 4).map((op) => ({
-              icon: op.category === "scholarship" ? GraduationCap
-                  : op.category === "hackathon" || op.category === "competition" ? Trophy
-                  : op.category === "internship" ? Briefcase : Compass,
-              label: op.title,
-              hint: op.organization,
-              href: `/opportunities/${op.id}`,
-            }))
-          : CARDS.map((c) => ({ icon: c.icon, label: c.label, hint: c.hint, href: "/opportunities" }))
-        ).map((c, i) => {
-          const Icon = c.icon as LucideIcon;
-          return (
-            <motion.button
-              key={c.label}
-              type="button"
-              onClick={() => navigate(c.href)}
+      {live.length === 0 ? (
+        <button
+          type="button"
+          onClick={() => navigate("/opportunities")}
+          className="w-full flex items-center gap-3 rounded-2xl border border-dashed border-amber-200 bg-amber-50/40 p-4 text-left hover:bg-amber-50/60"
+        >
+          <span className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center">
+            <Sparkles className="h-5 w-5 text-amber-700" />
+          </span>
+          <span className="text-[13px] text-amber-900">
+            <span className="font-bold block">Discover scholarships, internships & more</span>
+            <span className="text-[11px] text-amber-700/80">Curated for university students</span>
+          </span>
+        </button>
+      ) : (
+        <div className="grid gap-2">
+          {live.slice(0, 4).map((op, i) => (
+            <motion.div
+              key={op.id}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: i * 0.04, ease: [0.22, 1, 0.36, 1] }}
-              whileTap={{ scale: 0.98 }}
-              className="group relative flex items-center gap-3 rounded-2xl border border-neutral-100 bg-white p-3.5 min-h-[72px] text-left hover:border-amber-200 hover:shadow-[0_8px_22px_-12px_rgba(180,140,40,0.3)] hover:-translate-y-0.5 transition-all"
-              aria-label={c.label}
             >
-              <span className="h-9 w-9 rounded-xl bg-amber-50 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                <Icon className="h-[18px] w-[18px] text-amber-700" strokeWidth={1.8} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block font-display text-[13px] font-bold text-neutral-800 leading-tight line-clamp-2">
-                  {c.label}
-                </span>
-                <span className="block text-[10.5px] text-neutral-400 mt-0.5 truncate">
-                  {c.hint}
-                </span>
-              </span>
-              <ArrowRight className="h-3.5 w-3.5 text-neutral-300 group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all shrink-0" />
-            </motion.button>
-          );
-        })}
-      </div>
+              <OpportunityListItem op={op} isNew={isFresh(op.created_at)} />
+            </motion.div>
+          ))}
+        </div>
+      )}
     </section>
   );
 };

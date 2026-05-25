@@ -1084,6 +1084,39 @@ export type Database = {
           },
         ]
       }
+      course_discussion_threads: {
+        Row: {
+          course_id: string
+          created_at: string
+          thread_id: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          thread_id: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_discussion_threads_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: true
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_discussion_threads_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "chat_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_images: {
         Row: {
           caption: string | null
