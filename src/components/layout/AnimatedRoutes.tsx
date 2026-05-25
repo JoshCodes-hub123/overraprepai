@@ -165,13 +165,9 @@ export const AnimatedRoutes = () => {
     <AnimatePresence mode="wait" initial={false}>
       <Suspense fallback={<LoadingSpinner />} key={location.pathname}>
        <TutorPendingGate>
-        <AcademicPathGate>
-         <Routes location={location}>
+        <Routes location={location}>
           <Route path="/" element={<PageTransition><Welcome /></PageTransition>} />
           <Route path="/notifications" element={<PageTransition><NotificationsPage /></PageTransition>} />
-          <Route path="/start" element={<PageTransition><ChooseProduct /></PageTransition>} />
-          <Route path="/start/persona" element={<PageTransition><ChoosePersona /></PageTransition>} />
-          <Route path="/school/intro" element={<PageTransition><SchoolIntro /></PageTransition>} />
           <Route path="/website" element={<PageTransition><Index /></PageTransition>} />
           <Route path="/welcome-tour" element={<PageTransition><MobileWelcome /></PageTransition>} />
           <Route
