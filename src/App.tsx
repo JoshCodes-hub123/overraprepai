@@ -23,12 +23,15 @@ import UpdatePrompt from "@/components/system/UpdatePrompt";
 import { initPushNotifications } from "@/lib/native/push";
 import { Capacitor } from "@capacitor/core";
 import { useRecordDeviceLogin } from "@/hooks/useDeviceHistory";
+import { prefetchStudentDashboard } from "@/lib/routePrefetch";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 1,
       gcTime: 1000 * 60 * 10,
+      refetchOnWindowFocus: false,
+      retry: 1,
     },
   },
 });
@@ -51,6 +54,13 @@ function DeviceTracker() {
   return null;
 }
 
+// Warm the student dashboard chunk during browser idle on every app load,
+// so the very first navigation after sign-in paints instantly.
+function DashboardWarmup() {
+  useEffect(() => { prefetchStudentDashboard(); }, []);
+  return null;
+}
+
 const App = () => {
   return (
     <ErrorBoundary>
@@ -68,6 +78,7 @@ const App = () => {
             <AuthProvider>
               <PushBootstrap />
               <DeviceTracker />
+              <DashboardWarmup />
               <BiometricUnlock>
                 <PaymentTestModeBanner />
                 <EmailVerificationBanner />
