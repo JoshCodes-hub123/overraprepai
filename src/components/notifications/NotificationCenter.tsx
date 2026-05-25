@@ -1,4 +1,4 @@
-import { Bell, Check, CheckCheck, Trash2, Info, AlertTriangle, CheckCircle, XCircle, Settings, Sparkles, GraduationCap, Briefcase, MessageSquare, CreditCard, Star } from "lucide-react";
+import { Bell, Check, CheckCheck, Trash2, Info, AlertTriangle, CheckCircle, XCircle, Settings, Briefcase, Star, BookOpen, Megaphone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -26,28 +26,29 @@ const getNotificationIcon = (type: string) => {
   }
 };
 
-type FilterKey = "all" | "ai" | "tutors" | "opportunities" | "spotlights" | "discussions" | "subscriptions";
+type FilterKey = "all" | "opportunities" | "talent" | "articles" | "announcements" | "other";
 
 const FILTERS: { key: FilterKey; label: string; icon: any }[] = [
   { key: "all", label: "All", icon: Bell },
-  { key: "ai", label: "AI", icon: Sparkles },
-  { key: "tutors", label: "Tutors", icon: GraduationCap },
   { key: "opportunities", label: "Opportunities", icon: Briefcase },
-  { key: "spotlights", label: "Spotlights", icon: Star },
-  { key: "discussions", label: "Discussions", icon: MessageSquare },
-  { key: "subscriptions", label: "Plan", icon: CreditCard },
+  { key: "talent", label: "Talent", icon: Star },
+  { key: "articles", label: "Articles", icon: BookOpen },
+  { key: "announcements", label: "Announcements", icon: Megaphone },
+  { key: "other", label: "Other", icon: Info },
 ];
 
 const matchesFilter = (n: { title: string; message: string; link: string | null; type: string }, key: FilterKey) => {
   if (key === "all") return true;
-  const hay = `${n.title} ${n.message} ${n.link ?? ""} ${n.type}`.toLowerCase();
+  const t = (n.type || "").toLowerCase();
+  const isContent =
+    t === "post_talent" || t === "post_opportunity" || t === "post_article" ||
+    t === "post_announcement" || t === "opportunity_published";
   switch (key) {
-    case "ai": return /\bai\b|overraprep ai|gemini/.test(hay);
-    case "tutors": return /tutor|upload|announcement|note|quiz/.test(hay);
-    case "opportunities": return /opportunity|opportunit|internship|scholarship/.test(hay);
-    case "spotlights": return /spotlight|featured|champion|recognition/.test(hay);
-    case "discussions": return /discussion|chat|message|mention|reply|thread/.test(hay);
-    case "subscriptions": return /subscription|premium|payment|plan|wallet|token/.test(hay);
+    case "opportunities": return t === "opportunity_published" || t === "post_opportunity";
+    case "talent":        return t === "post_talent";
+    case "articles":      return t === "post_article";
+    case "announcements": return t === "post_announcement";
+    case "other":         return !isContent;
     default: return true;
   }
 };
