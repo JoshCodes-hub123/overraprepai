@@ -12,6 +12,13 @@ const cors = {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
+    const cronSecret = Deno.env.get("CRON_SECRET");
+    const provided = req.headers.get("x-cron-secret");
+    if (!cronSecret || provided !== cronSecret) {
+      return new Response(JSON.stringify({ error: "unauthorized" }), {
+        status: 401, headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const { data: items, error } = await admin.rpc("opportunities_needing_reminder");
     if (error) throw error;
