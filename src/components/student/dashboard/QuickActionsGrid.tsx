@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Layers, Target, Headphones, Sparkles, Bookmark, Crown, Wallet, Gift, type LucideIcon } from "lucide-react";
+import { Layers, Target, Headphones, Sparkles, Bookmark, Crown, Wallet, Gift, FileDown, type LucideIcon } from "lucide-react";
 
 interface Tile {
   icon: LucideIcon;
@@ -12,6 +12,7 @@ const TILES: Tile[] = [
   { icon: Layers,     label: "Flashcards",    to: "/flashcards" },
   { icon: Target,     label: "Practice Quiz", to: "/student/readiness" },
   { icon: Headphones, label: "Audio Reader",  to: "/audio-learning" },
+  { icon: FileDown,   label: "Smart Summary", to: "/student/smart-summary" },
   { icon: Sparkles,   label: "Ask AI",        to: "/ai-tutor" },
   { icon: Bookmark,   label: "My Library",    to: "/library" },
   { icon: Crown,      label: "Premium",       to: "/subscription" },
