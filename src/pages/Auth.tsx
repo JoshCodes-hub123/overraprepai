@@ -899,6 +899,15 @@ const Auth = () => {
                       </Button>
                     )}
                   </div>
+                  {!isLast && (
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="mt-3 w-full text-center text-sm font-semibold text-primary hover:underline disabled:opacity-60"
+                    >
+                      {isSubmitting ? "Creating account…" : "Skip — create my account now"}
+                    </button>
+                  )}
                 );
               })()}
 
