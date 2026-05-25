@@ -3,7 +3,6 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import PageTransition from "./PageTransition";
-import { AcademicPathGate } from "@/components/auth/AcademicPathGate";
 import { TutorPendingGate } from "@/components/auth/TutorPendingGate";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { RoleRoute } from "@/components/auth/RoleRoute";
@@ -31,16 +30,6 @@ const SchoolStub = lazy(() => import("@/pages/school/Stub"));
 const AdminSchoolApplications = lazy(() => import("@/pages/admin/SchoolApplications"));
 const ParentDashboard = lazy(() => import("@/pages/parent/ParentDashboard"));
 
-const ChoosePath = lazy(() => import("@/pages/onboarding/ChoosePath"));
-const RefinePath = lazy(() => import("@/pages/onboarding/RefinePath"));
-const TutorMatching = lazy(() => import("@/pages/onboarding/TutorMatching"));
-const ChooseProduct = lazy(() => import("@/pages/onboarding/ChooseProduct"));
-const ChoosePersona = lazy(() => import("@/pages/onboarding/ChoosePersona"));
-const ChooseUniversity = lazy(() => import("@/pages/onboarding/ChooseUniversity"));
-const ChooseFaculty = lazy(() => import("@/pages/onboarding/ChooseFaculty"));
-const ChooseDepartment = lazy(() => import("@/pages/onboarding/ChooseDepartment"));
-const ChooseLevel = lazy(() => import("@/pages/onboarding/ChooseLevel"));
-const SchoolIntro = lazy(() => import("@/pages/school/Intro"));
 const SubjectBrowser = lazy(() => import("@/pages/subjects/SubjectBrowser"));
 const Flashcards = lazy(() => import("@/pages/flashcards/Flashcards"));
 const JambIntelligence = lazy(() => import("@/pages/jamb/JambIntelligence"));
@@ -176,13 +165,9 @@ export const AnimatedRoutes = () => {
     <AnimatePresence mode="wait" initial={false}>
       <Suspense fallback={<LoadingSpinner />} key={location.pathname}>
        <TutorPendingGate>
-        <AcademicPathGate>
-         <Routes location={location}>
+        <Routes location={location}>
           <Route path="/" element={<PageTransition><Welcome /></PageTransition>} />
           <Route path="/notifications" element={<PageTransition><NotificationsPage /></PageTransition>} />
-          <Route path="/start" element={<PageTransition><ChooseProduct /></PageTransition>} />
-          <Route path="/start/persona" element={<PageTransition><ChoosePersona /></PageTransition>} />
-          <Route path="/school/intro" element={<PageTransition><SchoolIntro /></PageTransition>} />
           <Route path="/website" element={<PageTransition><Index /></PageTransition>} />
           <Route path="/welcome-tour" element={<PageTransition><MobileWelcome /></PageTransition>} />
           <Route
@@ -416,13 +401,6 @@ export const AnimatedRoutes = () => {
           <Route path="/study-hub" element={<PageTransition><StudyHub /></PageTransition>} />
           <Route path="/study-hub/:courseId" element={<PageTransition><StudyHubCourse /></PageTransition>} />
           <Route path="/pq-intelligence/:courseId" element={<PageTransition><PQIntelligence /></PageTransition>} />
-          <Route path="/onboarding/path" element={<PageTransition><ChoosePath /></PageTransition>} />
-          <Route path="/onboarding/refine" element={<PageTransition><RefinePath /></PageTransition>} />
-          <Route path="/onboarding/match" element={<PageTransition><TutorMatching /></PageTransition>} />
-          <Route path="/onboarding/university" element={<PageTransition><ChooseUniversity /></PageTransition>} />
-          <Route path="/onboarding/faculty" element={<PageTransition><ChooseFaculty /></PageTransition>} />
-          <Route path="/onboarding/department" element={<PageTransition><ChooseDepartment /></PageTransition>} />
-          <Route path="/onboarding/level" element={<PageTransition><ChooseLevel /></PageTransition>} />
           <Route path="/subjects" element={<PageTransition><SubjectBrowser /></PageTransition>} />
           <Route path="/flashcards" element={<PageTransition><Flashcards /></PageTransition>} />
           <Route
@@ -533,7 +511,6 @@ export const AnimatedRoutes = () => {
             }
           />
         </Routes>
-        </AcademicPathGate>
        </TutorPendingGate>
       </Suspense>
     </AnimatePresence>

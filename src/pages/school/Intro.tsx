@@ -40,7 +40,7 @@ const SchoolIntro = () => {
         </div>
 
         <header className="relative z-10 flex items-center px-6 pt-5">
-          <button onClick={() => navigate("/start")} aria-label="Back" className="p-2 -ml-2 rounded-full hover:bg-muted/50 transition">
+          <button onClick={() => navigate("/")} aria-label="Back" className="p-2 -ml-2 rounded-full hover:bg-muted/50 transition">
             <ArrowLeft className="w-5 h-5" />
           </button>
         </header>
