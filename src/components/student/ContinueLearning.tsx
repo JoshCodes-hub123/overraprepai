@@ -147,22 +147,25 @@ export const ContinueLearning = () => {
   if (items.length === 0) {
     return (
       <section aria-label="Continue learning" className="mb-6">
-        <div className="flex items-end justify-between mb-3 px-0.5">
-          <h2 className="font-display text-lg sm:text-xl font-bold tracking-tight text-foreground">
-            Continue Learning
-          </h2>
-        </div>
-        <div className="rounded-3xl border border-dashed border-amber-200 bg-gradient-to-br from-amber-50/50 to-white px-5 py-8 text-center">
-          <div className="mx-auto h-12 w-12 rounded-full bg-amber-100/70 flex items-center justify-center mb-2">
-            <BookOpen className="w-5 h-5 text-amber-600" aria-hidden />
+        <div className="flex items-center justify-between mb-3 px-0.5">
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-0.5 rounded-full bg-amber-500" />
+            <h2 className="font-display text-[11px] font-bold tracking-[0.22em] uppercase text-neutral-500">
+              Continue learning
+            </h2>
           </div>
-          <p className="font-display text-[14px] font-bold text-foreground">No active courses yet</p>
-          <p className="text-[12px] text-muted-foreground mt-1 max-w-[34ch] mx-auto">
+        </div>
+        <div className="rounded-[28px] border-2 border-dashed border-amber-100 bg-amber-50/30 px-6 py-10 text-center">
+          <div className="mx-auto h-12 w-12 rounded-full bg-white border border-amber-100 shadow-sm flex items-center justify-center mb-4">
+            <BookOpen className="w-5 h-5 text-amber-500" aria-hidden />
+          </div>
+          <p className="font-display text-[14px] font-bold text-neutral-800">No active courses yet</p>
+          <p className="text-[12px] text-neutral-500 mt-1 max-w-[34ch] mx-auto leading-relaxed">
             Take a quiz on any course and your progress will start showing up here.
           </p>
           <Link
             to="/student/dashboard#available-quizzes"
-            className="inline-flex mt-3 items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-500 text-white text-[12px] font-bold hover:bg-amber-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 transition"
+            className="inline-flex mt-5 items-center gap-1.5 px-6 py-2.5 rounded-full bg-amber-500 text-white text-[12px] font-bold shadow-lg shadow-amber-200/50 hover:bg-amber-600 hover:shadow-amber-300/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 transition-all"
           >
             Browse quizzes
           </Link>
@@ -173,15 +176,18 @@ export const ContinueLearning = () => {
 
   return (
     <section aria-label="Continue learning" className="mb-6">
-      <div className="flex items-end justify-between mb-3 px-0.5">
-        <h2 className="font-display text-lg sm:text-xl font-bold tracking-tight text-foreground">
-          Continue Learning
-        </h2>
+      <div className="flex items-center justify-between mb-3 px-0.5">
+        <div className="flex items-center gap-2">
+          <span className="h-3 w-0.5 rounded-full bg-amber-500" />
+          <h2 className="font-display text-[11px] font-bold tracking-[0.22em] uppercase text-neutral-500">
+            Continue learning
+          </h2>
+        </div>
         <Link
           to="/my-courses"
-          className="text-xs sm:text-sm font-semibold text-amber-700 hover:text-amber-800 transition-colors"
+          className="text-[11px] font-bold tracking-wider uppercase text-amber-700 hover:text-amber-800 transition-colors"
         >
-          See all
+          See all →
         </Link>
       </div>
 
