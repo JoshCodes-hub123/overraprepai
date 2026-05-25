@@ -1,0 +1,1 @@
+REVOKE SELECT (parent_phone, parent_email) ON public.school_students FROM authenticated, anon;
