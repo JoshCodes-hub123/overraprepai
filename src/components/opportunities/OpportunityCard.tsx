@@ -20,50 +20,75 @@ export function OpportunityCard({ op, bookmarked }: { op: Opportunity; bookmarke
   const expired = deadlineDate ? !isAfter(deadlineDate, new Date()) : false;
 
   return (
-    <article className="group rounded-2xl border border-amber-100/70 bg-card p-4 hover:border-amber-200 hover:shadow-[0_6px_18px_-10px_rgba(180,140,40,0.25)] transition-all">
-      <div className="flex items-start justify-between gap-3 mb-2">
-        <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200/70 text-amber-800">
-          {CATEGORY_LABEL[op.category] ?? op.category}
-        </span>
-        <button
-          type="button"
-          onClick={(e) => { e.preventDefault(); toggle.mutate({ id: op.id, current: bookmarked }); }}
-          aria-label={bookmarked ? "Remove bookmark" : "Bookmark"}
-          className="p-1 rounded-md hover:bg-amber-50"
-        >
-          <Bookmark className={`h-4 w-4 ${bookmarked ? "fill-amber-500 text-amber-600" : "text-muted-foreground"}`} />
-        </button>
-      </div>
-
+    <article className="group relative rounded-2xl overflow-hidden border border-amber-100/70 bg-card hover:border-amber-200 hover:shadow-[0_12px_28px_-12px_rgba(180,140,40,0.28)] hover:-translate-y-0.5 transition-all duration-300">
       <Link to={`/opportunities/${op.id}`} className="block">
-        <h3 className="font-display text-[15px] font-bold text-foreground leading-snug line-clamp-2">
+        <div className="relative aspect-[16/9] overflow-hidden bg-gradient-to-br from-amber-200 via-amber-100 to-white">
+          {op.cover_image_url ? (
+            <img
+              src={op.cover_image_url}
+              alt=""
+              loading="lazy"
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Sparkles className="h-10 w-10 text-amber-500/70" />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+          <span className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-[0.18em] px-2 py-1 rounded-md bg-white/95 backdrop-blur text-amber-800 shadow-sm">
+            {CATEGORY_LABEL[op.category] ?? op.category}
+          </span>
+          {deadlineDate && !expired && (
+            <span className="absolute top-3 right-12 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-amber-500 text-white shadow-sm">
+              Closes {format(deadlineDate, "MMM d")}
+            </span>
+          )}
+          {expired && (
+            <span className="absolute top-3 right-12 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-rose-600 text-white shadow-sm">
+              Closed
+            </span>
+          )}
+        </div>
+      </Link>
+      <button
+        type="button"
+        onClick={(e) => { e.preventDefault(); toggle.mutate({ id: op.id, current: bookmarked }); }}
+        aria-label={bookmarked ? "Remove bookmark" : "Bookmark"}
+        className="absolute top-2.5 right-2.5 z-10 p-1.5 rounded-full bg-white/95 backdrop-blur shadow-sm hover:bg-white"
+      >
+        <Bookmark className={`h-4 w-4 ${bookmarked ? "fill-amber-500 text-amber-600" : "text-neutral-600"}`} />
+      </button>
+
+      <Link to={`/opportunities/${op.id}`} className="block p-4">
+        <h3 className="font-display text-[15.5px] font-bold text-foreground leading-snug line-clamp-2 group-hover:text-amber-800 transition-colors">
           {op.title}
         </h3>
-        <p className="text-[12.5px] text-muted-foreground mt-1">{op.organization}</p>
-      </Link>
+        <p className="text-[12.5px] text-muted-foreground mt-1 truncate">{op.organization}</p>
 
-      <div className="mt-3 flex items-center justify-between text-[11.5px]">
-        <span className="inline-flex items-center gap-1 text-muted-foreground">
-          <Calendar className="h-3.5 w-3.5" />
-          {deadlineDate ? (
-            <span className={expired ? "text-rose-600" : ""}>
-              {expired ? "Closed" : `Closes ${format(deadlineDate, "MMM d")}`}
-            </span>
-          ) : (
-            <span>Rolling</span>
+        <div className="mt-3 pt-3 border-t border-amber-100/70 flex items-center justify-between text-[11.5px]">
+          <span className="inline-flex items-center gap-1 text-muted-foreground">
+            <Calendar className="h-3.5 w-3.5" />
+            {deadlineDate ? (
+              <span className={expired ? "text-rose-600" : ""}>
+                {expired ? "Closed" : `${format(deadlineDate, "MMM d, yyyy")}`}
+              </span>
+            ) : (
+              <span>Rolling deadline</span>
+            )}
+          </span>
+          {op.apply_url && (
+            <a
+              href={op.apply_url}
+              target="_blank" rel="noopener noreferrer"
+              onClick={(e) => { e.stopPropagation(); void track("opportunity_apply_click", { id: op.id, category: op.category }); }}
+              className="inline-flex items-center gap-1 text-amber-700 hover:text-amber-800 font-bold"
+            >
+              Apply <ExternalLink className="h-3 w-3" />
+            </a>
           )}
-        </span>
-        {op.apply_url && (
-          <a
-            href={op.apply_url}
-            target="_blank" rel="noopener noreferrer"
-            onClick={(e) => { e.stopPropagation(); void track("opportunity_apply_click", { id: op.id, category: op.category }); }}
-            className="inline-flex items-center gap-1 text-amber-700 hover:text-amber-800 font-bold"
-          >
-            Apply <ExternalLink className="h-3 w-3" />
-          </a>
-        )}
-      </div>
+        </div>
+      </Link>
     </article>
   );
 }
