@@ -1,83 +1,84 @@
-# Phase 9 — Admin Operations + Opportunity Lifecycle Completion
+# Smart Summary PDF for students
 
-Phase 8 shipped trust scoring, device audit, tutor announcements and recommended opportunities. Phase 9 closes the loop on what's still half-done: opportunity lifecycle management, admin operational depth, and tutor accountability — without redesigning the app or touching student architecture.
+Let students upload a course PDF / Word / TXT (or paste notes), get an AI-generated study summary on screen, and — if they're a verified student — download it as a beautifully branded **OverraPrep AI** PDF that already carries their name. Built for the "1 day to exam" moment.
 
-## Goals
-1. Make `/opportunities` feel alive (saved, applied, expiring, alerts).
-2. Give admins a real operations console (review queue, audit search, trust overrides, broadcast).
-3. Hold tutors accountable (scorecards visible to admins, suspend/warn flow).
-4. Harden monetization edges discovered in Phase 8 (refund audit, suspicious purchase flagging).
+## What the student sees
 
-Out of scope: visual redesign, student page restructure, new student features, payments rework.
+A new page at **`/student/smart-summary`** (and a dashboard quick-action tile "Smart Summary").
 
----
+1. **Upload card** — drop a PDF / DOCX / TXT or paste notes. Reuses the existing `extractText.ts` (pdfjs-dist + mammoth) used by Audio Learning, so it works offline-side for parsing.
+2. **Choose style** — three modes (toggle each time):
+   - Crash-course bullet points
+   - Structured study notes
+   - Q&A flashcard style
+3. **Generate** → AI returns markdown; rendered on screen in a clean reader (everyone can read this free preview).
+4. **Download branded PDF** button:
+   - Verified students → instant download.
+   - Unverified students → small inline prompt: "Verify your student profile to download the branded PDF" with a link to their profile / verification flow. They can still copy the on-screen summary.
 
-## 1. Opportunity lifecycle (student + admin)
-- **Saved tab** on `/opportunities` reading `opportunity_bookmarks` — empty state + count badge on filter rail.
-- **Applied tracking**: new `opportunity_applications` table (status: `interested | applied | accepted | rejected`), one-tap "Mark as applied" on `OpportunityDetail`.
-- **Deadline alerts**: edge function `opportunity-deadline-reminders` (cron daily) → notification 72h and 24h before deadline for bookmarked items.
-- **Auto-archive**: nightly job moves `deadline < now()` to `status = 'archived'`.
-- **Admin enhancements** on `/admin/opportunities`:
-  - Edit (currently only create/delete).
-  - Draft vs published toggle.
-  - Per-opportunity application count.
-  - Bulk import via CSV.
+The dashboard FAB / quick-actions also gets a "Smart Summary" entry so it surfaces clearly.
 
-## 2. Admin operations console
-- **New `/admin/audit`**: searchable, paginated `audit_logs` view — filter by action, admin, date range, free-text on `new_data`.
-- **New `/admin/trust`**: list users sorted by trust score with filters (low score, many devices, flagged). Inline "force re-verify" and "revoke all sessions" actions backed by RPCs.
-- **`/admin/broadcast`**: send platform-wide announcement (uses existing announcements table) with audience filter (all / level / university / tutors).
-- **Admin home (`AdminDashboard`)**: add KPI strip — pending tutor apps, low-trust users (24h), open moderation reports, opportunities expiring this week.
+## What the PDF looks like
 
-## 3. Tutor accountability
-- **Admin tutor scorecards** (page exists): wire real signals — student rating avg, response time, completed sessions, refund count, last active. Add Warn / Suspend / Reinstate buttons → write to `audit_logs` and toggle `profiles.tutor_status`.
-- **Tutor self-view**: read-only scorecard panel inside `TutorDashboard` so tutors see what admins see.
+Three brand spots, exactly as requested:
 
-## 4. Monetization hardening
-- **Refund audit table** `refund_events` populated by webhook, surfaced in `/admin/withdrawals` (extend existing page with a "Refunds" tab).
-- **Suspicious purchase flagging**: trigger on `token_purchases` insert that flags >3 purchases / 1h / user → admin queue item.
-- **Watermark all premium PDF exports**: extend `watermark.ts` usage to the remaining export points (`exportSummaryPdf`, `exportStudyPack`, `reportCard`).
+```text
++---------------------------------------------+
+| [LOGO]  OVERRAPREP AI · STUDY NOTES         | <- header (spot 1)
+| ------------------------------------------- |
+|  Title of the material                      |
+|  Style: Crash-course bullets                |
+|  Prepared for: Jane Doe ✓ Verified Student  |
+|  Matric: FUT/22/12345 · 25 May 2026         |
+| ------------------------------------------- |
+|                                             |
+|  • Key point                                |
+|  • Key point                                |
+|                                             |
+|        [faded LOGO + "OverraPrep AI"]       | <- diagonal watermark (spot 2)
+|                                             |
+| ------------------------------------------- |
+| [logo] Generated with OverraPrep AI  · Page x/y | <- footer (spot 3)
++---------------------------------------------+
+```
 
----
+- White + Gold + Inter (Helvetica fallback in jsPDF), matches the locked visual system.
+- Watermark uses `OverraPrep AI` text + tiny logo at 8% opacity, diagonal at -28°.
+- "Prepared for" line uses the student's `full_name`; the ✓ badge only renders for verified students.
 
-## Technical section
+## Who counts as verified
 
-**DB migrations (one file)**
-- `opportunity_applications` table + RLS (owner read/write, admin read-all).
-- `refund_events` table + RLS (admin only).
-- Index `audit_logs(action, created_at desc)` for the search page.
-- Trigger `flag_suspicious_purchase()` on `token_purchases`.
-- RPCs: `admin_revoke_all_sessions(_user_id)`, `admin_set_tutor_status(_user_id, _status, _reason)`, `get_admin_kpis()`.
+The `profiles` table has no `is_verified` column today, but it already has a clear FUTA signal. Verified = `onboarding_completed = true` **and** `matric_no` is set **and** `university` is set. A small helper `isVerifiedStudent(profile)` will live in `src/lib/profileCompleteness.ts` so we can swap to a real `is_verified` flag later without touching callers.
 
-**Edge functions**
-- `opportunity-deadline-reminders` (scheduled).
-- Extend `payments-webhook` to write `refund_events` on `transaction.refunded`.
+## Implementation outline (technical)
 
-**New pages**
-- `src/pages/admin/AdminAudit.tsx`
-- `src/pages/admin/AdminTrust.tsx`
-- `src/pages/admin/AdminBroadcast.tsx`
-- `src/pages/opportunities/SavedOpportunities.tsx` (tab inside existing page, no new route)
+### Frontend
+- `src/pages/student/SmartSummary.tsx` — upload → style picker → generate → reader + download. Lazy-loaded route in `App.tsx`.
+- `src/components/student/SummaryReader.tsx` — markdown renderer with a top "Download branded PDF" button. Shows a gated state for unverified users.
+- Reuse `extractTextFromFile()` from `src/lib/extractText.ts`.
+- Extend `src/lib/exportSummaryPdf.ts`:
+  - Accept `logoDataUrl`, `studentName`, `verified`, `matricNo`, `style` props.
+  - Embed `/logo.png` (preloaded to a data URL) in header, watermark center, and footer.
+  - Render the "Prepared for: NAME ✓ Verified Student" line on cover.
+- Dashboard QuickActions: add "Smart Summary" tile linking to the new route.
 
-**Edited (presentation + small logic)**
-- `src/pages/admin/AdminOpportunities.tsx` (edit, draft toggle, app counts, CSV import).
-- `src/pages/admin/AdminDashboard.tsx` (KPI strip).
-- `src/pages/admin/AdminTutorScorecards.tsx` (real metrics + actions).
-- `src/pages/admin/AdminWithdrawals.tsx` (refunds tab).
-- `src/pages/opportunities/Opportunities.tsx` (Saved tab + count badge).
-- `src/pages/opportunities/OpportunityDetail.tsx` (Mark as applied).
-- `src/pages/tutor/TutorDashboard.tsx` (self scorecard).
-- `src/lib/exportSummaryPdf.ts`, `src/lib/exportStudyPack.ts`, `src/lib/reportCard.ts` (apply watermark).
+### Backend
+- New edge function **`summarize-material`** (`supabase/functions/summarize-material/index.ts`):
+  - Validates JWT, takes `{ content, style, title }`, caps content at ~24k chars.
+  - Calls Lovable AI Gateway (`google/gemini-3-flash-preview`) with a strict prompt per style.
+  - Handles 429 / 402 the same way as `generate-quiz-from-text`.
+  - Logs an `analytics_events` row `smart_summary_generated` for the observability stack.
+- No DB schema change needed for v1 (PDF is generated client-side). Optional follow-up: persist generated summaries to a `student_summaries` table; not in this plan.
 
-**Not touched**
-Student dashboard, library, audio learning, course hub, splash, onboarding, auth, chat, sessions, exams, AI flows, tutor curriculum builder.
+### Verification helper
+- Add `isVerifiedStudent(profile)` to `src/lib/profileCompleteness.ts`.
+- Used in `SmartSummary.tsx` and surfaces a small "Verify to download" CTA when false.
 
----
+## Out of scope (kept simple on purpose)
+- Saving summaries to the user's Personal Library (can be added later — same `user-resources` bucket).
+- Multi-file merge (one file or one paste per run).
+- Sharing the PDF publicly.
 
-## Acceptance
-- Student can save, mark applied, and receive deadline reminders.
-- Admin can search audit logs, see trust outliers, broadcast announcements, and act on tutors.
-- All premium PDFs carry the user-bound watermark.
-- One migration, additive only. No destructive policy changes.
-
-Reply **"go"** to ship Phase 9 end-to-end, or edit the scope first.
+## Files touched
+- **New:** `src/pages/student/SmartSummary.tsx`, `src/components/student/SummaryReader.tsx`, `supabase/functions/summarize-material/index.ts`
+- **Edited:** `src/lib/exportSummaryPdf.ts` (logo + verified line), `src/lib/profileCompleteness.ts` (verified helper), `src/App.tsx` (route), dashboard QuickActions component (new tile).
