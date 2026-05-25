@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { FileText, Upload, Loader2, Trash2, ExternalLink, Eye, Download } from "lucide-react";
 import { toast } from "sonner";
 import FilePreview from "@/components/lecture/FilePreview";
+import InAppDocViewer from "@/components/viewer/InAppDocViewer";
 
 interface Note {
   id: string;
@@ -43,6 +44,7 @@ export default function LectureNotes() {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [filterMine, setFilterMine] = useState(false);
+  const [viewing, setViewing] = useState<Note | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -125,13 +127,10 @@ export default function LectureNotes() {
     await (supabase as any).rpc("increment_lecture_note_view", { p_note_id: n.id });
   };
 
-  const handleDownload = async (n: Note, e: React.MouseEvent<HTMLAnchorElement>) => {
-    // Optimistic UI bump
-    setNotes((prev) => prev.map((x) => x.id === n.id ? { ...x, download_count: x.download_count + 1 } : x));
-    // Fire-and-forget RPC; don't block the browser's download
-    (supabase as any).rpc("increment_lecture_note_download", { p_note_id: n.id })
-      .then(({ error }: any) => { if (error) console.error("download tracking failed", error); });
-    // Let the default <a download> behavior continue
+  const openViewer = (n: Note) => {
+    setViewing(n);
+    setNotes((prev) => prev.map((x) => x.id === n.id ? { ...x, view_count: x.view_count + 1 } : x));
+    (supabase as any).rpc("increment_lecture_note_view", { p_note_id: n.id }).then(() => {});
   };
 
   const fmtSize = (b: number | null) => {
@@ -269,15 +268,12 @@ export default function LectureNotes() {
                   </div>
                 </div>
                 <div className="flex gap-2 mt-4">
-                  <Button asChild size="sm" variant="outline" onClick={() => trackView(n)}>
-                    <a href={n.file_url} target="_blank" rel="noreferrer">
-                      <ExternalLink className="w-4 h-4 mr-1" /> Open
-                    </a>
-                  </Button>
-                  <Button asChild size="sm" className="bg-amber-500 hover:bg-amber-600 text-white">
-                    <a href={n.file_url} download onClick={(e) => handleDownload(n, e)}>
-                      <Download className="w-4 h-4 mr-1" /> Download
-                    </a>
+                  <Button
+                    size="sm"
+                    onClick={() => openViewer(n)}
+                    className="bg-amber-500 hover:bg-amber-600 text-white"
+                  >
+                    <Eye className="w-4 h-4 mr-1" /> View in app
                   </Button>
                   {isTutor && n.tutor_id === user?.id && (
                     <Button size="sm" variant="ghost" className="text-destructive ml-auto" onClick={() => remove(n)}>
@@ -290,6 +286,15 @@ export default function LectureNotes() {
           </div>
         )}
       </main>
+      {viewing && (
+        <InAppDocViewer
+          url={viewing.file_url}
+          title={viewing.title}
+          fileType={viewing.file_type}
+          open={!!viewing}
+          onOpenChange={(o) => !o && setViewing(null)}
+        />
+      )}
     </div>
   );
 }
