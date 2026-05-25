@@ -165,6 +165,15 @@ const Auth = () => {
     defaultValues: { email: "", password: "" },
   });
 
+  // Prefill the sign-in email when we just sent a verification mail or the
+  // user came back via a "?reason=verified" link.
+  useEffect(() => {
+    if (pendingEmail) {
+      signInForm.setValue("email", pendingEmail);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingEmail]);
+
   const signUpForm = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
