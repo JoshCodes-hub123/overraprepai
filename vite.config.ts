@@ -3,6 +3,23 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
+// Inject a build-time version stamp and emit /version.json so the running
+// app can detect when a new deployment is live and prompt users to refresh.
+const BUILD_VERSION = String(Date.now());
+
+function versionPlugin() {
+  return {
+    name: "emit-version-json",
+    generateBundle(this: any) {
+      this.emitFile({
+        type: "asset",
+        fileName: "version.json",
+        source: JSON.stringify({ version: BUILD_VERSION }),
+      });
+    },
+  } as any;
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   // Required for Capacitor — file:// loads need relative asset paths
@@ -11,9 +28,13 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  define: {
+    __APP_VERSION__: JSON.stringify(BUILD_VERSION),
+  },
   plugins: [
     react(),
     mode === "development" && componentTagger(),
+    versionPlugin(),
   ].filter(Boolean),
   resolve: {
     alias: {

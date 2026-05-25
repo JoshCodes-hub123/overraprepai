@@ -18,6 +18,7 @@ import RoleBadge from "@/components/auth/RoleBadge";
 import { NetworkStatus } from "@/components/system/NetworkStatus";
 import ScrollToTop from "@/components/system/ScrollToTop";
 import PageViewTracker from "@/components/system/PageViewTracker";
+import UpdatePrompt from "@/components/system/UpdatePrompt";
 import { initPushNotifications } from "@/lib/native/push";
 import { Capacitor } from "@capacitor/core";
 import { useRecordDeviceLogin } from "@/hooks/useDeviceHistory";
@@ -59,6 +60,7 @@ const App = () => {
           <InstallPrompt />
           <OfflineBanner />
           <NetworkStatus />
+            <UpdatePrompt />
           <BrowserRouter>
             <ScrollToTop />
             <PageViewTracker />
