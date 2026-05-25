@@ -6280,6 +6280,17 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_my_sent_transfers: {
+        Args: never
+        Returns: {
+          amount: number
+          created_at: string
+          from_user: string
+          id: string
+          to_email: string
+          to_user: string
+        }[]
+      }
       get_public_profile_stats: {
         Args: { _user_id: string }
         Returns: {
