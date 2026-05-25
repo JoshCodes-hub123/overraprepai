@@ -6323,6 +6323,13 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_student_parent_contact: {
+        Args: { _student_id: string }
+        Returns: {
+          parent_email: string
+          parent_phone: string
+        }[]
+      }
       get_trust_score: {
         Args: { _uid?: string }
         Returns: {
