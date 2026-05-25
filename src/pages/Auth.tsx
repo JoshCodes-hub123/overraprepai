@@ -316,12 +316,12 @@ const Auth = () => {
           await supabase
             .from("profiles")
             .update({
-              academic_path: data.academicPath,
-              level: data.level,
-              department: data.department,
-              phone: data.phone,
-              matric_no: data.matricNo,
-              state_of_origin: data.state,
+              academic_path: data.academicPath || null,
+              level: data.level || null,
+              department: data.department || null,
+              phone: data.phone || null,
+              matric_no: data.matricNo || null,
+              state_of_origin: data.state || null,
               academic_metadata: meta,
               ...(uploadedAvatarUrl
                 ? { avatar_url: uploadedAvatarUrl, profile_image_url: uploadedAvatarUrl }
