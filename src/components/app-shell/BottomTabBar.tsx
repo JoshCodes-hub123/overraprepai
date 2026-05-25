@@ -82,6 +82,8 @@ export const BottomTabBar = () => {
   else if (primaryRole === "student") tabs = STUDENT_TABS;
   else return null; // admin / tutor keep top nav only on their own routes
 
+  const hasStudentMore = tabs === STUDENT_TABS;
+
   const openRoute = (to: string) => {
     if (to === "more") {
       setMoreOpen(true);
@@ -139,7 +141,7 @@ export const BottomTabBar = () => {
         </ul>
       </nav>
 
-      {isStudentRoute && (
+      {hasStudentMore && (
         <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
           <SheetContent side="bottom" className="rounded-t-3xl border-amber-100 pb-8">
             <SheetHeader>
