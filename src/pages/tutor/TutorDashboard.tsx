@@ -44,6 +44,7 @@ import { SkeletonDashboard } from "@/components/ui/premium-skeletons";
 import { DashboardHero } from "@/components/dashboard/DashboardHero";
 import { PremiumStatCard } from "@/components/dashboard/PremiumStatCard";
 import { QuickActions } from "@/components/dashboard/QuickActions";
+import { SuggestOpportunityDialog } from "@/components/opportunities/SuggestOpportunityDialog";
 import { PullToRefresh } from "@/components/native/PullToRefresh";
 import { DashboardOfflineBanner } from "@/components/dashboard/DashboardOfflineBanner";
 import { LastUpdatedBadge } from "@/components/dashboard/LastUpdatedBadge";
@@ -359,14 +360,28 @@ const TutorDashboard = () => {
               : null,
           }}
           actions={
-            <Button
-              size="sm"
-              onClick={() => setShowUnifiedQuizCreator(true)}
-              className="bg-white text-amber-700 hover:bg-amber-50 shadow-md font-semibold rounded-full px-4 sm:px-5"
-            >
-              <Plus className="w-4 h-4 mr-1.5" />
-              New Quiz
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                onClick={() => setShowUnifiedQuizCreator(true)}
+                className="bg-white text-amber-700 hover:bg-amber-50 shadow-md font-semibold rounded-full px-4 sm:px-5"
+              >
+                <Plus className="w-4 h-4 mr-1.5" />
+                New Quiz
+              </Button>
+              <SuggestOpportunityDialog
+                trigger={
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="bg-white/10 border-white/40 text-white hover:bg-white/20 hover:text-white shadow-md font-semibold rounded-full px-4 sm:px-5"
+                  >
+                    <Plus className="w-4 h-4 mr-1.5" />
+                    Post opportunity
+                  </Button>
+                }
+              />
+            </div>
           }
           footer={
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
