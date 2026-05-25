@@ -2433,6 +2433,162 @@ export type Database = {
         }
         Relationships: []
       }
+      post_bookmarks: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_bookmarks_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          post_id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          post_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_likes: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          apply_url: string | null
+          author_id: string
+          body: string
+          category: string | null
+          comment_count: number
+          cover_image_url: string | null
+          created_at: string
+          deadline: string | null
+          gallery_urls: string[]
+          id: string
+          like_count: number
+          organization: string | null
+          published_at: string | null
+          status: Database["public"]["Enums"]["post_status"]
+          subtitle: string | null
+          tags: string[]
+          title: string
+          type: Database["public"]["Enums"]["post_type"]
+          university: string | null
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          apply_url?: string | null
+          author_id: string
+          body?: string
+          category?: string | null
+          comment_count?: number
+          cover_image_url?: string | null
+          created_at?: string
+          deadline?: string | null
+          gallery_urls?: string[]
+          id?: string
+          like_count?: number
+          organization?: string | null
+          published_at?: string | null
+          status?: Database["public"]["Enums"]["post_status"]
+          subtitle?: string | null
+          tags?: string[]
+          title: string
+          type?: Database["public"]["Enums"]["post_type"]
+          university?: string | null
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          apply_url?: string | null
+          author_id?: string
+          body?: string
+          category?: string | null
+          comment_count?: number
+          cover_image_url?: string | null
+          created_at?: string
+          deadline?: string | null
+          gallery_urls?: string[]
+          id?: string
+          like_count?: number
+          organization?: string | null
+          published_at?: string | null
+          status?: Database["public"]["Enums"]["post_status"]
+          subtitle?: string | null
+          tags?: string[]
+          title?: string
+          type?: Database["public"]["Enums"]["post_type"]
+          university?: string | null
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           academic_metadata: Json
@@ -6345,6 +6501,8 @@ export type Database = {
         | "tech_program"
         | "career"
       opportunity_status: "draft" | "published" | "archived"
+      post_status: "draft" | "pending" | "published" | "archived"
+      post_type: "showcase" | "opportunity" | "article" | "announcement"
       resource_kind:
         | "pdf"
         | "image"
@@ -6502,6 +6660,8 @@ export const Constants = {
         "career",
       ],
       opportunity_status: ["draft", "published", "archived"],
+      post_status: ["draft", "pending", "published", "archived"],
+      post_type: ["showcase", "opportunity", "article", "announcement"],
       resource_kind: [
         "pdf",
         "image",
