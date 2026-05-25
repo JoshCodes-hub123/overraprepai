@@ -401,13 +401,6 @@ export const AnimatedRoutes = () => {
           <Route path="/study-hub" element={<PageTransition><StudyHub /></PageTransition>} />
           <Route path="/study-hub/:courseId" element={<PageTransition><StudyHubCourse /></PageTransition>} />
           <Route path="/pq-intelligence/:courseId" element={<PageTransition><PQIntelligence /></PageTransition>} />
-          <Route path="/onboarding/path" element={<PageTransition><ChoosePath /></PageTransition>} />
-          <Route path="/onboarding/refine" element={<PageTransition><RefinePath /></PageTransition>} />
-          <Route path="/onboarding/match" element={<PageTransition><TutorMatching /></PageTransition>} />
-          <Route path="/onboarding/university" element={<PageTransition><ChooseUniversity /></PageTransition>} />
-          <Route path="/onboarding/faculty" element={<PageTransition><ChooseFaculty /></PageTransition>} />
-          <Route path="/onboarding/department" element={<PageTransition><ChooseDepartment /></PageTransition>} />
-          <Route path="/onboarding/level" element={<PageTransition><ChooseLevel /></PageTransition>} />
           <Route path="/subjects" element={<PageTransition><SubjectBrowser /></PageTransition>} />
           <Route path="/flashcards" element={<PageTransition><Flashcards /></PageTransition>} />
           <Route
