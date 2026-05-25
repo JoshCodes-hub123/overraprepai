@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, Send, Sparkles, Share2, Copy, Check, MoreVertical, Flag, Ban,
   RefreshCw, Settings2, FileText, Loader2,
@@ -50,6 +50,9 @@ export default function ThreadView() {
   const { user } = useAuth();
   const { messages: rawMessages, profiles, loading, send, aiTyping } = useChatMessages(threadId);
   const { blocked, block, unblock } = useUserBlocks();
+  const [searchParams] = useSearchParams();
+  const focusMsgId = searchParams.get("msg");
+  const [highlightId, setHighlightId] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [thread, setThread] = useState<Thread | null>(null);
   const [sending, setSending] = useState(false);
@@ -111,6 +114,21 @@ export default function ThreadView() {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages.length, aiTyping]);
+
+  // Deep-link: scroll to & briefly highlight the mentioned message.
+  useEffect(() => {
+    if (!focusMsgId || loading) return;
+    const target = messages.find((m) => m.id === focusMsgId);
+    if (!target) return;
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`msg-${focusMsgId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        setHighlightId(focusMsgId);
+        setTimeout(() => setHighlightId(null), 2400);
+      }
+    });
+  }, [focusMsgId, loading, messages]);
 
   useEffect(() => { inputRef.current?.focus(); }, [threadId]);
 
@@ -289,7 +307,11 @@ export default function ThreadView() {
             const showAuthor = !prev || prev.author_id !== m.author_id || prev.is_ai !== m.is_ai;
             const isOwn = m.author_id === user?.id;
             return (
-              <div key={m.id} className="group relative">
+              <div
+                key={m.id}
+                id={`msg-${m.id}`}
+                className={`group relative transition-colors ${highlightId === m.id ? "bg-amber-100/60 ring-2 ring-amber-300 rounded-xl" : ""}`}
+              >
                 <MessageBubble
                   message={m}
                   isOwn={isOwn}

@@ -210,10 +210,22 @@ const DocumentsUploader = ({ courseId, userId }: { courseId: string; userId?: st
 
   const upload = async () => {
     if (!file || !userId) { toast.error("Pick a file"); return; }
+    if (file.size > 25 * 1024 * 1024) { toast.error("File too large (max 25 MB)"); return; }
     setBusy(true);
-    const path = `${userId}/${courseId}/${Date.now()}_${file.name}`;
-    const { error: upErr } = await supabase.storage.from("lecture-notes").upload(path, file, { upsert: false });
-    if (upErr) { toast.error(upErr.message); setBusy(false); return; }
+    // Sanitize filename — special chars and spaces break storage paths.
+    const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";
+    const slug = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const path = `${userId}/${courseId}/${slug}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("lecture-notes").upload(path, file, {
+      contentType: file.type || undefined,
+      upsert: false,
+    });
+    if (upErr) {
+      console.error("lecture-notes upload failed", upErr);
+      toast.error(`Upload failed: ${upErr.message}`);
+      setBusy(false);
+      return;
+    }
     const { data: pub } = supabase.storage.from("lecture-notes").getPublicUrl(path);
     const { error } = await supabase.from("lecture_notes").insert({
       tutor_id: userId, course_id: courseId,
@@ -222,7 +234,11 @@ const DocumentsUploader = ({ courseId, userId }: { courseId: string; userId?: st
       file_size_bytes: file.size, is_published: true,
     });
     setBusy(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      console.error("lecture_notes insert failed", error);
+      toast.error(`Saved file but couldn't index it: ${error.message}`);
+      return;
+    }
     toast.success("Document uploaded");
     setTitle(""); setFile(null);
     qc.invalidateQueries({ queryKey: ["manage-docs", courseId] });
