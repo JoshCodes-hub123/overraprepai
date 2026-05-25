@@ -14,12 +14,59 @@ interface Notification {
   created_at: string;
 }
 
+/**
+ * Rewrite legacy/relocated notification links to current routes so every
+ * notification always deep-links to the right page.
+ */
+const normalizeLink = (link: string | null): string | null => {
+  if (!link) return null;
+  let l = link.trim();
+  if (!l) return null;
+
+  // Strip absolute origins
+  try {
+    if (/^https?:\/\//i.test(l)) {
+      const u = new URL(l);
+      l = u.pathname + u.search + u.hash;
+    }
+  } catch {
+    // ignore
+  }
+  if (!l.startsWith("/")) l = "/" + l;
+
+  // Known legacy → current mappings
+  const rewrites: Array<[RegExp, string]> = [
+    [/^\/inbox(\/|$)/, "/notifications"],
+    [/^\/messages\/inbox(\/|$)/, "/messages"],
+    [/^\/threads\/([^/?#]+)/, "/chat/$1"],
+    [/^\/dm\/([^/?#]+)/, "/chat/$1"],
+    [/^\/opportunity\/([^/?#]+)/, "/opportunities/$1"],
+    [/^\/jobs\/([^/?#]+)/, "/opportunities/$1"],
+    [/^\/course\/([^/?#]+)/, "/courses/$1"],
+    [/^\/quiz\/([^/?#]+)\/results?/, "/quiz/$1/results"],
+    [/^\/tutor\/apply(\/|$)/, "/apply-tutor"],
+    [/^\/profile\/me(\/|$)/, "/profile"],
+    [/^\/announcement\/([^/?#]+)/, "/announcements/$1"],
+    [/^\/post\/([^/?#]+)/, "/posts/$1"],
+    [/^\/session\/([^/?#]+)/, "/sessions/$1"],
+    [/^\/live\/room\/([^/?#]+)/, "/live/$1"],
+  ];
+  for (const [pat, rep] of rewrites) {
+    if (pat.test(l)) {
+      l = l.replace(pat, rep);
+      break;
+    }
+  }
+  return l;
+};
+
 export const useNotifications = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const key = ["notifications", user?.id] as const;
 
   const { data: notifications = [], isLoading } = useQuery({
-    queryKey: ["notifications", user?.id],
+    queryKey: key,
     queryFn: async () => {
       if (!user?.id) return [];
       const { data, error } = await supabase
@@ -30,14 +77,14 @@ export const useNotifications = () => {
         .limit(50);
       
       if (error) throw error;
-      return data as Notification[];
+      return (data as Notification[]).map((n) => ({ ...n, link: normalizeLink(n.link) }));
     },
     enabled: !!user?.id,
   });
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
-  // Real-time subscription
+  // Real-time subscription: INSERT / UPDATE / DELETE
   useEffect(() => {
     if (!user?.id) return;
 
@@ -45,14 +92,34 @@ export const useNotifications = () => {
       .channel("notifications-realtime")
       .on(
         "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["notifications", user.id] });
+        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const incoming = { ...(payload.new as Notification), link: normalizeLink((payload.new as Notification).link) };
+          queryClient.setQueryData<Notification[]>(key, (prev = []) => {
+            if (prev.some((n) => n.id === incoming.id)) return prev;
+            return [incoming, ...prev].slice(0, 50);
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const updated = { ...(payload.new as Notification), link: normalizeLink((payload.new as Notification).link) };
+          queryClient.setQueryData<Notification[]>(key, (prev = []) =>
+            prev.map((n) => (n.id === updated.id ? { ...n, ...updated } : n))
+          );
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const oldId = (payload.old as { id?: string } | null)?.id;
+          if (!oldId) return;
+          queryClient.setQueryData<Notification[]>(key, (prev = []) =>
+            prev.filter((n) => n.id !== oldId)
+          );
         }
       )
       .subscribe();
@@ -70,8 +137,19 @@ export const useNotifications = () => {
         .eq("id", notificationId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
+    onMutate: async (notificationId: string) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<Notification[]>(key);
+      queryClient.setQueryData<Notification[]>(key, (prev = []) =>
+        prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
+      );
+      return { previous };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(key, ctx.previous);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: key });
     },
   });
 
@@ -85,8 +163,19 @@ export const useNotifications = () => {
         .eq("is_read", false);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<Notification[]>(key);
+      queryClient.setQueryData<Notification[]>(key, (prev = []) =>
+        prev.map((n) => ({ ...n, is_read: true }))
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(key, ctx.previous);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: key });
     },
   });
 
@@ -98,8 +187,19 @@ export const useNotifications = () => {
         .eq("id", notificationId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
+    onMutate: async (notificationId: string) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<Notification[]>(key);
+      queryClient.setQueryData<Notification[]>(key, (prev = []) =>
+        prev.filter((n) => n.id !== notificationId)
+      );
+      return { previous };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(key, ctx.previous);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: key });
     },
   });
 
