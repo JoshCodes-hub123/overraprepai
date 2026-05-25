@@ -593,10 +593,10 @@ const TutorDashboard = () => {
                       variant="outline"
                       size="sm"
                       className="flex-1"
-                      onClick={() => setShowUploadQuestions(true)}
+                      onClick={() => navigate(`/tutor/courses/${course.id}/manage`)}
                     >
                       <Plus className="w-4 h-4 mr-1" />
-                      Add Questions
+                      Add quizzes
                     </Button>
                     <Button
                       variant="ghost"
@@ -649,32 +649,7 @@ const TutorDashboard = () => {
           refreshData();
         }}
       />
-      <CreateQuizDialog
-        open={showCreateQuiz}
-        onOpenChange={setShowCreateQuiz}
-        courses={courses}
-        onSuccess={() => {
-          setShowCreateQuiz(false);
-          refreshData();
-        }}
-      />
-      <UploadQuestionsDialog
-        open={showUploadQuestions}
-        onOpenChange={setShowUploadQuestions}
-        courses={courses}
-        onSuccess={() => {
-          setShowUploadQuestions(false);
-          refreshData();
-        }}
-      />
-      <QuickQuizCreator
-        open={showQuickQuizCreator}
-        onOpenChange={setShowQuickQuizCreator}
-        courses={courses}
-        onSuccess={() => {
-          refreshData();
-        }}
-      />
+      {/* Quiz upload dialogs intentionally removed — all uploads happen inside a course's Quizzes tab. */}
       <WithdrawalRequestDialog
         open={showWithdrawal}
         onOpenChange={setShowWithdrawal}
@@ -700,20 +675,6 @@ const TutorDashboard = () => {
         onSuccess={() => {
           setShowDeleteQuiz(false);
           setSelectedQuiz(null);
-          refreshData();
-        }}
-      />
-      <UnifiedQuizCreator
-        open={showUnifiedQuizCreator}
-        onOpenChange={setShowUnifiedQuizCreator}
-        onSuccess={() => {
-          refreshData();
-        }}
-      />
-      <BulkQuizImport
-        open={showBulkQuizImport}
-        onOpenChange={setShowBulkQuizImport}
-        onSuccess={() => {
           refreshData();
         }}
       />
