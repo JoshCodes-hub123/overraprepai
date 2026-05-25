@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Mail, Lock, User, ArrowRight, ArrowLeft, Loader2, Gift, GraduationCap, Phone, MapPin, BookOpen, IdCard, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, ArrowLeft, Loader2, Gift, GraduationCap, Phone, MapPin, BookOpen, IdCard, Eye, EyeOff, MailCheck, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import logo from "@/assets/logo.png";
 import authBg from "@/assets/auth-bg.jpg";
@@ -73,6 +73,11 @@ const Auth = () => {
   const [showSignUpPwd, setShowSignUpPwd] = useState(false);
   const [signUpStep, setSignUpStep] = useState(0);
   const [stepDir, setStepDir] = useState<1 | -1>(1);
+  // When sign-up requires email confirmation (or sign-in fails with
+  // "email not confirmed") we remember the address so we can show a
+  // dedicated banner with a "Resend verification email" button.
+  const [pendingEmail, setPendingEmail] = useState<string>("");
+  const [resending, setResending] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user, primaryRole, signIn, signUp } = useAuth();
@@ -96,6 +101,22 @@ const Auth = () => {
         variant: "destructive",
         title: "Access denied",
         description: "You don't have permission for that area. Sign in with the correct role.",
+      });
+    } else if (reason === "missing") {
+      toast({
+        variant: "destructive",
+        title: "You're not signed in",
+        description: "That page needs an account. Sign in below to continue.",
+      });
+    } else if (reason === "verify_required") {
+      toast({
+        title: "Verify your email first",
+        description: "Confirm your email address before continuing to onboarding.",
+      });
+    } else if (reason === "verified") {
+      toast({
+        title: "Email verified",
+        description: "Sign in to continue to onboarding.",
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -169,12 +190,17 @@ const Auth = () => {
     const { error } = await signIn(data.email, data.password);
     
     if (error) {
+      const lower = (error.message || "").toLowerCase();
+      if (lower.includes("email not confirmed") || lower.includes("not confirmed")) {
+        setPendingEmail(data.email);
+      }
       toast({
         variant: "destructive",
         title: "Sign in failed",
         description: mapAuthError(error.message),
       });
     } else {
+      setPendingEmail("");
       toast({
         title: "Welcome back!",
         description: "You have successfully signed in.",
@@ -183,6 +209,29 @@ const Auth = () => {
       // straight into the correct dashboard instead of stopping at the role hub.
     }
     setIsSubmitting(false);
+  };
+
+  const handleResendVerification = async () => {
+    if (!pendingEmail) return;
+    setResending(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: pendingEmail,
+      options: { emailRedirectTo: `${window.location.origin}/auth?reason=verified` },
+    });
+    setResending(false);
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Couldn't resend",
+        description: error.message || "Try again in a minute.",
+      });
+    } else {
+      toast({
+        title: "Email sent",
+        description: `New verification link sent to ${pendingEmail}.`,
+      });
+    }
   };
 
   const handleSignUp = async (data: SignUpFormData) => {
@@ -209,6 +258,7 @@ const Auth = () => {
           title: "Check your email to verify your account",
           description: `We sent a confirmation link to ${data.email}. Click it, then sign in to continue.`,
         });
+        setPendingEmail(data.email);
         setIsSubmitting(false);
         setIsSignUp(false);
         return;
