@@ -62,6 +62,7 @@ const MasteryBreakdown = lazy(() => import("@/pages/student/MasteryBreakdown"));
 const OfflinePractice = lazy(() => import("@/pages/student/OfflinePractice"));
 const OfflineRunner = lazy(() => import("@/pages/student/OfflineRunner"));
 const AudioLearning = lazy(() => import("@/pages/student/AudioLearning"));
+const SmartSummary = lazy(() => import("@/pages/student/SmartSummary"));
 const Learn = lazy(() => import("@/pages/student/Learn"));
 const TutorQuestionCards = lazy(() => import("@/pages/tutor/TutorQuestionCards"));
 const TutorDashboard = lazy(() => import("@/pages/tutor/TutorDashboard"));
@@ -375,6 +376,7 @@ export const AnimatedRoutes = () => {
           <Route path="/student/offline" element={<PageTransition><OfflinePractice /></PageTransition>} />
           <Route path="/student/offline/:setId" element={<PageTransition><OfflineRunner /></PageTransition>} />
           <Route path="/audio-learning" element={<PageTransition><AudioLearning /></PageTransition>} />
+          <Route path="/student/smart-summary" element={<PageTransition><SmartSummary /></PageTransition>} />
           <Route path="/cgpa" element={<PageTransition><CGPACalculator /></PageTransition>} />
           <Route path="/study-packs" element={<PageTransition><StudyPacks /></PageTransition>} />
           <Route path="/learn" element={<PageTransition><Learn /></PageTransition>} />

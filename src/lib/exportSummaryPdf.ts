@@ -9,6 +9,11 @@ export async function exportSummaryPdf(opts: {
   bodyMarkdown: string;
   authorLabel?: string;
   filename?: string;
+  logoDataUrl?: string;
+  studentName?: string;
+  verified?: boolean;
+  matricNo?: string;
+  style?: string;
 }): Promise<void> {
   const { default: jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "pt", format: "a4" });
@@ -19,12 +24,27 @@ export async function exportSummaryPdf(opts: {
   const maxW = pageW - margin * 2;
 
   const drawChrome = (pageIdx: number, totalPages: number) => {
-    // Diagonal gold watermark
+    // ── Center watermark (spot 2): logo + brand text, faded
     doc.saveGraphicsState?.();
     doc.setTextColor(212, 175, 55);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(72);
+    doc.setFontSize(64);
     (doc as any).setGState?.(new (doc as any).GState({ opacity: 0.08 }));
+    if (opts.logoDataUrl) {
+      try {
+        const wmSize = 140;
+        doc.addImage(
+          opts.logoDataUrl,
+          "PNG",
+          pageW / 2 - wmSize / 2,
+          pageH / 2 - wmSize - 10,
+          wmSize,
+          wmSize,
+        );
+      } catch {
+        /* ignore */
+      }
+    }
     doc.text("OverraPrep AI", pageW / 2, pageH / 2, {
       angle: -28,
       align: "center",
@@ -32,22 +52,42 @@ export async function exportSummaryPdf(opts: {
     (doc as any).setGState?.(new (doc as any).GState({ opacity: 1 }));
     doc.restoreGraphicsState?.();
 
-    // Header bar (only first page heavy)
-    if (pageIdx === 0) {
-      doc.setFillColor(212, 175, 55);
-      doc.rect(0, 0, pageW, 6, "F");
+    // ── Header (spot 1): gold accent bar + small logo + brand label on EVERY page
+    doc.setFillColor(212, 175, 55);
+    doc.rect(0, 0, pageW, 6, "F");
+    if (opts.logoDataUrl) {
+      try {
+        doc.addImage(opts.logoDataUrl, "PNG", margin, 16, 22, 22);
+      } catch {
+        /* ignore */
+      }
     }
+    doc.setFontSize(9);
+    doc.setTextColor(120);
+    doc.setFont("helvetica", "bold");
+    doc.text("OVERRAPREP AI", margin + (opts.logoDataUrl ? 28 : 0), 32);
 
-    // Footer
+    // ── Footer (spot 3): tiny logo + caption + page x/y
+    if (opts.logoDataUrl) {
+      try {
+        doc.addImage(opts.logoDataUrl, "PNG", margin, pageH - 32, 14, 14);
+      } catch {
+        /* ignore */
+      }
+    }
     doc.setFontSize(8);
     doc.setTextColor(120);
     doc.setFont("helvetica", "normal");
-    doc.text("Generated with OverraPrep AI", margin, pageH - 22);
+    doc.text(
+      "Generated with OverraPrep AI",
+      margin + (opts.logoDataUrl ? 18 : 0),
+      pageH - 22,
+    );
     doc.text(`Page ${pageIdx + 1} of ${totalPages}`, pageW - margin, pageH - 22, { align: "right" });
   };
 
   // Cover header
-  let y = margin + 8;
+  let y = margin + 24;
   doc.setTextColor(20);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
@@ -66,6 +106,38 @@ export async function exportSummaryPdf(opts: {
     const sub = doc.splitTextToSize(opts.subtitle, maxW);
     doc.text(sub, margin, y);
     y += sub.length * 14 + 8;
+  }
+
+  // Prepared-for block — the personalised + verification line
+  if (opts.studentName || opts.style) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(60);
+    if (opts.style) {
+      doc.text(`Style: ${opts.style}`, margin, y);
+      y += 14;
+    }
+    if (opts.studentName) {
+      const verifiedMark = opts.verified ? "  \u2713 Verified Student" : "";
+      doc.setFont("helvetica", "bold");
+      doc.text(`Prepared for: ${opts.studentName}${verifiedMark}`, margin, y);
+      doc.setFont("helvetica", "normal");
+      y += 14;
+    }
+    const metaBits = [
+      opts.matricNo ? `Matric: ${opts.matricNo}` : null,
+      new Date().toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }),
+    ].filter(Boolean);
+    if (metaBits.length) {
+      doc.setTextColor(120);
+      doc.text(metaBits.join("  ·  "), margin, y);
+      y += 14;
+    }
+    y += 4;
   }
 
   doc.setDrawColor(212, 175, 55);
