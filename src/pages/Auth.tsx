@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Mail, Lock, User, ArrowRight, ArrowLeft, Loader2, Gift, GraduationCap, Phone, MapPin, BookOpen, IdCard, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, ArrowLeft, Loader2, Gift, GraduationCap, Phone, MapPin, BookOpen, IdCard, Eye, EyeOff, MailCheck, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import logo from "@/assets/logo.png";
 import authBg from "@/assets/auth-bg.jpg";
@@ -73,6 +73,11 @@ const Auth = () => {
   const [showSignUpPwd, setShowSignUpPwd] = useState(false);
   const [signUpStep, setSignUpStep] = useState(0);
   const [stepDir, setStepDir] = useState<1 | -1>(1);
+  // When sign-up requires email confirmation (or sign-in fails with
+  // "email not confirmed") we remember the address so we can show a
+  // dedicated banner with a "Resend verification email" button.
+  const [pendingEmail, setPendingEmail] = useState<string>("");
+  const [resending, setResending] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user, primaryRole, signIn, signUp } = useAuth();
@@ -96,6 +101,22 @@ const Auth = () => {
         variant: "destructive",
         title: "Access denied",
         description: "You don't have permission for that area. Sign in with the correct role.",
+      });
+    } else if (reason === "missing") {
+      toast({
+        variant: "destructive",
+        title: "You're not signed in",
+        description: "That page needs an account. Sign in below to continue.",
+      });
+    } else if (reason === "verify_required") {
+      toast({
+        title: "Verify your email first",
+        description: "Confirm your email address before continuing to onboarding.",
+      });
+    } else if (reason === "verified") {
+      toast({
+        title: "Email verified",
+        description: "Sign in to continue to onboarding.",
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -144,6 +165,15 @@ const Auth = () => {
     defaultValues: { email: "", password: "" },
   });
 
+  // Prefill the sign-in email when we just sent a verification mail or the
+  // user came back via a "?reason=verified" link.
+  useEffect(() => {
+    if (pendingEmail) {
+      signInForm.setValue("email", pendingEmail);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingEmail]);
+
   const signUpForm = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
@@ -169,12 +199,17 @@ const Auth = () => {
     const { error } = await signIn(data.email, data.password);
     
     if (error) {
+      const lower = (error.message || "").toLowerCase();
+      if (lower.includes("email not confirmed") || lower.includes("not confirmed")) {
+        setPendingEmail(data.email);
+      }
       toast({
         variant: "destructive",
         title: "Sign in failed",
         description: mapAuthError(error.message),
       });
     } else {
+      setPendingEmail("");
       toast({
         title: "Welcome back!",
         description: "You have successfully signed in.",
@@ -183,6 +218,29 @@ const Auth = () => {
       // straight into the correct dashboard instead of stopping at the role hub.
     }
     setIsSubmitting(false);
+  };
+
+  const handleResendVerification = async () => {
+    if (!pendingEmail) return;
+    setResending(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: pendingEmail,
+      options: { emailRedirectTo: `${window.location.origin}/auth?reason=verified` },
+    });
+    setResending(false);
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Couldn't resend",
+        description: error.message || "Try again in a minute.",
+      });
+    } else {
+      toast({
+        title: "Email sent",
+        description: `New verification link sent to ${pendingEmail}.`,
+      });
+    }
   };
 
   const handleSignUp = async (data: SignUpFormData) => {
@@ -209,6 +267,7 @@ const Auth = () => {
           title: "Check your email to verify your account",
           description: `We sent a confirmation link to ${data.email}. Click it, then sign in to continue.`,
         });
+        setPendingEmail(data.email);
         setIsSubmitting(false);
         setIsSignUp(false);
         return;
@@ -361,6 +420,43 @@ const Auth = () => {
           {!isSignUp ? (
             /* Sign In Form */
             <form onSubmit={signInForm.handleSubmit(handleSignIn)} className="space-y-4 sm:space-y-5">
+              {pendingEmail && (
+                <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs sm:text-sm text-amber-900 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <MailCheck className="w-4 h-4 mt-0.5 shrink-0" />
+                    <p>
+                      We sent a confirmation link to{" "}
+                      <strong className="font-semibold">{pendingEmail}</strong>. Click it,
+                      then sign in below. You'll be taken straight to onboarding.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    disabled={resending}
+                    className="inline-flex items-center gap-1 font-semibold underline underline-offset-2 disabled:opacity-50"
+                  >
+                    {resending && <Loader2 className="w-3 h-3 animate-spin" />}
+                    Resend verification email
+                  </button>
+                </div>
+              )}
+              {reason === "verified" && !pendingEmail && (
+                <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-xs sm:text-sm text-emerald-900 flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+                  <p>Email verified. Sign in to continue to your onboarding.</p>
+                </div>
+              )}
+              {(reason === "expired" || reason === "missing") && (
+                <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-xs sm:text-sm text-destructive flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                  <p>
+                    {reason === "expired"
+                      ? "Your session expired for security. Sign in again to pick up where you left off."
+                      : "You need to be signed in to view that page. Sign in to continue."}
+                  </p>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="signin-email" className="text-foreground text-xs sm:text-sm font-medium">
                   Email
