@@ -19,8 +19,6 @@ import { TopHeader } from "@/components/student/dashboard/TopHeader";
 import { QuickActionsGrid } from "@/components/student/dashboard/QuickActionsGrid";
 import { OpportunityHubPreview } from "@/components/student/dashboard/OpportunityHubPreview";
 import { StudentSpotlight } from "@/components/student/dashboard/StudentSpotlight";
-import { FeatureGrid } from "@/components/student/FeatureGrid";
-import { QuickTray } from "@/components/student/QuickTray";
 
 // Warm likely-next route bundles when the dashboard mounts.
 if (typeof window !== "undefined") prefetchDashboardNeighbors();
@@ -571,12 +569,6 @@ const StudentDashboard = () => {
 
             {/* 3. Quick actions — 5 calm tiles */}
             <QuickActionsGrid />
-
-            {/* 3b. Quick access tray — 6 categories with sheet */}
-            <QuickTray />
-
-            {/* 3c. Full feature grid — every tool, grouped */}
-            <FeatureGrid />
 
             {/* 4. Continue learning — recent courses & study packs */}
             <ContinueLearning />

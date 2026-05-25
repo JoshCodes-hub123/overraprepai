@@ -29,34 +29,6 @@ const KIND_LABEL: Record<string, string> = {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
-    // Auth: allow either a valid CRON_SECRET header (for internal triggers)
-    // or an authenticated admin caller. Reject everything else.
-    const cronSecret = Deno.env.get("CRON_SECRET");
-    const providedCron = req.headers.get("x-cron-secret");
-    const isCron = !!cronSecret && providedCron === cronSecret;
-    if (!isCron) {
-      const authHeader = req.headers.get("Authorization");
-      if (!authHeader?.startsWith("Bearer ")) {
-        return new Response(JSON.stringify({ error: "unauthorized" }), {
-          status: 401, headers: { ...cors, "Content-Type": "application/json" },
-        });
-      }
-      const adminCheck = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-      const jwt = authHeader.replace("Bearer ", "");
-      const { data: userData, error: userErr } = await adminCheck.auth.getUser(jwt);
-      if (userErr || !userData?.user) {
-        return new Response(JSON.stringify({ error: "unauthorized" }), {
-          status: 401, headers: { ...cors, "Content-Type": "application/json" },
-        });
-      }
-      const { data: roles } = await adminCheck
-        .from("user_roles").select("role").eq("user_id", userData.user.id);
-      if (!(roles ?? []).some((r: any) => r.role === "admin")) {
-        return new Response(JSON.stringify({ error: "forbidden" }), {
-          status: 403, headers: { ...cors, "Content-Type": "application/json" },
-        });
-      }
-    }
     if (!RESEND_API_KEY) {
       return new Response(JSON.stringify({ skipped: "no RESEND_API_KEY" }), {
         headers: { ...cors, "Content-Type": "application/json" },
