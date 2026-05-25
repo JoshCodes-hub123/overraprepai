@@ -12,7 +12,9 @@ import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { SEO } from "@/components/seo/SEO";
 import { toast } from "sonner";
-import { Bell, Heart, MessageCircle, AtSign, Mail, MessagesSquare, Megaphone, Moon } from "lucide-react";
+import { Bell, Heart, MessageCircle, AtSign, Mail, MessagesSquare, Megaphone, Moon, Briefcase, Sparkles, Smartphone } from "lucide-react";
+import { initPushNotifications } from "@/lib/native/push";
+import { Capacitor } from "@capacitor/core";
 
 interface Prefs {
   notify_likes: boolean;
@@ -21,6 +23,11 @@ interface Prefs {
   notify_messages: boolean;
   notify_announcements: boolean;
   email_notifications: boolean;
+  notify_opportunities: boolean;
+  notify_posts: boolean;
+  email_opportunities: boolean;
+  email_posts: boolean;
+  push_enabled: boolean;
   quiet_hours_start: string | null;
   quiet_hours_end: string | null;
 }
@@ -32,6 +39,11 @@ const defaults: Prefs = {
   notify_messages: true,
   notify_announcements: true,
   email_notifications: false,
+  notify_opportunities: true,
+  notify_posts: true,
+  email_opportunities: false,
+  email_posts: false,
+  push_enabled: true,
   quiet_hours_start: null,
   quiet_hours_end: null,
 };
@@ -110,6 +122,19 @@ const NotificationSettings = () => {
 
         <Card className="mb-6">
           <CardHeader>
+            <CardTitle>New content</CardTitle>
+            <CardDescription>Alerts for new opportunities, talent showcases, articles and announcements</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <Row icon={Briefcase} title="In-app: Opportunities" desc="Scholarships, internships, hackathons" k="notify_opportunities" />
+            <Row icon={Sparkles} title="In-app: Posts" desc="Talent showcases, articles, announcements" k="notify_posts" />
+            <Row icon={Mail} title="Email: Opportunities" desc="Get an email when a new opportunity is published" k="email_opportunities" />
+            <Row icon={Mail} title="Email: Posts" desc="Get an email when a new post is published" k="email_posts" />
+          </CardContent>
+        </Card>
+
+        <Card className="mb-6">
+          <CardHeader>
             <CardTitle>Activity</CardTitle>
             <CardDescription>Alerts triggered by other users</CardDescription>
           </CardHeader>
@@ -129,6 +154,22 @@ const NotificationSettings = () => {
           </CardHeader>
           <CardContent className="pt-0">
             <Row icon={Mail} title="Email notifications" desc="Receive a daily summary by email" k="email_notifications" />
+            <Row icon={Smartphone} title="Push notifications" desc="On the mobile app, get push alerts for selected categories" k="push_enabled" />
+            {Capacitor.isNativePlatform() && (
+              <div className="pt-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    if (!user) return;
+                    await initPushNotifications(user.id);
+                    toast.success("Push permission requested");
+                  }}
+                >
+                  Enable device push
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
