@@ -62,6 +62,7 @@ const MasteryBreakdown = lazy(() => import("@/pages/student/MasteryBreakdown"));
 const OfflinePractice = lazy(() => import("@/pages/student/OfflinePractice"));
 const OfflineRunner = lazy(() => import("@/pages/student/OfflineRunner"));
 const AudioLearning = lazy(() => import("@/pages/student/AudioLearning"));
+const SmartSummary = lazy(() => import("@/pages/student/SmartSummary"));
 const Learn = lazy(() => import("@/pages/student/Learn"));
 const TutorQuestionCards = lazy(() => import("@/pages/tutor/TutorQuestionCards"));
 const TutorDashboard = lazy(() => import("@/pages/tutor/TutorDashboard"));
