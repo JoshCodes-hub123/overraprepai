@@ -28,7 +28,7 @@ const PreparationSettings = () => {
   const save = async () => {
     if (!user?.id || !selected) return;
     setSaving(true);
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("profiles")
       .update({ academic_path: selected })
       .eq("user_id", user.id);
