@@ -877,6 +877,7 @@ const Auth = () => {
                   setSignUpStep((s) => Math.max(0, s - 1));
                 };
                 return (
+                  <>
                   <div className="flex items-center gap-3">
                     {signUpStep > 0 && (
                       <Button type="button" variant="outline" size="lg" onClick={goBack} className="flex-1">
@@ -903,11 +904,12 @@ const Auth = () => {
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="mt-3 w-full text-center text-sm font-semibold text-primary hover:underline disabled:opacity-60"
+                      className="mt-3 block w-full text-center text-sm font-semibold text-primary hover:underline disabled:opacity-60"
                     >
                       {isSubmitting ? "Creating account…" : "Skip — create my account now"}
                     </button>
                   )}
+                  </>
                 );
               })()}
 
