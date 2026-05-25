@@ -10,14 +10,14 @@ const BUILD_VERSION = String(Date.now());
 function versionPlugin() {
   return {
     name: "emit-version-json",
-    generateBundle() {
+    generateBundle(this: any) {
       this.emitFile({
         type: "asset",
         fileName: "version.json",
         source: JSON.stringify({ version: BUILD_VERSION }),
       });
     },
-  };
+  } as any;
 }
 
 // https://vitejs.dev/config/
