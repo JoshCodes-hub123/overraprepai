@@ -2110,11 +2110,16 @@ export type Database = {
         Row: {
           created_at: string
           email_notifications: boolean
+          email_opportunities: boolean
+          email_posts: boolean
           notify_announcements: boolean
           notify_comments: boolean
           notify_likes: boolean
           notify_mentions: boolean
           notify_messages: boolean
+          notify_opportunities: boolean
+          notify_posts: boolean
+          push_enabled: boolean
           quiet_hours_end: string | null
           quiet_hours_start: string | null
           updated_at: string
@@ -2123,11 +2128,16 @@ export type Database = {
         Insert: {
           created_at?: string
           email_notifications?: boolean
+          email_opportunities?: boolean
+          email_posts?: boolean
           notify_announcements?: boolean
           notify_comments?: boolean
           notify_likes?: boolean
           notify_mentions?: boolean
           notify_messages?: boolean
+          notify_opportunities?: boolean
+          notify_posts?: boolean
+          push_enabled?: boolean
           quiet_hours_end?: string | null
           quiet_hours_start?: string | null
           updated_at?: string
@@ -2136,11 +2146,16 @@ export type Database = {
         Update: {
           created_at?: string
           email_notifications?: boolean
+          email_opportunities?: boolean
+          email_posts?: boolean
           notify_announcements?: boolean
           notify_comments?: boolean
           notify_likes?: boolean
           notify_mentions?: boolean
           notify_messages?: boolean
+          notify_opportunities?: boolean
+          notify_posts?: boolean
+          push_enabled?: boolean
           quiet_hours_end?: string | null
           quiet_hours_start?: string | null
           updated_at?: string
