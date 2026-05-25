@@ -147,6 +147,14 @@ const Auth = () => {
     if (intent === "parent") return "/parent/dashboard";
     // Skip onboarding — new students land straight on the dashboard
     if (justSignedUp) return "/student/dashboard";
+    // Resume where the user left off, if we have a saved route for this account.
+    try {
+      const uid = user?.id;
+      if (uid) {
+        const saved = localStorage.getItem(`overra_last_route:${uid}`);
+        if (saved && saved.startsWith("/")) return saved;
+      }
+    } catch { /* noop */ }
     if (primaryRole === "admin") return "/admin/dashboard";
     if (primaryRole === "tutor") return "/tutor/dashboard";
     if (primaryRole === "school_owner" || primaryRole === "school_admin" || primaryRole === "teacher") return "/school/dashboard";
