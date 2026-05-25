@@ -42,6 +42,7 @@ import { AnnouncementsManagement } from "@/components/admin/AnnouncementsManagem
 import SchoolApplicationsTab from "@/pages/admin/SchoolApplications";
 import { SkeletonDashboard } from "@/components/ui/premium-skeletons";
 import { DashboardHero } from "@/components/dashboard/DashboardHero";
+import { SuggestOpportunityDialog } from "@/components/opportunities/SuggestOpportunityDialog";
 import { PremiumStatCard } from "@/components/dashboard/PremiumStatCard";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { PullToRefresh } from "@/components/native/PullToRefresh";
@@ -234,6 +235,15 @@ const AdminDashboard = () => {
           fullName={profile?.full_name || "Admin"}
           avatarUrl={profile?.avatar_url}
           subtitle="Steward the platform — review tutors, moderate content, and watch the empire grow."
+          actions={
+            <SuggestOpportunityDialog
+              trigger={
+                <button className="inline-flex items-center gap-1.5 rounded-full bg-white text-amber-700 hover:bg-amber-50 shadow-md font-semibold text-sm px-4 py-2">
+                  + Post opportunity
+                </button>
+              }
+            />
+          }
           footer={
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
               <div className="flex items-center gap-2">
