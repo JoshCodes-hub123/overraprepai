@@ -1,70 +1,48 @@
+
 ## Goal
 
-Seed, as the admin account, a polished demo course with every tutor-side resource populated, plus a set of scholarship & opportunity entries so the student dashboard lights up. All data, no schema or code changes. Easy to wipe later.
+Let every signed-in student open any course and discuss inside it — ask questions, mention the tutor with `@tutor` to summon them, and mention `@AI` to get OverraPrep AI to answer.
 
-## Owner / cleanup
+The good news: most of this is already built. `course_chat_messages`, `course_chat_reactions`, `course_pinned_prompts`, the `CourseChat` component (with `@AI`, threaded replies, reactions, tutor badges, pins), and the `course-ai-reply` edge function all exist and are mounted on `CourseHub` and `StudyHubCourse`. Two things are missing:
 
-- Author: existing admin `admin@test.overraprep.com` (`c9bdc1fb-b1fb-42af-8cb5-93844be6e4ea`).
-- Cleanup: `DELETE FROM public.courses WHERE code = 'DEMO 101'` cascades the whole course; opportunities removed via `DELETE FROM public.opportunities WHERE organization LIKE 'OverraPrep Demo%'`.
+1. The chat is gated to enrolled students / tutor / admin only, so a regular student browsing a course can't post or even read.
+2. There is no `@tutor` summon that pings the course's tutor(s).
 
-## Demo Course: `DEMO 101 — OverraPrep Tutor Showcase`
+## Changes
 
-University FUTA, Level 100, Department "Demo", active, with description.
+### 1. Open the discussion to any signed-in user
 
-### Topics (4)
-1. Welcome & How OverraPrep Works
-2. Core Concepts
-3. Worked Examples
-4. Exam-Style Practice
+Relax `is_course_participant(_course_id, _user_id)` so any authenticated user counts as a participant for active, published courses. Tutors and admins keep their existing powers (pin prompts, delete any message). Enrolled status is no longer required to read or post.
 
-### Questions (15 MCQs)
-- Distributed across the 4 topics
-- Mix of easy / medium / hard
-- All approved with rich `explanation` text so AI-explain and review screens look complete
-- 3 flagged `is_past_question = true` with a `year` so the Past Questions view has content
+Practically: replace the function body to return `true` for any authenticated user when the course is active, and keep the tutor/admin branches for permission checks elsewhere. RLS on `course_chat_messages`, `course_chat_reactions`, and `course_pinned_prompts` automatically follows.
 
-### Quiz (1)
-- Title: "Demo Quiz — Tutor Showcase"
-- 15 questions, 20 minutes, free (`token_cost = 0`), active
-- `quiz_questions` rows linking all 15 in order
+### 2. `@tutor` summon
 
-### Lecture note (1)
-- Title: "Demo Lecture Note — Introduction Slides"
-- `file_url` points at a public placeholder PDF (Mozilla's sample PDF) so the download / preview works immediately. You can swap it from the admin UI later.
-- `is_published = true`
+In `CourseChat.send`, after a successful insert, detect `@tutor` (case-insensitive) in the message and:
+- Look up the course's tutor user IDs from `quizzes.tutor_id` for that course (already queried elsewhere in the component — reuse).
+- Insert a notification row per tutor (table `notifications` with `type = 'course_mention'`, `link = /courses/<id>?tab=discussion`, message snippet, `from_user_id = current user`). Also fire the existing in-app toast realtime channel if one is in use.
+- Show a small inline hint chip under the composer: "Tip: type `@tutor` to call the tutor, `@AI` to ask AI."
 
-### Flashcards (6 public)
-- Authored by admin, `course_id` set, `topic_id` linked to topic 2 ("Core Concepts")
-- `is_public = true` so they appear in the shared deck and `/flashcards`
+The tutor receives it in the existing notifications bell. No email — just in-app.
 
-### Tutor announcement (1 pinned)
-- Title: "Welcome to the Demo Course"
-- `course_id` set, `is_pinned = true` so it shows in the course feed and notification bell for followers
+### 3. Composer affordance
 
-### Course pinned prompt (1)
-- "Explain this topic to me like I'm 12, with one real-life example." → populates the AI tutor pinned-prompts row in the course chat
+Add two small ghost buttons next to the send button: `@tutor` and `@AI`. Tapping inserts the token into the textarea at the cursor. This makes the feature discoverable on mobile (370px viewport) where users won't think to type the mention.
 
-## Scholarships & Opportunities (6 entries, admin-posted, status = published)
+### 4. Visibility on the course page
 
-All `organization` prefixed `OverraPrep Demo —` so they're easy to filter / delete. Each has cover image URL (free Unsplash), deadline 30–90 days out, apply URL, rich description. Categories covered so every filter chip in `/opportunities` has at least one card:
+On `CourseHub` and `StudyHubCourse`, ensure the Discussion tab/section is visible to all visitors (no enrollment check around the `<CourseChat>` mount). If a wrapper currently hides it, drop the guard.
 
-1. **Scholarship** — "FUTA Future Leaders Scholarship 2026" ($2,500 grant, deadline +60d)
-2. **Scholarship** — "OverraPrep STEM Excellence Award" ($1,000 + 1yr Pro, deadline +45d)
-3. **Internship** — "Lovable Cloud Engineering Internship (Remote)" (deadline +30d)
-4. **Hackathon** — "OverraPrep FUTA Hack Weekend" (deadline +21d)
-5. **Competition** — "National CBT Mastery Challenge" (deadline +75d)
-6. **Tech Program** — "Google Africa Developer Track — Cohort 5" (deadline +90d)
+## Out of scope
 
-These flow into the dashboard's opportunities strip and the `/opportunities` page out of the box.
-
-## What is intentionally not done
-
-- No fake students, no fake quiz attempts, no fake earnings/analytics — keeps insights real. Take the quiz yourself from a student account to populate stats live.
-- No schema migrations, no edge function changes, no code edits.
-- No paid pricing on the demo content so nothing is gated by tokens.
+- No schema changes to `course_chat_messages` (already supports everything needed).
+- No paid/escrow logic; calling the tutor is free and best-effort.
+- No email notifications.
+- No changes to the `course-ai-reply` edge function.
 
 ## Technical notes
 
-- One `supabase--insert` call running a single transactional SQL block with WITH-CTEs to keep all FK ids consistent.
-- All inserts conditional on `NOT EXISTS` checks against course code / opportunity titles so re-running is a no-op.
-- `posted_by` / `created_by` / `tutor_id` / `user_id` = admin uuid; opportunities use the admin as `posted_by` so the "Insert opportunities by role" policy is satisfied.
+- Migration: `CREATE OR REPLACE FUNCTION public.is_course_participant` with the relaxed body. Security definer, search_path = public, returns boolean. No table/grant changes.
+- Notification insert reuses the existing `notifications` table pattern used elsewhere in the app (will verify column names before writing).
+- Mention detection: simple regex `/@tutor\b/i` and existing `/@AI\b/i`.
+- All UI work stays inside `src/components/course/CourseChat.tsx`; no new routes.
