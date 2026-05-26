@@ -16,6 +16,7 @@ import {
   ListChecks,
   BookOpen,
   HelpCircle,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -96,6 +97,7 @@ export default function SmartSummary() {
   const [generating, setGenerating] = useState(false);
   const [markdown, setMarkdown] = useState<string>("");
   const [downloading, setDownloading] = useState(false);
+  const [viewing, setViewing] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const charCount = text.length;
@@ -195,6 +197,29 @@ export default function SmartSummary() {
     }
   };
 
+  const viewPdf = async () => {
+    if (!markdown) return;
+    setViewing(true);
+    try {
+      const logoDataUrl = await loadLogoDataUrl();
+      await exportSummaryPdf({
+        title: title || "OverraPrep AI Study Summary",
+        subtitle: `Study summary · ${new Date().toLocaleDateString()}`,
+        bodyMarkdown: markdown,
+        logoDataUrl,
+        studentName,
+        verified,
+        matricNo: profile?.matric_no || undefined,
+        style: STYLE_LABEL[style],
+        mode: "view",
+      });
+    } catch (e: any) {
+      toast.error(e?.message || "Could not open PDF");
+    } finally {
+      setViewing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pb-24">
       <SEO
@@ -230,6 +255,25 @@ export default function SmartSummary() {
           </div>
         </div>
       </header>
+
+      {/* Hero banner */}
+      <section className="relative overflow-hidden border-b border-amber-200/60">
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-50 via-white to-amber-100/60" />
+        <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-amber-300/30 blur-3xl" />
+        <div className="absolute -bottom-20 -left-10 w-64 h-64 rounded-full bg-amber-400/20 blur-3xl" />
+        <div className="relative max-w-3xl mx-auto px-4 py-7">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/80 border border-amber-200 text-[10px] font-bold tracking-[0.18em] uppercase text-amber-700 shadow-sm">
+            <Sparkles className="w-3 h-3" /> OverraPrep AI
+          </div>
+          <h2 className="mt-3 font-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            Turn any material into <span className="text-amber-600">study-ready notes</span>.
+          </h2>
+          <p className="mt-1.5 text-sm text-muted-foreground max-w-xl">
+            Drop a PDF, paste your slides, or type your notes. Get a beautifully branded summary —
+            preview in your browser for free, download the verified PDF with your name on it.
+          </p>
+        </div>
+      </section>
 
       <main className="max-w-3xl mx-auto px-4 pt-4 space-y-4">
         {/* Step 1: source */}
@@ -336,29 +380,41 @@ export default function SmartSummary() {
                     <Sparkles className="w-4 h-4 text-amber-500" /> Your summary
                   </h2>
                   <p className="text-[11px] text-muted-foreground">
-                    Free preview — anyone can read. Branded PDF is for verified students.
+                    View the branded PDF free in your browser. Download is for verified students.
                   </p>
                 </div>
-                <Button
-                  onClick={download}
-                  disabled={downloading}
-                  className={cn(
-                    "gap-1.5",
-                    verified
-                      ? "bg-amber-500 hover:bg-amber-600 text-white"
-                      : "bg-muted text-muted-foreground hover:bg-muted",
-                  )}
-                  title={verified ? "Download branded PDF" : "Verify your profile to download"}
-                >
-                  {downloading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : verified ? (
-                    <FileDown className="w-4 h-4" />
-                  ) : (
-                    <Lock className="w-4 h-4" />
-                  )}
-                  {verified ? "Download branded PDF" : "Verify to download"}
-                </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    onClick={viewPdf}
+                    disabled={viewing}
+                    variant="outline"
+                    className="gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-50"
+                    title="Open branded PDF preview in a new tab"
+                  >
+                    {viewing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+                    View PDF
+                  </Button>
+                  <Button
+                    onClick={download}
+                    disabled={downloading}
+                    className={cn(
+                      "gap-1.5",
+                      verified
+                        ? "bg-amber-500 hover:bg-amber-600 text-white"
+                        : "bg-muted text-muted-foreground hover:bg-muted",
+                    )}
+                    title={verified ? "Download branded PDF" : "Verify your profile to download"}
+                  >
+                    {downloading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : verified ? (
+                      <FileDown className="w-4 h-4" />
+                    ) : (
+                      <Lock className="w-4 h-4" />
+                    )}
+                    {verified ? "Download branded PDF" : "Verify to download"}
+                  </Button>
+                </div>
               </div>
 
               {!verified && (
