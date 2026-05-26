@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Check, Crown } from 'lucide-react';
 import { useSubscriptionPlans, useMySubscription } from '@/hooks/useSubscription';
 import { toast } from 'sonner';
+import { SEO } from '@/components/seo/SEO';
 
 export default function Pricing() {
   const plans = useSubscriptionPlans();
@@ -14,7 +15,40 @@ export default function Pricing() {
     toast.info('Pro checkout opens soon — stay tuned!');
   };
 
+  const paidPlans = (plans.data ?? []).filter((p: any) => p.id !== 'free' && p.price_cents > 0);
+  const pricingStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: "OverraPrep Pro",
+    description: "Pro plan for OverraPrep AI — faster AI, priority study coach, and bonus tokens every month.",
+    brand: { "@type": "Brand", name: "OverraPrep AI" },
+    offers: paidPlans.length > 0
+      ? paidPlans.map((p: any) => ({
+          "@type": "Offer",
+          name: p.name,
+          price: (p.price_cents / 100).toFixed(2),
+          priceCurrency: "USD",
+          availability: "https://schema.org/InStock",
+          url: "https://prep-mentor-hub-50.lovable.app/pricing",
+        }))
+      : [{
+          "@type": "Offer",
+          name: "OverraPrep Pro",
+          price: "0.00",
+          priceCurrency: "USD",
+          availability: "https://schema.org/PreOrder",
+          url: "https://prep-mentor-hub-50.lovable.app/pricing",
+        }],
+  };
+
   return (
+    <>
+      <SEO
+        title="Pricing — Pro plans & token packs"
+        description="OverraPrep Pro pricing: faster AI, priority study coach, and bonus tokens every month. Pick a plan that fits your FUTA exam prep."
+        url="/pricing"
+        structuredData={pricingStructuredData}
+      />
     <div className="container mx-auto p-4 max-w-3xl space-y-6">
       <header className="text-center space-y-2">
         <h1 className="text-3xl font-bold flex items-center justify-center gap-2"><Crown className="w-7 h-7 text-primary"/>Go Pro</h1>
@@ -57,5 +91,6 @@ export default function Pricing() {
         })}
       </div>
     </div>
+    </>
   );
 }
