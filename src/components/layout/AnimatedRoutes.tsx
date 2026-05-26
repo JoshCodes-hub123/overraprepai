@@ -440,6 +440,7 @@ export const AnimatedRoutes = () => {
           <Route path="/survival-kits/:kitId" element={<PageTransition><SurvivalKitView /></PageTransition>} />
           <Route path="/strategy" element={<PageTransition><Strategy /></PageTransition>} />
           <Route path="/ai-tutor" element={<PageTransition><AITutor /></PageTransition>} />
+          <Route path="/ai-tutor/:threadId" element={<PageTransition><AITutor /></PageTransition>} />
           <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
           <Route path="/privacy" element={<PageTransition><Privacy /></PageTransition>} />
           <Route path="/settings/privacy" element={<PageTransition><PrivacySettings /></PageTransition>} />

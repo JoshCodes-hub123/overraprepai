@@ -35,6 +35,7 @@ const BodySchema = z.object({
     .min(1)
     .max(40),
   academic_path: z.enum(["secondary", "jamb", "university"]).optional().default("university"),
+  persona: z.enum(["tutor", "exam", "coach", "career"]).optional().default("tutor"),
 });
 
 Deno.serve(async (req) => {
@@ -75,19 +76,28 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    const { messages, academic_path } = parsed.data;
+    const { messages, academic_path, persona } = parsed.data;
 
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
 
-    const persona =
+    const levelPersona =
       academic_path === "secondary"
         ? "You are OverraPrep AI Tutor for a Secondary School student (JSS/SSS). Explain like the student is 12. Use short sentences, real-life Nigerian examples, and analogies."
         : academic_path === "jamb"
         ? "You are OverraPrep AI Tutor for a JAMB/UTME candidate. Be sharp, fast, exam-focused. Cite shortcuts, eliminate options, and emphasise CBT timing."
         : "You are OverraPrep AI Tutor for a Nigerian University student. Use rigorous academic depth, proper terminology, definitions and theory frameworks.";
 
-    const system = `${persona}\nAlways stay encouraging. Use markdown. Keep responses focused and end with a quick check-for-understanding question.`;
+    const personaOverlay =
+      persona === "exam"
+        ? "ROLE: Exam Strategist. Focus on exam tactics, time management, predicted questions, marking schemes, and elimination strategies. Always think like an examiner."
+        : persona === "coach"
+        ? "ROLE: Wellness & Study Coach. Be warm, calming, and practical. Help with motivation, anxiety, sleep, focus, study habits, procrastination. Use short, kind language. Suggest small, doable next steps."
+        : persona === "career"
+        ? "ROLE: Career Mentor for Nigerian students. Advise on career paths, internships, scholarships, CV/LinkedIn, skills to learn, and how the student's course connects to real jobs."
+        : "ROLE: Academic Tutor. Teach concepts clearly with examples and quick checks for understanding.";
+
+    const system = `${levelPersona}\n${personaOverlay}\nAlways stay encouraging. Use markdown. Keep responses focused and end with a quick check-for-understanding question.`;
 
     const upstream = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
