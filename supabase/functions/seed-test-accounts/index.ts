@@ -10,6 +10,16 @@ const accounts = [
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
+    // Guard: this function creates admin/tutor/student accounts with known
+    // passwords. It must only be callable with a server-side shared secret.
+    const expected = Deno.env.get("SEED_SECRET");
+    const provided = req.headers.get("x-seed-secret");
+    if (!expected || provided !== expected) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
