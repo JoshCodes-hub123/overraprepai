@@ -361,7 +361,7 @@ const BrowseTutors = () => {
       <SEO
         title="Browse Tutors"
         description="Discover expert tutors at FUTA. Browse verified tutors by department, view ratings, and access their quiz content."
-        url="https://overraprep.com/tutors"
+        url="/tutors"
       />
       <div className="min-h-screen bg-background">
         {/* Header */}
