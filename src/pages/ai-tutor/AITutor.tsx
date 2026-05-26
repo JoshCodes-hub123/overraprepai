@@ -109,7 +109,19 @@ const AITutor = () => {
   const [loading, setLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const SEARCH_STORAGE_KEY = "ai-tutor:search-query";
+  const [searchQuery, setSearchQuery] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    try { return window.localStorage.getItem(SEARCH_STORAGE_KEY) ?? ""; }
+    catch { return ""; }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (searchQuery) window.localStorage.setItem(SEARCH_STORAGE_KEY, searchQuery);
+      else window.localStorage.removeItem(SEARCH_STORAGE_KEY);
+    } catch { /* ignore quota */ }
+  }, [searchQuery]);
   const [renameTarget, setRenameTarget] = useState<{ id: string; title: string } | null>(null);
   const [renameValue, setRenameValue] = useState("");
 
@@ -208,7 +220,7 @@ const AITutor = () => {
       if (!msgs.length) { toast.error("This chat has no messages yet"); return; }
       const meta = { id: t.id, title: t.title, persona: t.persona, created_at: t.created_at, updated_at: t.updated_at };
       if (format === "json") exportThreadAsJSON(meta, msgs as any);
-      else await exportThreadAsPDF(meta, msgs as any);
+      else await exportThreadAsPDF(meta, msgs as any, { studentName: profile?.full_name ?? null });
       toast.success(`Exported as ${format.toUpperCase()}`);
     } catch (e: any) {
       toast.error(e?.message || "Export failed");
@@ -442,8 +454,18 @@ const AITutor = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search chats…"
-            className="w-full bg-background/70 border border-border/60 rounded-lg pl-8 pr-3 py-2 text-[12.5px] focus:outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition"
+            className="w-full bg-background/70 border border-border/60 rounded-lg pl-8 pr-8 py-2 text-[12.5px] focus:outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition"
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              aria-label="Clear search"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold tracking-wider text-muted-foreground hover:text-primary px-1.5 py-0.5 rounded"
+            >
+              CLR
+            </button>
+          )}
         </div>
 
         {threads.length === 0 && (
