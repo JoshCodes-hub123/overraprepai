@@ -138,6 +138,9 @@ const HeroSection = () => {
                   alt="University student reading on the OverraPrep AI app"
                   width={1024}
                   height={1024}
+                  loading="eager"
+                  decoding="async"
+                  fetchPriority="high"
                   className="w-full h-auto object-cover"
                 />
                 {/* Soft gold edge gradient */}
