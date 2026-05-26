@@ -199,6 +199,19 @@ export const CourseChat = ({ courseId, courseCode }: Props) => {
     if (/@AI\b/i.test(body)) {
       invokeAI(body.replace(/@AI\b/i, "").trim() || body, parentId);
     }
+    if (/@tutor\b/i.test(body)) {
+      try {
+        const { data: count } = await supabase.rpc("notify_course_tutors", {
+          _course_id: courseId,
+          _snippet: body,
+          _link: `/courses/${courseId}`,
+        });
+        if ((count ?? 0) > 0) toast.success("Tutor pinged");
+        else toast.message("No tutor is attached to this course yet.");
+      } catch (err) {
+        console.error("notify_course_tutors failed", err);
+      }
+    }
   };
 
   const retryAI = async (aiMsg: Message) => {
@@ -212,6 +225,13 @@ export const CourseChat = ({ courseId, courseCode }: Props) => {
 
   const useAsPrompt = (content: string) => {
     setText((t) => (t ? `${t} ${content}` : content));
+  };
+
+  const insertMention = (token: string) => {
+    setText((t) => {
+      if (new RegExp(`${token}\\b`, "i").test(t)) return t;
+      return t ? `${token} ${t}` : `${token} `;
+    });
   };
 
   const addPin = async (e: React.FormEvent) => {
@@ -551,7 +571,7 @@ export const CourseChat = ({ courseId, courseCode }: Props) => {
               <Input
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder={replyTo ? "Write a reply… (type @AI to ask AI)" : "Brainstorm… type @AI to ask OverraPrep AI"}
+                placeholder={replyTo ? "Reply… @tutor calls tutor · @AI asks AI" : "Ask anything… @tutor calls tutor · @AI asks AI"}
                 maxLength={2000}
                 disabled={sending}
                 className="flex-1"
@@ -560,10 +580,27 @@ export const CourseChat = ({ courseId, courseCode }: Props) => {
                 {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </Button>
             </form>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => insertMention("@tutor")}
+                className="text-[11px] font-semibold px-2 py-1 rounded-full bg-white border border-amber-200 text-amber-800 hover:bg-amber-50 inline-flex items-center gap-1"
+              >
+                <ShieldCheck className="w-3 h-3" /> @tutor
+              </button>
+              <button
+                type="button"
+                onClick={() => insertMention("@AI")}
+                className="text-[11px] font-semibold px-2 py-1 rounded-full bg-white border border-amber-200 text-amber-800 hover:bg-amber-50 inline-flex items-center gap-1"
+              >
+                <Bot className="w-3 h-3" /> @AI
+              </button>
+              <span className="text-[10px] text-muted-foreground ml-auto">Be kind — everyone is learning.</span>
+            </div>
           </div>
         ) : (
           <p className="text-xs text-center text-muted-foreground py-2">
-            Enroll in this course (or be its tutor) to join the chat.
+            Sign in to join the discussion.
           </p>
         )}
       </CardContent>
