@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { sanitizeAIText } from "@/lib/sanitizeAI";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message { role: "user" | "assistant"; content: string; }
 
@@ -36,11 +37,24 @@ const AITutor = () => {
     setLoading(true);
 
     try {
+      // Use the signed-in user's access token — the edge function requires
+      // a real user JWT (not the anon publishable key) to authorize streaming.
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) {
+        toast.error("Please sign in to chat with the AI Tutor.");
+        setLoading(false);
+        return;
+      }
       const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-      const KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const ANON = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       const res = await fetch(`${SUPABASE_URL}/functions/v1/ai-tutor-chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${KEY}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+          apikey: ANON,
+        },
         body: JSON.stringify({
           messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
           academic_path: profile?.academic_path || "university",
