@@ -1,48 +1,31 @@
+## Problem
 
-## Goal
+Course chat messages are already saved to the database (`course_chat_messages`) and reload correctly when the user reopens the course. The reason a freshly-sent message looks like it "didn't send" is that the chat UI never optimistically renders your own message — it waits for a Supabase Realtime event to echo it back. But `course_chat_messages`, `course_chat_reactions`, and `course_pinned_prompts` are **not in the `supabase_realtime` publication**, so the echo never arrives. The row is safely in the DB; the screen just doesn't refresh until you leave and come back.
 
-Let every signed-in student open any course and discuss inside it — ask questions, mention the tutor with `@tutor` to summon them, and mention `@AI` to get OverraPrep AI to answer.
+## Fix
 
-The good news: most of this is already built. `course_chat_messages`, `course_chat_reactions`, `course_pinned_prompts`, the `CourseChat` component (with `@AI`, threaded replies, reactions, tutor badges, pins), and the `course-ai-reply` edge function all exist and are mounted on `CourseHub` and `StudyHubCourse`. Two things are missing:
+### 1. Enable realtime on the three chat tables (migration)
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE
+  public.course_chat_messages,
+  public.course_chat_reactions,
+  public.course_pinned_prompts;
 
-1. The chat is gated to enrolled students / tutor / admin only, so a regular student browsing a course can't post or even read.
-2. There is no `@tutor` summon that pings the course's tutor(s).
+ALTER TABLE public.course_chat_messages REPLICA IDENTITY FULL;
+ALTER TABLE public.course_chat_reactions REPLICA IDENTITY FULL;
+ALTER TABLE public.course_pinned_prompts REPLICA IDENTITY FULL;
+```
 
-## Changes
+### 2. Optimistic append in `CourseChat.send` (belt + suspenders)
+In `src/components/course/CourseChat.tsx`, change the insert to `.select().single()` and immediately push the returned row into local `messages` state (deduping against the realtime echo by id). This way the message is on screen the instant the DB write succeeds, even if realtime is briefly down.
 
-### 1. Open the discussion to any signed-in user
-
-Relax `is_course_participant(_course_id, _user_id)` so any authenticated user counts as a participant for active, published courses. Tutors and admins keep their existing powers (pin prompts, delete any message). Enrolled status is no longer required to read or post.
-
-Practically: replace the function body to return `true` for any authenticated user when the course is active, and keep the tutor/admin branches for permission checks elsewhere. RLS on `course_chat_messages`, `course_chat_reactions`, and `course_pinned_prompts` automatically follows.
-
-### 2. `@tutor` summon
-
-In `CourseChat.send`, after a successful insert, detect `@tutor` (case-insensitive) in the message and:
-- Look up the course's tutor user IDs from `quizzes.tutor_id` for that course (already queried elsewhere in the component — reuse).
-- Insert a notification row per tutor (table `notifications` with `type = 'course_mention'`, `link = /courses/<id>?tab=discussion`, message snippet, `from_user_id = current user`). Also fire the existing in-app toast realtime channel if one is in use.
-- Show a small inline hint chip under the composer: "Tip: type `@tutor` to call the tutor, `@AI` to ask AI."
-
-The tutor receives it in the existing notifications bell. No email — just in-app.
-
-### 3. Composer affordance
-
-Add two small ghost buttons next to the send button: `@tutor` and `@AI`. Tapping inserts the token into the textarea at the cursor. This makes the feature discoverable on mobile (370px viewport) where users won't think to type the mention.
-
-### 4. Visibility on the course page
-
-On `CourseHub` and `StudyHubCourse`, ensure the Discussion tab/section is visible to all visitors (no enrollment check around the `<CourseChat>` mount). If a wrapper currently hides it, drop the guard.
+### 3. Friendlier error toast
+The current insert-failure toast says "You need to enroll in this course (or be its tutor) to chat here." Since chat is now open to all signed-in students, switch it to: "Couldn't send message. Please sign in and try again." Keep the original text restore so the typed message isn't lost.
 
 ## Out of scope
+- No RLS changes (write policy already allows any signed-in user on an active course).
+- No new "My messages" history page — messages already persist and are visible whenever you reopen the course.
+- No edge function changes.
 
-- No schema changes to `course_chat_messages` (already supports everything needed).
-- No paid/escrow logic; calling the tutor is free and best-effort.
-- No email notifications.
-- No changes to the `course-ai-reply` edge function.
-
-## Technical notes
-
-- Migration: `CREATE OR REPLACE FUNCTION public.is_course_participant` with the relaxed body. Security definer, search_path = public, returns boolean. No table/grant changes.
-- Notification insert reuses the existing `notifications` table pattern used elsewhere in the app (will verify column names before writing).
-- Mention detection: simple regex `/@tutor\b/i` and existing `/@AI\b/i`.
-- All UI work stays inside `src/components/course/CourseChat.tsx`; no new routes.
+## Verification
+Reload a course → open Discussion → type and send → message appears immediately and remains after a hard refresh.
