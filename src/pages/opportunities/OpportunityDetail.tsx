@@ -9,6 +9,16 @@ import { OpportunityListItem } from "@/components/opportunities/OpportunityCard"
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 
+function isSafeHttpUrl(url: string | null | undefined): url is string {
+  if (!url) return false;
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" || u.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
 export default function OpportunityDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -130,7 +140,7 @@ export default function OpportunityDetail() {
 
           {/* Action row */}
           <div className="flex flex-wrap items-center gap-2 mb-6">
-            {op.apply_url && (
+            {isSafeHttpUrl(op.apply_url) && (
               <a href={op.apply_url} target="_blank" rel="noopener noreferrer"
                  className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm shadow-md shadow-amber-200/60">
                 Apply now <ExternalLink className="h-4 w-4" />
