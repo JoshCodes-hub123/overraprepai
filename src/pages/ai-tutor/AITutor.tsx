@@ -7,6 +7,7 @@ import { SEO } from "@/components/seo/SEO";
 import {
   ArrowUp, GraduationCap, Copy, ThumbsUp, ThumbsDown, Check,
   Plus, MessageSquare, Trash2, Menu, BookOpen, Target, Heart, Briefcase,
+  Search, Pin, PinOff, Pencil, FileDown, FileJson, MoreHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
@@ -16,9 +17,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useAITutorThreads, type TutorPersona } from "@/hooks/useAITutorThreads";
 import { useAITutorMessages } from "@/hooks/useAITutorMessages";
+import { exportThreadAsJSON, exportThreadAsPDF } from "@/lib/exportAITutorThread";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
@@ -81,7 +89,10 @@ const AITutor = () => {
   const navRole = (primaryRole === "admin" || primaryRole === "tutor" ? primaryRole : "student") as
     "admin" | "tutor" | "student";
 
-  const { threads, createThread, deleteThread, renameThread, touchThread } = useAITutorThreads();
+  const {
+    threads, createThread, deleteThread, renameThread, touchThread,
+    togglePin, markRead,
+  } = useAITutorThreads();
   const { messages: dbMessages, insertMessage, updateMessage, setLocalMessages } =
     useAITutorMessages(routeThreadId ?? null);
 
@@ -98,6 +109,9 @@ const AITutor = () => {
   const [loading, setLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [renameTarget, setRenameTarget] = useState<{ id: string; title: string } | null>(null);
+  const [renameValue, setRenameValue] = useState("");
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -116,6 +130,11 @@ const AITutor = () => {
   }, [localMessages.length, stream?.content]);
 
   useEffect(() => { inputRef.current?.focus(); }, [routeThreadId]);
+
+  // Mark active thread as read whenever it's opened or new messages arrive
+  useEffect(() => {
+    if (routeThreadId) markRead(routeThreadId);
+  }, [routeThreadId, dbMessages.length, markRead]);
 
   const greetingName = (profile?.full_name || "").trim().split(" ")[0];
   const greeting = (() => {
@@ -156,6 +175,43 @@ const AITutor = () => {
     if (id === routeThreadId) {
       const next = threads.find((t) => t.id !== id);
       navigate(next ? `/ai-tutor/${next.id}` : "/ai-tutor");
+    }
+  };
+
+  const openRename = (id: string, current: string) => {
+    setRenameTarget({ id, title: current });
+    setRenameValue(current);
+  };
+
+  const submitRename = async () => {
+    if (!renameTarget) return;
+    const v = renameValue.trim();
+    if (!v) { toast.error("Title can't be empty"); return; }
+    await renameThread(renameTarget.id, v);
+    setRenameTarget(null);
+    toast.success("Chat renamed");
+  };
+
+  const handleExportThread = async (threadId: string, format: "pdf" | "json") => {
+    const t = threads.find((x) => x.id === threadId);
+    if (!t) return;
+    try {
+      let msgs = dbMessages;
+      if (threadId !== routeThreadId) {
+        const { data } = await supabase
+          .from("ai_tutor_messages")
+          .select("role, content, created_at")
+          .eq("thread_id", threadId)
+          .order("created_at", { ascending: true });
+        msgs = (data ?? []) as any;
+      }
+      if (!msgs.length) { toast.error("This chat has no messages yet"); return; }
+      const meta = { id: t.id, title: t.title, persona: t.persona, created_at: t.created_at, updated_at: t.updated_at };
+      if (format === "json") exportThreadAsJSON(meta, msgs as any);
+      else await exportThreadAsPDF(meta, msgs as any);
+      toast.success(`Exported as ${format.toUpperCase()}`);
+    } catch (e: any) {
+      toast.error(e?.message || "Export failed");
     }
   };
 
@@ -301,20 +357,39 @@ const AITutor = () => {
   const showSuggestions = dbMessages.length === 0 && !stream && !loading;
   const suggestions = SUGGESTIONS_BY_PERSONA[persona];
 
-  // Group threads by date bucket
+  // Filter by search, then group: pinned first, then by date bucket
+  const filteredThreads = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return threads;
+    return threads.filter((t) => {
+      const inTitle = t.title?.toLowerCase().includes(q);
+      const inPreview = t.last_message_preview?.toLowerCase().includes(q);
+      const inPersona = t.persona?.toLowerCase().includes(q);
+      return inTitle || inPreview || inPersona;
+    });
+  }, [threads, searchQuery]);
+
   const grouped = useMemo(() => {
+    const pinned: typeof threads = [];
     const today: typeof threads = [];
     const week: typeof threads = [];
     const older: typeof threads = [];
     const now = Date.now();
-    for (const t of threads) {
+    for (const t of filteredThreads) {
+      if (t.pinned) { pinned.push(t); continue; }
       const age = now - new Date(t.updated_at).getTime();
       if (age < 24 * 3600 * 1000) today.push(t);
       else if (age < 7 * 24 * 3600 * 1000) week.push(t);
       else older.push(t);
     }
-    return { today, week, older };
-  }, [threads]);
+    return { pinned, today, week, older };
+  }, [filteredThreads]);
+
+  const isUnread = (t: typeof threads[number]) => {
+    if (!t.last_message_at || t.last_message_role !== "assistant") return false;
+    if (t.id === routeThreadId) return false;
+    return new Date(t.last_message_at).getTime() > new Date(t.last_read_at).getTime();
+  };
 
   const Sidebar = (
     <aside className="flex flex-col h-full bg-muted/30 border-r border-border/60 w-72">
@@ -360,23 +435,49 @@ const AITutor = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-4">
+        {/* Search */}
+        <div className="relative px-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" strokeWidth={2.2} />
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search chats…"
+            className="w-full bg-background/70 border border-border/60 rounded-lg pl-8 pr-3 py-2 text-[12.5px] focus:outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition"
+          />
+        </div>
+
         {threads.length === 0 && (
           <div className="text-center text-xs text-muted-foreground py-10 px-4">
             No saved chats yet. Start one — it'll appear here and stay synced across devices.
           </div>
         )}
-        {(["today", "week", "older"] as const).map((bucket) => {
+        {threads.length > 0 && filteredThreads.length === 0 && (
+          <div className="text-center text-xs text-muted-foreground py-10 px-4">
+            No chats match "{searchQuery}".
+          </div>
+        )}
+        {(["pinned", "today", "week", "older"] as const).map((bucket) => {
           const list = grouped[bucket];
           if (list.length === 0) return null;
-          const label = bucket === "today" ? "Today" : bucket === "week" ? "Past 7 days" : "Older";
+          const label =
+            bucket === "pinned" ? "Pinned" :
+            bucket === "today" ? "Today" :
+            bucket === "week" ? "Past 7 days" : "Older";
           return (
             <div key={bucket}>
-              <div className="text-[10px] font-bold tracking-[0.18em] text-muted-foreground uppercase mb-1 px-2">{label}</div>
+              <div className="text-[10px] font-bold tracking-[0.18em] text-muted-foreground uppercase mb-1 px-2 flex items-center gap-1.5">
+                {bucket === "pinned" && <Pin className="w-3 h-3" strokeWidth={2.4} />}
+                {label}
+              </div>
               <div className="space-y-0.5">
                 {list.map((t) => {
                   const active = t.id === routeThreadId;
                   const p = PERSONAS.find((x) => x.id === t.persona) ?? PERSONAS[0];
                   const Icon = p.icon;
+                  const unread = isUnread(t);
+                  const previewLabel = t.last_message_preview
+                    ? (t.last_message_role === "user" ? "You: " : "") + t.last_message_preview
+                    : formatDistanceToNow(new Date(t.updated_at), { addSuffix: true });
                   return (
                     <div
                       key={t.id}
@@ -389,13 +490,28 @@ const AITutor = () => {
                         onClick={() => handleSelectThread(t.id)}
                         className="flex-1 min-w-0 flex items-center gap-2 px-2 py-2 text-left"
                       >
-                        <Icon className={cn("w-3.5 h-3.5 shrink-0", active ? "text-primary" : "text-muted-foreground")} strokeWidth={2.2} />
+                        <div className="relative shrink-0">
+                          <Icon className={cn("w-3.5 h-3.5", active ? "text-primary" : "text-muted-foreground")} strokeWidth={2.2} />
+                          {unread && (
+                            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-primary ring-2 ring-muted/30" />
+                          )}
+                        </div>
                         <div className="min-w-0 flex-1">
-                          <div className={cn("text-[13px] truncate", active ? "text-foreground font-semibold" : "text-foreground/80")}>
-                            {t.title}
+                          <div className="flex items-center gap-1.5">
+                            <div className={cn(
+                              "text-[13px] truncate flex-1",
+                              active ? "text-foreground font-semibold" :
+                              unread ? "text-foreground font-semibold" : "text-foreground/80"
+                            )}>
+                              {t.title}
+                            </div>
+                            {t.pinned && <Pin className="w-2.5 h-2.5 text-primary shrink-0" strokeWidth={2.6} />}
                           </div>
-                          <div className="text-[10px] text-muted-foreground truncate">
-                            {formatDistanceToNow(new Date(t.updated_at), { addSuffix: true })}
+                          <div className={cn(
+                            "text-[11px] truncate",
+                            unread ? "text-foreground/70 font-medium" : "text-muted-foreground"
+                          )}>
+                            {previewLabel}
                           </div>
                         </div>
                       </button>
@@ -403,17 +519,33 @@ const AITutor = () => {
                         <DropdownMenuTrigger asChild>
                           <button
                             aria-label="Chat options"
-                            className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition"
+                            className="opacity-60 md:opacity-0 group-hover:opacity-100 focus:opacity-100 p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/5 transition"
                           >
-                            <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
+                            <MoreHorizontal className="w-3.5 h-3.5" strokeWidth={2.2} />
                           </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onClick={() => togglePin(t.id, !t.pinned)}>
+                            {t.pinned
+                              ? <><PinOff className="w-4 h-4 mr-2" /> Unpin chat</>
+                              : <><Pin className="w-4 h-4 mr-2" /> Pin chat</>}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openRename(t.id, t.title)}>
+                            <Pencil className="w-4 h-4 mr-2" /> Rename
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleExportThread(t.id, "pdf")}>
+                            <FileDown className="w-4 h-4 mr-2" /> Export as PDF
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleExportThread(t.id, "json")}>
+                            <FileJson className="w-4 h-4 mr-2" /> Export as JSON
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
                             onClick={() => handleDeleteThread(t.id)}
                           >
-                            Delete chat
+                            <Trash2 className="w-4 h-4 mr-2" /> Delete chat
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
