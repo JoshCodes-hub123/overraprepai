@@ -1,0 +1,27 @@
+# OverraPrep AI
+
+> AI-powered CBT exam preparation platform for FUTA (Federal University of Technology, Akure) students. Practice past questions, get AI explanations, work with verified tutors, and track mastery toward your exams.
+
+## Pages
+
+- [Home](/website): Product overview, features, testimonials, and FAQ.
+- [Pricing](/pricing): Pro plans and token packs.
+- [Browse Tutors](/tutors): Discover verified FUTA tutors and their quizzes.
+- [Become a Tutor](/apply-tutor): Tutor application and requirements.
+- [Courses](/courses): Course directory for FUTA departments and levels.
+- [Study Hub](/study-hub): Past questions and study packs grouped by course.
+- [Subjects](/subjects): Subject browser across faculties.
+- [Theory Prep](/theory): Theory questions and AI-graded answers.
+- [Survival Kits](/survival-kits): Curated last-minute prep packs.
+- [Strategy](/strategy): Study strategies and exam tactics.
+- [AI Tutor](/ai-tutor): Conversational AI tutor for explanations.
+- [Community](/community): Student community wall and discussions.
+- [Leaderboard](/leaderboard): Weekly student leaderboard.
+- [Opportunities](/opportunities): Scholarships, internships, and events.
+- [Verify Report Card](/verify): Verify an OverraPrep report card.
+- [Install App](/install): Install the OverraPrep PWA on your device.
+
+## Optional
+
+- [Terms](/terms): Terms of service.
+- [Privacy](/privacy): Privacy policy.

@@ -6,4 +6,4 @@ Disallow: /admin
 Disallow: /website
 Disallow: /jamb-intelligence
 
-Sitemap: https://overraprep.com/sitemap.xml
+Sitemap: https://prep-mentor-hub-50.lovable.app/sitemap.xml
