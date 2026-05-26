@@ -508,6 +508,11 @@ export const AnimatedRoutes = () => {
           <Route path="/copilot" element={<PageTransition><CopilotPage /></PageTransition>} />
           <Route path="/tutor/growth" element={<PageTransition><TutorGrowthStudio /></PageTransition>} />
           <Route path="/r/:slug" element={<AffiliateRedirect />} />
+          {/* Friendly aliases — silently send common stale links to the home screen
+              instead of showing a 404 after a reload. */}
+          <Route path="/index" element={<Navigate to="/" replace />} />
+          <Route path="/index.html" element={<Navigate to="/" replace />} />
+          <Route path="/home" element={<Navigate to="/" replace />} />
           <Route
             path="*"
             element={
