@@ -6288,6 +6288,49 @@ export type Database = {
       }
     }
     Functions: {
+      admin_get_school: {
+        Args: { _school_id: string }
+        Returns: {
+          address: string | null
+          admin_notes: string | null
+          approval_letter_url: string | null
+          approval_number: string | null
+          brand_color: string | null
+          cac_document_url: string | null
+          classes_offered: string[] | null
+          created_at: string
+          email: string | null
+          established_year: number | null
+          id: string
+          lga: string | null
+          logo_url: string | null
+          motto: string | null
+          name: string
+          official_email: string | null
+          official_phone: string | null
+          owner_id: string
+          owner_id_url: string | null
+          phone: string | null
+          principal_name: string | null
+          principal_phone: string | null
+          rejection_reason: string | null
+          report_footer: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          social_link: string | null
+          state: string | null
+          status: string
+          student_count: number | null
+          updated_at: string
+          website: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "schools"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_revoke_all_sessions: { Args: { _user_id: string }; Returns: number }
       admin_set_tutor_status: {
         Args: { _reason?: string; _status: string; _user_id: string }
