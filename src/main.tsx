@@ -23,15 +23,34 @@ if (Capacitor.isNativePlatform()) {
 
 // Auto-recover from stale chunk references after a new deploy (PWA cache).
 // When a dynamic import fails because the hashed file no longer exists,
-// reload once to fetch the fresh index.html and chunk map.
-const CHUNK_RELOAD_KEY = "chunk-reload-attempt";
+// reload to fetch the fresh index.html + chunk map. We allow multiple
+// recoveries (cooldown-gated) instead of a one-shot flag so a single
+// flaky CDN response doesn't permanently brick the session.
+const CHUNK_RELOAD_TS_KEY = "chunk-reload-ts";
+const CHUNK_RELOAD_COOLDOWN_MS = 30_000;
 const isChunkLoadError = (msg: string) =>
-  /Failed to fetch dynamically imported module|Importing a module script failed|ChunkLoadError/i.test(msg);
+  /Failed to fetch dynamically imported module|Importing a module script failed|ChunkLoadError|Loading chunk \d+ failed/i.test(msg);
+
+function tryChunkRecoveryReload() {
+  try {
+    const last = Number(sessionStorage.getItem(CHUNK_RELOAD_TS_KEY) ?? 0);
+    if (Date.now() - last < CHUNK_RELOAD_COOLDOWN_MS) return false;
+    sessionStorage.setItem(CHUNK_RELOAD_TS_KEY, String(Date.now()));
+    // Cache-bust the document so the browser refetches index.html (and the
+    // new hashed chunk references inside it) instead of serving a stale copy.
+    const url = new URL(window.location.href);
+    url.searchParams.set("_cb", Date.now().toString(36));
+    window.location.replace(url.toString());
+    return true;
+  } catch {
+    window.location.reload();
+    return true;
+  }
+}
 
 window.addEventListener("error", (e) => {
-  if (e?.message && isChunkLoadError(e.message) && !sessionStorage.getItem(CHUNK_RELOAD_KEY)) {
-    sessionStorage.setItem(CHUNK_RELOAD_KEY, "1");
-    window.location.reload();
+  if (e?.message && isChunkLoadError(e.message)) {
+    if (tryChunkRecoveryReload()) return;
   }
 });
 window.addEventListener("error", (e) => {
@@ -44,10 +63,8 @@ window.addEventListener("error", (e) => {
 });
 window.addEventListener("unhandledrejection", (e) => {
   const msg = String(e?.reason?.message ?? e?.reason ?? "");
-  if (isChunkLoadError(msg) && !sessionStorage.getItem(CHUNK_RELOAD_KEY)) {
-    sessionStorage.setItem(CHUNK_RELOAD_KEY, "1");
-    window.location.reload();
-    return;
+  if (isChunkLoadError(msg)) {
+    if (tryChunkRecoveryReload()) return;
   }
   if (msg) {
     import("@/lib/analytics").then(({ logClientError }) => {

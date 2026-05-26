@@ -6,6 +6,7 @@ import PageTransition from "./PageTransition";
 import { TutorPendingGate } from "@/components/auth/TutorPendingGate";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { RoleRoute } from "@/components/auth/RoleRoute";
+import RouteErrorBoundary from "@/components/system/RouteErrorBoundary";
 import { FEATURES } from "@/config/features";
 import ComingSoon from "@/pages/ComingSoon";
 import { Navigate } from "react-router-dom";
@@ -165,8 +166,9 @@ export const AnimatedRoutes = () => {
   return (
     <AnimatePresence mode="wait" initial={false}>
       <Suspense fallback={<LoadingSpinner />} key={location.pathname}>
-       <TutorPendingGate>
-        <Routes location={location}>
+       <RouteErrorBoundary resetKey={location.pathname}>
+        <TutorPendingGate>
+         <Routes location={location}>
           <Route path="/" element={<PageTransition><Welcome /></PageTransition>} />
           <Route path="/notifications" element={<PageTransition><NotificationsPage /></PageTransition>} />
           <Route path="/website" element={<PageTransition><Index /></PageTransition>} />
@@ -513,8 +515,9 @@ export const AnimatedRoutes = () => {
               </PageTransition>
             }
           />
-        </Routes>
-       </TutorPendingGate>
+         </Routes>
+        </TutorPendingGate>
+       </RouteErrorBoundary>
       </Suspense>
     </AnimatePresence>
   );
