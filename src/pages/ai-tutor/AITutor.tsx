@@ -109,7 +109,19 @@ const AITutor = () => {
   const [loading, setLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const SEARCH_STORAGE_KEY = "ai-tutor:search-query";
+  const [searchQuery, setSearchQuery] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    try { return window.localStorage.getItem(SEARCH_STORAGE_KEY) ?? ""; }
+    catch { return ""; }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (searchQuery) window.localStorage.setItem(SEARCH_STORAGE_KEY, searchQuery);
+      else window.localStorage.removeItem(SEARCH_STORAGE_KEY);
+    } catch { /* ignore quota */ }
+  }, [searchQuery]);
   const [renameTarget, setRenameTarget] = useState<{ id: string; title: string } | null>(null);
   const [renameValue, setRenameValue] = useState("");
 
@@ -208,7 +220,7 @@ const AITutor = () => {
       if (!msgs.length) { toast.error("This chat has no messages yet"); return; }
       const meta = { id: t.id, title: t.title, persona: t.persona, created_at: t.created_at, updated_at: t.updated_at };
       if (format === "json") exportThreadAsJSON(meta, msgs as any);
-      else await exportThreadAsPDF(meta, msgs as any);
+      else await exportThreadAsPDF(meta, msgs as any, { studentName: profile?.full_name ?? null });
       toast.success(`Exported as ${format.toUpperCase()}`);
     } catch (e: any) {
       toast.error(e?.message || "Export failed");
