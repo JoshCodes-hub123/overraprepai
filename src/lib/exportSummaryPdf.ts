@@ -14,6 +14,8 @@ export async function exportSummaryPdf(opts: {
   verified?: boolean;
   matricNo?: string;
   style?: string;
+  /** "download" saves the file (default). "view" opens the PDF in a new browser tab. */
+  mode?: "download" | "view";
 }): Promise<void> {
   const { default: jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "pt", format: "a4" });
@@ -209,5 +211,20 @@ export async function exportSummaryPdf(opts: {
   const safe = (opts.filename || opts.title || "overraprep-notes")
     .replace(/[^\w.\-]+/g, "_")
     .slice(0, 80);
+
+  if (opts.mode === "view") {
+    // Open in a new tab — no download. Works on desktop + most mobile browsers.
+    const blob: Blob = doc.output("blob");
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, "_blank", "noopener,noreferrer");
+    if (!win) {
+      // Popup blocked — fall back to same-tab navigation
+      window.location.href = url;
+    }
+    // Revoke after a delay so the tab has time to load
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    return;
+  }
+
   doc.save(`${safe}.pdf`);
 }
