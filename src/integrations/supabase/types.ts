@@ -4160,6 +4160,83 @@ export type Database = {
         }
         Relationships: []
       }
+      security_audit_findings: {
+        Row: {
+          check_name: string
+          created_at: string
+          detail: string
+          id: string
+          is_new: boolean
+          object_name: string | null
+          object_schema: string | null
+          run_id: string
+          severity: string
+        }
+        Insert: {
+          check_name: string
+          created_at?: string
+          detail: string
+          id?: string
+          is_new?: boolean
+          object_name?: string | null
+          object_schema?: string | null
+          run_id: string
+          severity: string
+        }
+        Update: {
+          check_name?: string
+          created_at?: string
+          detail?: string
+          id?: string
+          is_new?: boolean
+          object_name?: string | null
+          object_schema?: string | null
+          run_id?: string
+          severity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_audit_findings_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "security_audit_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      security_audit_runs: {
+        Row: {
+          created_at: string
+          error: string | null
+          finished_at: string | null
+          high_severity_count: number
+          id: string
+          started_at: string
+          status: string
+          total_findings: number
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          high_severity_count?: number
+          id?: string
+          started_at?: string
+          status?: string
+          total_findings?: number
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          high_severity_count?: number
+          id?: string
+          started_at?: string
+          status?: string
+          total_findings?: number
+        }
+        Relationships: []
+      }
       session_bookings: {
         Row: {
           completed_at: string | null
@@ -6603,6 +6680,10 @@ export type Database = {
         }[]
       }
       my_university: { Args: never; Returns: string }
+      notify_admins_of_new_findings: {
+        Args: { _run_id: string }
+        Returns: number
+      }
       opportunities_needing_reminder: {
         Args: never
         Returns: {
@@ -6661,6 +6742,7 @@ export type Database = {
           id: string
         }[]
       }
+      run_security_audit: { Args: never; Returns: string }
       search_courses_scoped: {
         Args: { _q: string }
         Returns: {
