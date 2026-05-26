@@ -187,14 +187,21 @@ export const CourseChat = ({ courseId, courseCode }: Props) => {
     const parentId = replyTo?.id ?? null;
     setText("");
     setReplyTo(null);
-    const { error } = await supabase
-      .from("course_chat_messages").insert({ course_id: courseId, user_id: user.id, content: body, parent_id: parentId });
+    const { data: inserted, error } = await supabase
+      .from("course_chat_messages")
+      .insert({ course_id: courseId, user_id: user.id, content: body, parent_id: parentId })
+      .select()
+      .single();
     setSending(false);
     if (error) {
-      toast.error("You need to enroll in this course (or be its tutor) to chat here.");
+      toast.error("Couldn't send message. Please sign in and try again.");
       setText(body);
       setReplyTo(replyTo);
       return;
+    }
+    if (inserted) {
+      const m = inserted as Message;
+      setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
     }
     if (/@AI\b/i.test(body)) {
       invokeAI(body.replace(/@AI\b/i, "").trim() || body, parentId);
