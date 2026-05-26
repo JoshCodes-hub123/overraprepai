@@ -40,7 +40,7 @@ export const SEO = ({
     "@type": "WebApplication",
     name: "OverraPrep AI",
     description: DEFAULT_DESCRIPTION,
-    url: DEFAULT_URL,
+    url: SITE_ORIGIN,
     applicationCategory: "EducationalApplication",
     operatingSystem: "Web Browser",
     offers: {
