@@ -6684,6 +6684,10 @@ export type Database = {
         Args: { _run_id: string }
         Returns: number
       }
+      notify_course_tutors: {
+        Args: { _course_id: string; _link: string; _snippet: string }
+        Returns: number
+      }
       opportunities_needing_reminder: {
         Args: never
         Returns: {
