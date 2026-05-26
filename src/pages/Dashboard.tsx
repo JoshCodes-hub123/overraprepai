@@ -28,7 +28,9 @@ const Dashboard = () => {
       navigate("/auth", { replace: true });
       return;
     }
-    if (primaryRole) navigate(ROLE_HOME[primaryRole] || "/student/dashboard", { replace: true });
+    // Default to the student dashboard if the role hasn't resolved yet so
+    // users never get stuck on a blank loading spinner after reload.
+    navigate(ROLE_HOME[primaryRole ?? "student"] || "/student/dashboard", { replace: true });
   }, [user, primaryRole, isLoading, navigate]);
 
   return (
