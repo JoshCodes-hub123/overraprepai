@@ -454,8 +454,18 @@ const AITutor = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search chats…"
-            className="w-full bg-background/70 border border-border/60 rounded-lg pl-8 pr-3 py-2 text-[12.5px] focus:outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition"
+            className="w-full bg-background/70 border border-border/60 rounded-lg pl-8 pr-8 py-2 text-[12.5px] focus:outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition"
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              aria-label="Clear search"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold tracking-wider text-muted-foreground hover:text-primary px-1.5 py-0.5 rounded"
+            >
+              CLR
+            </button>
+          )}
         </div>
 
         {threads.length === 0 && (
