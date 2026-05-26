@@ -11,6 +11,11 @@ export interface AITutorThread {
   persona: TutorPersona;
   created_at: string;
   updated_at: string;
+  pinned: boolean;
+  last_read_at: string;
+  last_message_at: string | null;
+  last_message_preview: string | null;
+  last_message_role: "user" | "assistant" | null;
 }
 
 export function useAITutorThreads() {
@@ -72,5 +77,23 @@ export function useAITutorThreads() {
     });
   }, []);
 
-  return { threads, loading, refresh, createThread, renameThread, deleteThread, touchThread };
+  const togglePin = useCallback(async (id: string, pinned: boolean) => {
+    setThreads((prev) => prev.map((t) => (t.id === id ? { ...t, pinned } : t)));
+    await supabase.from("ai_tutor_threads").update({ pinned }).eq("id", id);
+  }, []);
+
+  const markRead = useCallback(async (id: string) => {
+    const now = new Date().toISOString();
+    setThreads((prev) => prev.map((t) => (t.id === id ? { ...t, last_read_at: now } : t)));
+    await supabase.from("ai_tutor_threads").update({ last_read_at: now }).eq("id", id);
+  }, []);
+
+  const patchLocalThread = useCallback((id: string, patch: Partial<AITutorThread>) => {
+    setThreads((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+  }, []);
+
+  return {
+    threads, loading, refresh, createThread, renameThread, deleteThread,
+    touchThread, togglePin, markRead, patchLocalThread,
+  };
 }
