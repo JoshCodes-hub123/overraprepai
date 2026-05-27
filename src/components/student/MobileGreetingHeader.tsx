@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, Flame, Camera, Loader2, LogOut, GraduationCap } from "lucide-react";
+import { Bell, Flame, Camera, Loader2, LogOut, GraduationCap, Coins } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { LevelSwitcherDialog } from "@/components/student/LevelSwitcherDialog";
 import { useStudentLevel } from "@/hooks/useStudentLevel";
 import { celebrateOncePerDay } from "@/lib/celebrate";
+import { useTokenBalance } from "@/hooks/useTokenBalance";
 
 /**
  * Mobile-first greeting header that mirrors the product mockup:
@@ -26,6 +27,7 @@ export const MobileGreetingHeader = () => {
   const navigate = useNavigate();
   const { user, profile, refreshProfile, signOut } = useAuth();
   const { level } = useStudentLevel();
+  const { balance } = useTokenBalance();
   const [streak, setStreak] = useState<number>(0);
   const [unread, setUnread] = useState<number>(0);
   const [uploading, setUploading] = useState(false);
@@ -248,6 +250,15 @@ export const MobileGreetingHeader = () => {
         >
           <GraduationCap className="h-3.5 w-3.5 text-amber-600" />
           {level ? `${level} Level` : "Set level"}
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate("/wallet")}
+          aria-label={`Tokens: ${balance}`}
+          className="inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full border border-amber-300/70 bg-white text-amber-800 text-[12px] font-semibold shadow-sm hover:bg-amber-50 active:scale-95 transition"
+        >
+          <Coins className="h-3.5 w-3.5 text-amber-600" />
+          <span className="font-extrabold">{balance.toLocaleString()}</span>
         </button>
         <span className="ml-auto text-[11px] text-muted-foreground hidden">Happy {dayName}</span>
       </div>
