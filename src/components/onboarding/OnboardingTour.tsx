@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -72,6 +73,7 @@ const TOUR_STORAGE_KEY = "overraprep_tour_completed";
 export const OnboardingTour = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Check if tour was already completed
@@ -106,6 +108,17 @@ export const OnboardingTour = () => {
   const handleComplete = () => {
     localStorage.setItem(TOUR_STORAGE_KEY, "true");
     setIsVisible(false);
+    // After the tour, send the student to the course picker so the
+    // "Get Started" CTA actually starts something instead of dismissing.
+    try {
+      const onPublicPage =
+        window.location.pathname === "/" ||
+        window.location.pathname.startsWith("/website") ||
+        window.location.pathname.startsWith("/auth");
+      if (!onPublicPage) navigate("/courses");
+    } catch {
+      /* no-op */
+    }
   };
 
   const step = tourSteps[currentStep];
