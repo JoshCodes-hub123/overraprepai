@@ -160,6 +160,7 @@ const AdminSpotlights = lazy(() => import("@/pages/admin/AdminSpotlights"));
 const ActivityFeed = lazy(() => import("@/pages/student/ActivityFeed"));
 const Challenges = lazy(() => import("@/pages/student/Challenges"));
 const AdminChallenges = lazy(() => import("@/pages/admin/AdminChallenges"));
+const StudyMode = lazy(() => import("@/pages/student/StudyMode"));
 import { DashboardSkeleton } from "@/components/student/dashboard/DashboardSkeleton";
 
 export const AnimatedRoutes = () => {
