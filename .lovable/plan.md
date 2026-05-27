@@ -1,94 +1,64 @@
-## Phase 9 — Sub-phasing strategy
+# Phase 9 — Remaining Roadmap
 
-Phase 9 is 12 sections of work. To go deep without shallow coverage, I'll ship it as 4 sub-phases. After each one I'll stop and ask you to approve the next.
+Sub-Phase 9.1 is **DONE** (tutor/admin upload RLS fixes, signed URLs for private buckets, onboarding "Get Started" CTA fix, SmartSummary collapsible + copy + mobile polish, `audio_sessions` table groundwork).
 
-```
-Sub-Phase 9.1  →  Fix-first (urgent)         ← we build this now
-Sub-Phase 9.2  →  Engagement (comments + challenges + welcome polish)
-Sub-Phase 9.3  →  Academic core (Study Mode + Readiness + Smart reminders)
-Sub-Phase 9.4  →  Future-standard (Planner, Countdown, Weakness AI, Mobile-first polish)
-```
+Below is what's still pending, grouped into focused sub-phases. I will ship one at a time and stop for your sign-off between each.
 
 ---
 
-## Sub-Phase 9.1 — Scope (this build)
+## Sub-Phase 9.1b — Audio Learning refactor (NEXT)
+Sections 7 + finish 8.
 
-Covers Sections **5, 4, 7, 8** from your brief.
+- New `AudioPlayerContext` + persistent `MiniPlayer` (portal, bottom of viewport, pause/skip 15s/close, survives navigation)
+- Refactor `/audio` page: large artwork, 48px touch targets, waveform progress, playback-rate chip (0.75/1/1.25/1.5×), swipe-to-skip on mobile
+- "Continue Listening" row backed by `audio_sessions` (auto-save position every 5s)
+- Summary page: add export-to-PDF button (reuse `jsPDF`), final pass on 360/390/414px
+- QA at 360 / 390 / 414 / 768px
 
-### 1. Section 5 — Tutor upload RLS + bucket alignment (CRITICAL)
+## Sub-Phase 9.2 — Community Interaction + Opportunity Engagement
+Sections 1 + 10 (engagement counts).
 
-Problem: tutor uploads fail with `new row violates row-level security policy`.
+- New tables: `opportunity_comments`, `opportunity_reactions`, `material_comments` (lecture-note comments). Tutor-post comments reuse existing `community_post_comments`.
+- Counters on `opportunities`: `view_count`, `comment_count`, `bookmark_count` (triggers).
+- Threaded replies (1 level deep), emoji reactions (👍 ❤️ 🎯 💡 — 4 max, no spam).
+- Realtime subscriptions on Opportunity Hub + Dashboard "Recent Opportunities" strip.
+- Clean academic styling: muted borders, no avatars-on-avatars stacks, no infinite scroll noise.
 
-Root cause from the code:
-- `TutorCourseEditor.tsx` uploads to `lecture-notes` and `course-images` buckets — these were originally admin-only buckets, so storage RLS rejects tutors.
-- `useTutorCurricula.ts` uses `tutor-materials` (correct, scoped to tutor folder), but `TutorCourseEditor` (the course-resources flow students use) was never aligned.
+## Sub-Phase 9.3 — 7-Day Challenges + Badges + Welcome Polish
+Sections 2 + 3.
 
-Fix (migration + small code edit):
-- Mirror the admin upload pattern for tutors: allow authenticated tutors (`has_role(auth.uid(),'tutor')`) to `INSERT/UPDATE/DELETE` in `lecture-notes` and `course-images` **only inside their own `tutor/{auth.uid()}/...` folder**. Public SELECT stays as is.
-- Update `TutorCourseEditor.tsx` upload paths to prefix `tutor/${user.id}/...` so the storage policy passes.
-- Audit & GRANT-check every public-schema table touched by tutor uploads (`tutor_curriculum_materials`, `course_resources`, etc.) — add missing `INSERT/UPDATE/DELETE` policies for tutors mirroring the admin policies, and the matching `GRANT`s.
-- Run `supabase--linter` after the migration; fix any new warnings.
+- Tables: `challenges` (admin-curated + seeded), `challenge_enrollments`, `challenge_progress`, `user_badges`, `badge_definitions`.
+- Seeded set: Consistent Study (7d), Quiz Master (5 quizzes), Flashcard Champion (50 cards), Audio Learner (3 sessions), Early Revision (review before deadline).
+- Admin page `/admin/challenges` (CRUD + activate/deactivate).
+- Student `/challenges` page: enroll, progress ring, claim reward (tokens + badge).
+- Auto-tracking triggers (quiz_attempts → quiz challenge, srs_reviews → flashcard, audio_sessions → audio).
+- Subtle premium login welcome: streak chip + once-per-day soft confetti on streak milestones (3/7/14/30) — uses existing `canvas-confetti`, single burst, gold particles only.
 
-Result: tutors upload PDFs, notes, images, flashcards, quizzes under courses/topics exactly like admins do.
+## Sub-Phase 9.4 — AI Study Mode + Readiness Exam
+Section 6 + Section 11 (AI Planner, Exam Countdown, Weakness Detection).
 
-### 2. Section 4 — "I'm new / Get Started" fix
+- New route `/study-mode/:courseId`: Study tab (materials) → Readiness tab (AI-generated 10-Q exam from course materials via Gemini) → Results tab (strengths, weak topics, recommendations, readiness %).
+- Tables: `readiness_exams`, `readiness_attempts`, `weakness_signals`.
+- AI Planner: weekly plan generation per course (reuses `exam_readiness_suite`).
+- Exam Countdown widget on Dashboard (driven by `courses.exam_date`).
+- Weakness Detection: aggregate from quiz_attempts + readiness_attempts, surface top-3 weak topics on dashboard.
 
-- Audit `MobileWelcome` + `OnboardingTour` + `QuickActions` "Quick Start" tile end-to-end.
-- Repair broken CTAs: every button on the new-user path navigates somewhere meaningful (course picker → first study pack).
-- Persist `profiles.onboarded_at` correctly so the tour doesn't re-trigger.
-- First-time guidance overlay on Dashboard if `onboarded_at IS NULL`: 3-step coachmarks (Pick a course → Open a study pack → Try Overra AI). Uses existing `framer-motion` tour primitives.
+## Sub-Phase 9.5 — Smart Reminders + Mobile Polish + Activity Metrics
+Sections 9 + 10 (rest) + 12.
 
-### 3. Section 7 — Audio Learning polish (mobile-first)
-
-Refactor `/audio` page only — no business-logic change to `text-to-speech` edge function:
-- New sticky **MiniPlayer** that survives navigation (Context + portal), pause/skip/close.
-- Restructure player card: large artwork-style header, larger touch targets (48px), waveform-style progress with scrubbing, 15s skip back/forward, playback-rate chip (0.75× / 1× / 1.25× / 1.5×).
-- "Continue listening" row at the top, sourced from a new `audio_sessions` table (id, user_id, source_text_hash, voice, position_seconds, duration_seconds, title, updated_at).
-- Mobile fit: vertical stack <640px, generous spacing, no horizontal overflow, safe-area padding.
-- Swipe-left/right on player surface = prev/next track (touch handler, no extra dep).
-
-### 4. Section 8 — Summary page polish (mobile-first)
-
-- Audit `Summary.tsx` / summary panel: switch layout to single column on mobile, collapsible `<details>` sections per heading, copy + export-to-PDF buttons in the action bar (reuse `jsPDF`).
-- Typography pass: `prose` sizing tuned for 360–414px viewports, line-height 1.6, generous bottom padding.
-- Stop overflow: replace any fixed-width tables/code with horizontal scroll containers.
-
----
-
-## What this sub-phase does NOT touch
-
-To keep the build deep and safe, these wait for later sub-phases:
-- Comments / opportunity engagement → 9.2
-- 7-day challenges + badges → 9.2
-- Welcome confetti / dopamine motion → 9.2
-- AI Study Mode + Readiness exam → 9.3
-- Smart engagement reminders → 9.3
-- Activity metrics, AI Planner, Exam Countdown, Weakness AI, mobile-app polish pass → 9.4
+- Daily reminder edge function (cron) using existing `notification_preferences` — non-spammy: max 1/day, only if user idle >24h.
+- "Continue where you stopped" card on Dashboard from latest `audio_sessions` / unfinished `quiz_attempts` / open SRS deck.
+- Mobile polish pass: page transitions tuned, larger touch targets on Dashboard tiles, safe-area insets, skeleton loaders standardized.
+- Material/opportunity view tracking → tutor analytics dashboard widget.
 
 ---
 
-## Files I expect to touch in 9.1
+## Technical guardrails (all sub-phases)
+- Every new `public` table: `GRANT` + RLS in same migration.
+- Realtime tables explicitly added to `supabase_realtime` publication.
+- All AI calls via existing `ai-chat` / `ai-quiz-generator` edge fns + Lovable AI Gateway (no new API keys).
+- No new heavy libs — reuse `framer-motion`, `canvas-confetti`, `jsPDF`, `pdfjs-dist`.
+- Run `supabase--linter` after every migration.
 
-Code:
-- `src/pages/tutor/TutorCourseEditor.tsx` (upload path prefix)
-- `src/pages/student/MobileWelcome.tsx`, `src/components/onboarding/OnboardingTour.tsx` (Get Started)
-- `src/pages/Audio.tsx` (or `AudioLearning.tsx`) + new `src/components/audio/MiniPlayer.tsx`, `AudioPlayerContext.tsx`
-- `src/pages/Summary.tsx` / summary components
-- `src/App.tsx` (mount MiniPlayer provider)
-
-Database (one migration):
-- Storage policies for `lecture-notes` and `course-images` (tutor write inside `tutor/{uid}/`)
-- New `audio_sessions` table + RLS + GRANTs
-- Any missing tutor INSERT/UPDATE/DELETE policies on curriculum tables
-
----
-
-## Acceptance checklist for 9.1
-
-- [ ] Tutor can upload a PDF to a course topic without RLS error, and student sees it.
-- [ ] Brand-new user lands on Dashboard, sees 3-step coachmarks, and every CTA navigates correctly.
-- [ ] Audio page passes mobile QA at 360 / 390 / 414 px — no overflow, MiniPlayer persists across routes, position resumes.
-- [ ] Summary page is single-column, collapsible, copy + export work, no horizontal scroll.
-- [ ] `supabase--linter` reports no new warnings introduced by the migration.
-
-After this ships and you confirm, I'll ask you to approve **Sub-Phase 9.2 — Engagement** (comments + opportunity activity + 7-day challenges + welcome dopamine).
+## What I need from you
+Confirm to proceed with **Sub-Phase 9.1b — Audio refactor + MiniPlayer + Continue Listening + Summary PDF export**, or tell me to jump to a different sub-phase first.
