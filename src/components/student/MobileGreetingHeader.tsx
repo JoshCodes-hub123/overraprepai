@@ -9,6 +9,7 @@ import { uploadToBucketWithVerification } from "@/lib/storageUpload";
 import { toast } from "@/hooks/use-toast";
 import { LevelSwitcherDialog } from "@/components/student/LevelSwitcherDialog";
 import { useStudentLevel } from "@/hooks/useStudentLevel";
+import { celebrateOncePerDay } from "@/lib/celebrate";
 
 /**
  * Mobile-first greeting header that mirrors the product mockup:
@@ -70,7 +71,12 @@ export const MobileGreetingHeader = () => {
         .eq("user_id", user.id)
         .eq("is_read", false);
       if (cancelled) return;
-      setStreak(sRes?.data?.current_streak ?? 0);
+      const s = sRes?.data?.current_streak ?? 0;
+      setStreak(s);
+      // Subtle gold burst on milestone days, once per local day per milestone.
+      if ([3, 7, 14, 30, 60, 100].includes(s)) {
+        celebrateOncePerDay(`streak-${s}`, s >= 30 ? "rich" : "soft");
+      }
       setUnread(nRes?.count ?? 0);
     })();
     return () => {
