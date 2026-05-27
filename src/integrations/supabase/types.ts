@@ -354,6 +354,45 @@ export type Database = {
           },
         ]
       }
+      audio_sessions: {
+        Row: {
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          position_seconds: number
+          source_hash: string
+          title: string
+          total_chars: number | null
+          updated_at: string
+          user_id: string
+          voice: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          position_seconds?: number
+          source_hash: string
+          title: string
+          total_chars?: number | null
+          updated_at?: string
+          user_id: string
+          voice?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          position_seconds?: number
+          source_hash?: string
+          title?: string
+          total_chars?: number | null
+          updated_at?: string
+          user_id?: string
+          voice?: string | null
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
