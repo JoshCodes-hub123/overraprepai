@@ -2351,7 +2351,9 @@ export type Database = {
       opportunities: {
         Row: {
           apply_url: string | null
+          bookmark_count: number
           category: Database["public"]["Enums"]["opportunity_category"]
+          comment_count: number
           cover_image_url: string | null
           created_at: string
           deadline: string | null
@@ -2363,10 +2365,13 @@ export type Database = {
           title: string
           university: string | null
           updated_at: string
+          view_count: number
         }
         Insert: {
           apply_url?: string | null
+          bookmark_count?: number
           category: Database["public"]["Enums"]["opportunity_category"]
+          comment_count?: number
           cover_image_url?: string | null
           created_at?: string
           deadline?: string | null
@@ -2378,10 +2383,13 @@ export type Database = {
           title: string
           university?: string | null
           updated_at?: string
+          view_count?: number
         }
         Update: {
           apply_url?: string | null
+          bookmark_count?: number
           category?: Database["public"]["Enums"]["opportunity_category"]
+          comment_count?: number
           cover_image_url?: string | null
           created_at?: string
           deadline?: string | null
@@ -2393,6 +2401,7 @@ export type Database = {
           title?: string
           university?: string | null
           updated_at?: string
+          view_count?: number
         }
         Relationships: []
       }
@@ -2456,6 +2465,83 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "opportunity_bookmarks_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          opportunity_id: string
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          opportunity_id: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          opportunity_id?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_comments_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          opportunity_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          opportunity_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          opportunity_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_reactions_opportunity_id_fkey"
             columns: ["opportunity_id"]
             isOneToOne: false
             referencedRelation: "opportunities"
@@ -6655,6 +6741,10 @@ export type Database = {
         Args: { p_note_id: string }
         Returns: undefined
       }
+      increment_opportunity_view: {
+        Args: { p_opportunity_id: string }
+        Returns: undefined
+      }
       is_chat_member: {
         Args: { _thread_id: string; _user_id: string }
         Returns: boolean
@@ -6742,7 +6832,9 @@ export type Database = {
         Args: { _limit?: number }
         Returns: {
           apply_url: string | null
+          bookmark_count: number
           category: Database["public"]["Enums"]["opportunity_category"]
+          comment_count: number
           cover_image_url: string | null
           created_at: string
           deadline: string | null
@@ -6754,6 +6846,7 @@ export type Database = {
           title: string
           university: string | null
           updated_at: string
+          view_count: number
         }[]
         SetofOptions: {
           from: "*"

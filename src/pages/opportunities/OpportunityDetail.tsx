@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Calendar, ExternalLink, Bookmark, Check, Share2, Building2, MapPin, Award, Sparkles } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
@@ -8,6 +9,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { OpportunityListItem } from "@/components/opportunities/OpportunityCard";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
+import OpportunityComments from "@/components/opportunities/OpportunityComments";
+import OpportunityEngagementBar from "@/components/opportunities/OpportunityEngagementBar";
+import { trackOpportunityView } from "@/hooks/useOpportunityComments";
 
 function isSafeHttpUrl(url: string | null | undefined): url is string {
   if (!url) return false;
@@ -29,6 +33,10 @@ export default function OpportunityDetail() {
   const { data: myApp } = useMyApplicationFor(id);
   const setStatus = useSetApplicationStatus();
   const { data: related = [] } = useOpportunities({ category: op?.category, limit: 4 });
+
+  useEffect(() => {
+    if (op?.id && op.status === "published") trackOpportunityView(op.id);
+  }, [op?.id, op?.status]);
 
   if (isLoading || !op) {
     return (
@@ -165,6 +173,15 @@ export default function OpportunityDetail() {
           <article className="prose prose-sm sm:prose-base prose-neutral max-w-none prose-headings:font-display prose-headings:font-bold prose-a:text-amber-700">
             <ReactMarkdown>{op.description}</ReactMarkdown>
           </article>
+
+          <OpportunityEngagementBar
+            opportunityId={op.id}
+            viewCount={(op as any).view_count ?? 0}
+            commentCount={(op as any).comment_count ?? 0}
+            bookmarkCount={(op as any).bookmark_count ?? 0}
+          />
+
+          <OpportunityComments opportunityId={op.id} />
 
           {/* Application tracker */}
           {user ? (

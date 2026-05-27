@@ -13,14 +13,17 @@ Audited existing audio stack — most pieces already shipped:
 - Summary PDF export via `exportSummaryPdf` already wired in both `AudioLearning.tsx` and `SmartSummary.tsx` ✅
 - Added in this sub-phase: `src/lib/audioSessions.ts` helpers + `globalAudio.ts` now upserts position every 5s + on pause/end → `audio_sessions` table is now actively populated for future Continue Listening features.
 
-## Sub-Phase 9.2 — Community Interaction + Opportunity Engagement
-Sections 1 + 10 (engagement counts).
+## Sub-Phase 9.2 — Opportunity Engagement (DONE)
+Shipped:
+- Migration: `view_count` / `comment_count` / `bookmark_count` counter columns on `opportunities`, auto-bumped via triggers
+- `opportunity_comments` table — threaded (1-level reply), RLS scoped to author + admin delete
+- `opportunity_reactions` table — 1 emoji per user per opp (👍 ❤️ 🎯 💡)
+- RPC `increment_opportunity_view` + per-session dedup in `trackOpportunityView`
+- Realtime publication added for comments + reactions + bookmarks
+- Components: `OpportunityComments`, `OpportunityEngagementBar` wired into `OpportunityDetail`
+- `useOpportunitiesRealtime` invalidator on the Hub list
 
-- New tables: `opportunity_comments`, `opportunity_reactions`, `material_comments` (lecture-note comments). Tutor-post comments reuse existing `community_post_comments`.
-- Counters on `opportunities`: `view_count`, `comment_count`, `bookmark_count` (triggers).
-- Threaded replies (1 level deep), emoji reactions (👍 ❤️ 🎯 💡 — 4 max, no spam).
-- Realtime subscriptions on Opportunity Hub + Dashboard "Recent Opportunities" strip.
-- Clean academic styling: muted borders, no avatars-on-avatars stacks, no infinite scroll noise.
+Deferred to a later pass: material_comments (lecture-note threads) — tutor-post comments already exist via `community_post_comments`.
 
 ## Sub-Phase 9.3 — 7-Day Challenges + Badges + Welcome Polish
 Sections 2 + 3.
