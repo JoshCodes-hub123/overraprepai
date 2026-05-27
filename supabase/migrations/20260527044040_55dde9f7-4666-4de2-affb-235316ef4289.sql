@@ -1,0 +1,2 @@
+CREATE POLICY "Tutors can update own courses" ON public.courses FOR UPDATE TO authenticated USING (has_role(auth.uid(), 'tutor'::app_role) AND created_by = auth.uid()) WITH CHECK (has_role(auth.uid(), 'tutor'::app_role) AND created_by = auth.uid());
+CREATE POLICY "Tutors can delete own courses" ON public.courses FOR DELETE TO authenticated USING (has_role(auth.uid(), 'tutor'::app_role) AND created_by = auth.uid());
