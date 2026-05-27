@@ -1,68 +1,73 @@
-# Phase 9 — Remaining Roadmap
+## Goal
+Knock out 9 connected asks without bloating the app. Two blockers first (upload RLS + Startup Check), then UI restructure, gamification, community wall.
 
-Sub-Phase 9.1 is **DONE** (tutor/admin upload RLS fixes, signed URLs for private buckets, onboarding "Get Started" CTA fix, SmartSummary collapsible + copy + mobile polish, `audio_sessions` table groundwork).
+## 1. Fix course-document upload (BLOCKER)
+Symptom: `new row violates row-level security policy` on Manage → Documents.
+Cause: `lecture_notes` INSERT + `storage.objects` (`lecture-notes` bucket) INSERT both require `has_role(auth.uid(),'tutor'|'admin')`. Tutors approved before the role-grant flow existed have no `user_roles` row, so they fail silently.
+Fix (one migration):
+- Backfill `INSERT INTO user_roles (user_id,'tutor') ... FROM tutor_applications WHERE status='approved'` on conflict do nothing.
+- Broaden both INSERT policies: also accept "user is the course's `created_by`" so any course owner can upload regardless of role-cache state.
+- Same broadening applied to `quizzes`, `flashcards`, `course_images` so all four Manage tabs work.
 
-Below is what's still pending, grouped into focused sub-phases. I will ship one at a time and stop for your sign-off between each.
+## 2. Fix Startup Check
+- Edge fn `startup-check` currently calls `auth.getClaims(token)` (wrong arg). Replace with the shared `requireUser()` helper, then check admin via `user_roles`.
+- Client: only invoke after `isAdmin === true`; surface server error in the alert.
 
----
+## 3. Dashboard restructured by functionality hierarchy (UI only)
+Same components, re-ordered + grouped by "what students actually do first":
+1. TopHeader (greeting + streak + bell + tokens)
+2. **HERO row** — `StudyPackHero` (the one big AI entry point)
+3. **TODAY row** — `DailyMomentumStrip` (new): streak flame · XP today · Hero Quest dots · readiness %
+4. **CONTINUE row** — `PickUpWhereYouLeftOff` + `ContinueLearning`
+5. **POWER FEATURES row** — `KeyFeaturesStrip` redesigned as 3 large gradient cards (Overra AI · Study Hub · Theory Prep) — the "amazing features" the user wants visible
+6. **QUICK ACTIONS** — bento (already good, slight polish)
+7. **EXAM CARD** — `ExamCountdownCard`
+8. **COMMUNITY + OPPORTUNITY + SPOTLIGHT** — kept, but under a single "Beyond study" section header so the page stops feeling flat
+9. Profile completion nudge moved to bottom (only renders when needed)
+Add reusable `<DashboardSectionHeader kicker title cta>` so the page reads like a magazine, plus subtle gold divider bands between groups.
 
-## Sub-Phase 9.1b — Audio Learning refactor (DONE)
-Audited existing audio stack — most pieces already shipped:
-- `MiniPlayerBar` portal (mounted in `App.tsx`) — pause/seek/close, survives navigation ✅
-- `AudioPlayerCard` (664 LOC) — large artwork, waveform, voice/speed/ambient sheets, bookmarks ✅
-- Summary PDF export via `exportSummaryPdf` already wired in both `AudioLearning.tsx` and `SmartSummary.tsx` ✅
-- Added in this sub-phase: `src/lib/audioSessions.ts` helpers + `globalAudio.ts` now upserts position every 5s + on pause/end → `audio_sessions` table is now actively populated for future Continue Listening features.
+## 4. Global Community Wall
+- New page `/community` (replace current discussion list as the default tab) — a single global feed where any signed-in student in the same university can post text/image, like, and reply. No "start a discussion" gate.
+- Realtime via Supabase `community_posts` + `community_post_likes` + `community_post_replies` (single new migration with GRANTs + RLS scoped by `university_id`).
+- Existing structured community/team pages remain at `/community/teams` etc.
+- Look: large hero "FUTA is talking…" header, post composer pinned top (auto-grow textarea, image attach), infinite scroll, gold accents, soft motion on new posts.
 
-## Sub-Phase 9.2 — Opportunity Engagement (DONE)
-Shipped:
-- Migration: `view_count` / `comment_count` / `bookmark_count` counter columns on `opportunities`, auto-bumped via triggers
-- `opportunity_comments` table — threaded (1-level reply), RLS scoped to author + admin delete
-- `opportunity_reactions` table — 1 emoji per user per opp (👍 ❤️ 🎯 💡)
-- RPC `increment_opportunity_view` + per-session dedup in `trackOpportunityView`
-- Realtime publication added for comments + reactions + bookmarks
-- Components: `OpportunityComments`, `OpportunityEngagementBar` wired into `OpportunityDetail`
-- `useOpportunitiesRealtime` invalidator on the Hub list
+## 5. Comments under every opportunity section
+- Reuse `OpportunityComments` pattern. Generalise into `EntityComments({entity_type, entity_id})` backed by new `entity_comments` table (RLS: anyone authenticated reads, only author edits/deletes, admins moderate).
+- Drop it under: each opportunity section/sub-tab, announcements detail, spotlight detail, fresh-courses preview. One component, many mounts.
 
-Deferred to a later pass: material_comments (lecture-note threads) — tutor-post comments already exist via `community_post_comments`.
+## 6. 7-Day Hero Quest (gamified weekly loop)
+- Migration: `weekly_quests` (auto-generated per user every Monday) with 7 daily goals (quiz, flashcard, audio, theory, review, share, login). `weekly_quest_progress` row per goal.
+- Cron edge fn `weekly-quest-reset` (Mon 00:00 UTC) — uses `pg_cron` row or `supabase functions schedule`.
+- `HeroQuestCard` on dashboard: 7 glowing dots, day name, "Be the hero of your week" copy. Completing day 7 → animated cape + adds "Hero of the Week" badge to existing `badges` table → confetti.
+- New `/student/quest` page with detail + history.
 
-## Sub-Phase 9.3 — 7-Day Challenges + Badges + Welcome Polish (DONE)
-Shipped:
-- Tables: `challenges`, `challenge_enrollments`, `challenge_progress`, `user_badges`, `badge_definitions` (+ GRANT + RLS)
-- Seeded 5 challenges + 5 matching badges (Consistent Scholar / Quiz Master / Flashcard Champion / Audio Learner / Early Reviser)
-- Auto-tracking triggers wired: `quiz_attempts` → quizzes + study_days, `srs_reviews` → flashcards, `audio_sessions` → audio_sessions
-- SECURITY DEFINER RPC `bump_challenge_progress` clamps to `goal_target` + marks `completed`
-- New route `/challenges` (student): enroll, progress bar, claim reward (token amount shown, badge awarded into `user_badges`), gold confetti burst on claim
-- New route `/admin/challenges`: full CRUD, activate/pause toggle
-- Streak chip in mobile greeting now taps to `/challenges` and fires a subtle gold confetti once per day on milestone streaks (3/7/14/30/60/100) via new `src/lib/celebrate.ts` (`canvas-confetti`, respects `prefers-reduced-motion`)
+## 7. Login celebration (dopamine)
+- `LoginCelebration` overlay fired once per session by `AuthProvider` post-signin:
+  - Confetti gold burst (reuse `celebrateGold`)
+  - Big animated "Welcome back, {firstName} 🔥 Day {streak}!"
+  - Auto-dismiss 1.4s, reduced-motion respected
+- First login of the day → richer burst + "+10 XP daily login" toast (writes to existing xp table) + haptic on native.
+- Streak-day milestones (3, 7, 14, 30) trigger a unique medal animation.
 
-## Sub-Phase 9.4 — AI Study Mode + Readiness Exam (DONE)
-Shipped:
-- Tables: `readiness_exams`, `readiness_attempts`, `weakness_signals` (+ GRANT + RLS, user-scoped)
-- Trigger `fanout_readiness_weaknesses` fans out missed topics from each completed attempt into `weakness_signals` (miss_count bumped on conflict)
-- Edge functions: `readiness-exam-generate` (pulls public study_materials + tutor curriculum content_text, asks Gemini 3 Flash for 10 MCQs with per-question `topic`, persists exam, returns sanitized client copy) and `readiness-exam-grade` (computes readiness %, strengths, top-5 weaknesses, AI-curated 3 recommendations with safe fallback)
-- New route `/study-mode/:courseId`: Study tab (links to Course Hub / Study Hub / PQ Intelligence + Start exam CTA) → Readiness tab (sticky submit bar, gold-accented option buttons) → Results tab (readiness % with tone verdict, focus topics, strengths chips, AI study plan)
-- `ExamCountdownCard` (driven by active `exam_goals` row) added to Dashboard above key features; surfaces top 3 weakness chips when present, links to `/exams`
-- `useReadiness.ts` hooks: latest attempt, weakness signals, active exam goal
+## 8. Study Mode → AI Readiness Exam
+- `StudyMode.tsx` already exists; expose it from `CourseHub` as a new "Study Mode" tab scoped to that course.
+- Flow: read materials → "I'm ready, test me" CTA → calls existing `readiness-exam-generate` → 10 mixed Qs in CBT-style runner → `readiness-exam-grade` returns score + topic breakdown + AI feedback.
+- Persist to `readiness_attempts` so `ExamCountdownCard` and the new DailyMomentumStrip can show "Course readiness: 78%".
 
-Deferred: weekly AI Planner generation reusing `exam_readiness_suite` (existing suite already covers this), and a cross-source weakness aggregator from `quiz_attempts` (current dashboard widget already reads `weakness_signals` populated by readiness attempts).
+## 9. "I'm New — Get Started" works end-to-end
+- Audit `/start/persona → /start/path → /start/university → /start/faculty → /start/department → /start/level → /start/product` chain.
+- Fix any dead-end (saving partial choices to `localStorage` + `profiles` on each step so a refresh resumes).
+- Final step → routes straight to `/student/dashboard` with `onboardingComplete=true`, triggering the login celebration.
 
-## Sub-Phase 9.5 — Smart Reminders + Mobile Polish + Activity Metrics
-Shipped:
-- New `PickUpWhereYouLeftOff` card on the Student Dashboard (above Key Features). Surfaces the most recent unfinished audio session (only when >10s played and <95% done) and the most recent in-progress `quiz_attempt`. Two-tile layout with gold (audio → `/audio-learning`) and emerald (quiz → `/quiz/:id`) tones; component renders nothing when both are empty so the dashboard stays calm.
+## Out of scope (call out)
+- No new payment tiers, no new AI models, no LiveKit changes.
+- Existing pages (challenges, leaderboards, badges, referrals) reused — not rebuilt.
 
-Deferred (already covered or out of scope for now):
-- Daily reminder cron — existing `streak-reminders` edge function already covers this with one-per-day cadence based on `study_streaks`.
-- Mobile polish pass — Phase 9 dashboards already use safe-area insets (`pb-24 md:pb-12`), `PullToRefresh`, and consistent skeletons; no concrete regressions left to address.
-- Material/opportunity view-tracking widget — opportunities already track views via 9.2; tutor-side aggregation for study materials needs a separate counter migration and was descoped to keep the surface uncluttered.
+## Technical summary
+- Migrations: (a) RLS fix + role backfill for `lecture_notes`/`quizzes`/`flashcards`/`course_images` + storage `lecture-notes` bucket; (b) `weekly_quests` + `weekly_quest_progress`; (c) `entity_comments`; (d) `community_posts` + `community_post_likes` + `community_post_replies` with realtime + GRANTs.
+- Edge fns: fix `startup-check` auth; new `weekly-quest-reset` cron.
+- Frontend additions: `DashboardSectionHeader`, `DailyMomentumStrip`, `HeroQuestCard`, `LoginCelebration`, `EntityComments`, `CommunityWall`, `CourseHub` Study Mode tab, restructured `StudentDashboard` order.
+- Frontend edits: `KeyFeaturesStrip` (3 hero gradient cards), `QuickActionsGrid` (subtle polish), `Ambassadors`/start flow audit.
 
----
-
-## Technical guardrails (all sub-phases)
-- Every new `public` table: `GRANT` + RLS in same migration.
-- Realtime tables explicitly added to `supabase_realtime` publication.
-- All AI calls via existing `ai-chat` / `ai-quiz-generator` edge fns + Lovable AI Gateway (no new API keys).
-- No new heavy libs — reuse `framer-motion`, `canvas-confetti`, `jsPDF`, `pdfjs-dist`.
-- Run `supabase--linter` after every migration.
-
-## What I need from you
-Confirm to proceed with **Sub-Phase 9.1b — Audio refactor + MiniPlayer + Continue Listening + Summary PDF export**, or tell me to jump to a different sub-phase first.
+Approve to build, or want me to split into Build A (blockers 1+2 + dashboard restructure 3) and Build B (community + gamification + study mode)?
