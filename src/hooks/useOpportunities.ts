@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,6 +19,27 @@ export interface Opportunity {
   university: string | null;
   status: "draft" | "published" | "archived";
   created_at: string;
+  view_count?: number;
+  comment_count?: number;
+  bookmark_count?: number;
+}
+
+/** Subscribe a component to realtime invalidation for opportunities/comments/bookmarks. */
+export function useOpportunitiesRealtime() {
+  const qc = useQueryClient();
+  useEffect(() => {
+    const ch = supabase
+      .channel("opportunities-feed")
+      .on("postgres_changes", { event: "*", schema: "public", table: "opportunities" }, () => {
+        qc.invalidateQueries({ queryKey: ["opportunities"] });
+        qc.invalidateQueries({ queryKey: ["opportunity"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "opportunity_bookmarks" }, () => {
+        qc.invalidateQueries({ queryKey: ["opportunity-bookmarks"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [qc]);
 }
 
 export function useOpportunities(filters?: { category?: OpportunityCategory; limit?: number }) {
