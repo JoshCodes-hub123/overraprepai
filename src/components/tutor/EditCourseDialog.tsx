@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { LevelSelect, levelToDb, dbToLevel } from "@/components/shared/LevelSelect";
+import { LevelSelect, levelToDb, levelFromDb } from "@/components/shared/LevelSelect";
 
 export interface EditableCourse {
   id: string;
@@ -48,7 +48,7 @@ export function EditCourseDialog({ open, onOpenChange, course, onSuccess }: Prop
       setName(course.name);
       setDepartment(course.department ?? "");
       setDescription(course.description ?? "");
-      setLevel(dbToLevel ? dbToLevel(course.level) : (course.level ?? "ALL"));
+      setLevel(levelFromDb(course.level));
       setIsActive(course.is_active);
     }
   }, [course]);
