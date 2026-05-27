@@ -11,6 +11,7 @@ import { CompleteProfileCard } from "@/components/student/CompleteProfileCard";
 import { StudyPackHero } from "@/components/student/StudyPackHero";
 import { CommandPalette, useCommandPaletteHotkey } from "@/components/student/CommandPalette";
 import { ContinueLearning } from "@/components/student/ContinueLearning";
+import { PickUpWhereYouLeftOff } from "@/components/student/PickUpWhereYouLeftOff";
 import { TopHeader } from "@/components/student/dashboard/TopHeader";
 import { QuickActionsGrid } from "@/components/student/dashboard/QuickActionsGrid";
 import { KeyFeaturesStrip } from "@/components/student/dashboard/KeyFeaturesStrip";
@@ -69,6 +70,9 @@ const StudentDashboard = () => {
 
             {/* Exam countdown — only renders when an active exam goal exists */}
             <ExamCountdownCard />
+
+            {/* Pick up where you left off — unfinished audio / quiz */}
+            <PickUpWhereYouLeftOff key={`pickup-${refreshKey}`} />
 
             {/* Key features spotlight — Overra AI, Study Hub, Theory Prep */}
             <KeyFeaturesStrip />

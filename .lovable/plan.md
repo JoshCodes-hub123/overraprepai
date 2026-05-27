@@ -47,12 +47,13 @@ Shipped:
 Deferred: weekly AI Planner generation reusing `exam_readiness_suite` (existing suite already covers this), and a cross-source weakness aggregator from `quiz_attempts` (current dashboard widget already reads `weakness_signals` populated by readiness attempts).
 
 ## Sub-Phase 9.5 — Smart Reminders + Mobile Polish + Activity Metrics
-Sections 9 + 10 (rest) + 12.
+Shipped:
+- New `PickUpWhereYouLeftOff` card on the Student Dashboard (above Key Features). Surfaces the most recent unfinished audio session (only when >10s played and <95% done) and the most recent in-progress `quiz_attempt`. Two-tile layout with gold (audio → `/audio-learning`) and emerald (quiz → `/quiz/:id`) tones; component renders nothing when both are empty so the dashboard stays calm.
 
-- Daily reminder edge function (cron) using existing `notification_preferences` — non-spammy: max 1/day, only if user idle >24h.
-- "Continue where you stopped" card on Dashboard from latest `audio_sessions` / unfinished `quiz_attempts` / open SRS deck.
-- Mobile polish pass: page transitions tuned, larger touch targets on Dashboard tiles, safe-area insets, skeleton loaders standardized.
-- Material/opportunity view tracking → tutor analytics dashboard widget.
+Deferred (already covered or out of scope for now):
+- Daily reminder cron — existing `streak-reminders` edge function already covers this with one-per-day cadence based on `study_streaks`.
+- Mobile polish pass — Phase 9 dashboards already use safe-area insets (`pb-24 md:pb-12`), `PullToRefresh`, and consistent skeletons; no concrete regressions left to address.
+- Material/opportunity view-tracking widget — opportunities already track views via 9.2; tutor-side aggregation for study materials needs a separate counter migration and was descoped to keep the surface uncluttered.
 
 ---
 
