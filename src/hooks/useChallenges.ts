@@ -136,24 +136,12 @@ export const useClaimReward = () => {
       challenge: Challenge;
     }) => {
       if (!user?.id) throw new Error("Sign in");
-      // Mark enrollment claimed
-      const { error: upErr } = await (supabase as any)
-        .from("challenge_enrollments")
-        .update({ status: "claimed", claimed_at: new Date().toISOString() })
-        .eq("id", enrollment.id)
-        .eq("user_id", user.id);
-      if (upErr) throw upErr;
-
-      // Award badge if any (ignore duplicate)
-      if (challenge.badge_slug) {
-        await (supabase as any)
-          .from("user_badges")
-          .insert({
-            user_id: user.id,
-            badge_slug: challenge.badge_slug,
-            source: `challenge:${challenge.slug}`,
-          });
-      }
+      // Server-side validated claim: marks enrollment claimed and awards
+      // the badge only if the challenge was actually completed.
+      const { error } = await (supabase as any).rpc("claim_challenge_reward", {
+        _enrollment_id: enrollment.id,
+      });
+      if (error) throw error;
       return challenge;
     },
     onSuccess: () => {
