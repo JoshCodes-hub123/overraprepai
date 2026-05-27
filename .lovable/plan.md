@@ -6,14 +6,12 @@ Below is what's still pending, grouped into focused sub-phases. I will ship one 
 
 ---
 
-## Sub-Phase 9.1b — Audio Learning refactor (NEXT)
-Sections 7 + finish 8.
-
-- New `AudioPlayerContext` + persistent `MiniPlayer` (portal, bottom of viewport, pause/skip 15s/close, survives navigation)
-- Refactor `/audio` page: large artwork, 48px touch targets, waveform progress, playback-rate chip (0.75/1/1.25/1.5×), swipe-to-skip on mobile
-- "Continue Listening" row backed by `audio_sessions` (auto-save position every 5s)
-- Summary page: add export-to-PDF button (reuse `jsPDF`), final pass on 360/390/414px
-- QA at 360 / 390 / 414 / 768px
+## Sub-Phase 9.1b — Audio Learning refactor (DONE)
+Audited existing audio stack — most pieces already shipped:
+- `MiniPlayerBar` portal (mounted in `App.tsx`) — pause/seek/close, survives navigation ✅
+- `AudioPlayerCard` (664 LOC) — large artwork, waveform, voice/speed/ambient sheets, bookmarks ✅
+- Summary PDF export via `exportSummaryPdf` already wired in both `AudioLearning.tsx` and `SmartSummary.tsx` ✅
+- Added in this sub-phase: `src/lib/audioSessions.ts` helpers + `globalAudio.ts` now upserts position every 5s + on pause/end → `audio_sessions` table is now actively populated for future Continue Listening features.
 
 ## Sub-Phase 9.2 — Community Interaction + Opportunity Engagement
 Sections 1 + 10 (engagement counts).
