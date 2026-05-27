@@ -112,7 +112,7 @@ const CourseHub = () => {
   });
 
   const canManage = useMemo(
-    () => !!user && (primaryRole === "admin" || (primaryRole === "tutor" && course?.created_by === user.id)),
+    () => !!user && (primaryRole === "admin" || primaryRole === "tutor"),
     [user, primaryRole, course],
   );
 
