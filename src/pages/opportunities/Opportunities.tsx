@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Bookmark } from "lucide-react";
 import { SEO } from "@/components/seo/SEO";
-import { useOpportunities, useOpportunityBookmarks, type OpportunityCategory } from "@/hooks/useOpportunities";
+import { useOpportunities, useOpportunityBookmarks, useOpportunitiesRealtime, type OpportunityCategory } from "@/hooks/useOpportunities";
 import { OpportunityCard } from "@/components/opportunities/OpportunityCard";
 import RecommendedOpportunities from "@/components/opportunities/RecommendedOpportunities";
 import { SuggestOpportunityDialog } from "@/components/opportunities/SuggestOpportunityDialog";
@@ -18,6 +18,7 @@ const CATEGORIES: { id: OpportunityCategory | "all"; label: string }[] = [
 ];
 
 export default function Opportunities() {
+  useOpportunitiesRealtime();
   const [cat, setCat] = useState<OpportunityCategory | "all">("all");
   const [savedOnly, setSavedOnly] = useState(false);
   const { data: items = [], isLoading } = useOpportunities(
