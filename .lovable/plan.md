@@ -35,14 +35,16 @@ Shipped:
 - New route `/admin/challenges`: full CRUD, activate/pause toggle
 - Streak chip in mobile greeting now taps to `/challenges` and fires a subtle gold confetti once per day on milestone streaks (3/7/14/30/60/100) via new `src/lib/celebrate.ts` (`canvas-confetti`, respects `prefers-reduced-motion`)
 
-## Sub-Phase 9.4 — AI Study Mode + Readiness Exam
-Section 6 + Section 11 (AI Planner, Exam Countdown, Weakness Detection).
+## Sub-Phase 9.4 — AI Study Mode + Readiness Exam (DONE)
+Shipped:
+- Tables: `readiness_exams`, `readiness_attempts`, `weakness_signals` (+ GRANT + RLS, user-scoped)
+- Trigger `fanout_readiness_weaknesses` fans out missed topics from each completed attempt into `weakness_signals` (miss_count bumped on conflict)
+- Edge functions: `readiness-exam-generate` (pulls public study_materials + tutor curriculum content_text, asks Gemini 3 Flash for 10 MCQs with per-question `topic`, persists exam, returns sanitized client copy) and `readiness-exam-grade` (computes readiness %, strengths, top-5 weaknesses, AI-curated 3 recommendations with safe fallback)
+- New route `/study-mode/:courseId`: Study tab (links to Course Hub / Study Hub / PQ Intelligence + Start exam CTA) → Readiness tab (sticky submit bar, gold-accented option buttons) → Results tab (readiness % with tone verdict, focus topics, strengths chips, AI study plan)
+- `ExamCountdownCard` (driven by active `exam_goals` row) added to Dashboard above key features; surfaces top 3 weakness chips when present, links to `/exams`
+- `useReadiness.ts` hooks: latest attempt, weakness signals, active exam goal
 
-- New route `/study-mode/:courseId`: Study tab (materials) → Readiness tab (AI-generated 10-Q exam from course materials via Gemini) → Results tab (strengths, weak topics, recommendations, readiness %).
-- Tables: `readiness_exams`, `readiness_attempts`, `weakness_signals`.
-- AI Planner: weekly plan generation per course (reuses `exam_readiness_suite`).
-- Exam Countdown widget on Dashboard (driven by `courses.exam_date`).
-- Weakness Detection: aggregate from quiz_attempts + readiness_attempts, surface top-3 weak topics on dashboard.
+Deferred: weekly AI Planner generation reusing `exam_readiness_suite` (existing suite already covers this), and a cross-source weakness aggregator from `quiz_attempts` (current dashboard widget already reads `weakness_signals` populated by readiness attempts).
 
 ## Sub-Phase 9.5 — Smart Reminders + Mobile Polish + Activity Metrics
 Sections 9 + 10 (rest) + 12.
