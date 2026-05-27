@@ -1,6 +1,7 @@
 // Singleton background audio service so playback persists across route changes.
 // A single HTMLAudioElement lives for the lifetime of the app; pages just
 // drive it through `playGlobal(...)` and subscribe to its state.
+import { saveAudioSession, hashSource } from "@/lib/audioSessions";
 
 export interface GlobalAudioTrack {
   src: string;
@@ -29,15 +30,51 @@ const state: GlobalAudioState = {
   rate: 1,
 };
 
+// Throttle position writes to Supabase to once every ~5s while playing.
+let lastSaveAt = 0;
+function maybePersistPosition() {
+  if (!state.track) return;
+  if (!state.playing) return;
+  const now = Date.now();
+  if (now - lastSaveAt < 5000) return;
+  lastSaveAt = now;
+  saveAudioSession({
+    sourceHash: hashSource(state.track.src),
+    title: state.track.title || "Audio",
+    positionSeconds: state.current,
+    durationSeconds: state.duration || null,
+  });
+}
+
 function ensure(): HTMLAudioElement {
   if (audio) return audio;
   const el = new Audio();
   el.preload = "metadata";
   el.crossOrigin = "anonymous";
   el.addEventListener("play", () => emit({ playing: true }));
-  el.addEventListener("pause", () => emit({ playing: false }));
-  el.addEventListener("ended", () => emit({ playing: false, current: el.duration || 0 }));
-  el.addEventListener("timeupdate", () => emit({ current: el.currentTime, duration: el.duration || 0 }));
+  el.addEventListener("pause", () => {
+    emit({ playing: false });
+    // flush position when user pauses
+    if (state.track) {
+      lastSaveAt = 0;
+      maybePersistPosition();
+    }
+  });
+  el.addEventListener("ended", () => {
+    emit({ playing: false, current: el.duration || 0 });
+    if (state.track) {
+      saveAudioSession({
+        sourceHash: hashSource(state.track.src),
+        title: state.track.title || "Audio",
+        positionSeconds: el.duration || 0,
+        durationSeconds: el.duration || null,
+      });
+    }
+  });
+  el.addEventListener("timeupdate", () => {
+    emit({ current: el.currentTime, duration: el.duration || 0 });
+    maybePersistPosition();
+  });
   el.addEventListener("loadedmetadata", () => emit({ duration: el.duration || 0 }));
   audio = el;
   if (typeof navigator !== "undefined" && "mediaSession" in navigator) {
