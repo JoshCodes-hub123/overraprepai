@@ -82,7 +82,11 @@ export default function LectureNotes() {
       upsert: false,
     });
     if (upErr) { setUploading(false); return toast.error(upErr.message); }
-    const { data: pub } = supabase.storage.from("lecture-notes").getPublicUrl(path);
+    // Private bucket — sign URL for download / preview.
+    const { data: signed } = await supabase.storage
+      .from("lecture-notes")
+      .createSignedUrl(path, 60 * 60 * 24 * 365);
+    const fileUrl = signed?.signedUrl ?? "";
 
     let thumbnail_url: string | null = null;
     if (thumbBlob) {
@@ -91,7 +95,10 @@ export default function LectureNotes() {
         .from("lecture-notes")
         .upload(thumbPath, thumbBlob, { contentType: "image/png", upsert: false });
       if (!tErr) {
-        thumbnail_url = supabase.storage.from("lecture-notes").getPublicUrl(thumbPath).data.publicUrl;
+        const { data: tSigned } = await supabase.storage
+          .from("lecture-notes")
+          .createSignedUrl(thumbPath, 60 * 60 * 24 * 365);
+        thumbnail_url = tSigned?.signedUrl ?? null;
       }
     }
 
@@ -99,7 +106,7 @@ export default function LectureNotes() {
       tutor_id: user.id,
       title: title.trim(),
       description: desc.trim() || null,
-      file_url: pub.publicUrl,
+      file_url: fileUrl,
       file_path: path,
       file_type: file.type,
       file_size_bytes: file.size,
