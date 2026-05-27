@@ -16,6 +16,7 @@ import { QuickActionsGrid } from "@/components/student/dashboard/QuickActionsGri
 import { KeyFeaturesStrip } from "@/components/student/dashboard/KeyFeaturesStrip";
 import { OpportunityHubPreview } from "@/components/student/dashboard/OpportunityHubPreview";
 import { StudentSpotlight } from "@/components/student/dashboard/StudentSpotlight";
+import { ExamCountdownCard } from "@/components/student/dashboard/ExamCountdownCard";
 
 // Warm likely-next route bundles when the dashboard mounts.
 if (typeof window !== "undefined") prefetchDashboardNeighbors();
@@ -65,6 +66,9 @@ const StudentDashboard = () => {
 
             {/* 2. Hero — Study Pack AI (single intelligent entry point) */}
             <StudyPackHero />
+
+            {/* Exam countdown — only renders when an active exam goal exists */}
+            <ExamCountdownCard />
 
             {/* Key features spotlight — Overra AI, Study Hub, Theory Prep */}
             <KeyFeaturesStrip />

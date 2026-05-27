@@ -160,6 +160,7 @@ const AdminSpotlights = lazy(() => import("@/pages/admin/AdminSpotlights"));
 const ActivityFeed = lazy(() => import("@/pages/student/ActivityFeed"));
 const Challenges = lazy(() => import("@/pages/student/Challenges"));
 const AdminChallenges = lazy(() => import("@/pages/admin/AdminChallenges"));
+const StudyMode = lazy(() => import("@/pages/student/StudyMode"));
 import { DashboardSkeleton } from "@/components/student/dashboard/DashboardSkeleton";
 
 export const AnimatedRoutes = () => {
@@ -402,6 +403,7 @@ export const AnimatedRoutes = () => {
           <Route path="/admin/spotlights" element={<AdminRoute><PageTransition><AdminSpotlights /></PageTransition></AdminRoute>} />
           <Route path="/admin/challenges" element={<AdminRoute><PageTransition><AdminChallenges /></PageTransition></AdminRoute>} />
           <Route path="/challenges" element={<PageTransition><Challenges /></PageTransition>} />
+          <Route path="/study-mode/:courseId" element={<PageTransition><StudyMode /></PageTransition>} />
           <Route path="/courses" element={<PageTransition><CourseDirectory /></PageTransition>} />
           <Route path="/courses/:courseId" element={<PageTransition><CourseHub /></PageTransition>} />
           <Route path="/tutor/courses/new" element={<PageTransition><TutorCourseEditor /></PageTransition>} />
