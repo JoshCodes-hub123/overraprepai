@@ -26,11 +26,10 @@ const FeaturedTutorsSection = () => {
   useEffect(() => {
     const fetchFeaturedTutors = async () => {
       try {
-        const { data: tutorRoles } = await supabase.from("user_roles").select("user_id").eq("role", "tutor");
-        if (!tutorRoles || tutorRoles.length === 0) { setTutors([]); setIsLoading(false); return; }
-        const tutorIds = tutorRoles.map((r) => r.user_id);
-        const { data: profiles } = await supabase.from("profiles").select("id, full_name, profile_image_url, department, tutor_code").in("id", tutorIds);
-        if (!profiles) { setTutors([]); setIsLoading(false); return; }
+        // Use safe SECURITY DEFINER RPC so anon visitors can see the
+        // tutor carousel without reading sensitive profile columns.
+        const { data: profiles } = await (supabase as any).rpc("get_public_tutor_directory");
+        if (!profiles || profiles.length === 0) { setTutors([]); setIsLoading(false); return; }
         const tutorsWithStats = await Promise.all(
           profiles.map(async (profile) => {
             const { data: quizzes } = await supabase.from("quizzes").select("id").eq("tutor_id", profile.id).eq("is_active", true);
