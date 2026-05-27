@@ -1210,6 +1210,64 @@ export type Database = {
         }
         Relationships: []
       }
+      community_post_comments: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_post_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_post_likes: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_posts: {
         Row: {
           author_id: string
@@ -1736,6 +1794,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      entity_comments: {
+        Row: {
+          body: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          hidden: boolean
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          hidden?: boolean
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          hidden?: boolean
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       exam_goals: {
         Row: {
@@ -6622,6 +6713,71 @@ export type Database = {
           prize_tokens?: number
           rank?: number
           score?: number
+          user_id?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
+      weekly_quest_progress: {
+        Row: {
+          completed_at: string
+          day_index: number
+          goal_key: string
+          id: string
+          quest_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          day_index: number
+          goal_key: string
+          id?: string
+          quest_id: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          day_index?: number
+          goal_key?: string
+          id?: string
+          quest_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_quest_progress_quest_id_fkey"
+            columns: ["quest_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_quests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weekly_quests: {
+        Row: {
+          completed_days: number
+          created_at: string
+          goals: Json
+          id: string
+          is_hero: boolean
+          user_id: string
+          week_start: string
+        }
+        Insert: {
+          completed_days?: number
+          created_at?: string
+          goals?: Json
+          id?: string
+          is_hero?: boolean
+          user_id: string
+          week_start: string
+        }
+        Update: {
+          completed_days?: number
+          created_at?: string
+          goals?: Json
+          id?: string
+          is_hero?: boolean
           user_id?: string
           week_start?: string
         }
