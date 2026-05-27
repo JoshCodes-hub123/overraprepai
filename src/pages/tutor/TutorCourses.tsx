@@ -12,8 +12,9 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SEO } from "@/components/seo/SEO";
 import { toast } from "sonner";
-import { BookOpen, Plus, Search, Trash2, Sparkles } from "lucide-react";
+import { BookOpen, Plus, Search, Trash2, Sparkles, Pencil } from "lucide-react";
 import { CreateCourseDialog } from "@/components/tutor/CreateCourseDialog";
+import { EditCourseDialog, EditableCourse } from "@/components/tutor/EditCourseDialog";
 
 interface Course {
   id: string;
@@ -21,6 +22,9 @@ interface Course {
   name: string;
   department: string | null;
   level: string | null;
+  description?: string | null;
+  is_active?: boolean;
+  created_by?: string | null;
 }
 
 const TutorCourses = () => {
@@ -32,6 +36,7 @@ const TutorCourses = () => {
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editing, setEditing] = useState<EditableCourse | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -42,7 +47,7 @@ const TutorCourses = () => {
     if (!user) return;
     setLoading(true);
     const [cs, mine] = await Promise.all([
-      supabase.from("courses").select("id, code, name, department, level").eq("is_active", true).order("code"),
+      supabase.from("courses").select("id, code, name, department, level, description, is_active, created_by").order("code"),
       (supabase as any).from("tutor_courses").select("course_id").eq("tutor_id", user.id),
     ]);
     setAllCourses((cs.data as any) ?? []);
@@ -52,10 +57,18 @@ const TutorCourses = () => {
 
   useEffect(() => { load(); }, [user]);
 
-  const picked = useMemo(() => allCourses.filter(c => pickedIds.includes(c.id)), [allCourses, pickedIds]);
+  const picked = useMemo(
+    () => allCourses.filter(c => pickedIds.includes(c.id) && c.is_active !== false),
+    [allCourses, pickedIds]
+  );
+  const mineCreated = useMemo(
+    () => allCourses.filter(c => c.created_by && user && c.created_by === user.id),
+    [allCourses, user]
+  );
   const browseable = useMemo(() => {
     const q = search.trim().toLowerCase();
     return allCourses.filter(c => {
+      if (c.is_active === false) return false;
       if (pickedIds.includes(c.id)) return false;
       if (!q) return true;
       return c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q) || (c.department || "").toLowerCase().includes(q);
@@ -82,6 +95,28 @@ const TutorCourses = () => {
     load();
   };
 
+  const deleteCourse = async (c: Course) => {
+    if (!confirm(`Delete ${c.code}? This permanently removes the course and its quizzes/questions.`)) return;
+    setBusy(c.id);
+    const { error } = await supabase.from("courses").delete().eq("id", c.id);
+    setBusy(null);
+    if (error) { toast.error(error.message || "Could not delete"); return; }
+    toast.success("Course deleted");
+    load();
+  };
+
+  const openEdit = (c: Course) => {
+    setEditing({
+      id: c.id,
+      code: c.code,
+      name: c.name,
+      department: c.department ?? null,
+      description: c.description ?? null,
+      level: c.level ?? null,
+      is_active: c.is_active ?? true,
+    });
+  };
+
   if (authLoading || loading) {
     return <div className="min-h-screen bg-background"><Navbar /><div className="flex justify-center pt-32"><LoadingSpinner /></div></div>;
   }
@@ -106,6 +141,7 @@ const TutorCourses = () => {
           <TabsList>
             <TabsTrigger value="picked">My Courses ({picked.length})</TabsTrigger>
             <TabsTrigger value="browse">Pick Courses</TabsTrigger>
+            <TabsTrigger value="created">Created by Me ({mineCreated.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="picked" className="mt-4">
@@ -156,12 +192,48 @@ const TutorCourses = () => {
               </div>
             )}
           </TabsContent>
+
+          <TabsContent value="created" className="mt-4">
+            {mineCreated.length === 0 ? (
+              <Card><CardContent className="py-12 text-center text-muted-foreground">You haven't created any courses yet. Tap "Create New Course" above to add one.</CardContent></Card>
+            ) : (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {mineCreated.map(c => (
+                  <Card key={c.id} className="glass-card">
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-2">
+                        <Badge variant="outline" className="mb-2 w-fit">{c.code}</Badge>
+                        {c.is_active === false && <Badge variant="secondary">Inactive</Badge>}
+                      </div>
+                      <CardTitle className="text-base font-display">{c.name}</CardTitle>
+                      <CardDescription>{c.level ? `${c.level} Level` : ""} {c.department ? `· ${c.department}` : ""}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex gap-2">
+                      <Button size="sm" variant="outline" className="flex-1" onClick={() => openEdit(c)}>
+                        <Pencil className="w-4 h-4 mr-1" /> Edit
+                      </Button>
+                      <Button size="sm" variant="ghost" disabled={busy === c.id} onClick={() => deleteCourse(c)}>
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
 
         <CreateCourseDialog
           open={createOpen}
           onOpenChange={setCreateOpen}
           onSuccess={() => { setCreateOpen(false); load(); }}
+        />
+
+        <EditCourseDialog
+          open={!!editing}
+          onOpenChange={(v) => { if (!v) setEditing(null); }}
+          course={editing}
+          onSuccess={() => { setEditing(null); load(); }}
         />
       </main>
     </div>
