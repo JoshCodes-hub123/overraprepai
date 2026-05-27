@@ -226,11 +226,16 @@ const DocumentsUploader = ({ courseId, userId }: { courseId: string; userId?: st
       setBusy(false);
       return;
     }
-    const { data: pub } = supabase.storage.from("lecture-notes").getPublicUrl(path);
+    // lecture-notes bucket is private — mint a long-lived signed URL so
+    // students can open the file. We refresh on view if it expires.
+    const { data: signed } = await supabase.storage
+      .from("lecture-notes")
+      .createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year
+    const fileUrl = signed?.signedUrl ?? "";
     const { error } = await supabase.from("lecture_notes").insert({
       tutor_id: userId, course_id: courseId,
       title: title.trim() || file.name,
-      file_url: pub.publicUrl, file_path: path, file_type: file.type,
+      file_url: fileUrl, file_path: path, file_type: file.type,
       file_size_bytes: file.size, is_published: true,
     });
     setBusy(false);

@@ -17,6 +17,8 @@ import {
   BookOpen,
   HelpCircle,
   Eye,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -34,6 +36,27 @@ import { extractTextFromFile } from "@/lib/extractText";
 import { exportSummaryPdf } from "@/lib/exportSummaryPdf";
 import { isVerifiedStudent } from "@/lib/profileCompleteness";
 import logoUrl from "@/assets/logo.png";
+
+/**
+ * Split a markdown string into collapsible sections at every H2 (`## …`)
+ * heading. The first chunk before any heading is kept as an intro block.
+ */
+function splitMarkdownByH2(md: string): Array<{ heading: string | null; body: string }> {
+  const lines = md.split("\n");
+  const out: Array<{ heading: string | null; body: string }> = [];
+  let current: { heading: string | null; body: string } = { heading: null, body: "" };
+  for (const line of lines) {
+    const m = line.match(/^##\s+(.+?)\s*$/);
+    if (m) {
+      if (current.body.trim() || current.heading) out.push(current);
+      current = { heading: m[1], body: "" };
+    } else {
+      current.body += line + "\n";
+    }
+  }
+  if (current.body.trim() || current.heading) out.push(current);
+  return out;
+}
 
 type Style = "bullets" | "structured" | "qa";
 
@@ -384,6 +407,7 @@ export default function SmartSummary() {
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                <CopyMarkdownButton markdown={markdown} />
                   <Button
                     onClick={viewPdf}
                     disabled={viewing}
@@ -438,13 +462,80 @@ export default function SmartSummary() {
                 </div>
               )}
 
-              <article className="prose prose-sm dark:prose-invert max-w-none prose-headings:font-display prose-headings:text-foreground prose-strong:text-foreground">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
-              </article>
+              <CollapsibleMarkdown markdown={markdown} />
             </Card>
           </motion.div>
         )}
       </main>
+    </div>
+  );
+}
+
+/* ---------- Reader helpers ---------- */
+
+function CopyMarkdownButton({ markdown }: { markdown: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <Button
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(markdown);
+          setCopied(true);
+          toast.success("Summary copied");
+          setTimeout(() => setCopied(false), 1800);
+        } catch {
+          toast.error("Copy failed");
+        }
+      }}
+      variant="outline"
+      className="gap-1.5"
+      title="Copy the full summary to your clipboard"
+    >
+      {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+      {copied ? "Copied" : "Copy"}
+    </Button>
+  );
+}
+
+function CollapsibleMarkdown({ markdown }: { markdown: string }) {
+  const sections = useMemo(() => splitMarkdownByH2(markdown), [markdown]);
+  // If the doc has no H2 sections, fall back to plain article.
+  if (sections.length <= 1 && !sections[0]?.heading) {
+    return (
+      <article className="prose prose-sm sm:prose-base dark:prose-invert max-w-none break-words leading-relaxed prose-headings:font-display prose-headings:text-foreground prose-strong:text-foreground prose-pre:overflow-x-auto">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
+      </article>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      {sections.map((s, i) =>
+        s.heading ? (
+          <details
+            key={i}
+            open={i === 0}
+            className="group rounded-xl border border-border bg-card/40 px-3 py-2 open:bg-card/70 transition-colors"
+          >
+            <summary className="cursor-pointer list-none flex items-center justify-between gap-2 py-1.5 font-semibold text-sm text-foreground">
+              <span className="font-display truncate">{s.heading}</span>
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground group-open:text-amber-600">
+                {/* visual cue */}
+                <span className="inline-block transition-transform group-open:rotate-180">▾</span>
+              </span>
+            </summary>
+            <article className="prose prose-sm sm:prose-base dark:prose-invert max-w-none break-words leading-relaxed prose-headings:font-display prose-headings:text-foreground prose-strong:text-foreground prose-pre:overflow-x-auto pt-1">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{s.body.trim()}</ReactMarkdown>
+            </article>
+          </details>
+        ) : (
+          <article
+            key={i}
+            className="prose prose-sm sm:prose-base dark:prose-invert max-w-none break-words leading-relaxed prose-headings:font-display prose-headings:text-foreground prose-strong:text-foreground prose-pre:overflow-x-auto"
+          >
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{s.body.trim()}</ReactMarkdown>
+          </article>
+        ),
+      )}
     </div>
   );
 }
