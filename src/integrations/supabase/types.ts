@@ -3684,6 +3684,103 @@ export type Database = {
           },
         ]
       }
+      readiness_attempts: {
+        Row: {
+          answers: Json
+          completed_at: string | null
+          correct: number
+          course_id: string
+          exam_id: string
+          id: string
+          readiness_pct: number
+          recommendations: Json
+          started_at: string
+          strengths: Json
+          total: number
+          user_id: string
+          weaknesses: Json
+        }
+        Insert: {
+          answers?: Json
+          completed_at?: string | null
+          correct?: number
+          course_id: string
+          exam_id: string
+          id?: string
+          readiness_pct?: number
+          recommendations?: Json
+          started_at?: string
+          strengths?: Json
+          total?: number
+          user_id: string
+          weaknesses?: Json
+        }
+        Update: {
+          answers?: Json
+          completed_at?: string | null
+          correct?: number
+          course_id?: string
+          exam_id?: string
+          id?: string
+          readiness_pct?: number
+          recommendations?: Json
+          started_at?: string
+          strengths?: Json
+          total?: number
+          user_id?: string
+          weaknesses?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "readiness_attempts_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "readiness_exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      readiness_exams: {
+        Row: {
+          course_id: string
+          created_at: string
+          difficulty: string
+          id: string
+          questions: Json
+          source_material_ids: string[]
+          title: string
+          user_id: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          difficulty?: string
+          id?: string
+          questions?: Json
+          source_material_ids?: string[]
+          title?: string
+          user_id: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          difficulty?: string
+          id?: string
+          questions?: Json
+          source_material_ids?: string[]
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "readiness_exams_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recently_opened_courses: {
         Row: {
           course_id: string
@@ -6466,6 +6563,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      weakness_signals: {
+        Row: {
+          course_id: string | null
+          id: string
+          last_seen_at: string
+          miss_count: number
+          source: string
+          topic: string
+          user_id: string
+        }
+        Insert: {
+          course_id?: string | null
+          id?: string
+          last_seen_at?: string
+          miss_count?: number
+          source?: string
+          topic: string
+          user_id: string
+        }
+        Update: {
+          course_id?: string | null
+          id?: string
+          last_seen_at?: string
+          miss_count?: number
+          source?: string
+          topic?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       weekly_leaderboards: {
         Row: {
