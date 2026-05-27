@@ -7176,6 +7176,19 @@ export type Database = {
           uploads_count: number
         }[]
       }
+      get_public_tutor_directory: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          bio: string
+          department: string
+          full_name: string
+          id: string
+          profile_image_url: string
+          tutor_code: string
+          university: string
+        }[]
+      }
       get_session_meeting_url: { Args: { _slot_id: string }; Returns: string }
       get_student_leaderboard: {
         Args: { _limit?: number }
