@@ -7051,6 +7051,10 @@ export type Database = {
         Args: { _booking_id: string }
         Returns: undefined
       }
+      claim_challenge_reward: {
+        Args: { _enrollment_id: string }
+        Returns: Json
+      }
       claim_team_challenge_reward: {
         Args: { _challenge_id: string }
         Returns: undefined
