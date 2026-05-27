@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { useOpportunities } from "@/hooks/useOpportunities";
+import { useOpportunities, useOpportunitiesRealtime } from "@/hooks/useOpportunities";
 import { OpportunityListItem } from "@/components/opportunities/OpportunityCard";
 import { supabase } from "@/integrations/supabase/client";
 import { Sparkles } from "lucide-react";
