@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Layers, Target, Headphones, Sparkles, Bookmark, Crown, Wallet, Gift, FileDown, MoreHorizontal, Rocket, type LucideIcon } from "lucide-react";
+import { Layers, Target, Headphones, Sparkles, Bookmark, Crown, Wallet, Gift, FileDown, MoreHorizontal, Rocket, Library, PenLine, type LucideIcon } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -25,8 +25,10 @@ function quickStartTile(path: string | null | undefined): Tile {
 
 const BASE_PRIMARY: Tile[] = [
   { icon: Target,     label: "Practice",      to: "/student/readiness", hint: "Test yourself" },
+  { icon: Sparkles,   label: "Overra AI",     to: "/ai-tutor",          hint: "Deep Intelligence. Instant Clarity." },
+  { icon: Library,    label: "Study Hub",     to: "/study-hub",         hint: "Past questions, decoded" },
+  { icon: PenLine,    label: "Theory Prep",   to: "/theory",            hint: "AI-graded answers" },
   { icon: Layers,     label: "Flashcards",    to: "/flashcards",        hint: "Quick review" },
-  { icon: Sparkles,   label: "Ask AI",        to: "/ai-tutor",          hint: "Get help" },
   { icon: Headphones, label: "Listen",        to: "/audio-learning",    hint: "Audio notes" },
   { icon: FileDown,   label: "Summary",       to: "/student/smart-summary", hint: "TL;DR" },
 ];
