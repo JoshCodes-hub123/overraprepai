@@ -13,6 +13,7 @@ import { CommandPalette, useCommandPaletteHotkey } from "@/components/student/Co
 import { ContinueLearning } from "@/components/student/ContinueLearning";
 import { TopHeader } from "@/components/student/dashboard/TopHeader";
 import { QuickActionsGrid } from "@/components/student/dashboard/QuickActionsGrid";
+import { KeyFeaturesStrip } from "@/components/student/dashboard/KeyFeaturesStrip";
 import { OpportunityHubPreview } from "@/components/student/dashboard/OpportunityHubPreview";
 import { StudentSpotlight } from "@/components/student/dashboard/StudentSpotlight";
 
@@ -64,6 +65,9 @@ const StudentDashboard = () => {
 
             {/* 2. Hero — Study Pack AI (single intelligent entry point) */}
             <StudyPackHero />
+
+            {/* Key features spotlight — Overra AI, Study Hub, Theory Prep */}
+            <KeyFeaturesStrip />
 
             {/* 3. Quick actions — calm tiles */}
             <QuickActionsGrid />
