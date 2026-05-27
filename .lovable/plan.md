@@ -25,15 +25,15 @@ Shipped:
 
 Deferred to a later pass: material_comments (lecture-note threads) — tutor-post comments already exist via `community_post_comments`.
 
-## Sub-Phase 9.3 — 7-Day Challenges + Badges + Welcome Polish
-Sections 2 + 3.
-
-- Tables: `challenges` (admin-curated + seeded), `challenge_enrollments`, `challenge_progress`, `user_badges`, `badge_definitions`.
-- Seeded set: Consistent Study (7d), Quiz Master (5 quizzes), Flashcard Champion (50 cards), Audio Learner (3 sessions), Early Revision (review before deadline).
-- Admin page `/admin/challenges` (CRUD + activate/deactivate).
-- Student `/challenges` page: enroll, progress ring, claim reward (tokens + badge).
-- Auto-tracking triggers (quiz_attempts → quiz challenge, srs_reviews → flashcard, audio_sessions → audio).
-- Subtle premium login welcome: streak chip + once-per-day soft confetti on streak milestones (3/7/14/30) — uses existing `canvas-confetti`, single burst, gold particles only.
+## Sub-Phase 9.3 — 7-Day Challenges + Badges + Welcome Polish (DONE)
+Shipped:
+- Tables: `challenges`, `challenge_enrollments`, `challenge_progress`, `user_badges`, `badge_definitions` (+ GRANT + RLS)
+- Seeded 5 challenges + 5 matching badges (Consistent Scholar / Quiz Master / Flashcard Champion / Audio Learner / Early Reviser)
+- Auto-tracking triggers wired: `quiz_attempts` → quizzes + study_days, `srs_reviews` → flashcards, `audio_sessions` → audio_sessions
+- SECURITY DEFINER RPC `bump_challenge_progress` clamps to `goal_target` + marks `completed`
+- New route `/challenges` (student): enroll, progress bar, claim reward (token amount shown, badge awarded into `user_badges`), gold confetti burst on claim
+- New route `/admin/challenges`: full CRUD, activate/pause toggle
+- Streak chip in mobile greeting now taps to `/challenges` and fires a subtle gold confetti once per day on milestone streaks (3/7/14/30/60/100) via new `src/lib/celebrate.ts` (`canvas-confetti`, respects `prefers-reduced-motion`)
 
 ## Sub-Phase 9.4 — AI Study Mode + Readiness Exam
 Section 6 + Section 11 (AI Planner, Exam Countdown, Weakness Detection).

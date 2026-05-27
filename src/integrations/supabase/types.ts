@@ -432,6 +432,36 @@ export type Database = {
         }
         Relationships: []
       }
+      badge_definitions: {
+        Row: {
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          name: string
+          slug: string
+          tier: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          name: string
+          slug: string
+          tier?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          name?: string
+          slug?: string
+          tier?: string
+        }
+        Relationships: []
+      }
       bookmarked_questions: {
         Row: {
           created_at: string
@@ -567,6 +597,156 @@ export type Database = {
           title?: string
         }
         Relationships: []
+      }
+      challenge_enrollments: {
+        Row: {
+          challenge_id: string
+          claimed_at: string | null
+          completed_at: string | null
+          current_value: number
+          ends_at: string
+          enrolled_at: string
+          id: string
+          starts_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          claimed_at?: string | null
+          completed_at?: string | null
+          current_value?: number
+          ends_at: string
+          enrolled_at?: string
+          id?: string
+          starts_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          claimed_at?: string | null
+          completed_at?: string | null
+          current_value?: number
+          ends_at?: string
+          enrolled_at?: string
+          id?: string
+          starts_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_enrollments_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenge_progress: {
+        Row: {
+          created_at: string
+          delta: number
+          enrollment_id: string
+          id: string
+          meta: Json
+          source: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delta?: number
+          enrollment_id: string
+          id?: string
+          meta?: Json
+          source: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delta?: number
+          enrollment_id?: string
+          id?: string
+          meta?: Json
+          source?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_progress_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenges: {
+        Row: {
+          badge_slug: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          duration_days: number
+          goal_target: number
+          goal_type: string
+          icon: string
+          id: string
+          is_active: boolean
+          is_seeded: boolean
+          reward_tokens: number
+          slug: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          badge_slug?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          duration_days?: number
+          goal_target?: number
+          goal_type: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          is_seeded?: boolean
+          reward_tokens?: number
+          slug: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          badge_slug?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          duration_days?: number
+          goal_target?: number
+          goal_type?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          is_seeded?: boolean
+          reward_tokens?: number
+          slug?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenges_badge_slug_fkey"
+            columns: ["badge_slug"]
+            isOneToOne: false
+            referencedRelation: "badge_definitions"
+            referencedColumns: ["slug"]
+          },
+        ]
       }
       chat_message_reports: {
         Row: {
@@ -6091,6 +6271,38 @@ export type Database = {
           },
         ]
       }
+      user_badges: {
+        Row: {
+          awarded_at: string
+          badge_slug: string
+          id: string
+          source: string | null
+          user_id: string
+        }
+        Insert: {
+          awarded_at?: string
+          badge_slug: string
+          id?: string
+          source?: string | null
+          user_id: string
+        }
+        Update: {
+          awarded_at?: string
+          badge_slug?: string
+          id?: string
+          source?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_badges_badge_slug_fkey"
+            columns: ["badge_slug"]
+            isOneToOne: false
+            referencedRelation: "badge_definitions"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       user_blocks: {
         Row: {
           blocked_id: string
@@ -6543,6 +6755,15 @@ export type Database = {
         Returns: undefined
       }
       book_session: { Args: { _slot_id: string }; Returns: string }
+      bump_challenge_progress: {
+        Args: {
+          _delta?: number
+          _goal_type: string
+          _source?: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
       cancel_session_booking: {
         Args: { _booking_id: string }
         Returns: undefined

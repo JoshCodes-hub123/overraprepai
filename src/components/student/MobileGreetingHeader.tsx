@@ -9,6 +9,7 @@ import { uploadToBucketWithVerification } from "@/lib/storageUpload";
 import { toast } from "@/hooks/use-toast";
 import { LevelSwitcherDialog } from "@/components/student/LevelSwitcherDialog";
 import { useStudentLevel } from "@/hooks/useStudentLevel";
+import { celebrateOncePerDay } from "@/lib/celebrate";
 
 /**
  * Mobile-first greeting header that mirrors the product mockup:
@@ -70,7 +71,12 @@ export const MobileGreetingHeader = () => {
         .eq("user_id", user.id)
         .eq("is_read", false);
       if (cancelled) return;
-      setStreak(sRes?.data?.current_streak ?? 0);
+      const s = sRes?.data?.current_streak ?? 0;
+      setStreak(s);
+      // Subtle gold burst on milestone days, once per local day per milestone.
+      if ([3, 7, 14, 30, 60, 100].includes(s)) {
+        celebrateOncePerDay(`streak-${s}`, s >= 30 ? "rich" : "soft");
+      }
       setUnread(nRes?.count ?? 0);
     })();
     return () => {
@@ -225,12 +231,16 @@ export const MobileGreetingHeader = () => {
 
       {/* Streak + Level pills */}
       <div className="mt-3 flex items-center gap-1.5 flex-wrap">
-        <div className="inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full border border-amber-300/70 bg-gradient-to-r from-amber-50 to-amber-100/60 text-amber-800 text-[12px] font-semibold shadow-[0_2px_8px_-4px_rgba(180,140,40,0.35)]">
+        <button
+          type="button"
+          onClick={() => navigate("/challenges")}
+          className="inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full border border-amber-300/70 bg-gradient-to-r from-amber-50 to-amber-100/60 text-amber-800 text-[12px] font-semibold shadow-[0_2px_8px_-4px_rgba(180,140,40,0.35)] hover:from-amber-100 hover:to-amber-200/70 active:scale-95 transition"
+        >
           <Flame className="h-3.5 w-3.5 text-amber-600" />
           {streak > 0
             ? <>On a <span className="font-extrabold">{streak}-day</span> streak!</>
             : <>Start your streak today!</>}
-        </div>
+        </button>
         <button
           type="button"
           onClick={() => setLevelOpen(true)}
