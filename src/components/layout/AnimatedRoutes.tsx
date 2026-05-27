@@ -400,6 +400,8 @@ export const AnimatedRoutes = () => {
           <Route path="/posts/:id" element={<PageTransition><PostDetail /></PageTransition>} />
           <Route path="/admin/posts" element={<AdminRoute><PageTransition><AdminPosts /></PageTransition></AdminRoute>} />
           <Route path="/admin/spotlights" element={<AdminRoute><PageTransition><AdminSpotlights /></PageTransition></AdminRoute>} />
+          <Route path="/admin/challenges" element={<AdminRoute><PageTransition><AdminChallenges /></PageTransition></AdminRoute>} />
+          <Route path="/challenges" element={<PageTransition><Challenges /></PageTransition>} />
           <Route path="/courses" element={<PageTransition><CourseDirectory /></PageTransition>} />
           <Route path="/courses/:courseId" element={<PageTransition><CourseHub /></PageTransition>} />
           <Route path="/tutor/courses/new" element={<PageTransition><TutorCourseEditor /></PageTransition>} />
