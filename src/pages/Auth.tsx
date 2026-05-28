@@ -4,7 +4,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Mail, Lock, User, ArrowRight, ArrowLeft, Loader2, Gift, GraduationCap, Phone, MapPin, BookOpen, IdCard, Eye, EyeOff, MailCheck, AlertTriangle, CheckCircle2, KeyRound, Sparkles } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import logo from "@/assets/logo.png";
 import authBg from "@/assets/auth-bg.jpg";
 import authHero from "@/assets/auth-hero.jpg";
