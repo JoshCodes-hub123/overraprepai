@@ -186,6 +186,8 @@ const Auth = () => {
 
   const signInForm = useForm<SignInFormData>({
     resolver: zodResolver(signInSchema),
+    mode: "onTouched",
+    reValidateMode: "onChange",
     defaultValues: { email: "", password: "" },
   });
 
@@ -200,6 +202,8 @@ const Auth = () => {
 
   const signUpForm = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
+    mode: "onTouched",
+    reValidateMode: "onChange",
     defaultValues: {
       fullName: "",
       email: "",
@@ -215,6 +219,22 @@ const Auth = () => {
       referralCode: referralCodeFromUrl,
     },
   });
+
+  // Respect prefers-reduced-motion + low-data connections: skip the
+  // backdrop video entirely and let the poster image carry the page.
+  const prefersReducedMotion = useReducedMotion();
+  const [enableBgVideo, setEnableBgVideo] = useState(false);
+  useEffect(() => {
+    if (prefersReducedMotion) return;
+    const conn = (navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    if (conn?.saveData) return;
+    if (conn?.effectiveType && /^(slow-2g|2g)$/.test(conn.effectiveType)) return;
+    // Defer kicking the video to idle so the form paints instantly on low-end phones.
+    const idle = (window as any).requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 600));
+    const cancel = (window as any).cancelIdleCallback ?? clearTimeout;
+    const id = idle(() => setEnableBgVideo(true));
+    return () => cancel(id);
+  }, [prefersReducedMotion]);
 
   const academicPath = signUpForm.watch("academicPath");
 
