@@ -377,8 +377,18 @@ const TutorApplications = () => {
     );
   }
 
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
-  const [quizzesFor, setQuizzesFor] = useState<{ id: string; name: string } | null>(null);
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-6">
+        <div className="text-center max-w-sm">
+          <h2 className="font-display text-xl font-bold mb-2">Couldn't load applications</h2>
+          <p className="text-sm text-muted-foreground mb-4">{loadError}</p>
+          <Button onClick={() => setReloadKey((k) => k + 1)}>Try again</Button>
+        </div>
+      </div>
+    );
+  }
+
 
   const showPending = statusFilter === "all" || statusFilter === "pending";
   const showApproved = statusFilter === "all" || statusFilter === "approved";
