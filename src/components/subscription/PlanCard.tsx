@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Crown } from "lucide-react";
+import { Check, Crown, Loader2 } from "lucide-react";
 
 interface Plan {
   id: string;
@@ -15,9 +15,10 @@ interface Props {
   plan: Plan;
   active?: boolean;
   onChoose?: () => void;
+  loading?: boolean;
 }
 
-export const PlanCard = ({ plan, active, onChoose }: Props) => {
+export const PlanCard = ({ plan, active, onChoose, loading }: Props) => {
   const features = Array.isArray(plan.features) ? plan.features : [];
   const price = plan.price_cents === 0 ? "Free" : `$${(plan.price_cents / 100).toFixed(2)}`;
   const isFree = plan.id === "free";
@@ -65,9 +66,11 @@ export const PlanCard = ({ plan, active, onChoose }: Props) => {
           }`}
           variant={highlight ? "default" : "outline"}
           onClick={onChoose}
-          disabled={active}
+          disabled={active || loading}
         >
-          {active ? "Active" : "Choose plan"}
+          {loading ? (
+            <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Opening checkout…</span>
+          ) : active ? "Active" : "Upgrade now"}
         </Button>
       )}
     </Card>

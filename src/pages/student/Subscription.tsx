@@ -9,8 +9,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import PlanCard from "@/components/subscription/PlanCard";
 import SubmitPaymentDialog from "@/components/subscription/SubmitPaymentDialog";
-import { Crown, Clock } from "lucide-react";
+import { Crown, Clock, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 const Subscription = () => {
   const { user } = useAuth();
@@ -18,6 +19,34 @@ const Subscription = () => {
   const { data: plans = [] } = useSubscriptionPlans();
   const { data: mySub } = useMySubscription();
   const [chosenPlan, setChosenPlan] = useState<any | null>(null);
+  const [launchingPlanId, setLaunchingPlanId] = useState<string | null>(null);
+
+  const handleUpgrade = async (plan: any) => {
+    if (!plan?.id) return;
+    // Free / manual-only plans use the receipt-upload dialog
+    if (plan.id === "free" || (plan.price_cents ?? 0) === 0) {
+      setChosenPlan(plan);
+      return;
+    }
+    try {
+      setLaunchingPlanId(plan.id);
+      const { data, error } = await supabase.functions.invoke("flutterwave-init", {
+        body: {
+          plan_id: plan.id,
+          redirect_url: `${window.location.origin}/subscription`,
+        },
+      });
+      if (error) throw error;
+      const url = (data as any)?.checkout_url;
+      if (!url) throw new Error("No checkout URL returned");
+      window.location.href = url;
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Could not start payment. Try again.");
+      setLaunchingPlanId(null);
+    }
+  };
+
 
   const { data: requests = [] } = useQuery({
     queryKey: ["payment-requests", user?.id],
@@ -73,10 +102,16 @@ const Subscription = () => {
                 key={p.id}
                 plan={p}
                 active={p.id === currentPlanId}
-                onChoose={() => setChosenPlan(p)}
+                onChoose={() => handleUpgrade(p)}
+                loading={launchingPlanId === p.id}
               />
             ))}
           </div>
+          {launchingPlanId && (
+            <p className="mt-3 text-xs text-muted-foreground flex items-center gap-2">
+              <Loader2 className="w-3 h-3 animate-spin" /> Opening secure Flutterwave checkout…
+            </p>
+          )}
 
           <section className="mt-8">
             <h2 className="font-display text-lg font-bold mb-3">Payment history</h2>

@@ -3267,6 +3267,7 @@ export type Database = {
           department: string | null
           email: string
           faculty: string | null
+          flw_customer_id: string | null
           full_name: string | null
           gender: string | null
           hobbies: string[] | null
@@ -3306,6 +3307,7 @@ export type Database = {
           department?: string | null
           email: string
           faculty?: string | null
+          flw_customer_id?: string | null
           full_name?: string | null
           gender?: string | null
           hobbies?: string[] | null
@@ -3345,6 +3347,7 @@ export type Database = {
           department?: string | null
           email?: string
           faculty?: string | null
+          flw_customer_id?: string | null
           full_name?: string | null
           gender?: string | null
           hobbies?: string[] | null
@@ -7330,6 +7333,7 @@ export type Database = {
           department: string | null
           email: string
           faculty: string | null
+          flw_customer_id: string | null
           full_name: string | null
           gender: string | null
           hobbies: string[] | null
