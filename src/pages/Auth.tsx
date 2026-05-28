@@ -272,6 +272,49 @@ const Auth = () => {
     }
   };
 
+  // Persist optional profile + avatar once a session exists (after OTP verify
+  // or, in the rare auto-confirm case, right after signUp).
+  const persistExtraSignupDetails = async (data: SignUpFormData, avatar: File | null) => {
+    try {
+      const { data: { user: newUser } } = await supabase.auth.getUser();
+      if (!newUser?.id) return;
+      const meta = { school: data.school };
+      let uploadedAvatarUrl: string | null = null;
+      if (avatar) {
+        try {
+          const ext = (avatar.name.split(".").pop() || "jpg").toLowerCase();
+          const path = `${newUser.id}/avatar.${ext}`;
+          const { error: upErr } = await supabase.storage
+            .from("avatars")
+            .upload(path, avatar, { upsert: true, contentType: avatar.type });
+          if (!upErr) {
+            const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+            uploadedAvatarUrl = `${pub.publicUrl}?v=${Date.now()}`;
+          }
+        } catch (upErr) {
+          console.warn("Avatar upload failed:", upErr);
+        }
+      }
+      await supabase
+        .from("profiles")
+        .update({
+          academic_path: (data.academicPath || null) as any,
+          level: data.level || null,
+          department: data.department || null,
+          phone: data.phone || null,
+          matric_no: data.matricNo || null,
+          state_of_origin: data.state || null,
+          academic_metadata: meta,
+          ...(uploadedAvatarUrl
+            ? { avatar_url: uploadedAvatarUrl, profile_image_url: uploadedAvatarUrl }
+            : {}),
+        })
+        .eq("id", newUser.id);
+    } catch (e) {
+      console.warn("Could not persist extra signup details:", e);
+    }
+  };
+
   const handleSignUp = async (data: SignUpFormData) => {
     setIsSubmitting(true);
     const { error } = await signUp(data.email, data.password, data.fullName, data.referralCode);
@@ -281,82 +324,76 @@ const Auth = () => {
       if (error.message.includes("already registered")) {
         message = "This email is already registered. Please sign in instead.";
       }
+      toast({ variant: "destructive", title: "Sign up failed", description: message });
+      setIsSubmitting(false);
+      return;
+    }
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      // Email confirmation required → switch to branded 6-digit OTP screen.
+      setPendingSignUp(data);
+      setPendingAvatar(avatarFile);
+      setPendingEmail(data.email);
+      setOtpCode("");
+      setVerifyMode(true);
+      toast({
+        title: "Check your inbox 📬",
+        description: `We sent a 6-digit code to ${data.email}. Enter it below to verify your account.`,
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Rare auto-confirm path: session exists immediately.
+    await persistExtraSignupDetails(data, avatarFile);
+    const welcomeMsg = data.referralCode
+      ? "Welcome to OverraPrep AI! Complete your first quiz to earn bonus tokens."
+      : "Welcome to OverraPrep AI. You can now start practicing.";
+    toast({ title: "Account created!", description: welcomeMsg });
+    navigate(postAuthDestination(true));
+    setIsSubmitting(false);
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!pendingEmail || otpCode.length !== 6) return;
+    setOtpSubmitting(true);
+    const { error } = await supabase.auth.verifyOtp({
+      type: "signup",
+      email: pendingEmail,
+      token: otpCode,
+    });
+    if (error) {
+      setOtpSubmitting(false);
       toast({
         variant: "destructive",
-        title: "Sign up failed",
-        description: message,
+        title: "Couldn't verify code",
+        description: error.message || "That code is invalid or has expired. Request a new one.",
       });
-    } else {
-      // If email confirmation is required, there is no session yet. Tell the
-      // user to verify their inbox instead of pushing them into onboarding
-      // (which would fail because `user` is null there).
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        toast({
-          title: "Check your email to verify your account",
-          description: `We sent a confirmation link to ${data.email}. Click it, then sign in to continue.`,
-        });
-        setPendingEmail(data.email);
-        setIsSubmitting(false);
-        setIsSignUp(false);
-        return;
-      }
-      // Persist extra profile details (best-effort; profile row is created by trigger)
-      try {
-        const { data: { user: newUser } } = await supabase.auth.getUser();
-        if (newUser?.id) {
-          const meta = {
-            school: data.school,
-          };
-
-          // Upload avatar if user picked one
-          let uploadedAvatarUrl: string | null = null;
-          if (avatarFile) {
-            try {
-              const ext = (avatarFile.name.split(".").pop() || "jpg").toLowerCase();
-              const path = `${newUser.id}/avatar.${ext}`;
-              const { error: upErr } = await supabase.storage
-                .from("avatars")
-                .upload(path, avatarFile, { upsert: true, contentType: avatarFile.type });
-              if (!upErr) {
-                const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-                uploadedAvatarUrl = `${pub.publicUrl}?v=${Date.now()}`;
-              }
-            } catch (upErr) {
-              console.warn("Avatar upload failed:", upErr);
-            }
-          }
-
-          await supabase
-            .from("profiles")
-            .update({
-              academic_path: (data.academicPath || null) as any,
-              level: data.level || null,
-              department: data.department || null,
-              phone: data.phone || null,
-              matric_no: data.matricNo || null,
-              state_of_origin: data.state || null,
-              academic_metadata: meta,
-              ...(uploadedAvatarUrl
-                ? { avatar_url: uploadedAvatarUrl, profile_image_url: uploadedAvatarUrl }
-                : {}),
-            })
-            .eq("id", newUser.id);
-        }
-      } catch (e) {
-        console.warn("Could not persist extra signup details:", e);
-      }
-
-      const welcomeMsg = data.referralCode
-        ? "Welcome to OverraPrep AI! Complete your first quiz to earn bonus tokens."
-        : "Welcome to OverraPrep AI. You can now start practicing.";
-      toast({
-        title: "Account created!",
-        description: welcomeMsg,
-      });
-      navigate(postAuthDestination(true));
+      return;
     }
-    setIsSubmitting(false);
+    if (pendingSignUp) {
+      await persistExtraSignupDetails(pendingSignUp, pendingAvatar);
+    }
+    toast({
+      title: "You're in! 🎉",
+      description: "Welcome to OverraPrep AI. Let's set up your study profile.",
+    });
+    setVerifyMode(false);
+    setOtpSubmitting(false);
+    navigate(postAuthDestination(true));
+  };
+
+  const handleResendCode = async () => {
+    if (!pendingEmail) return;
+    setResending(true);
+    const { error } = await supabase.auth.resend({ type: "signup", email: pendingEmail });
+    setResending(false);
+    if (error) {
+      toast({ variant: "destructive", title: "Couldn't resend", description: error.message || "Try again in a minute." });
+    } else {
+      toast({ title: "New code sent", description: `Fresh 6-digit code on its way to ${pendingEmail}.` });
+    }
   };
 
   return (
