@@ -576,7 +576,7 @@ const Auth = () => {
                     id="signin-email"
                     type="email"
                     placeholder="you@example.com"
-                    className="pl-10 h-11 sm:h-12 text-sm sm:text-base"
+                    className="pl-10 h-10 sm:h-12 text-sm sm:text-base"
                     {...signInForm.register("email")}
                   />
                 </div>
@@ -595,7 +595,7 @@ const Auth = () => {
                     id="signin-password"
                     type={showSignInPwd ? "text" : "password"}
                     placeholder="••••••••"
-                    className="pl-10 pr-11 h-11 sm:h-12 text-sm sm:text-base"
+                    className="pl-10 pr-11 h-10 sm:h-12 text-sm sm:text-base"
                     {...signInForm.register("password")}
                   />
                   <button
@@ -705,7 +705,7 @@ const Auth = () => {
                     id="signup-name"
                     type="text"
                     placeholder="John Doe"
-                    className="pl-10 h-11 sm:h-12 text-sm sm:text-base"
+                    className="pl-10 h-10 sm:h-12 text-sm sm:text-base"
                     {...signUpForm.register("fullName")}
                   />
                 </div>
@@ -724,7 +724,7 @@ const Auth = () => {
                     id="signup-email"
                     type="email"
                     placeholder="you@example.com"
-                    className="pl-10 h-11 sm:h-12 text-sm sm:text-base"
+                    className="pl-10 h-10 sm:h-12 text-sm sm:text-base"
                     {...signUpForm.register("email")}
                   />
                 </div>
@@ -743,7 +743,7 @@ const Auth = () => {
                     id="signup-password"
                     type={showSignUpPwd ? "text" : "password"}
                     placeholder="At least 6 characters"
-                    className="pl-10 pr-11 h-11 sm:h-12 text-sm sm:text-base"
+                    className="pl-10 pr-11 h-10 sm:h-12 text-sm sm:text-base"
                     {...signUpForm.register("password")}
                   />
                   <button
@@ -770,7 +770,7 @@ const Auth = () => {
                     id="signup-confirm"
                     type="password"
                     placeholder="••••••••"
-                    className="pl-10 h-11 sm:h-12 text-sm sm:text-base"
+                    className="pl-10 h-10 sm:h-12 text-sm sm:text-base"
                     {...signUpForm.register("confirmPassword")}
                   />
                 </div>
@@ -933,7 +933,7 @@ const Auth = () => {
                     id="signup-referral"
                     type="text"
                     placeholder="Paste code here (e.g., REF-ABC123)"
-                    className="h-11 sm:h-12 text-sm sm:text-base font-mono uppercase bg-card border-primary/30 focus:border-primary"
+                    className="h-10 sm:h-12 text-sm sm:text-base font-mono uppercase bg-card border-primary/30 focus:border-primary"
                     {...signUpForm.register("referralCode")}
                   />
                   <p className="text-xs text-muted-foreground">
