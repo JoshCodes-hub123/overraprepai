@@ -1009,39 +1009,39 @@ const Auth = () => {
                   setSignUpStep((s) => Math.max(0, s - 1));
                 };
                 return (
-                  <>
-                  <div className="flex items-center gap-3">
-                    {signUpStep > 0 && (
-                      <Button type="button" variant="outline" size="lg" onClick={goBack} className="flex-1">
-                        <ArrowLeft className="w-4 h-4" /> Back
-                      </Button>
-                    )}
-                    {!isLast ? (
-                      <Button type="button" variant="hero" size="lg" onClick={goNext} className="flex-1">
-                        Continue <ArrowRight className="w-5 h-5" />
-                      </Button>
-                    ) : (
-                      <Button type="submit" variant="hero" size="lg" className="flex-1" disabled={isSubmitting}>
-                        {isSubmitting ? (
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
-                          <>
-                            Create Account <ArrowRight className="w-5 h-5" />
-                          </>
-                        )}
-                      </Button>
+                  <div className="sticky bottom-0 -mx-4 sm:mx-0 px-4 sm:px-0 pt-3 sm:pt-0 pb-[max(env(safe-area-inset-bottom),0.5rem)] sm:pb-0 bg-gradient-to-t from-[#FCFBF8] via-[#FCFBF8]/95 to-transparent sm:bg-none z-20">
+                    <div className="flex items-center gap-3">
+                      {signUpStep > 0 && (
+                        <Button type="button" variant="outline" size="lg" onClick={goBack} className="flex-1">
+                          <ArrowLeft className="w-4 h-4" /> Back
+                        </Button>
+                      )}
+                      {!isLast ? (
+                        <Button type="button" variant="hero" size="lg" onClick={goNext} className="flex-1">
+                          Continue <ArrowRight className="w-5 h-5" />
+                        </Button>
+                      ) : (
+                        <Button type="submit" variant="hero" size="lg" className="flex-1" disabled={isSubmitting}>
+                          {isSubmitting ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                          ) : (
+                            <>
+                              Create Account <ArrowRight className="w-5 h-5" />
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                    {!isLast && (
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="mt-2 block w-full text-center text-xs font-semibold text-primary hover:underline disabled:opacity-60"
+                      >
+                        {isSubmitting ? "Creating account…" : "Skip — create my account now"}
+                      </button>
                     )}
                   </div>
-                  {!isLast && (
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="mt-3 block w-full text-center text-sm font-semibold text-primary hover:underline disabled:opacity-60"
-                    >
-                      {isSubmitting ? "Creating account…" : "Skip — create my account now"}
-                    </button>
-                  )}
-                  </>
                 );
               })()}
 
