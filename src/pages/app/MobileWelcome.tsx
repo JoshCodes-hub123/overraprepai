@@ -107,10 +107,10 @@ const MobileWelcome = () => {
 
             <div className="mt-5 flex gap-2.5">
               <Button
-                onClick={() => navigate("/auth?mode=signup&intent=student")}
+                onClick={() => navigate("/start")}
                 className="h-11 px-5 rounded-full font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30"
               >
-                Get Started
+                I'm New — Get Started
                 <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
               <Button
