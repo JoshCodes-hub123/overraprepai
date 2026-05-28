@@ -1017,11 +1017,15 @@ const Auth = () => {
 
         </div>
 
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          <a href="/" className="hover:text-foreground transition-colors">
-            ← Back to Home
+        <div className="mt-8 flex justify-center">
+          <a
+            href="/"
+            className="inline-flex items-center gap-2 text-xs font-medium text-[#A69D8E] hover:text-[#3D3A35] transition-colors group"
+          >
+            <ArrowLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
+            Back to Home
           </a>
-        </p>
+        </div>
       </article>
         </div>
     </main>
