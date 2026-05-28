@@ -11,6 +11,7 @@ import { LevelSwitcherDialog } from "@/components/student/LevelSwitcherDialog";
 import { useStudentLevel } from "@/hooks/useStudentLevel";
 import { celebrateOncePerDay } from "@/lib/celebrate";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
+import { useMyActivityBadge } from "@/hooks/useMyActivityBadge";
 
 /**
  * Mobile-first greeting header that mirrors the product mockup:
