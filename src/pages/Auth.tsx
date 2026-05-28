@@ -432,14 +432,28 @@ const Auth = () => {
         {/* Premium ambassador / brand showcase (lg+ only) */}
         <AuthBrandPanel />
 
-        {/* Mobile: subtle vertical video backdrop with cream wash so the page
-            feels alive without forcing the user to scroll. */}
+        {/* Mobile backdrop: poster image always renders (instant + cheap on
+            low-end phones); the looped vertical clip lazy-mounts only when
+            the user doesn't have reduced-motion / save-data on. */}
         <div className="lg:hidden absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-          <video
+          <img
+            src={authHero}
+            alt=""
             className="absolute inset-0 w-full h-full object-cover opacity-30"
-            src="/__l5e/assets-v1/5b198689-3af2-4d21-b7f6-2cf2962ff353/auth-bg.mp4"
-            autoPlay muted loop playsInline preload="auto"
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
           />
+          {enableBgVideo && (
+            <video
+              className="absolute inset-0 w-full h-full object-cover opacity-30 motion-safe:animate-fade-in"
+              src="/__l5e/assets-v1/5b198689-3af2-4d21-b7f6-2cf2962ff353/auth-bg.mp4"
+              poster={authHero}
+              autoPlay muted loop playsInline
+              preload="metadata"
+              disableRemotePlayback
+            />
+          )}
           <div
             className="absolute inset-0"
             style={{
