@@ -21,7 +21,7 @@ const NotificationsPage = () => {
 
   return (
     <>
-      <SEO title="Notifications" description="Your activity, updates, and announcements." noindex url="/notifications" />
+      <SEO title="Notifications" description="Stay on top of your study activity, tutor updates, community replies, and platform announcements — all in one place." noindex url="/notifications" />
       <div className="min-h-screen bg-background">
         <header className="sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-amber-100/70">
           <div className="container max-w-2xl mx-auto px-4 h-14 flex items-center gap-2">

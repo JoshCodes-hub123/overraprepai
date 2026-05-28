@@ -36,7 +36,10 @@ const Dashboard = () => {
   return (
     <>
       <SEO
-        title="Opening dashboard"
+        title="Your study dashboard"
+        description="Your personalized OverraPrep AI dashboard: track readiness, continue courses, and resume practice sessions."
+        url="/dashboard"
+        noindex
         description="Opening your OverraPrep workspace."
         noindex
         url="https://overraprep.com/dashboard"
