@@ -121,6 +121,7 @@ const ChooseUniversity = lazy(() => import("@/pages/onboarding/ChooseUniversity"
 const ChooseFaculty = lazy(() => import("@/pages/onboarding/ChooseFaculty"));
 const ChooseDepartment = lazy(() => import("@/pages/onboarding/ChooseDepartment"));
 const ChooseLevel = lazy(() => import("@/pages/onboarding/ChooseLevel"));
+const ChooseCourses = lazy(() => import("@/pages/onboarding/ChooseCourses"));
 const TutorMatchingOnboarding = lazy(() => import("@/pages/onboarding/TutorMatching"));
 const CGPACalculator = lazy(() => import("@/pages/student/CGPACalculator"));
 const StudyPacks = lazy(() => import("@/pages/student/StudyPacks"));
@@ -220,6 +221,7 @@ export const AnimatedRoutes = () => {
           <Route path="/onboarding/faculty" element={<PageTransition><ChooseFaculty /></PageTransition>} />
           <Route path="/onboarding/department" element={<PageTransition><ChooseDepartment /></PageTransition>} />
           <Route path="/onboarding/level" element={<PageTransition><ChooseLevel /></PageTransition>} />
+          <Route path="/onboarding/courses" element={<PageTransition><ChooseCourses /></PageTransition>} />
           <Route path="/onboarding/match" element={<PageTransition><TutorMatchingOnboarding /></PageTransition>} />
           <Route
             path="/auth"
