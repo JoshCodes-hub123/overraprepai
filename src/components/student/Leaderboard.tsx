@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Medal, Award, Crown, Loader2, GraduationCap, Flame, ShieldCheck, Users } from "lucide-react";
 import { useStudentLeaderboard, useTutorLeaderboard, type StudentRow, type TutorRow } from "@/hooks/useLeaderboards";
+import { useMyActivityBadge } from "@/hooks/useMyActivityBadge";
 import { TeamLeaderboard } from "./TeamLeaderboard";
 
 const rankIcon = (rank: number) => {
