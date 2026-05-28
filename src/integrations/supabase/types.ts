@@ -7222,6 +7222,15 @@ export type Database = {
           quizzes_started: number
         }[]
       }
+      get_my_leaderboard_rank: {
+        Args: { _user: string }
+        Returns: {
+          percentile: number
+          rank: number
+          score: number
+          total: number
+        }[]
+      }
       get_my_profile: {
         Args: never
         Returns: {
