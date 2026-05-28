@@ -641,8 +641,10 @@ const TutorApplications = () => {
             </div>
           )}
         </section>
+        )}
 
         {/* Reviewed Applications */}
+        {(showApproved || showRejected) && (
         <section>
           <h2 className="font-display text-xl font-bold text-foreground mb-4 flex items-center gap-2">
             <GraduationCap className="w-5 h-5 text-primary" />
@@ -658,37 +660,62 @@ const TutorApplications = () => {
               {reviewedApplications.map((application) => (
                 <div
                   key={application.id}
-                  className="bg-card rounded-xl border border-border p-4 flex items-center justify-between"
+                  className="bg-card rounded-xl border border-border p-4 flex flex-wrap items-center justify-between gap-3"
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 min-w-0">
                     <Avatar className="w-12 h-12">
                       <AvatarImage src={application.profile_image_url || undefined} alt={application.full_name} />
                       <AvatarFallback className="bg-muted">
                         {getInitials(application.full_name)}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <h3 className="font-medium text-foreground">{application.full_name}</h3>
-                      <p className="text-sm text-muted-foreground">{application.email}</p>
+                    <div className="min-w-0">
+                      <h3 className="font-medium text-foreground truncate">{application.full_name}</h3>
+                      <p className="text-sm text-muted-foreground truncate">{application.email}</p>
                     </div>
                   </div>
-                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
-                    application.status === "approved" 
-                      ? "bg-success/10 text-success"
-                      : "bg-destructive/10 text-destructive"
-                  }`}>
-                    {application.status === "approved" ? (
-                      <CheckCircle2 className="w-4 h-4" />
-                    ) : (
-                      <XCircle className="w-4 h-4" />
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Link
+                      to={`/profile/${application.user_id}`}
+                      className="text-xs px-3 py-1.5 rounded-full bg-muted hover:bg-muted/70 text-foreground inline-flex items-center gap-1"
+                    >
+                      <User className="w-3.5 h-3.5" /> Profile
+                    </Link>
+                    {application.status === "approved" && (
+                      <button
+                        type="button"
+                        onClick={() => setQuizzesFor({ id: application.user_id, name: application.full_name })}
+                        className="text-xs px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary inline-flex items-center gap-1"
+                      >
+                        <ListChecks className="w-3.5 h-3.5" /> Quizzes
+                      </button>
                     )}
-                    {application.status === "approved" ? "Approved" : "Rejected"}
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
+                      application.status === "approved"
+                        ? "bg-success/10 text-success"
+                        : "bg-destructive/10 text-destructive"
+                    }`}>
+                      {application.status === "approved" ? (
+                        <CheckCircle2 className="w-4 h-4" />
+                      ) : (
+                        <XCircle className="w-4 h-4" />
+                      )}
+                      {application.status === "approved" ? "Approved" : "Rejected"}
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           )}
         </section>
+        )}
+
+        <TutorQuizzesDialog
+          open={!!quizzesFor}
+          onOpenChange={(v) => { if (!v) setQuizzesFor(null); }}
+          tutorId={quizzesFor?.id ?? null}
+          tutorName={quizzesFor?.name ?? ""}
+        />
       </main>
     </div>
   );
