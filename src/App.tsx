@@ -131,9 +131,9 @@ const App = () => {
                 <PaymentTestModeBanner />
                 <EmailVerificationBanner />
                 <LoginCelebration />
-                <div className="pb-16 md:pb-0">
+                <main id="main-content" className="pb-16 md:pb-0">
                   <AnimatedRoutes />
-                </div>
+                </main>
                 <BottomTabBar />
                 <NewStudyPackFAB />
                 <MiniPlayerBar />

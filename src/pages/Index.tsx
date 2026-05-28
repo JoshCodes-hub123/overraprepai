@@ -62,7 +62,7 @@ const Index = () => {
       <OnboardingTour />
       <div className="min-h-screen">
         <Navbar />
-        <main role="main" aria-label="Main content">
+        <div>
           <HeroSection />
           <TrustStrip />
           <StatsSection />
@@ -73,7 +73,7 @@ const Index = () => {
           <FAQSection />
           <TutorSection />
           <CTASection />
-        </main>
+        </div>
         <Footer />
       </div>
     </>

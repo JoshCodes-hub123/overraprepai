@@ -12,10 +12,10 @@ interface SEOProps {
   structuredData?: object;
 }
 
-const DEFAULT_TITLE = "OverraPrep AI – FUTA";
+const DEFAULT_TITLE = "OverraPrep AI";
 const DEFAULT_DESCRIPTION =
-  "Ace your FUTA CBT exams with AI-powered practice questions, instant explanations, and personalized learning paths. Join thousands of students preparing smarter.";
-const SITE_ORIGIN = "https://prep-mentor-hub-50.lovable.app";
+  "Ace your CBT and university exams with AI-powered practice questions, instant explanations, and personalized learning paths for students across Nigeria.";
+const SITE_ORIGIN = "https://overraprepai.com";
 const DEFAULT_IMAGE = `${SITE_ORIGIN}/app-icon.png`;
 
 export const SEO = ({

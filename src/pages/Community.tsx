@@ -258,8 +258,8 @@ const Community = () => {
   return (
     <>
       <SEO
-        title="Community - OverraPrep AI"
-        description="Connect with fellow students, ask questions, and share knowledge."
+        title="Community discussions & study groups"
+        description="Join OverraPrep AI study groups, ask questions, and share resources with students across universities."
       />
       <div className="min-h-screen bg-background">
         {/* Header */}
