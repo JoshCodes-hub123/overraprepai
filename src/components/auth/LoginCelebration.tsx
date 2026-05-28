@@ -32,7 +32,7 @@ export const LoginCelebration = () => {
       try { celebrateGold("rich"); } catch { /* noop */ }
     }
 
-    const t = setTimeout(() => setOpen(false), 1600);
+    const t = setTimeout(() => setOpen(false), 3000);
     return () => clearTimeout(t);
   }, [user, profile]);
 
