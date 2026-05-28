@@ -652,16 +652,20 @@ const Auth = () => {
                 </a>
               </div>
 
-              <Button variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    Sign In
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </Button>
+              {/* Sticky bottom CTA on mobile so it sits above the keyboard
+                  / above-the-fold without needing to scroll. */}
+              <div className="sticky bottom-0 -mx-4 sm:mx-0 px-4 sm:px-0 pt-3 sm:pt-0 pb-[max(env(safe-area-inset-bottom),0.5rem)] sm:pb-0 bg-gradient-to-t from-[#FCFBF8] via-[#FCFBF8]/95 to-transparent sm:bg-none z-20">
+                <Button variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      Sign In
+                      <ArrowRight className="w-5 h-5" />
+                    </>
+                  )}
+                </Button>
+              </div>
             </form>
           ) : (
             /* Sign Up Form */
