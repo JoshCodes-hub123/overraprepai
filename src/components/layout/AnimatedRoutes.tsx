@@ -187,6 +187,18 @@ export const AnimatedRoutes = () => {
           <Route path="/notifications" element={<PageTransition><NotificationsPage /></PageTransition>} />
           <Route path="/website" element={<PageTransition><Index /></PageTransition>} />
           <Route path="/welcome-tour" element={<PageTransition><MobileWelcome /></PageTransition>} />
+          {/* "I'm New" onboarding flow */}
+          <Route path="/start" element={<PageTransition><ChooseProduct /></PageTransition>} />
+          <Route path="/start/product" element={<PageTransition><ChooseProduct /></PageTransition>} />
+          <Route path="/start/persona" element={<PageTransition><ChoosePersona /></PageTransition>} />
+          <Route path="/start/path" element={<PageTransition><ChoosePath /></PageTransition>} />
+          <Route path="/onboarding/path" element={<PageTransition><ChoosePath /></PageTransition>} />
+          <Route path="/onboarding/refine" element={<PageTransition><RefinePath /></PageTransition>} />
+          <Route path="/onboarding/university" element={<PageTransition><ChooseUniversity /></PageTransition>} />
+          <Route path="/onboarding/faculty" element={<PageTransition><ChooseFaculty /></PageTransition>} />
+          <Route path="/onboarding/department" element={<PageTransition><ChooseDepartment /></PageTransition>} />
+          <Route path="/onboarding/level" element={<PageTransition><ChooseLevel /></PageTransition>} />
+          <Route path="/onboarding/match" element={<PageTransition><TutorMatchingOnboarding /></PageTransition>} />
           <Route
             path="/auth"
             element={
