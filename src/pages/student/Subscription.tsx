@@ -9,8 +9,17 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import PlanCard from "@/components/subscription/PlanCard";
 import SubmitPaymentDialog from "@/components/subscription/SubmitPaymentDialog";
-import { Crown, Clock } from "lucide-react";
+import { Crown, Clock, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
+
+const Subscription = () => {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const { data: plans = [] } = useSubscriptionPlans();
+  const { data: mySub } = useMySubscription();
+  const [chosenPlan, setChosenPlan] = useState<any | null>(null);
+  const [launchingPlanId, setLaunchingPlanId] = useState<string | null>(null);
 
 const Subscription = () => {
   const { user } = useAuth();
