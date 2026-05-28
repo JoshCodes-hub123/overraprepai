@@ -102,7 +102,7 @@ function TutorQuizzesDialog({
                   </p>
                 </div>
                 <Link
-                  to={`/quiz/preview/${q.id}`}
+                  to={`/quiz/${q.id}`}
                   className="shrink-0 text-xs text-primary hover:underline inline-flex items-center gap-1"
                 >
                   Open <ExternalLink className="w-3 h-3" />
