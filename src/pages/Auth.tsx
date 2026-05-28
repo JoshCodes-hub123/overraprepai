@@ -457,8 +457,43 @@ const Auth = () => {
           {/* outer gold border glow */}
           <div className="absolute -inset-[1.5px] rounded-[28px] bg-gradient-to-br from-primary/60 via-amber-300/30 to-primary/60 opacity-70 blur-[2px]" aria-hidden />
           <div className="relative bg-white/85 supports-[backdrop-filter]:bg-white/65 backdrop-blur-2xl rounded-2xl sm:rounded-[26px] border border-white/60 shadow-[0_30px_80px_-20px_hsl(var(--primary)/0.45)] p-4 sm:p-7 md:p-8">
+          {verifyMode ? (
+            <div className="space-y-5 text-center">
+              <div className="mx-auto h-14 w-14 rounded-2xl bg-gradient-to-br from-primary to-amber-400 flex items-center justify-center shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.6)]">
+                <KeyRound className="w-7 h-7 text-primary-foreground" />
+              </div>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-display font-bold tracking-tight">Verify your email</h2>
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  Enter the 6-digit code we sent to <strong className="text-foreground">{pendingEmail}</strong>
+                </p>
+              </div>
+              <div className="flex justify-center">
+                <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
+                  <InputOTPGroup>
+                    {[0,1,2,3,4,5].map((i) => (
+                      <InputOTPSlot key={i} index={i} className="h-12 w-10 sm:h-14 sm:w-12 text-lg font-bold" />
+                    ))}
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+              <Button variant="hero" size="lg" className="w-full" onClick={handleVerifyOtp} disabled={otpSubmitting || otpCode.length !== 6}>
+                {otpSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (<><Sparkles className="w-4 h-4" /> Verify & continue</>)}
+              </Button>
+              <div className="flex items-center justify-between text-xs">
+                <button type="button" onClick={handleResendCode} disabled={resending} className="font-semibold text-primary hover:underline disabled:opacity-50 inline-flex items-center gap-1">
+                  {resending && <Loader2 className="w-3 h-3 animate-spin" />}Resend code
+                </button>
+                <button type="button" onClick={() => { setVerifyMode(false); setIsSignUp(false); }} className="text-muted-foreground hover:text-foreground underline">
+                  Use a different email
+                </button>
+              </div>
+              <p className="text-[11px] text-muted-foreground pt-2">Code expires in 1 hour. Check spam if you don't see it.</p>
+            </div>
+          ) : (<>
           {/* Tab Switcher */}
           <div className="relative flex mb-5 sm:mb-7 bg-muted/70 rounded-2xl p-1 border border-border/40">
+
             <span
               className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl bg-gradient-to-br from-primary to-amber-400 shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.6)] transition-all duration-300 ease-out ${
                 isSignUp ? "left-[calc(50%+2px)]" : "left-1"
