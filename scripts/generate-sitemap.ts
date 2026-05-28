@@ -190,7 +190,7 @@ async function fetchDynamic(): Promise<{
         const { data, error } = await sb
           .from("opportunities")
           .select("id, updated_at, status")
-          .eq("status", "approved")
+          .eq("status", "published")
           .limit(10_000);
         if (error) throw error;
         return (data ?? []).map<Entry>((o: any) => ({
