@@ -1,79 +1,106 @@
-## Goal
-Make the student experience launch-ready by fixing profile picture display, making key app features easy to reach from the Dashboard, and listing course-based quizzes clearly for new students.
 
-## What I found
-- **Profile picture upload path exists**, but display is inconsistent: some components read `avatar_url`, some read `profile_image_url`, and the edit screen can save a temporary local blob URL if the user clicks Save while upload is still in progress.
-- **No test/user data currently exists in the backend** for profiles with avatars, courses, quizzes, or attempts, so empty states will show unless seed/admin content is added.
-- **Course quiz structure already exists**: quizzes are tied to `course_id`, and `/courses/:courseId` already has a Quizzes tab. What is missing is a Dashboard-level quiz discovery section for the courses the student picked.
-- **Recent scoring activity feed is wired**, but there are currently no matching activity rows, so it will be empty until quiz/flashcard/streak events are logged.
-- **Dashboard has many feature cards**, but not all major student features are equally visible; several useful launch features are buried in navigation.
+# Phase 7B.1 — Payments, Free/Pro gating, and launch seed
 
-## Implementation plan
+This is the first of four sub-phases. We get money + accounts + content live first, then move to onboarding/empty states (7B.2), referrals/notifications/trust (7B.3), and analytics/offline/polish (7B.4).
 
-### 1. Fix profile picture display everywhere
-- Use a single helper to resolve avatars in this order:
-  1. `profile_image_url`
-  2. `avatar_url`
-  3. fallback letter
-- Update the Dashboard header, leaderboard, activity feed, spotlight, tutor cards, chat/community surfaces where needed to use that helper.
-- Fix `EditProfile` so:
-  - upload uses the dedicated `avatars` bucket instead of the tutor profile bucket for student avatars,
-  - Save is disabled while avatar upload is in progress,
-  - Save never writes a temporary `blob:` preview URL into the profile,
-  - both `avatar_url` and `profile_image_url` are updated with the final public image URL,
-  - the profile refresh happens immediately after upload.
+---
 
-### 2. Add a Dashboard “Quiz by your courses” section
-- Create a new student Dashboard section that reads the student’s selected/enrolled courses.
-- For each course, show active quizzes underneath with:
-  - course code/name,
-  - quiz title,
-  - number of questions,
-  - duration,
-  - direct “Start quiz” action.
-- If a student has no enrolled courses, show a clear empty state linking to **My Courses** / **Courses**.
-- If enrolled courses have no quizzes yet, show a clear message and link to Course Hub / Study Hub.
-- Place this section high enough on the Dashboard so students who came only to take quizzes can find it quickly.
+## 1. Free vs Pro model (final)
 
-### 3. Make all important app updates/features visible from Dashboard
-- Add/refine a compact “Explore OverraPrep” dashboard section with direct entry points for launch-critical features:
-  - Courses / My Courses
-  - Quizzes
-  - Study Hub
-  - AI Tutor
-  - Audio Learning
-  - Flashcards / Review
-  - Mock Exams
-  - Leaderboard
-  - Challenges
-  - Library
-  - Tutors
-  - Community / Chat
-  - Sessions, if enabled/ready
-- Keep the current white + gold visual system and mobile-first layout.
-- Avoid adding broken or paused routes; anything not ready should either be hidden or clearly marked Coming Soon.
+**Free tier (calibrated to convert, not to frustrate):**
+- Unlimited: quizzes, reading materials, flashcards review (SRS), leaderboards, community, courses browsing.
+- **10 AI tokens per day** shared bucket across:
+  - 1 token = 1 AI explanation / 1 summary paragraph / 1 TTS audio request / 1 AI study pack section / 1 tutor AI chat reply.
+- Hits zero → soft paywall sheet: *"You've used today's 10 free AI tokens. Upgrade to Pro for unlimited AI, or come back tomorrow."*
+- Resets at 00:00 WAT.
 
-### 4. Make course pages better for quiz-first students
-- Update course cards/actions so “Quiz” opens the course directly on the Quizzes tab.
-- Make `CourseHub` respect `?tab=quizzes`, `?tab=materials`, `?tab=audio`, etc. so existing dashboard/course-card links land on the correct tab.
-- Add better loading/error/empty messaging around course quizzes if needed.
+**Pro tier (₦2,500 / month — single plan to start):**
+- Unlimited AI everything, audio downloads, advanced analytics, priority tutor chat, badge on profile.
+- 30 days from activation date.
 
-### 5. Complete scoring activity feed behavior
-- Add backend-safe activity logging for completed quizzes so the leaderboard activity feed starts filling automatically after students submit quizzes.
-- If needed, add lightweight logging for flashcard/SRS review and streak updates without exposing private data.
-- Keep RLS secure: students can log their own activity; everyone can only see public scoring activity.
+This gives students real value free (they can study all day) but the AI features — which are the magic — create the upgrade pressure.
 
-### 6. Launch readiness check after implementation
-I will verify these launch-critical screens and give you a checklist:
-- **Dashboard:** avatar visible, feature grid visible, course quiz section visible, empty states understandable.
-- **Profile Edit:** upload image, preview image, save, return to Dashboard, image replaces fallback letter.
-- **Courses / My Courses:** selected courses show, quiz CTA opens the Quizzes tab.
-- **Course Hub:** Materials, Quizzes, Flashcards, Audio, AI Packs tabs load correctly.
-- **Leaderboard:** weekly/overall filters, course filter, activity feed, badge modal.
-- **Admin tutor queue:** pending/approved/rejected tabs, profile view, quiz content view.
-- **New-user state:** no courses/no quizzes/no activity states are helpful instead of looking broken.
+---
 
-## Technical notes
-- This may need one small database migration for activity logging triggers/functions if the current activity feed still has no automatic quiz-completion event source.
-- I will not manually edit generated backend client/type files.
-- I will preserve the locked visual style: white + gold + Inter, no navy backgrounds.
+## 2. Payment flow — Paystack (automatic) + manual fallback
+
+### Primary: Paystack inline checkout
+1. Student taps **Upgrade to Pro** on `/subscription`.
+2. Paystack popup opens (card / bank transfer / USSD / Opay / Moniepoint).
+3. On success, Paystack calls our `paystack-webhook` edge function.
+4. Webhook verifies signature with `PAYSTACK_SECRET_KEY`, calls `activate_pro_subscription` RPC.
+5. User's `plan_id` flips to `pro`, `expires_at = now() + 30 days`. UI updates in real-time via Supabase subscription.
+6. Receipt email sent via Resend.
+
+**Why Paystack over Moniepoint manual:** instant activation, no admin work per payment, students trust the in-app flow, ~1.5% fee is worth it. Your Moniepoint account `8145472586` becomes a **settlement account** — Paystack deposits the net amount there automatically.
+
+### Fallback: Manual transfer + receipt upload
+For students with card issues:
+- "Pay by bank transfer" button → shows your Moniepoint details (`8145472586 Joshua Abayomi`).
+- Student uploads receipt screenshot to `payment-proofs` bucket.
+- Admin sees pending requests in `/admin/payments`, can **Approve** (activates Pro 30 days) or **Reject** (with reason).
+- Already half-built (`payment_requests` table + `SubmitPaymentDialog` exist) — we just wire admin actions + notifications.
+
+---
+
+## 3. Seed data (combining your requests = heavy realistic seed)
+
+You'll get:
+- **1 admin account** — you give me email + password before I run the seed.
+- **4 approved tutor accounts** with TUT-XXXX codes, profile photos, bios.
+- **1 Pro demo student** (`plan_id=pro`, expires in 30 days) so you can showcase the Pro experience.
+- **3 demo free students** to populate leaderboard.
+- **12 FUTA courses** spread across faculties (Computing, Engineering, Sciences, Management).
+- **60 quizzes** (5 per course), each with 8–15 MCQs, mix of difficulties.
+- **~40 flashcard decks** tied to courses.
+- **6 sample audio lessons** (short TTS-generated).
+- **Seeded activity** — fake quiz attempts spread over the last 14 days so the leaderboard and activity feed look alive on day one.
+
+Done via one idempotent `seed-launch-data` edge function so it's safe to re-run.
+
+---
+
+## 4. Implementation steps
+
+### Database (single migration)
+- Add `subscription_plans` row: `pro` at `250000` kobo (₦2,500) NGN, 30-day cycle.
+- Update `user_subscriptions` to support `pro` plan.
+- New table `payment_transactions` (paystack reference, amount, status, user_id, raw payload).
+- New columns on `profiles`: `daily_ai_tokens_used`, `daily_ai_tokens_reset_at`.
+- RPC `consume_ai_token(_user_id, _kind)` — atomically increments, returns `{allowed, used, remaining}`. Pro users always get `allowed=true`.
+- RPC `activate_pro_subscription(_user_id, _months, _source, _reference)` — used by webhook and admin approval.
+- RPC `admin_change_plan(_user_id, _plan, _days)` — admin override (for refunds, gifts, manual approvals). Audit-logged.
+- Trigger: nightly reset of `daily_ai_tokens_used`.
+
+### Edge functions
+- `paystack-init` — creates a transaction, returns `authorization_url` + `reference`.
+- `paystack-webhook` — verifies HMAC SHA512 with `PAYSTACK_SECRET_KEY`, idempotent on reference, calls `activate_pro_subscription`.
+- `seed-launch-data` — idempotent seed runner.
+
+### Secrets needed (I'll ask via add_secret)
+- `PAYSTACK_SECRET_KEY` (you create at paystack.com → Settings → API Keys)
+- `PAYSTACK_PUBLIC_KEY` (publishable, stored in code)
+
+### Frontend
+- Replace existing `Subscription.tsx` Pro plan card → wire to Paystack inline (`@paystack/inline-js`).
+- Rewrite `usePremium` / `useTokenBalance` to call new RPCs.
+- Hook `consume_ai_token` into every AI call site (AI tutor, summary, TTS, study pack, explanation). If `allowed=false`, open `SoftPaywallSheet`.
+- Add **Pro badge** to profile + leaderboard.
+- New admin page `/admin/payments` — pending receipts list + Approve/Reject buttons + override "Change plan" action per user.
+- Top-bar wallet chip already exists — point it at the new daily-tokens RPC.
+
+### Notifications
+- Pro activated → push + email + in-app.
+- Receipt approved/rejected → notification.
+- 3 days before Pro expires → reminder push.
+
+---
+
+## 5. What I need from you before I start building
+
+1. **Admin login** — what email + password should I create the admin account with?
+2. **Paystack account** — sign up at paystack.com (free, 5 minutes), then I'll request `PAYSTACK_SECRET_KEY` via the secret prompt. Your Moniepoint `8145472586` is added inside Paystack as your settlement account.
+3. **Confirm the Pro price** — I've defaulted to **₦2,500/month**. Common alternatives: ₦1,500 (aggressive), ₦3,000 (premium), ₦5,000 (semester pass). Tell me if you want a different number.
+4. **Confirm daily free quota** — I've defaulted to **10 AI tokens/day**. Want it higher (15) or lower (5)?
+
+Once you confirm those four, I'll switch to build mode and ship 7B.1 end-to-end. Phases 7B.2 → 7B.4 follow after you've tested the money flow with a real student.
