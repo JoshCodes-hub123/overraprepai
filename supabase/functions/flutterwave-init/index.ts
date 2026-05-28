@@ -29,9 +29,7 @@ async function getAccessToken(): Promise<string> {
   return json.access_token as string
 }
 
-function uuid() {
-  return crypto.randomUUID()
-}
+function uuid() { return crypto.randomUUID() }
 
 async function ensureCustomer(token: string, admin: any, userId: string, email: string, name: string): Promise<string> {
   const { data: profile } = await admin
@@ -40,6 +38,9 @@ async function ensureCustomer(token: string, admin: any, userId: string, email: 
     .eq('id', userId)
     .maybeSingle()
   if (profile?.flw_customer_id) return profile.flw_customer_id
+
+  const first = (name?.split(' ')[0] || 'Student').slice(0, 50)
+  const last = (name?.split(' ').slice(1).join(' ') || 'User').slice(0, 50)
 
   const res = await fetch(`${FLW_BASE}/customers`, {
     method: 'POST',
@@ -50,7 +51,7 @@ async function ensureCustomer(token: string, admin: any, userId: string, email: 
       'X-Idempotency-Key': `cust_${userId}`,
     },
     body: JSON.stringify({
-      name: { first: name?.split(' ')[0] || 'Student', last: name?.split(' ').slice(1).join(' ') || 'User' },
+      name: { first, last },
       email,
     }),
   })
@@ -81,22 +82,25 @@ Deno.serve(async (req) => {
     const email = claims.claims.email as string
 
     const body = await req.json().catch(() => ({}))
-    const planCode = body?.plan_code as string | undefined
+    const planId = body?.plan_id as string | undefined // e.g. 'pro_monthly'
     const redirectUrl = body?.redirect_url as string | undefined
 
-    if (!planCode || !['pro_monthly', 'pro_semester'].includes(planCode)) {
-      return new Response(JSON.stringify({ error: 'Invalid plan_code' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    if (!planId) {
+      return new Response(JSON.stringify({ error: 'Missing plan_id' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
     const admin = createClient(SUPA_URL, SUPA_SERVICE)
     const { data: plan, error: planErr } = await admin
       .from('subscription_plans')
-      .select('id, code, name, price_kobo, currency, interval_days')
-      .eq('code', planCode)
+      .select('id, name, price_cents, currency, interval, features')
+      .eq('id', planId)
+      .eq('is_active', true)
       .maybeSingle()
     if (planErr || !plan) {
       return new Response(JSON.stringify({ error: 'Plan not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
+
+    const durationDays = Number((plan.features as any)?.duration_days || 30)
 
     const { data: profile } = await admin
       .from('profiles')
@@ -105,12 +109,11 @@ Deno.serve(async (req) => {
       .maybeSingle()
 
     const accessToken = await getAccessToken()
-    const customerId = await ensureCustomer(accessToken, admin, userId, email, profile?.full_name || email)
+    const customerId = await ensureCustomer(accessToken, admin, userId, email, (profile?.full_name as string) || email)
 
     const reference = `op_${userId.slice(0, 8)}_${Date.now()}`
-    const amountMajor = Number(plan.price_kobo) / 100 // naira
+    const amountMajor = Number(plan.price_cents) / 100 // naira
 
-    // Create checkout session
     const sessionRes = await fetch(`${FLW_BASE}/checkout/sessions`, {
       method: 'POST',
       headers: {
@@ -128,8 +131,7 @@ Deno.serve(async (req) => {
         meta: {
           user_id: userId,
           plan_id: plan.id,
-          plan_code: plan.code,
-          interval_days: plan.interval_days,
+          duration_days: durationDays,
         },
       }),
     })
@@ -144,10 +146,10 @@ Deno.serve(async (req) => {
       plan_id: plan.id,
       provider: 'flutterwave',
       reference,
-      amount_kobo: plan.price_kobo,
+      amount_cents: plan.price_cents,
       currency: plan.currency || 'NGN',
       status: 'pending',
-      metadata: { flutterwave_session: sessionJson.data, customer_id: customerId },
+      raw_payload: { flutterwave_session: sessionJson.data, customer_id: customerId, duration_days: durationDays },
     })
 
     return new Response(JSON.stringify({
