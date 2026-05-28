@@ -24,7 +24,7 @@ interface SplashScreenProps {
   onComplete: () => void;
 }
 
-const SPLASH_DURATION_MS = 3200;
+const SPLASH_DURATION_MS = 6000;
 const EXIT_DURATION_MS = 500;
 
 const SplashScreen = ({ onComplete }: SplashScreenProps) => {
