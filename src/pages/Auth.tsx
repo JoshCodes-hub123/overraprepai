@@ -465,11 +465,9 @@ const Auth = () => {
           </div>
         )}
 
-        {/* Auth Card — glassmorphic */}
+        {/* Auth Card — editorial cream */}
         <div className="relative">
-          {/* outer gold border glow */}
-          <div className="absolute -inset-[1.5px] rounded-[28px] bg-gradient-to-br from-primary/60 via-amber-300/30 to-primary/60 opacity-70 blur-[2px]" aria-hidden />
-          <div className="relative bg-white/85 supports-[backdrop-filter]:bg-white/65 backdrop-blur-2xl rounded-2xl sm:rounded-[26px] border border-white/60 shadow-[0_30px_80px_-20px_hsl(var(--primary)/0.45)] p-4 sm:p-7 md:p-8">
+          <div className="relative bg-[#FCFBF8] rounded-3xl border border-[#C5A059]/10 shadow-[0_10px_40px_-10px_rgba(197,160,89,0.12)] p-5 sm:p-7 md:p-8">
           {verifyMode ? (
             <div className="space-y-5 text-center">
               <div className="mx-auto h-14 w-14 rounded-2xl bg-gradient-to-br from-primary to-amber-400 flex items-center justify-center shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.6)]">
