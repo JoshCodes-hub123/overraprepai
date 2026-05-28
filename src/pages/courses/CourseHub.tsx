@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,14 +26,22 @@ import { CourseChat } from "@/components/course/CourseChat";
 import { useTrackCourseOpen } from "@/hooks/useRecentlyOpenedCourses";
 import { EmptyState } from "@/components/shell/EmptyState";
 
+const VALID_TABS = ["documents", "flashcards", "quizzes", "audio", "ai", "images", "discuss"] as const;
+type TabValue = typeof VALID_TABS[number];
+
 const CourseHub = () => {
   const { courseId = "" } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, primaryRole } = useAuth();
   const { level: studentLevel } = useStudentScope();
   const { courseIds } = useMyCourses();
   const navRole = (primaryRole === "admin" || primaryRole === "tutor" ? primaryRole : "student") as
     "admin" | "tutor" | "student";
   const [topicFilter, setTopicFilter] = useState<string | null>(null);
+  const requestedTab = searchParams.get("tab") as TabValue | null;
+  const activeTab: TabValue = requestedTab && (VALID_TABS as readonly string[]).includes(requestedTab)
+    ? requestedTab
+    : "documents";
   useTrackCourseOpen(courseId);
 
   const { data: course } = useQuery({
@@ -212,7 +220,15 @@ const CourseHub = () => {
 
         <CourseTopicsStrip courseId={course.id} value={topicFilter} onChange={setTopicFilter} />
 
-        <Tabs defaultValue="documents" className="w-full">
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => {
+            const next = new URLSearchParams(searchParams);
+            next.set("tab", v);
+            setSearchParams(next, { replace: true });
+          }}
+          className="w-full"
+        >
           <div className="sticky top-[56px] z-10 -mx-4 px-4 py-2 bg-background/85 backdrop-blur-md border-b border-border/60 mb-4">
             <TabsList className="w-full overflow-x-auto justify-start gap-1 h-auto p-1 bg-muted/50 rounded-full">
               <TabsTrigger value="documents" className="gap-1.5 rounded-full data-[state=active]:bg-foreground data-[state=active]:text-background">
