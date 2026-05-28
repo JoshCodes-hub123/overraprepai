@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import logo from "@/assets/logo.png";
 
 // Lovable CDN URL of the cinematic splash background (immutable asset).
-// Source pointer: public/splash-bg.mp4.asset.json
-const SPLASH_VIDEO_URL = "/__l5e/assets-v1/937af908-c0d2-4c76-b6a1-09b7f4bf2c7b/splash-bg.mp4";
+// Vertical 9:16 real-footage clip — source pointer: public/auth-bg.mp4.asset.json
+const SPLASH_VIDEO_URL = "/__l5e/assets-v1/5b198689-3af2-4d21-b7f6-2cf2962ff353/auth-bg.mp4";
 
 /**
  * Splash screen — Phase 7A redesign.
