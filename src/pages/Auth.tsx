@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Mail, Lock, User, ArrowRight, ArrowLeft, Loader2, Gift, GraduationCap, Phone, MapPin, BookOpen, IdCard, Eye, EyeOff, MailCheck, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, ArrowLeft, Loader2, Gift, GraduationCap, Phone, MapPin, BookOpen, IdCard, Eye, EyeOff, MailCheck, AlertTriangle, CheckCircle2, KeyRound, Sparkles } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import logo from "@/assets/logo.png";
 import authBg from "@/assets/auth-bg.jpg";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { SEO } from "@/components/seo/SEO";
@@ -79,6 +80,14 @@ const Auth = () => {
   // dedicated banner with a "Resend verification email" button.
   const [pendingEmail, setPendingEmail] = useState<string>("");
   const [resending, setResending] = useState(false);
+  // OTP verification state — when sign-up requires email confirmation we
+  // switch the entire card to a branded "enter the 6-digit code" screen
+  // instead of asking the user to click a link.
+  const [verifyMode, setVerifyMode] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [otpSubmitting, setOtpSubmitting] = useState(false);
+  const [pendingSignUp, setPendingSignUp] = useState<SignUpFormData | null>(null);
+  const [pendingAvatar, setPendingAvatar] = useState<File | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user, profile, primaryRole, signIn, signUp } = useAuth();
@@ -263,6 +272,49 @@ const Auth = () => {
     }
   };
 
+  // Persist optional profile + avatar once a session exists (after OTP verify
+  // or, in the rare auto-confirm case, right after signUp).
+  const persistExtraSignupDetails = async (data: SignUpFormData, avatar: File | null) => {
+    try {
+      const { data: { user: newUser } } = await supabase.auth.getUser();
+      if (!newUser?.id) return;
+      const meta = { school: data.school };
+      let uploadedAvatarUrl: string | null = null;
+      if (avatar) {
+        try {
+          const ext = (avatar.name.split(".").pop() || "jpg").toLowerCase();
+          const path = `${newUser.id}/avatar.${ext}`;
+          const { error: upErr } = await supabase.storage
+            .from("avatars")
+            .upload(path, avatar, { upsert: true, contentType: avatar.type });
+          if (!upErr) {
+            const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+            uploadedAvatarUrl = `${pub.publicUrl}?v=${Date.now()}`;
+          }
+        } catch (upErr) {
+          console.warn("Avatar upload failed:", upErr);
+        }
+      }
+      await supabase
+        .from("profiles")
+        .update({
+          academic_path: (data.academicPath || null) as any,
+          level: data.level || null,
+          department: data.department || null,
+          phone: data.phone || null,
+          matric_no: data.matricNo || null,
+          state_of_origin: data.state || null,
+          academic_metadata: meta,
+          ...(uploadedAvatarUrl
+            ? { avatar_url: uploadedAvatarUrl, profile_image_url: uploadedAvatarUrl }
+            : {}),
+        })
+        .eq("id", newUser.id);
+    } catch (e) {
+      console.warn("Could not persist extra signup details:", e);
+    }
+  };
+
   const handleSignUp = async (data: SignUpFormData) => {
     setIsSubmitting(true);
     const { error } = await signUp(data.email, data.password, data.fullName, data.referralCode);
@@ -272,82 +324,76 @@ const Auth = () => {
       if (error.message.includes("already registered")) {
         message = "This email is already registered. Please sign in instead.";
       }
+      toast({ variant: "destructive", title: "Sign up failed", description: message });
+      setIsSubmitting(false);
+      return;
+    }
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      // Email confirmation required → switch to branded 6-digit OTP screen.
+      setPendingSignUp(data);
+      setPendingAvatar(avatarFile);
+      setPendingEmail(data.email);
+      setOtpCode("");
+      setVerifyMode(true);
+      toast({
+        title: "Check your inbox 📬",
+        description: `We sent a 6-digit code to ${data.email}. Enter it below to verify your account.`,
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Rare auto-confirm path: session exists immediately.
+    await persistExtraSignupDetails(data, avatarFile);
+    const welcomeMsg = data.referralCode
+      ? "Welcome to OverraPrep AI! Complete your first quiz to earn bonus tokens."
+      : "Welcome to OverraPrep AI. You can now start practicing.";
+    toast({ title: "Account created!", description: welcomeMsg });
+    navigate(postAuthDestination(true));
+    setIsSubmitting(false);
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!pendingEmail || otpCode.length !== 6) return;
+    setOtpSubmitting(true);
+    const { error } = await supabase.auth.verifyOtp({
+      type: "signup",
+      email: pendingEmail,
+      token: otpCode,
+    });
+    if (error) {
+      setOtpSubmitting(false);
       toast({
         variant: "destructive",
-        title: "Sign up failed",
-        description: message,
+        title: "Couldn't verify code",
+        description: error.message || "That code is invalid or has expired. Request a new one.",
       });
-    } else {
-      // If email confirmation is required, there is no session yet. Tell the
-      // user to verify their inbox instead of pushing them into onboarding
-      // (which would fail because `user` is null there).
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        toast({
-          title: "Check your email to verify your account",
-          description: `We sent a confirmation link to ${data.email}. Click it, then sign in to continue.`,
-        });
-        setPendingEmail(data.email);
-        setIsSubmitting(false);
-        setIsSignUp(false);
-        return;
-      }
-      // Persist extra profile details (best-effort; profile row is created by trigger)
-      try {
-        const { data: { user: newUser } } = await supabase.auth.getUser();
-        if (newUser?.id) {
-          const meta = {
-            school: data.school,
-          };
-
-          // Upload avatar if user picked one
-          let uploadedAvatarUrl: string | null = null;
-          if (avatarFile) {
-            try {
-              const ext = (avatarFile.name.split(".").pop() || "jpg").toLowerCase();
-              const path = `${newUser.id}/avatar.${ext}`;
-              const { error: upErr } = await supabase.storage
-                .from("avatars")
-                .upload(path, avatarFile, { upsert: true, contentType: avatarFile.type });
-              if (!upErr) {
-                const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-                uploadedAvatarUrl = `${pub.publicUrl}?v=${Date.now()}`;
-              }
-            } catch (upErr) {
-              console.warn("Avatar upload failed:", upErr);
-            }
-          }
-
-          await supabase
-            .from("profiles")
-            .update({
-              academic_path: (data.academicPath || null) as any,
-              level: data.level || null,
-              department: data.department || null,
-              phone: data.phone || null,
-              matric_no: data.matricNo || null,
-              state_of_origin: data.state || null,
-              academic_metadata: meta,
-              ...(uploadedAvatarUrl
-                ? { avatar_url: uploadedAvatarUrl, profile_image_url: uploadedAvatarUrl }
-                : {}),
-            })
-            .eq("id", newUser.id);
-        }
-      } catch (e) {
-        console.warn("Could not persist extra signup details:", e);
-      }
-
-      const welcomeMsg = data.referralCode
-        ? "Welcome to OverraPrep AI! Complete your first quiz to earn bonus tokens."
-        : "Welcome to OverraPrep AI. You can now start practicing.";
-      toast({
-        title: "Account created!",
-        description: welcomeMsg,
-      });
-      navigate(postAuthDestination(true));
+      return;
     }
-    setIsSubmitting(false);
+    if (pendingSignUp) {
+      await persistExtraSignupDetails(pendingSignUp, pendingAvatar);
+    }
+    toast({
+      title: "You're in! 🎉",
+      description: "Welcome to OverraPrep AI. Let's set up your study profile.",
+    });
+    setVerifyMode(false);
+    setOtpSubmitting(false);
+    navigate(postAuthDestination(true));
+  };
+
+  const handleResendCode = async () => {
+    if (!pendingEmail) return;
+    setResending(true);
+    const { error } = await supabase.auth.resend({ type: "signup", email: pendingEmail });
+    setResending(false);
+    if (error) {
+      toast({ variant: "destructive", title: "Couldn't resend", description: error.message || "Try again in a minute." });
+    } else {
+      toast({ title: "New code sent", description: `Fresh 6-digit code on its way to ${pendingEmail}.` });
+    }
   };
 
   return (
@@ -411,8 +457,43 @@ const Auth = () => {
           {/* outer gold border glow */}
           <div className="absolute -inset-[1.5px] rounded-[28px] bg-gradient-to-br from-primary/60 via-amber-300/30 to-primary/60 opacity-70 blur-[2px]" aria-hidden />
           <div className="relative bg-white/85 supports-[backdrop-filter]:bg-white/65 backdrop-blur-2xl rounded-2xl sm:rounded-[26px] border border-white/60 shadow-[0_30px_80px_-20px_hsl(var(--primary)/0.45)] p-4 sm:p-7 md:p-8">
+          {verifyMode ? (
+            <div className="space-y-5 text-center">
+              <div className="mx-auto h-14 w-14 rounded-2xl bg-gradient-to-br from-primary to-amber-400 flex items-center justify-center shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.6)]">
+                <KeyRound className="w-7 h-7 text-primary-foreground" />
+              </div>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-display font-bold tracking-tight">Verify your email</h2>
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  Enter the 6-digit code we sent to <strong className="text-foreground">{pendingEmail}</strong>
+                </p>
+              </div>
+              <div className="flex justify-center">
+                <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
+                  <InputOTPGroup>
+                    {[0,1,2,3,4,5].map((i) => (
+                      <InputOTPSlot key={i} index={i} className="h-12 w-10 sm:h-14 sm:w-12 text-lg font-bold" />
+                    ))}
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+              <Button variant="hero" size="lg" className="w-full" onClick={handleVerifyOtp} disabled={otpSubmitting || otpCode.length !== 6}>
+                {otpSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (<><Sparkles className="w-4 h-4" /> Verify & continue</>)}
+              </Button>
+              <div className="flex items-center justify-between text-xs">
+                <button type="button" onClick={handleResendCode} disabled={resending} className="font-semibold text-primary hover:underline disabled:opacity-50 inline-flex items-center gap-1">
+                  {resending && <Loader2 className="w-3 h-3 animate-spin" />}Resend code
+                </button>
+                <button type="button" onClick={() => { setVerifyMode(false); setIsSignUp(false); }} className="text-muted-foreground hover:text-foreground underline">
+                  Use a different email
+                </button>
+              </div>
+              <p className="text-[11px] text-muted-foreground pt-2">Code expires in 1 hour. Check spam if you don't see it.</p>
+            </div>
+          ) : (<>
           {/* Tab Switcher */}
           <div className="relative flex mb-5 sm:mb-7 bg-muted/70 rounded-2xl p-1 border border-border/40">
+
             <span
               className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl bg-gradient-to-br from-primary to-amber-400 shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.6)] transition-all duration-300 ease-out ${
                 isSignUp ? "left-[calc(50%+2px)]" : "left-1"
@@ -923,7 +1004,9 @@ const Auth = () => {
               </p>
             </form>
           )}
+          </>)}
           </div>
+
         </div>
 
         <p className="text-center text-sm text-muted-foreground mt-6">
