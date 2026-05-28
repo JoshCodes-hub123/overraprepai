@@ -32,8 +32,18 @@ export const LoginCelebration = () => {
       try { celebrateGold("rich"); } catch { /* noop */ }
     }
 
-    const t = setTimeout(() => setOpen(false), 3000);
-    return () => clearTimeout(t);
+    // Flash and go — dashboard should be usable immediately.
+    const t = setTimeout(() => setOpen(false), 1100);
+    const dismiss = () => setOpen(false);
+    window.addEventListener("pointerdown", dismiss, { once: true });
+    window.addEventListener("scroll", dismiss, { once: true, passive: true });
+    window.addEventListener("keydown", dismiss, { once: true });
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("pointerdown", dismiss);
+      window.removeEventListener("scroll", dismiss);
+      window.removeEventListener("keydown", dismiss);
+    };
   }, [user, profile]);
 
   return (
