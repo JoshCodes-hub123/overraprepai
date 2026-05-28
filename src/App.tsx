@@ -22,6 +22,7 @@ import { NetworkStatus } from "@/components/system/NetworkStatus";
 import ScrollToTop from "@/components/system/ScrollToTop";
 import PageViewTracker from "@/components/system/PageViewTracker";
 import UpdatePrompt from "@/components/system/UpdatePrompt";
+import ReportProblemFab from "@/components/system/ReportProblemFab";
 import { initPushNotifications } from "@/lib/native/push";
 import { Capacitor } from "@capacitor/core";
 import { useRecordDeviceLogin } from "@/hooks/useDeviceHistory";
@@ -136,6 +137,7 @@ const App = () => {
                 </main>
                 <BottomTabBar />
                 <NewStudyPackFAB />
+                <ReportProblemFab />
                 <MiniPlayerBar />
                 <RoleBadge />
               </BiometricUnlock>

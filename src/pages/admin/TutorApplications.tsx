@@ -159,9 +159,13 @@ const TutorApplications = () => {
   const { logAction } = useAuditLog();
   const [applications, setApplications] = useState<TutorApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
+  const [quizzesFor, setQuizzesFor] = useState<{ id: string; name: string } | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -177,21 +181,26 @@ const TutorApplications = () => {
   }, [user, authLoading, hasRole, navigate, toast]);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchApplications = async () => {
+      setIsLoading(true);
+      setLoadError(null);
       const { data, error } = await supabase
         .from("tutor_applications")
         .select("*")
         .order("created_at", { ascending: false });
 
+      if (cancelled) return;
       if (error) {
         console.error("Error fetching applications:", error);
+        setLoadError(error.message || "Failed to load applications.");
         toast({
           variant: "destructive",
           title: "Error",
           description: "Failed to load applications.",
         });
       } else {
-        setApplications(data as TutorApplication[]);
+        setApplications((data ?? []) as TutorApplication[]);
       }
       setIsLoading(false);
     };
@@ -199,7 +208,8 @@ const TutorApplications = () => {
     if (user && hasRole("admin")) {
       fetchApplications();
     }
-  }, [user, hasRole, toast]);
+    return () => { cancelled = true; };
+  }, [user, hasRole, toast, reloadKey]);
 
   const handleApprove = async (application: TutorApplication) => {
     setProcessingId(application.id);
@@ -367,8 +377,18 @@ const TutorApplications = () => {
     );
   }
 
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
-  const [quizzesFor, setQuizzesFor] = useState<{ id: string; name: string } | null>(null);
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-6">
+        <div className="text-center max-w-sm">
+          <h2 className="font-display text-xl font-bold mb-2">Couldn't load applications</h2>
+          <p className="text-sm text-muted-foreground mb-4">{loadError}</p>
+          <Button onClick={() => setReloadKey((k) => k + 1)}>Try again</Button>
+        </div>
+      </div>
+    );
+  }
+
 
   const showPending = statusFilter === "all" || statusFilter === "pending";
   const showApproved = statusFilter === "all" || statusFilter === "approved";

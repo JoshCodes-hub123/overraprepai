@@ -47,7 +47,7 @@ function describe(row: ScoringActivityRow): { Icon: any; tint: string; text: str
 }
 
 export function ScoringActivityFeed({ limit = 20 }: { limit?: number }) {
-  const { data, isLoading } = useRecentScoringActivity(limit);
+  const { data, isLoading, isError, error, refetch } = useRecentScoringActivity(limit);
 
   return (
     <div className="bg-card rounded-2xl border border-amber-100/70 p-5">
@@ -63,6 +63,17 @@ export function ScoringActivityFeed({ limit = 20 }: { limit?: number }) {
 
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-amber-600" /></div>
+      ) : isError ? (
+        <div className="text-center py-8 px-2">
+          <p className="text-sm font-semibold text-foreground">Couldn't load activity</p>
+          <p className="text-xs text-muted-foreground mt-1">{(error as any)?.message || "Please retry."}</p>
+          <button
+            onClick={() => refetch()}
+            className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 hover:text-amber-900"
+          >
+            <Loader2 className="w-3.5 h-3.5" /> Try again
+          </button>
+        </div>
       ) : (data?.length ?? 0) === 0 ? (
         <p className="text-center text-sm text-muted-foreground py-8">
           No scoring activity yet. Take a quiz or review flashcards to appear here.
