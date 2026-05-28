@@ -5,6 +5,5 @@ project_id = "vfbxyldwtjwwecpbgezu"
     verify_jwt = false
   [functions.process-email-queue]
     verify_jwt = true
-  [functions.paystack-webhook]
+  [functions.flutterwave-webhook]
     verify_jwt = false
-
