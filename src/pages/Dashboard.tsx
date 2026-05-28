@@ -40,9 +40,6 @@ const Dashboard = () => {
         description="Your personalized OverraPrep AI dashboard: track readiness, continue courses, and resume practice sessions."
         url="/dashboard"
         noindex
-        description="Opening your OverraPrep workspace."
-        noindex
-        url="https://overraprep.com/dashboard"
       />
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="text-center space-y-3">
