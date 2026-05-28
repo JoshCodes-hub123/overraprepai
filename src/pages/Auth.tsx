@@ -502,27 +502,24 @@ const Auth = () => {
               <p className="text-[11px] text-muted-foreground pt-2">Code expires in 1 hour. Check spam if you don't see it.</p>
             </div>
           ) : (<>
-          {/* Tab Switcher */}
-          <div className="relative flex mb-5 sm:mb-7 bg-muted/70 rounded-2xl p-1 border border-border/40">
-
-            <span
-              className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-xl bg-gradient-to-br from-primary to-amber-400 shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.6)] transition-all duration-300 ease-out ${
-                isSignUp ? "left-[calc(50%+2px)]" : "left-1"
-              }`}
-              aria-hidden
-            />
+          {/* Sculptural underline tabs */}
+          <div className="flex justify-around mb-7 sm:mb-8 border-b border-[#EAE4D9]">
             <button
               onClick={() => setIsSignUp(false)}
-              className={`relative z-10 flex-1 py-2.5 text-sm font-semibold rounded-xl transition-colors duration-200 ${
-                !isSignUp ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+              className={`pb-3 px-4 text-sm font-semibold relative transition-colors ${
+                !isSignUp
+                  ? "text-[#3D3A35] border-b-2 border-[#C5A059] -mb-px"
+                  : "text-[#A69D8E] border-b-2 border-transparent hover:text-[#3D3A35]"
               }`}
             >
               Sign In
             </button>
             <button
               onClick={() => setIsSignUp(true)}
-              className={`relative z-10 flex-1 py-2.5 text-sm font-semibold rounded-xl transition-colors duration-200 ${
-                isSignUp ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+              className={`pb-3 px-4 text-sm font-semibold relative transition-colors ${
+                isSignUp
+                  ? "text-[#3D3A35] border-b-2 border-[#C5A059] -mb-px"
+                  : "text-[#A69D8E] border-b-2 border-transparent hover:text-[#3D3A35]"
               }`}
             >
               Sign Up
