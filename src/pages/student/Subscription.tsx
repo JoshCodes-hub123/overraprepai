@@ -21,12 +21,32 @@ const Subscription = () => {
   const [chosenPlan, setChosenPlan] = useState<any | null>(null);
   const [launchingPlanId, setLaunchingPlanId] = useState<string | null>(null);
 
-const Subscription = () => {
-  const { user } = useAuth();
-  const qc = useQueryClient();
-  const { data: plans = [] } = useSubscriptionPlans();
-  const { data: mySub } = useMySubscription();
-  const [chosenPlan, setChosenPlan] = useState<any | null>(null);
+  const handleUpgrade = async (plan: any) => {
+    if (!plan?.id) return;
+    // Free / manual-only plans use the receipt-upload dialog
+    if (plan.id === "free" || (plan.price_cents ?? 0) === 0) {
+      setChosenPlan(plan);
+      return;
+    }
+    try {
+      setLaunchingPlanId(plan.id);
+      const { data, error } = await supabase.functions.invoke("flutterwave-init", {
+        body: {
+          plan_id: plan.id,
+          redirect_url: `${window.location.origin}/subscription`,
+        },
+      });
+      if (error) throw error;
+      const url = (data as any)?.checkout_url;
+      if (!url) throw new Error("No checkout URL returned");
+      window.location.href = url;
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Could not start payment. Try again.");
+      setLaunchingPlanId(null);
+    }
+  };
+
 
   const { data: requests = [] } = useQuery({
     queryKey: ["payment-requests", user?.id],
