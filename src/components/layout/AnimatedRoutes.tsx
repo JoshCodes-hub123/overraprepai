@@ -100,6 +100,17 @@ const TutorCurricula = lazy(() => import("@/pages/tutor/TutorCurricula"));
 const TutorCurriculumBuilder = lazy(() => import("@/pages/tutor/TutorCurriculumBuilder"));
 const AdminCourses = lazy(() => import("@/pages/admin/AdminCourses"));
 const CommunityWall = lazy(() => import("@/pages/community/CommunityWall"));
+
+// "I'm New" onboarding chain
+const ChoosePersona = lazy(() => import("@/pages/onboarding/ChoosePersona"));
+const ChooseProduct = lazy(() => import("@/pages/onboarding/ChooseProduct"));
+const ChoosePath = lazy(() => import("@/pages/onboarding/ChoosePath"));
+const RefinePath = lazy(() => import("@/pages/onboarding/RefinePath"));
+const ChooseUniversity = lazy(() => import("@/pages/onboarding/ChooseUniversity"));
+const ChooseFaculty = lazy(() => import("@/pages/onboarding/ChooseFaculty"));
+const ChooseDepartment = lazy(() => import("@/pages/onboarding/ChooseDepartment"));
+const ChooseLevel = lazy(() => import("@/pages/onboarding/ChooseLevel"));
+const TutorMatchingOnboarding = lazy(() => import("@/pages/onboarding/TutorMatching"));
 const CGPACalculator = lazy(() => import("@/pages/student/CGPACalculator"));
 const StudyPacks = lazy(() => import("@/pages/student/StudyPacks"));
 const Library = lazy(() => import("@/pages/student/Library"));
