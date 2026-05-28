@@ -181,21 +181,26 @@ const TutorApplications = () => {
   }, [user, authLoading, hasRole, navigate, toast]);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchApplications = async () => {
+      setIsLoading(true);
+      setLoadError(null);
       const { data, error } = await supabase
         .from("tutor_applications")
         .select("*")
         .order("created_at", { ascending: false });
 
+      if (cancelled) return;
       if (error) {
         console.error("Error fetching applications:", error);
+        setLoadError(error.message || "Failed to load applications.");
         toast({
           variant: "destructive",
           title: "Error",
           description: "Failed to load applications.",
         });
       } else {
-        setApplications(data as TutorApplication[]);
+        setApplications((data ?? []) as TutorApplication[]);
       }
       setIsLoading(false);
     };
@@ -203,7 +208,8 @@ const TutorApplications = () => {
     if (user && hasRole("admin")) {
       fetchApplications();
     }
-  }, [user, hasRole, toast]);
+    return () => { cancelled = true; };
+  }, [user, hasRole, toast, reloadKey]);
 
   const handleApprove = async (application: TutorApplication) => {
     setProcessingId(application.id);
