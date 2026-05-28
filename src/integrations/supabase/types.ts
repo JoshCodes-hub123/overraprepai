@@ -2960,6 +2960,54 @@ export type Database = {
           },
         ]
       }
+      payment_transactions: {
+        Row: {
+          activated: boolean
+          activated_at: string | null
+          amount_cents: number
+          created_at: string
+          currency: string
+          id: string
+          plan_id: string
+          provider: string
+          raw_payload: Json | null
+          reference: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activated?: boolean
+          activated_at?: string | null
+          amount_cents: number
+          created_at?: string
+          currency?: string
+          id?: string
+          plan_id: string
+          provider?: string
+          raw_payload?: Json | null
+          reference: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activated?: boolean
+          activated_at?: string | null
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          plan_id?: string
+          provider?: string
+          raw_payload?: Json | null
+          reference?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       platform_announcements: {
         Row: {
           audience: string
@@ -3213,6 +3261,8 @@ export type Database = {
           cover_photo_url: string | null
           created_at: string
           current_cgpa: number | null
+          daily_ai_tokens_reset_at: string
+          daily_ai_tokens_used: number
           date_of_birth: string | null
           department: string | null
           email: string
@@ -3250,6 +3300,8 @@ export type Database = {
           cover_photo_url?: string | null
           created_at?: string
           current_cgpa?: number | null
+          daily_ai_tokens_reset_at?: string
+          daily_ai_tokens_used?: number
           date_of_birth?: string | null
           department?: string | null
           email: string
@@ -3287,6 +3339,8 @@ export type Database = {
           cover_photo_url?: string | null
           created_at?: string
           current_cgpa?: number | null
+          daily_ai_tokens_reset_at?: string
+          daily_ai_tokens_used?: number
           date_of_birth?: string | null
           department?: string | null
           email?: string
@@ -7096,6 +7150,25 @@ export type Database = {
       }
     }
     Functions: {
+      activate_pro_subscription: {
+        Args: {
+          _days: number
+          _plan_id: string
+          _reference?: string
+          _source?: string
+          _user_id: string
+        }
+        Returns: string
+      }
+      admin_change_plan: {
+        Args: {
+          _days?: number
+          _plan_id: string
+          _reason?: string
+          _user_id: string
+        }
+        Returns: string
+      }
       admin_get_school: {
         Args: { _school_id: string }
         Returns: {
@@ -7171,6 +7244,15 @@ export type Database = {
         Returns: undefined
       }
       complete_session: { Args: { _booking_id: string }; Returns: undefined }
+      consume_ai_token: {
+        Args: { _daily_limit?: number; _kind?: string }
+        Returns: {
+          allowed: boolean
+          is_pro: boolean
+          remaining: number
+          used: number
+        }[]
+      }
       course_in_my_university: {
         Args: { _course_id: string }
         Returns: boolean
@@ -7242,6 +7324,8 @@ export type Database = {
           cover_photo_url: string | null
           created_at: string
           current_cgpa: number | null
+          daily_ai_tokens_reset_at: string
+          daily_ai_tokens_used: number
           date_of_birth: string | null
           department: string | null
           email: string
@@ -7431,7 +7515,7 @@ export type Database = {
         Args: { _course_id: string; _user_id: string }
         Returns: boolean
       }
-      is_pro: { Args: { _uid?: string }; Returns: boolean }
+      is_pro: { Args: { _user_id: string }; Returns: boolean }
       is_school_member: {
         Args: { _role?: string; _school_id: string }
         Returns: boolean
