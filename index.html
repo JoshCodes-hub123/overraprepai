@@ -162,14 +162,14 @@
       <div id="boot-fallback">
         <h2>Hmm, that took a while.</h2>
         <p id="boot-fallback-msg">We couldn't finish loading the app. Check your connection and try again.</p>
-        <button type="button" onclick="window.location.reload()">Reload app</button>
+        <button type="button" onclick="(function(){try{var u=new URL(window.location.href);u.searchParams.set('_cb',Date.now().toString(36));window.location.replace(u.toString());}catch(e){window.location.reload();}})()">Reload app</button>
       </div>
     </div>
     <script>
       (function () {
-        // Reveal the fallback CTA if the app hasn't mounted within 12s,
+        // Reveal the fallback CTA if the app hasn't mounted within 25s,
         // or if a chunk fails to load. Prevents blank-screen lock-up.
-        var FALLBACK_MS = 12000;
+        var FALLBACK_MS = 25000;
         var shown = false;
         function showFallback(msg) {
           if (shown) return; shown = true;
@@ -181,19 +181,38 @@
           }
           el.style.display = "block";
         }
+        // One-shot silent reload for chunk errors (stale deploy / dropped fetch)
+        // before showing the fallback. Gated by sessionStorage to never loop.
+        function softReloadOnce() {
+          try {
+            var k = "overra_boot_reload_at";
+            var last = Number(sessionStorage.getItem(k) || 0);
+            if (Date.now() - last > 60000) {
+              sessionStorage.setItem(k, String(Date.now()));
+              var u = new URL(window.location.href);
+              u.searchParams.set("_cb", Date.now().toString(36));
+              window.location.replace(u.toString());
+              return true;
+            }
+          } catch (_) {}
+          return false;
+        }
         var timer = setTimeout(function () {
           if (!document.body.classList.contains("app-ready")) showFallback();
         }, FALLBACK_MS);
         window.__BOOT_FALLBACK__ = { show: showFallback, cancel: function () { clearTimeout(timer); } };
+        var CHUNK_RE = /Failed to fetch dynamically imported module|Importing a module script failed|ChunkLoadError|Loading chunk \d+ failed/i;
         window.addEventListener("error", function (e) {
           var msg = (e && e.message) || "";
-          if (/Failed to fetch dynamically imported module|Importing a module script failed|ChunkLoadError|Loading chunk \d+ failed/i.test(msg)) {
+          if (CHUNK_RE.test(msg)) {
+            if (softReloadOnce()) return;
             showFallback("A new version is available or your connection dropped. Tap reload to continue.");
           }
         });
         window.addEventListener("unhandledrejection", function (e) {
           var msg = (e && e.reason && (e.reason.message || e.reason)) || "";
-          if (/Failed to fetch dynamically imported module|Importing a module script failed|ChunkLoadError|Loading chunk \d+ failed/i.test(String(msg))) {
+          if (CHUNK_RE.test(String(msg))) {
+            if (softReloadOnce()) return;
             showFallback("A new version is available or your connection dropped. Tap reload to continue.");
           }
         });
