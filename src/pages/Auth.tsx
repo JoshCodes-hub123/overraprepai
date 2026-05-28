@@ -467,7 +467,7 @@ const Auth = () => {
 
         {/* Auth Card — editorial cream */}
         <div className="relative">
-          <div className="relative bg-[#FCFBF8] rounded-3xl border border-[#C5A059]/10 shadow-[0_10px_40px_-10px_rgba(197,160,89,0.12)] p-5 sm:p-7 md:p-8">
+          <div className="relative bg-[#FCFBF8]/95 backdrop-blur-sm rounded-3xl border border-[#C5A059]/10 shadow-[0_10px_40px_-10px_rgba(197,160,89,0.18)] p-4 sm:p-7 md:p-8">
           {verifyMode ? (
             <div className="space-y-5 text-center">
               <div className="mx-auto h-14 w-14 rounded-2xl bg-gradient-to-br from-primary to-amber-400 flex items-center justify-center shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.6)]">
