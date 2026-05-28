@@ -80,6 +80,14 @@ const Auth = () => {
   // dedicated banner with a "Resend verification email" button.
   const [pendingEmail, setPendingEmail] = useState<string>("");
   const [resending, setResending] = useState(false);
+  // OTP verification state — when sign-up requires email confirmation we
+  // switch the entire card to a branded "enter the 6-digit code" screen
+  // instead of asking the user to click a link.
+  const [verifyMode, setVerifyMode] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [otpSubmitting, setOtpSubmitting] = useState(false);
+  const [pendingSignUp, setPendingSignUp] = useState<SignUpFormData | null>(null);
+  const [pendingAvatar, setPendingAvatar] = useState<File | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user, profile, primaryRole, signIn, signUp } = useAuth();
