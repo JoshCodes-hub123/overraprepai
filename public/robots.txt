@@ -5,5 +5,6 @@ Disallow: /dashboard
 Disallow: /admin
 Disallow: /website
 Disallow: /jamb-intelligence
+Disallow: /notifications
 
-Sitemap: https://prep-mentor-hub-50.lovable.app/sitemap.xml
+Sitemap: https://overraprepai.com/sitemap.xml
