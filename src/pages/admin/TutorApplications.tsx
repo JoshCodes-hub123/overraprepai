@@ -415,7 +415,24 @@ const TutorApplications = () => {
           </p>
         </div>
 
+        {/* Status filter */}
+        <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)} className="mb-6">
+          <TabsList className="grid grid-cols-4 w-full max-w-md">
+            <TabsTrigger value="all">All ({applications.length})</TabsTrigger>
+            <TabsTrigger value="pending">
+              Pending ({applications.filter(a => a.status === "pending").length})
+            </TabsTrigger>
+            <TabsTrigger value="approved">
+              Approved ({applications.filter(a => a.status === "approved").length})
+            </TabsTrigger>
+            <TabsTrigger value="rejected">
+              Rejected ({applications.filter(a => a.status === "rejected").length})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         {/* Pending Applications */}
+        {showPending && (
         <section className="mb-12">
           <h2 className="font-display text-xl font-bold text-foreground mb-4 flex items-center gap-2">
             <Clock className="w-5 h-5 text-accent" />
