@@ -406,53 +406,53 @@ const Auth = () => {
         url="https://overraprep.com/auth"
       />
       <main
-        className="min-h-screen relative overflow-hidden bg-[#FAF7F2] lg:grid lg:grid-cols-[1.05fr_1fr] xl:grid-cols-[1.15fr_1fr] flex items-center justify-center"
+        className="min-h-screen relative overflow-hidden bg-[#FAF7F2] lg:grid lg:grid-cols-[1.05fr_1fr] xl:grid-cols-[1.15fr_1fr] flex items-stretch lg:items-center justify-center"
         role="main"
       >
         {/* Premium ambassador / brand showcase (lg+ only) */}
         <AuthBrandPanel />
 
-        <div className="w-full flex items-start sm:items-center justify-center px-4 py-6 sm:p-8 lg:p-10 relative z-10">
-          <article className="w-full max-w-[400px] relative z-10 animate-fade-in">
-        {/* Editorial hero photo (mobile only — desktop gets AuthBrandPanel) */}
-        <div className="lg:hidden w-full mb-7 relative">
-          <div className="aspect-[4/3] w-full rounded-[2rem] overflow-hidden shadow-[0_12px_30px_-8px_rgba(197,160,89,0.18)] border border-[#C5A059]/15">
-            <img
-              src={authHero}
-              alt="African university student studying with OverraPrep AI"
-              className="w-full h-full object-cover"
-              loading="eager"
-              width={800}
-              height={608}
-            />
-          </div>
-          <div className="absolute -bottom-3 right-5 bg-white py-1.5 px-3.5 rounded-full shadow-[0_6px_18px_-4px_rgba(197,160,89,0.25)] border border-[#C5A059]/15 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#3D3A35]">AI-Powered Prep</span>
-          </div>
+        {/* Mobile: subtle vertical video backdrop with cream wash so the page
+            feels alive without forcing the user to scroll. */}
+        <div className="lg:hidden absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+          <video
+            className="absolute inset-0 w-full h-full object-cover opacity-30"
+            src="/__l5e/assets-v1/5b198689-3af2-4d21-b7f6-2cf2962ff353/auth-bg.mp4"
+            autoPlay muted loop playsInline preload="auto"
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(180deg, rgba(250,247,242,0.55) 0%, rgba(250,247,242,0.88) 45%, rgba(250,247,242,0.98) 100%)",
+            }}
+          />
         </div>
 
-        {/* Logo + serif wordmark (mobile only) */}
-        <div className="text-center mb-7 lg:hidden">
-          <a href="/" className="inline-flex flex-col items-center group">
-            <span className="w-12 h-12 rounded-full bg-white shadow-[0_4px_15px_rgba(197,160,89,0.12)] border border-[#C5A059]/10 flex items-center justify-center mb-3">
-              <img src={logo} alt="OverraPrep AI" className="h-7 w-auto object-contain" />
-            </span>
+        <div className="w-full flex items-center justify-center px-4 py-4 sm:p-8 lg:p-10 relative z-10 min-h-screen">
+          <article className="w-full max-w-[400px] relative z-10 animate-fade-in">
+        {/* Compact inline header (mobile only) — logo + serif wordmark + tagline
+            all in a single row group so the form stays above the fold. */}
+        <div className="flex items-center justify-center gap-2.5 mb-4 lg:hidden">
+          <span className="w-9 h-9 rounded-full bg-white shadow-[0_4px_15px_rgba(197,160,89,0.12)] border border-[#C5A059]/10 flex items-center justify-center">
+            <img src={logo} alt="OverraPrep AI" className="h-5 w-auto object-contain" />
+          </span>
+          <div className="flex flex-col leading-tight">
             <span
-              className="text-2xl font-semibold tracking-[0.04em] text-[#3D3A35]"
+              className="text-lg font-semibold tracking-[0.04em] text-[#3D3A35]"
               style={{ fontFamily: "'Cormorant Garamond', serif" }}
             >
               OverraPrep
             </span>
-            <span className="mt-1 text-[10px] uppercase tracking-[0.25em] text-[#A69D8E] font-semibold">
+            <span className="text-[9px] uppercase tracking-[0.22em] text-[#A69D8E] font-semibold">
               Study Smart, Not Hard
             </span>
-          </a>
+          </div>
         </div>
 
         {isSignUp && intent && INTENT_LABELS[intent] && (
-          <div className="mb-4 flex items-center justify-center gap-2 text-xs">
-            <span className="px-3 py-1.5 rounded-full bg-primary/10 text-primary font-semibold">
+          <div className="mb-3 flex items-center justify-center gap-2 text-xs">
+            <span className="px-3 py-1 rounded-full bg-primary/10 text-primary font-semibold">
               Signing up as {INTENT_LABELS[intent]}
             </span>
             <button
