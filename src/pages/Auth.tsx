@@ -4,7 +4,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Mail, Lock, User, ArrowRight, ArrowLeft, Loader2, Gift, GraduationCap, Phone, MapPin, BookOpen, IdCard, Eye, EyeOff, MailCheck, AlertTriangle, CheckCircle2, KeyRound, Sparkles } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import logo from "@/assets/logo.png";
 import authBg from "@/assets/auth-bg.jpg";
 import authHero from "@/assets/auth-hero.jpg";
@@ -186,6 +186,8 @@ const Auth = () => {
 
   const signInForm = useForm<SignInFormData>({
     resolver: zodResolver(signInSchema),
+    mode: "onTouched",
+    reValidateMode: "onChange",
     defaultValues: { email: "", password: "" },
   });
 
@@ -200,6 +202,8 @@ const Auth = () => {
 
   const signUpForm = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
+    mode: "onTouched",
+    reValidateMode: "onChange",
     defaultValues: {
       fullName: "",
       email: "",
@@ -215,6 +219,22 @@ const Auth = () => {
       referralCode: referralCodeFromUrl,
     },
   });
+
+  // Respect prefers-reduced-motion + low-data connections: skip the
+  // backdrop video entirely and let the poster image carry the page.
+  const prefersReducedMotion = useReducedMotion();
+  const [enableBgVideo, setEnableBgVideo] = useState(false);
+  useEffect(() => {
+    if (prefersReducedMotion) return;
+    const conn = (navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    if (conn?.saveData) return;
+    if (conn?.effectiveType && /^(slow-2g|2g)$/.test(conn.effectiveType)) return;
+    // Defer kicking the video to idle so the form paints instantly on low-end phones.
+    const idle = (window as any).requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 600));
+    const cancel = (window as any).cancelIdleCallback ?? clearTimeout;
+    const id = idle(() => setEnableBgVideo(true));
+    return () => cancel(id);
+  }, [prefersReducedMotion]);
 
   const academicPath = signUpForm.watch("academicPath");
 
@@ -412,14 +432,28 @@ const Auth = () => {
         {/* Premium ambassador / brand showcase (lg+ only) */}
         <AuthBrandPanel />
 
-        {/* Mobile: subtle vertical video backdrop with cream wash so the page
-            feels alive without forcing the user to scroll. */}
+        {/* Mobile backdrop: poster image always renders (instant + cheap on
+            low-end phones); the looped vertical clip lazy-mounts only when
+            the user doesn't have reduced-motion / save-data on. */}
         <div className="lg:hidden absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-          <video
+          <img
+            src={authHero}
+            alt=""
             className="absolute inset-0 w-full h-full object-cover opacity-30"
-            src="/__l5e/assets-v1/5b198689-3af2-4d21-b7f6-2cf2962ff353/auth-bg.mp4"
-            autoPlay muted loop playsInline preload="auto"
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
           />
+          {enableBgVideo && (
+            <video
+              className="absolute inset-0 w-full h-full object-cover opacity-30 motion-safe:animate-fade-in"
+              src="/__l5e/assets-v1/5b198689-3af2-4d21-b7f6-2cf2962ff353/auth-bg.mp4"
+              poster={authHero}
+              autoPlay muted loop playsInline
+              preload="metadata"
+              disableRemotePlayback
+            />
+          )}
           <div
             className="absolute inset-0"
             style={{
@@ -618,16 +652,20 @@ const Auth = () => {
                 </a>
               </div>
 
-              <Button variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    Sign In
-                    <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </Button>
+              {/* Sticky bottom CTA on mobile so it sits above the keyboard
+                  / above-the-fold without needing to scroll. */}
+              <div className="sticky bottom-0 -mx-4 sm:mx-0 px-4 sm:px-0 pt-3 sm:pt-0 pb-[max(env(safe-area-inset-bottom),0.5rem)] sm:pb-0 bg-gradient-to-t from-[#FCFBF8] via-[#FCFBF8]/95 to-transparent sm:bg-none z-20">
+                <Button variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      Sign In
+                      <ArrowRight className="w-5 h-5" />
+                    </>
+                  )}
+                </Button>
+              </div>
             </form>
           ) : (
             /* Sign Up Form */
@@ -971,39 +1009,39 @@ const Auth = () => {
                   setSignUpStep((s) => Math.max(0, s - 1));
                 };
                 return (
-                  <>
-                  <div className="flex items-center gap-3">
-                    {signUpStep > 0 && (
-                      <Button type="button" variant="outline" size="lg" onClick={goBack} className="flex-1">
-                        <ArrowLeft className="w-4 h-4" /> Back
-                      </Button>
-                    )}
-                    {!isLast ? (
-                      <Button type="button" variant="hero" size="lg" onClick={goNext} className="flex-1">
-                        Continue <ArrowRight className="w-5 h-5" />
-                      </Button>
-                    ) : (
-                      <Button type="submit" variant="hero" size="lg" className="flex-1" disabled={isSubmitting}>
-                        {isSubmitting ? (
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
-                          <>
-                            Create Account <ArrowRight className="w-5 h-5" />
-                          </>
-                        )}
-                      </Button>
+                  <div className="sticky bottom-0 -mx-4 sm:mx-0 px-4 sm:px-0 pt-3 sm:pt-0 pb-[max(env(safe-area-inset-bottom),0.5rem)] sm:pb-0 bg-gradient-to-t from-[#FCFBF8] via-[#FCFBF8]/95 to-transparent sm:bg-none z-20">
+                    <div className="flex items-center gap-3">
+                      {signUpStep > 0 && (
+                        <Button type="button" variant="outline" size="lg" onClick={goBack} className="flex-1">
+                          <ArrowLeft className="w-4 h-4" /> Back
+                        </Button>
+                      )}
+                      {!isLast ? (
+                        <Button type="button" variant="hero" size="lg" onClick={goNext} className="flex-1">
+                          Continue <ArrowRight className="w-5 h-5" />
+                        </Button>
+                      ) : (
+                        <Button type="submit" variant="hero" size="lg" className="flex-1" disabled={isSubmitting}>
+                          {isSubmitting ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                          ) : (
+                            <>
+                              Create Account <ArrowRight className="w-5 h-5" />
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                    {!isLast && (
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="mt-2 block w-full text-center text-xs font-semibold text-primary hover:underline disabled:opacity-60"
+                      >
+                        {isSubmitting ? "Creating account…" : "Skip — create my account now"}
+                      </button>
                     )}
                   </div>
-                  {!isLast && (
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="mt-3 block w-full text-center text-sm font-semibold text-primary hover:underline disabled:opacity-60"
-                    >
-                      {isSubmitting ? "Creating account…" : "Skip — create my account now"}
-                    </button>
-                  )}
-                  </>
                 );
               })()}
 
