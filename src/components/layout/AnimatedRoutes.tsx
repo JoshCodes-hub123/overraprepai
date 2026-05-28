@@ -341,6 +341,14 @@ export const AnimatedRoutes = () => {
             path="/community"
             element={
               <PageTransition>
+                <CommunityWall />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/communities"
+            element={
+              <PageTransition>
                 <Community />
               </PageTransition>
             }

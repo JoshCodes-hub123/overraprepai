@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Megaphone, Loader2, Trash2, Pin } from "lucide-react";
 import { toast } from "sonner";
+import EntityComments from "@/components/comments/EntityComments";
 
 interface Ann {
   id: string;
@@ -167,6 +168,7 @@ export default function Announcements() {
                   {a.tutor_name} · {new Date(a.created_at).toLocaleString()}
                 </p>
                 <p className="mt-3 text-foreground whitespace-pre-wrap">{a.body}</p>
+                <EntityComments entityType="announcement" entityId={a.id} />
               </article>
             ))}
           </div>

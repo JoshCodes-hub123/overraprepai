@@ -9,6 +9,7 @@ import { PullToRefresh } from "@/components/native/PullToRefresh";
 import { DashboardOfflineBanner } from "@/components/dashboard/DashboardOfflineBanner";
 import { CompleteProfileCard } from "@/components/student/CompleteProfileCard";
 import { StudyPackHero } from "@/components/student/StudyPackHero";
+import HeroQuestCard from "@/components/student/dashboard/HeroQuestCard";
 import { CommandPalette, useCommandPaletteHotkey } from "@/components/student/CommandPalette";
 import { ContinueLearning } from "@/components/student/ContinueLearning";
 import { PickUpWhereYouLeftOff } from "@/components/student/PickUpWhereYouLeftOff";
@@ -67,6 +68,9 @@ const StudentDashboard = () => {
 
             {/* 2. Hero — Study Pack AI (single intelligent entry point) */}
             <StudyPackHero />
+
+            {/* 7-Day Hero Quest — daily momentum loop */}
+            <HeroQuestCard />
 
             {/* Exam countdown — only renders when an active exam goal exists */}
             <ExamCountdownCard />

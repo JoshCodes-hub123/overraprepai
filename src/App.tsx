@@ -17,6 +17,7 @@ import MiniPlayerBar from "@/components/audio/MiniPlayerBar";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import EmailVerificationBanner from "@/components/auth/EmailVerificationBanner";
 import RoleBadge from "@/components/auth/RoleBadge";
+import LoginCelebration from "@/components/auth/LoginCelebration";
 import { NetworkStatus } from "@/components/system/NetworkStatus";
 import ScrollToTop from "@/components/system/ScrollToTop";
 import PageViewTracker from "@/components/system/PageViewTracker";
@@ -129,6 +130,7 @@ const App = () => {
               <BiometricUnlock>
                 <PaymentTestModeBanner />
                 <EmailVerificationBanner />
+                <LoginCelebration />
                 <div className="pb-16 md:pb-0">
                   <AnimatedRoutes />
                 </div>
