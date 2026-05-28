@@ -136,6 +136,7 @@ const App = () => {
                 </main>
                 <BottomTabBar />
                 <NewStudyPackFAB />
+                <ReportProblemFab />
                 <MiniPlayerBar />
                 <RoleBadge />
               </BiometricUnlock>
