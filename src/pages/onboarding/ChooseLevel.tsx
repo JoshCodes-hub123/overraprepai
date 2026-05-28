@@ -18,14 +18,15 @@ export default function ChooseLevel() {
   const choose = async (l: string) => {
     if (!user) return;
     setSaving(l);
+    // Do NOT mark onboarding_completed here — course selection is the final gate.
     const { error } = await supabase
       .from("profiles")
-      .update({ level: l, academic_path: "university" as any, onboarding_completed: true })
+      .update({ level: l, academic_path: "university" as any })
       .eq("id", user.id);
     setSaving(null);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error("Couldn't save your level", { description: error.message }); return; }
     await refreshProfile();
-    navigate("/onboarding/match");
+    navigate("/onboarding/courses");
   };
 
   return (
