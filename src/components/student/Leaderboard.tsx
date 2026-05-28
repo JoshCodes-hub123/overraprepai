@@ -193,10 +193,17 @@ export const Leaderboard = () => {
             <div className="space-y-2.5">
               {students.isLoading ? (
                 <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-amber-600" /></div>
+              ) : students.isError ? (
+                <StateError
+                  title="Couldn't load rankings"
+                  message={(students.error as any)?.message || "Check your connection and try again."}
+                  onRetry={() => students.refetch()}
+                />
               ) : (students.data?.length ?? 0) === 0 ? (
-                <p className="text-center text-muted-foreground py-10 text-sm">
-                  No rankings yet for this filter — try a different course or time range.
-                </p>
+                <StateEmpty
+                  title="No rankings yet"
+                  message="Try a different course or time range, or start a quiz to be the first on the board."
+                />
               ) : (
                 students.data!.map((row, i) => <StudentCard key={row.user_id} row={row} rank={i + 1} />)
               )}
@@ -225,8 +232,14 @@ export const Leaderboard = () => {
           <TabsContent value="tutors" className="space-y-2.5">
             {tutors.isLoading ? (
               <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-amber-600" /></div>
+            ) : tutors.isError ? (
+              <StateError
+                title="Couldn't load tutor rankings"
+                message={(tutors.error as any)?.message || "Check your connection and try again."}
+                onRetry={() => tutors.refetch()}
+              />
             ) : (tutors.data?.length ?? 0) === 0 ? (
-              <p className="text-center text-muted-foreground py-10 text-sm">No tutor rankings yet.</p>
+              <StateEmpty title="No tutor rankings yet" message="Tutors appear once they have students and content." />
             ) : (
               tutors.data!.map((row, i) => <TutorCard key={row.tutor_id} row={row} rank={i + 1} />)
             )}
