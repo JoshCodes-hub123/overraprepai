@@ -75,7 +75,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
               videoReady ? "opacity-60" : "opacity-0"
             }`}
-            src={splashBgAsset.url}
+            src={SPLASH_VIDEO_URL}
             autoPlay
             muted
             loop
