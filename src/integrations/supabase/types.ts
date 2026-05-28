@@ -7317,9 +7317,38 @@ export type Database = {
           university: string
         }[]
       }
+      get_recent_scoring_activity: {
+        Args: { _limit?: number }
+        Returns: {
+          actor_id: string
+          avatar_url: string
+          course_id: string
+          created_at: string
+          full_name: string
+          id: string
+          meta: Json
+          object_type: string
+          verb: string
+        }[]
+      }
       get_session_meeting_url: { Args: { _slot_id: string }; Returns: string }
       get_student_leaderboard: {
         Args: { _limit?: number }
+        Returns: {
+          ai_activity: number
+          avatar_url: string
+          cards_reviewed: number
+          engagement: number
+          full_name: string
+          quiz_accuracy: number
+          score: number
+          streak_days: number
+          university: string
+          user_id: string
+        }[]
+      }
+      get_student_leaderboard_filtered: {
+        Args: { _course_id?: string; _limit?: number; _scope?: string }
         Returns: {
           ai_activity: number
           avatar_url: string
