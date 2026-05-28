@@ -81,7 +81,7 @@ const Auth = () => {
   const [resending, setResending] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user, primaryRole, signIn, signUp } = useAuth();
+  const { user, profile, primaryRole, signIn, signUp } = useAuth();
 
   // Surface reasons that brought the user back to /auth (expired, switching, etc.)
   useEffect(() => {
