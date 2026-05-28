@@ -79,6 +79,17 @@ const StudyHub = lazy(() => import("@/pages/study-hub/StudyHub"));
 const StudyHubCourse = lazy(() => import("@/pages/study-hub/StudyHubCourse"));
 const PQIntelligence = lazy(() => import("@/pages/study-hub/PQIntelligence"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
+
+// SEO landing shells (public, indexable)
+const SEOJambHub = lazy(() => import("@/pages/seo/JambHub"));
+const SEOJambCBTPractice = lazy(() => import("@/pages/seo/JambCBTPractice"));
+const SEOJambPastQuestions = lazy(() => import("@/pages/seo/JambPastQuestions"));
+const SEOPostUtmePage = lazy(() => import("@/pages/seo/PostUtmePage"));
+const SEOUniversityPage = lazy(() => import("@/pages/seo/UniversityPage"));
+const SEOTopicPage = lazy(() => import("@/pages/seo/TopicPage"));
+const SEOFlashcardGenerator = lazy(() => import("@/pages/seo/FlashcardGenerator"));
+const SEOQuizGenerator = lazy(() => import("@/pages/seo/QuizGenerator"));
+const SEOMockExams = lazy(() => import("@/pages/seo/MockExams"));
 const StartupChecklist = lazy(() => import("@/pages/admin/StartupChecklist"));
 const VerifyReportCard = lazy(() => import("@/pages/verify/VerifyReportCard"));
 const MyReportCard = lazy(() => import("@/pages/student/MyReportCard"));
@@ -184,6 +195,17 @@ export const AnimatedRoutes = () => {
         <TutorPendingGate>
          <Routes location={location}>
           <Route path="/" element={<PageTransition><Welcome /></PageTransition>} />
+
+          {/* Public SEO landing pages */}
+          <Route path="/jamb" element={<PageTransition><SEOJambHub /></PageTransition>} />
+          <Route path="/jamb/cbt-practice" element={<PageTransition><SEOJambCBTPractice /></PageTransition>} />
+          <Route path="/jamb/past-questions" element={<PageTransition><SEOJambPastQuestions /></PageTransition>} />
+          <Route path="/post-utme/:university" element={<PageTransition><SEOPostUtmePage /></PageTransition>} />
+          <Route path="/universities/:slug" element={<PageTransition><SEOUniversityPage /></PageTransition>} />
+          <Route path="/topics/:slug" element={<PageTransition><SEOTopicPage /></PageTransition>} />
+          <Route path="/ai/flashcard-generator" element={<PageTransition><SEOFlashcardGenerator /></PageTransition>} />
+          <Route path="/ai/quiz-generator" element={<PageTransition><SEOQuizGenerator /></PageTransition>} />
+          <Route path="/mock-exams" element={<PageTransition><SEOMockExams /></PageTransition>} />
           <Route path="/notifications" element={<PageTransition><NotificationsPage /></PageTransition>} />
           <Route path="/website" element={<PageTransition><Index /></PageTransition>} />
           <Route path="/welcome-tour" element={<PageTransition><MobileWelcome /></PageTransition>} />
