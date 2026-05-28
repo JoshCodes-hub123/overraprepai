@@ -81,23 +81,26 @@ export default function UpdatePrompt() {
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogContent className="border-primary/30">
+      <AlertDialogContent className="border-amber-300/60 bg-white">
         <AlertDialogHeader>
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Sparkles className="h-6 w-6" />
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-lg shadow-amber-500/30">
+            <Sparkles className="h-7 w-7" />
           </div>
-          <AlertDialogTitle className="text-center">
-            A new version is available
+          <AlertDialogTitle className="text-center font-display text-xl">
+            A fresh OverraPrep is ready
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-center">
-            We've shipped new features and fixes. Click <strong>OK, upgrade now</strong>{" "}
-            to load the latest version of the app.
+          <AlertDialogDescription className="text-center text-sm leading-relaxed">
+            We've shipped new features and fixes. Refresh to load the latest version —
+            your work is saved and you'll land right back where you left off.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="sm:justify-center">
-          <AlertDialogCancel>Later</AlertDialogCancel>
-          <AlertDialogAction onClick={handleUpgrade}>
-            OK, upgrade now
+        <AlertDialogFooter className="sm:justify-center gap-2">
+          <AlertDialogCancel className="rounded-xl">Later</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleUpgrade}
+            className="rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold"
+          >
+            Update now
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

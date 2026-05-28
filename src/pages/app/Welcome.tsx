@@ -18,14 +18,37 @@ const Welcome = () => {
   // Always show splash on app open (per brand requirement)
   const [showSplash, setShowSplash] = useState(true);
 
-  // Redirect signed-in users to their dashboard
+  // Redirect signed-in users — preferring their last in-app route if we have one.
+  // This is the "resume where you left off" behaviour: a returning student lands
+  // back on the screen they were last using, instead of being bounced to the
+  // generic dashboard.
   useEffect(() => {
     if (isLoading || !user) return;
-    if (primaryRole === "admin") navigate("/admin/dashboard", { replace: true });
-    else if (primaryRole === "tutor") navigate("/tutor/dashboard", { replace: true });
-    else if ((primaryRole as any) === "school_owner") navigate("/school/dashboard", { replace: true });
-    else if ((primaryRole as any) === "parent") navigate("/parent/dashboard", { replace: true });
-    else if (primaryRole === "student") navigate("/student/dashboard", { replace: true });
+    const roleHome =
+      primaryRole === "admin" ? "/admin/dashboard"
+      : primaryRole === "tutor" ? "/tutor/dashboard"
+      : (primaryRole as any) === "school_owner" ? "/school/dashboard"
+      : (primaryRole as any) === "parent" ? "/parent/dashboard"
+      : "/student/dashboard";
+
+    let dest = roleHome;
+    try {
+      const saved = localStorage.getItem(`overra_last_route:${user.id}`);
+      // Only restore safe, in-app routes — never auth/install/quiz-take/etc.
+      if (
+        saved &&
+        saved.startsWith("/") &&
+        !saved.startsWith("//") &&
+        !saved.startsWith("/auth") &&
+        !saved.startsWith("/install") &&
+        !saved.startsWith("/onboarding") &&
+        !saved.startsWith("/start") &&
+        saved !== "/"
+      ) {
+        dest = saved;
+      }
+    } catch { /* localStorage unavailable */ }
+    navigate(dest, { replace: true });
   }, [user, primaryRole, isLoading, navigate]);
 
   const handleSplashDone = () => {
