@@ -5,6 +5,7 @@ import { Bell, Flame, GraduationCap, Cake } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { resolveAvatarUrl } from "@/lib/avatar";
 
 const greeting = () => {
   const h = new Date().getHours();
@@ -141,7 +142,7 @@ export const TopHeader = () => {
           className="h-11 w-11 rounded-2xl flex items-center justify-center hover:bg-amber-50/50 transition-colors"
         >
           <Avatar className="h-10 w-10 ring-1 ring-amber-200/70 shadow-sm">
-            <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "Profile"} />
+            <AvatarImage src={resolveAvatarUrl(profile)} alt={profile?.full_name || "Profile"} />
             <AvatarFallback className="bg-gradient-to-br from-amber-100 to-amber-200 text-amber-800 text-sm font-bold">
               {firstName.charAt(0).toUpperCase()}
             </AvatarFallback>

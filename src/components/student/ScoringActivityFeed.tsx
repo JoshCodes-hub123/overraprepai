@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Loader2, BookOpenCheck, Layers, Flame, Trophy, Sparkles, Award } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRecentScoringActivity, type ScoringActivityRow } from "@/hooks/useLeaderboards";
+import { resolveAvatarUrl } from "@/lib/avatar";
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -86,7 +87,7 @@ export function ScoringActivityFeed({ limit = 20 }: { limit?: number }) {
               <li key={row.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-amber-50/40 transition-colors">
                 <Link to={row.actor_id ? `/profile/${row.actor_id}` : "#"} className="shrink-0">
                   <Avatar className="w-8 h-8 border border-amber-100">
-                    <AvatarImage src={row.avatar_url || undefined} />
+                    <AvatarImage src={resolveAvatarUrl(row)} alt={row.full_name || ""} />
                     <AvatarFallback className="bg-amber-100 text-amber-800 text-xs font-semibold">
                       {row.full_name?.charAt(0)?.toUpperCase() || "?"}
                     </AvatarFallback>

@@ -122,6 +122,8 @@ const EditProfile = () => {
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // Reset the input so picking the same file twice still triggers change
+    e.target.value = "";
     if (!file || !user) return;
 
     if (!file.type.startsWith("image/")) {
@@ -133,39 +135,41 @@ const EditProfile = () => {
       return;
     }
 
-    // Instant local preview while we upload
+    // Instant local preview while we upload (never saved to DB)
     const localPreview = URL.createObjectURL(file);
+    const previousUrl = avatarUrl;
     setAvatarUrl(localPreview);
 
     setIsUploading(true);
     const fileExt = (file.name.split(".").pop() || "jpg").toLowerCase();
-    const path = `${user.id}/avatar.${fileExt}`;
+    const path = `${user.id}/avatar-${Date.now()}.${fileExt}`;
 
     try {
       const { publicUrl } = await uploadToBucketWithVerification({
-        bucket: "tutor-profiles",
+        bucket: "avatars",
         path,
         file,
       });
 
-      // Persist immediately so the dashboard hero updates without a full Save
-      await supabase
+      // Persist immediately so the dashboard avatar updates without a full Save.
+      // Write to BOTH columns so every legacy reader picks it up.
+      const { error: updateError } = await supabase
         .from("profiles")
         .update({ avatar_url: publicUrl, profile_image_url: publicUrl } as any)
         .eq("id", user.id);
 
+      if (updateError) throw updateError;
+
       setAvatarUrl(publicUrl);
       await refreshProfile();
-      toast.success("Profile picture saved", {
-        description: `Stored at tutor-profiles/${path}`,
-      });
+      toast.success("Profile picture saved");
     } catch (error: any) {
       console.error("Avatar upload failed:", error);
       toast.error("Failed to upload avatar", {
         description: error?.message || "Check console for details",
       });
-      // Roll back preview on failure
-      setAvatarUrl(profile?.avatar_url ?? null);
+      // Roll back preview to whatever was there before
+      setAvatarUrl(previousUrl);
     } finally {
       URL.revokeObjectURL(localPreview);
       setIsUploading(false);
@@ -234,6 +238,14 @@ const EditProfile = () => {
       toast.error("Please enter your name");
       return;
     }
+    if (isUploading) {
+      toast.error("Please wait for the profile picture to finish uploading");
+      return;
+    }
+
+    // Defensive: never persist a temporary blob preview URL.
+    const safeAvatarUrl =
+      avatarUrl && !avatarUrl.startsWith("blob:") ? avatarUrl : profile?.avatar_url ?? null;
 
     setIsSaving(true);
     try {
@@ -244,8 +256,8 @@ const EditProfile = () => {
         .update({
           full_name: fullName.trim(),
           department: department || null,
-          avatar_url: avatarUrl,
-          profile_image_url: avatarUrl,
+          avatar_url: safeAvatarUrl,
+          profile_image_url: safeAvatarUrl,
           cover_photo_url: coverUrl,
           level: level || null,
           current_cgpa: num(currentCgpa),
@@ -371,7 +383,7 @@ const EditProfile = () => {
           <div className="flex flex-col items-center gap-4 -mt-16">
             <div className="relative">
               <Avatar className="w-24 h-24 border-4 border-border">
-                <AvatarImage src={avatarUrl || undefined} />
+                <AvatarImage src={avatarUrl || undefined} alt={fullName || profile?.full_name || "Profile"} />
                 <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
                   {getInitials(fullName || profile?.full_name)}
                 </AvatarFallback>

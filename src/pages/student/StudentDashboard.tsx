@@ -19,6 +19,8 @@ import { KeyFeaturesStrip } from "@/components/student/dashboard/KeyFeaturesStri
 import { OpportunityHubPreview } from "@/components/student/dashboard/OpportunityHubPreview";
 import { StudentSpotlight } from "@/components/student/dashboard/StudentSpotlight";
 import { ExamCountdownCard } from "@/components/student/dashboard/ExamCountdownCard";
+import { CourseQuizzesSection } from "@/components/student/dashboard/CourseQuizzesSection";
+import { ExploreFeaturesGrid } from "@/components/student/dashboard/ExploreFeaturesGrid";
 
 // Warm likely-next route bundles when the dashboard mounts.
 if (typeof window !== "undefined") prefetchDashboardNeighbors();
@@ -75,11 +77,17 @@ const StudentDashboard = () => {
             {/* Exam countdown — only renders when an active exam goal exists */}
             <ExamCountdownCard />
 
+            {/* Quizzes grouped by the courses the student picked */}
+            <CourseQuizzesSection key={`cq-${refreshKey}`} />
+
             {/* Pick up where you left off — unfinished audio / quiz */}
             <PickUpWhereYouLeftOff key={`pickup-${refreshKey}`} />
 
             {/* Key features spotlight — Overra AI, Study Hub, Theory Prep */}
             <KeyFeaturesStrip />
+
+            {/* Every launch-critical feature, one tap away */}
+            <ExploreFeaturesGrid />
 
             {/* 3. Quick actions — calm tiles */}
             <QuickActionsGrid />

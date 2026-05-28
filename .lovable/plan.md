@@ -1,50 +1,79 @@
-# Fix 404 dead links + sticky splash loader
+## Goal
+Make the student experience launch-ready by fixing profile picture display, making key app features easy to reach from the Dashboard, and listing course-based quizzes clearly for new students.
 
-## What's actually broken
+## What I found
+- **Profile picture upload path exists**, but display is inconsistent: some components read `avatar_url`, some read `profile_image_url`, and the edit screen can save a temporary local blob URL if the user clicks Save while upload is still in progress.
+- **No test/user data currently exists in the backend** for profiles with avatars, courses, quizzes, or attempts, so empty states will show unless seed/admin content is added.
+- **Course quiz structure already exists**: quizzes are tied to `course_id`, and `/courses/:courseId` already has a Quizzes tab. What is missing is a Dashboard-level quiz discovery section for the courses the student picked.
+- **Recent scoring activity feed is wired**, but there are currently no matching activity rows, so it will be empty until quiz/flashcard/streak events are logged.
+- **Dashboard has many feature cards**, but not all major student features are equally visible; several useful launch features are buried in navigation.
 
-I traced every `"/student/..."` link in the codebase against the routes registered in `AnimatedRoutes.tsx`. Two paths are referenced from UI but **not registered** — they 404:
+## Implementation plan
 
-| Link in UI | Where | Registered? |
-|---|---|---|
-| `/student/challenges` | `HeroQuestCard` (7-Day Hero Quest on dashboard) | ❌ — page exists at `/challenges` only |
-| `/student/weak-area-drill` | `PremiumQuickActions` Weak Areas button | ❌ — only `/student/weak/:courseId` (needs a course) exists |
+### 1. Fix profile picture display everywhere
+- Use a single helper to resolve avatars in this order:
+  1. `profile_image_url`
+  2. `avatar_url`
+  3. fallback letter
+- Update the Dashboard header, leaderboard, activity feed, spotlight, tutor cards, chat/community surfaces where needed to use that helper.
+- Fix `EditProfile` so:
+  - upload uses the dedicated `avatars` bucket instead of the tutor profile bucket for student avatars,
+  - Save is disabled while avatar upload is in progress,
+  - Save never writes a temporary `blob:` preview URL into the profile,
+  - both `avatar_url` and `profile_image_url` are updated with the final public image URL,
+  - the profile refresh happens immediately after upload.
 
-The Challenges page itself (`src/pages/student/Challenges.tsx`) is already fully built — list, badges, enroll, claim. It's just unreachable from the dashboard CTA. Same story for the weak-area button.
+### 2. Add a Dashboard “Quiz by your courses” section
+- Create a new student Dashboard section that reads the student’s selected/enrolled courses.
+- For each course, show active quizzes underneath with:
+  - course code/name,
+  - quiz title,
+  - number of questions,
+  - duration,
+  - direct “Start quiz” action.
+- If a student has no enrolled courses, show a clear empty state linking to **My Courses** / **Courses**.
+- If enrolled courses have no quizzes yet, show a clear message and link to Course Hub / Study Hub.
+- Place this section high enough on the Dashboard so students who came only to take quizzes can find it quickly.
 
-The splash screen you screenshotted ("Hmm, that took a while… Reload app") is the pre-React boot fallback in `index.html`. It fires after 12s if React hasn't mounted, which on slow mobile networks happens **before** the first chunk finishes downloading — so reloading sometimes works (cache warms up) and sometimes shows the same screen again.
+### 3. Make all important app updates/features visible from Dashboard
+- Add/refine a compact “Explore OverraPrep” dashboard section with direct entry points for launch-critical features:
+  - Courses / My Courses
+  - Quizzes
+  - Study Hub
+  - AI Tutor
+  - Audio Learning
+  - Flashcards / Review
+  - Mock Exams
+  - Leaderboard
+  - Challenges
+  - Library
+  - Tutors
+  - Community / Chat
+  - Sessions, if enabled/ready
+- Keep the current white + gold visual system and mobile-first layout.
+- Avoid adding broken or paused routes; anything not ready should either be hidden or clearly marked Coming Soon.
 
-## Fixes
+### 4. Make course pages better for quiz-first students
+- Update course cards/actions so “Quiz” opens the course directly on the Quizzes tab.
+- Make `CourseHub` respect `?tab=quizzes`, `?tab=materials`, `?tab=audio`, etc. so existing dashboard/course-card links land on the correct tab.
+- Add better loading/error/empty messaging around course quizzes if needed.
 
-### 1. Register the missing routes (the real fix for the 404)
+### 5. Complete scoring activity feed behavior
+- Add backend-safe activity logging for completed quizzes so the leaderboard activity feed starts filling automatically after students submit quizzes.
+- If needed, add lightweight logging for flashcard/SRS review and streak updates without exposing private data.
+- Keep RLS secure: students can log their own activity; everyone can only see public scoring activity.
 
-In `src/components/layout/AnimatedRoutes.tsx`, add aliases next to the existing entries:
+### 6. Launch readiness check after implementation
+I will verify these launch-critical screens and give you a checklist:
+- **Dashboard:** avatar visible, feature grid visible, course quiz section visible, empty states understandable.
+- **Profile Edit:** upload image, preview image, save, return to Dashboard, image replaces fallback letter.
+- **Courses / My Courses:** selected courses show, quiz CTA opens the Quizzes tab.
+- **Course Hub:** Materials, Quizzes, Flashcards, Audio, AI Packs tabs load correctly.
+- **Leaderboard:** weekly/overall filters, course filter, activity feed, badge modal.
+- **Admin tutor queue:** pending/approved/rejected tabs, profile view, quiz content view.
+- **New-user state:** no courses/no quizzes/no activity states are helpful instead of looking broken.
 
-```tsx
-<Route path="/student/challenges" element={<PageTransition><Challenges /></PageTransition>} />
-<Route path="/student/weak-area-drill" element={<PageTransition><MasteryBreakdown /></PageTransition>} />
-```
-
-`MasteryBreakdown` is the per-course weak-area picker, which is what the Quick Action implies. Keeps existing `/challenges` and `/student/weak/:courseId` working for any deep links.
-
-### 2. Harden the boot splash so reloads recover reliably
-
-Edit `index.html`:
-
-- Bump `FALLBACK_MS` from **12 000 → 25 000** so flaky 3G/4G doesn't trip it on a healthy load.
-- Change the Reload button to a cache-busted reload (`?_cb=Date.now()`) so a stuck/stale chunk gets re-requested from the server instead of being served from disk cache again.
-- Add an automatic, **one-time** silent reload on real chunk errors before showing the fallback (mirror what `ErrorBoundary` already does), gated by `sessionStorage["overra_boot_reload_at"]` so we never loop.
-
-### 3. Sweep — confirm nothing else 404s
-
-I already diffed used vs registered `/student/*` paths; those two were the only mismatches. After applying step 1, no other student-area link points at a missing route.
-
-## Files touched
-
-- `src/components/layout/AnimatedRoutes.tsx` — 2 new `<Route>` aliases
-- `index.html` — bump timeout, smarter reload, one-shot chunk-error reload
-
-## Out of scope (explicitly)
-
-- No changes to the Challenges page UI/logic — it's complete.
-- No backend / migration work.
-- No changes to the LeaderboardPage, ActivityFeed, badges modal — those are already wired.
+## Technical notes
+- This may need one small database migration for activity logging triggers/functions if the current activity feed still has no automatic quiz-completion event source.
+- I will not manually edit generated backend client/type files.
+- I will preserve the locked visual style: white + gold + Inter, no navy backgrounds.
