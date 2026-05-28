@@ -406,36 +406,48 @@ const Auth = () => {
         url="https://overraprep.com/auth"
       />
       <main
-        className="min-h-screen relative overflow-hidden bg-[#faf6ee] lg:grid lg:grid-cols-[1.05fr_1fr] xl:grid-cols-[1.15fr_1fr] flex items-center justify-center"
+        className="min-h-screen relative overflow-hidden bg-[#FAF7F2] lg:grid lg:grid-cols-[1.05fr_1fr] xl:grid-cols-[1.15fr_1fr] flex items-center justify-center"
         role="main"
       >
-        {/* Static editorial photo backdrop (mobile only — desktop shows AuthBrandPanel instead) */}
-        <div className="lg:hidden absolute inset-0 -z-10" aria-hidden>
-          <img
-            src={authBg}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/85 to-white/95" />
-        </div>
-
         {/* Premium ambassador / brand showcase (lg+ only) */}
         <AuthBrandPanel />
 
-        <div className="w-full flex items-start sm:items-center justify-center px-3 py-5 sm:p-6 lg:p-10 relative z-10">
-          <article className="w-full max-w-md relative z-10 animate-fade-in">
-        {/* Logo */}
-        <div className="text-center mb-5 sm:mb-7 lg:hidden">
-          <a href="/" className="inline-flex items-center group">
+        <div className="w-full flex items-start sm:items-center justify-center px-4 py-6 sm:p-8 lg:p-10 relative z-10">
+          <article className="w-full max-w-[400px] relative z-10 animate-fade-in">
+        {/* Editorial hero photo (mobile only — desktop gets AuthBrandPanel) */}
+        <div className="lg:hidden w-full mb-7 relative">
+          <div className="aspect-[4/3] w-full rounded-[2rem] overflow-hidden shadow-[0_12px_30px_-8px_rgba(197,160,89,0.18)] border border-[#C5A059]/15">
             <img
-              src={logo}
-              alt="OverraPrep AI"
-              className="h-12 sm:h-16 w-auto object-contain drop-shadow-[0_8px_30px_hsl(var(--primary)/0.45)] transition-transform group-hover:scale-105"
+              src={authHero}
+              alt="African university student studying with OverraPrep AI"
+              className="w-full h-full object-cover"
+              loading="eager"
+              width={800}
+              height={608}
             />
+          </div>
+          <div className="absolute -bottom-3 right-5 bg-white py-1.5 px-3.5 rounded-full shadow-[0_6px_18px_-4px_rgba(197,160,89,0.25)] border border-[#C5A059]/15 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#3D3A35]">AI-Powered Prep</span>
+          </div>
+        </div>
+
+        {/* Logo + serif wordmark (mobile only) */}
+        <div className="text-center mb-7 lg:hidden">
+          <a href="/" className="inline-flex flex-col items-center group">
+            <span className="w-12 h-12 rounded-full bg-white shadow-[0_4px_15px_rgba(197,160,89,0.12)] border border-[#C5A059]/10 flex items-center justify-center mb-3">
+              <img src={logo} alt="OverraPrep AI" className="h-7 w-auto object-contain" />
+            </span>
+            <span
+              className="text-2xl font-semibold tracking-[0.04em] text-[#3D3A35]"
+              style={{ fontFamily: "'Cormorant Garamond', serif" }}
+            >
+              OverraPrep
+            </span>
+            <span className="mt-1 text-[10px] uppercase tracking-[0.25em] text-[#A69D8E] font-semibold">
+              Study Smart, Not Hard
+            </span>
           </a>
-          <p className="mt-2 sm:mt-3 text-[10px] sm:text-[11px] uppercase tracking-[0.25em] sm:tracking-[0.3em] text-muted-foreground/80 font-bold">
-            Study Smart · Not Hard
-          </p>
         </div>
 
         {isSignUp && intent && INTENT_LABELS[intent] && (
