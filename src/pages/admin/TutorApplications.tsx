@@ -367,8 +367,18 @@ const TutorApplications = () => {
     );
   }
 
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
+  const [quizzesFor, setQuizzesFor] = useState<{ id: string; name: string } | null>(null);
+
+  const showPending = statusFilter === "all" || statusFilter === "pending";
+  const showApproved = statusFilter === "all" || statusFilter === "approved";
+  const showRejected = statusFilter === "all" || statusFilter === "rejected";
+
   const pendingApplications = applications.filter(a => a.status === "pending");
-  const reviewedApplications = applications.filter(a => a.status !== "pending");
+  const reviewedApplications = applications.filter(
+    a => a.status !== "pending"
+      && (statusFilter === "all" || a.status === statusFilter),
+  );
 
   return (
     <div className="min-h-screen bg-background">
