@@ -66,9 +66,11 @@ export const PlanCard = ({ plan, active, onChoose, loading }: Props) => {
           }`}
           variant={highlight ? "default" : "outline"}
           onClick={onChoose}
-          disabled={active}
+          disabled={active || loading}
         >
-          {active ? "Active" : "Choose plan"}
+          {loading ? (
+            <span className="inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Opening checkout…</span>
+          ) : active ? "Active" : "Upgrade now"}
         </Button>
       )}
     </Card>
