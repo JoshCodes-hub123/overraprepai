@@ -1,73 +1,50 @@
-## Goal
-Knock out 9 connected asks without bloating the app. Two blockers first (upload RLS + Startup Check), then UI restructure, gamification, community wall.
+## 1. Remove the "Welcome back / Let's make today legendary" overlay
+- Delete `src/components/auth/LoginCelebration.tsx`.
+- Remove its import + `<LoginCelebration />` mount from `src/App.tsx`.
+- Stop setting the `overra_fresh_login` flag in `useAuth` (search & clean) so nothing else can trigger it.
 
-## 1. Fix course-document upload (BLOCKER)
-Symptom: `new row violates row-level security policy` on Manage → Documents.
-Cause: `lecture_notes` INSERT + `storage.objects` (`lecture-notes` bucket) INSERT both require `has_role(auth.uid(),'tutor'|'admin')`. Tutors approved before the role-grant flow existed have no `user_roles` row, so they fail silently.
-Fix (one migration):
-- Backfill `INSERT INTO user_roles (user_id,'tutor') ... FROM tutor_applications WHERE status='approved'` on conflict do nothing.
-- Broaden both INSERT policies: also accept "user is the course's `created_by`" so any course owner can upload regardless of role-cache state.
-- Same broadening applied to `quizzes`, `flashcards`, `course_images` so all four Manage tabs work.
+## 2. 404 / Error → always a "Back home" button
+- `NotFound.tsx` already has it — leave as is.
+- `RouteErrorBoundary.tsx` chunk-error branch only shows **Reload**; add a secondary **Go home** button under it so users are never trapped.
+- Add the same Home button to the top-level `ErrorBoundary.tsx` fallback (currently has reload-only — verify and add).
 
-## 2. Fix Startup Check
-- Edge fn `startup-check` currently calls `auth.getClaims(token)` (wrong arg). Replace with the shared `requireUser()` helper, then check admin via `user_roles`.
-- Client: only invoke after `isAdmin === true`; surface server error in the alert.
+## 3. Complete the Challenges system
+Tables (`challenges`, `challenge_enrollments`, `challenge_progress`, `badge_definitions`, `user_badges`) and progress triggers (`trg_quiz_attempt_to_challenge`, `trg_audio_session_to_challenge`, `trg_srs_review_to_challenge`, `bump_challenge_progress`, `claim_challenge_reward`) already exist but **no rows are seeded** — so `/student/challenges` shows "No challenges available yet".
 
-## 3. Dashboard restructured by functionality hierarchy (UI only)
-Same components, re-ordered + grouped by "what students actually do first":
-1. TopHeader (greeting + streak + bell + tokens)
-2. **HERO row** — `StudyPackHero` (the one big AI entry point)
-3. **TODAY row** — `DailyMomentumStrip` (new): streak flame · XP today · Hero Quest dots · readiness %
-4. **CONTINUE row** — `PickUpWhereYouLeftOff` + `ContinueLearning`
-5. **POWER FEATURES row** — `KeyFeaturesStrip` redesigned as 3 large gradient cards (Overra AI · Study Hub · Theory Prep) — the "amazing features" the user wants visible
-6. **QUICK ACTIONS** — bento (already good, slight polish)
-7. **EXAM CARD** — `ExamCountdownCard`
-8. **COMMUNITY + OPPORTUNITY + SPOTLIGHT** — kept, but under a single "Beyond study" section header so the page stops feeling flat
-9. Profile completion nudge moved to bottom (only renders when needed)
-Add reusable `<DashboardSectionHeader kicker title cta>` so the page reads like a magazine, plus subtle gold divider bands between groups.
+- **Seed `badge_definitions`** (8 badges, bronze→gold): `consistent-learner`, `quiz-master`, `flashcard-pro`, `night-owl`, `social-butterfly`, `streak-legend`, `top-10`, `champion`.
+- **Seed `challenges`** (6 active weekly): e.g. *Answer 50 questions*, *Review 100 flashcards*, *7-day streak*, *5 AI study sessions*, *Listen to 3 audio summaries*, *Score 80%+ on 3 quizzes*. Each links to a badge slug + token reward (10–40).
+- Verify the existing triggers wire to the right tables (quiz_attempts, audio_sessions, srs_cards). If a trigger is missing for any seeded `goal_type`, add a thin RPC `bump_challenge_progress(_goal_type, _delta)` call from the relevant React Query mutation as a fallback.
+- Polish `Challenges.tsx`: show "X completed / Y active / Z claimed" stat strip above the list, and a "How it works" collapsible.
 
-## 4. Global Community Wall
-- New page `/community` (replace current discussion list as the default tab) — a single global feed where any signed-in student in the same university can post text/image, like, and reply. No "start a discussion" gate.
-- Realtime via Supabase `community_posts` + `community_post_likes` + `community_post_replies` (single new migration with GRANTs + RLS scoped by `university_id`).
-- Existing structured community/team pages remain at `/community/teams` etc.
-- Look: large hero "FUTA is talking…" header, post composer pinned top (auto-grow textarea, image attach), infinite scroll, gold accents, soft motion on new posts.
+## 4. Complete the Leaderboard with rank-of-me
+- `get_student_leaderboard` already scores by accuracy + cards + streak + AI activity + engagement. Keep it.
+- Add a new RPC `get_my_leaderboard_rank(_user uuid)` returning `{ rank, total, score, percentile, badge_tier }` so a user can see their own number even if outside top 20.
+- Add a "You" sticky row at the bottom of `Leaderboard.tsx` showing the caller's rank + score + computed badge tier (Bronze < 30, Silver 30–60, Gold 60–80, Diamond 80+).
+- Activity-tier helper `src/lib/activityBadge.ts` (pure function) → `{ tier, label, color, icon }` reused by header + leaderboard so they never drift.
 
-## 5. Comments under every opportunity section
-- Reuse `OpportunityComments` pattern. Generalise into `EntityComments({entity_type, entity_id})` backed by new `entity_comments` table (RLS: anyone authenticated reads, only author edits/deletes, admins moderate).
-- Drop it under: each opportunity section/sub-tab, announcements detail, spotlight detail, fresh-courses preview. One component, many mounts.
+## 5. Surface rank + activity badge in the Dashboard header
+- New hook `useMyActivityBadge()` → calls `get_my_leaderboard_rank`, returns `{ rank, total, tier, label }`, `staleTime: 5min`.
+- In `MobileGreetingHeader.tsx`, add a compact pill to the right cluster (between streak and bell): `#{rank} · {tier}` with the tier icon (Crown/Medal/Award/Star) and gradient by tier. Tap → `/leaderboard`.
+- In desktop `DashboardHero` (or its header strip), show the same badge inline next to the user's name.
 
-## 6. 7-Day Hero Quest (gamified weekly loop)
-- Migration: `weekly_quests` (auto-generated per user every Monday) with 7 daily goals (quiz, flashcard, audio, theory, review, share, login). `weekly_quest_progress` row per goal.
-- Cron edge fn `weekly-quest-reset` (Mon 00:00 UTC) — uses `pg_cron` row or `supabase functions schedule`.
-- `HeroQuestCard` on dashboard: 7 glowing dots, day name, "Be the hero of your week" copy. Completing day 7 → animated cape + adds "Hero of the Week" badge to existing `badges` table → confetti.
-- New `/student/quest` page with detail + history.
+## 6. Technical notes
+- All DB changes via one migration (seeds + new RPC). Seeds use `INSERT … ON CONFLICT (slug) DO NOTHING` so re-running is safe.
+- RPC signatures:
+  - `public.get_my_leaderboard_rank(_user uuid) RETURNS TABLE(rank int, total int, score numeric, percentile int)` — `STABLE SECURITY DEFINER`, scopes to same 30-day window as `get_student_leaderboard`.
+- Badge tier thresholds and colors live in `src/lib/activityBadge.ts` only; no duplicated logic.
+- No new tables → no new RLS work; `badge_definitions` already public-readable.
+- Keep visuals on the locked White + Gold + Inter palette (no navy).
 
-## 7. Login celebration (dopamine)
-- `LoginCelebration` overlay fired once per session by `AuthProvider` post-signin:
-  - Confetti gold burst (reuse `celebrateGold`)
-  - Big animated "Welcome back, {firstName} 🔥 Day {streak}!"
-  - Auto-dismiss 1.4s, reduced-motion respected
-- First login of the day → richer burst + "+10 XP daily login" toast (writes to existing xp table) + haptic on native.
-- Streak-day milestones (3, 7, 14, 30) trigger a unique medal animation.
+```text
+Header (mobile)
+┌────────────────────────────────────────────────┐
+│ [avatar]  Good morning,             [#12 ★Gold] [🔔]
+│           Welcome back, Tope                    │
+│           Let's make today productive.          │
+│  🔥 On a 7-day study streak!                    │
+└────────────────────────────────────────────────┘
+```
 
-## 8. Study Mode → AI Readiness Exam
-- `StudyMode.tsx` already exists; expose it from `CourseHub` as a new "Study Mode" tab scoped to that course.
-- Flow: read materials → "I'm ready, test me" CTA → calls existing `readiness-exam-generate` → 10 mixed Qs in CBT-style runner → `readiness-exam-grade` returns score + topic breakdown + AI feedback.
-- Persist to `readiness_attempts` so `ExamCountdownCard` and the new DailyMomentumStrip can show "Course readiness: 78%".
-
-## 9. "I'm New — Get Started" works end-to-end
-- Audit `/start/persona → /start/path → /start/university → /start/faculty → /start/department → /start/level → /start/product` chain.
-- Fix any dead-end (saving partial choices to `localStorage` + `profiles` on each step so a refresh resumes).
-- Final step → routes straight to `/student/dashboard` with `onboardingComplete=true`, triggering the login celebration.
-
-## Out of scope (call out)
-- No new payment tiers, no new AI models, no LiveKit changes.
-- Existing pages (challenges, leaderboards, badges, referrals) reused — not rebuilt.
-
-## Technical summary
-- Migrations: (a) RLS fix + role backfill for `lecture_notes`/`quizzes`/`flashcards`/`course_images` + storage `lecture-notes` bucket; (b) `weekly_quests` + `weekly_quest_progress`; (c) `entity_comments`; (d) `community_posts` + `community_post_likes` + `community_post_replies` with realtime + GRANTs.
-- Edge fns: fix `startup-check` auth; new `weekly-quest-reset` cron.
-- Frontend additions: `DashboardSectionHeader`, `DailyMomentumStrip`, `HeroQuestCard`, `LoginCelebration`, `EntityComments`, `CommunityWall`, `CourseHub` Study Mode tab, restructured `StudentDashboard` order.
-- Frontend edits: `KeyFeaturesStrip` (3 hero gradient cards), `QuickActionsGrid` (subtle polish), `Ambassadors`/start flow audit.
-
-Approve to build, or want me to split into Build A (blockers 1+2 + dashboard restructure 3) and Build B (community + gamification + study mode)?
+## Out of scope
+- Tutor leaderboard (already done) — no change.
+- Team challenges — already done; only adding the self-rank for the student tab.
