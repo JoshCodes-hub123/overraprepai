@@ -70,9 +70,14 @@ export class ErrorBoundary extends React.Component<{ children: React.ReactNode }
           )}
           <div className="flex gap-3 justify-center">
             {isChunkError ? (
-              <Button onClick={this.reload}>
-                <RefreshCw className="w-4 h-4 mr-2" /> Reload
-              </Button>
+              <>
+                <Button onClick={this.reload}>
+                  <RefreshCw className="w-4 h-4 mr-2" /> Reload
+                </Button>
+                <Button variant="outline" onClick={() => { window.location.href = "/"; }}>
+                  <Home className="w-4 h-4 mr-2" /> Go home
+                </Button>
+              </>
             ) : (
               <>
                 <Button onClick={this.reset} variant="outline">

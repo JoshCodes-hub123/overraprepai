@@ -69,9 +69,14 @@ export class RouteErrorBoundary extends React.Component<
           </p>
           <div className="flex gap-2 justify-center">
             {isChunkError ? (
-              <Button onClick={this.reload}>
-                <RefreshCw className="w-4 h-4 mr-2" /> Reload
-              </Button>
+              <>
+                <Button onClick={this.reload}>
+                  <RefreshCw className="w-4 h-4 mr-2" /> Reload
+                </Button>
+                <Button variant="outline" onClick={() => { window.location.href = "/"; }}>
+                  <Home className="w-4 h-4 mr-2" /> Go home
+                </Button>
+              </>
             ) : (
               <>
                 <Button variant="outline" onClick={this.reset}>

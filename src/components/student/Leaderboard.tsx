@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy, Medal, Award, Crown, Loader2, GraduationCap, Flame, ShieldCheck, Users } from "lucide-react";
 import { useStudentLeaderboard, useTutorLeaderboard, type StudentRow, type TutorRow } from "@/hooks/useLeaderboards";
+import { useMyActivityBadge } from "@/hooks/useMyActivityBadge";
 import { TeamLeaderboard } from "./TeamLeaderboard";
 
 const rankIcon = (rank: number) => {
@@ -90,6 +91,7 @@ function TutorCard({ row, rank }: { row: TutorRow; rank: number }) {
 export const Leaderboard = () => {
   const students = useStudentLeaderboard(20);
   const tutors = useTutorLeaderboard(20);
+  const { data: me } = useMyActivityBadge();
 
   return (
     <div className="bg-card rounded-2xl border border-amber-100/70 p-5 sm:p-6">
@@ -120,6 +122,21 @@ export const Leaderboard = () => {
           ) : (
             students.data!.map((row, i) => <StudentCard key={row.user_id} row={row} rank={i + 1} />)
           )}
+          {me && me.rank > 0 && (() => {
+            const { Icon, label, className } = me.badge;
+            return (
+              <div className={`mt-3 flex items-center gap-3 p-3.5 rounded-2xl border ${className}`}>
+                <div className="w-7 flex justify-center shrink-0"><Icon className="w-5 h-5" /></div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-[14px]">You · {label}</p>
+                  <p className="text-[11.5px] opacity-80 mt-0.5">
+                    Rank #{me.rank} of {me.total} · top {Math.max(1, 100 - me.percentile)}%
+                  </p>
+                </div>
+                <p className="font-display text-lg font-bold tabular-nums">{Math.round(me.score)}</p>
+              </div>
+            );
+          })()}
         </TabsContent>
 
         <TabsContent value="tutors" className="space-y-2.5">
