@@ -1,50 +1,50 @@
-## 1. Remove the "Welcome back / Let's make today legendary" overlay
-- Delete `src/components/auth/LoginCelebration.tsx`.
-- Remove its import + `<LoginCelebration />` mount from `src/App.tsx`.
-- Stop setting the `overra_fresh_login` flag in `useAuth` (search & clean) so nothing else can trigger it.
+# Fix 404 dead links + sticky splash loader
 
-## 2. 404 / Error → always a "Back home" button
-- `NotFound.tsx` already has it — leave as is.
-- `RouteErrorBoundary.tsx` chunk-error branch only shows **Reload**; add a secondary **Go home** button under it so users are never trapped.
-- Add the same Home button to the top-level `ErrorBoundary.tsx` fallback (currently has reload-only — verify and add).
+## What's actually broken
 
-## 3. Complete the Challenges system
-Tables (`challenges`, `challenge_enrollments`, `challenge_progress`, `badge_definitions`, `user_badges`) and progress triggers (`trg_quiz_attempt_to_challenge`, `trg_audio_session_to_challenge`, `trg_srs_review_to_challenge`, `bump_challenge_progress`, `claim_challenge_reward`) already exist but **no rows are seeded** — so `/student/challenges` shows "No challenges available yet".
+I traced every `"/student/..."` link in the codebase against the routes registered in `AnimatedRoutes.tsx`. Two paths are referenced from UI but **not registered** — they 404:
 
-- **Seed `badge_definitions`** (8 badges, bronze→gold): `consistent-learner`, `quiz-master`, `flashcard-pro`, `night-owl`, `social-butterfly`, `streak-legend`, `top-10`, `champion`.
-- **Seed `challenges`** (6 active weekly): e.g. *Answer 50 questions*, *Review 100 flashcards*, *7-day streak*, *5 AI study sessions*, *Listen to 3 audio summaries*, *Score 80%+ on 3 quizzes*. Each links to a badge slug + token reward (10–40).
-- Verify the existing triggers wire to the right tables (quiz_attempts, audio_sessions, srs_cards). If a trigger is missing for any seeded `goal_type`, add a thin RPC `bump_challenge_progress(_goal_type, _delta)` call from the relevant React Query mutation as a fallback.
-- Polish `Challenges.tsx`: show "X completed / Y active / Z claimed" stat strip above the list, and a "How it works" collapsible.
+| Link in UI | Where | Registered? |
+|---|---|---|
+| `/student/challenges` | `HeroQuestCard` (7-Day Hero Quest on dashboard) | ❌ — page exists at `/challenges` only |
+| `/student/weak-area-drill` | `PremiumQuickActions` Weak Areas button | ❌ — only `/student/weak/:courseId` (needs a course) exists |
 
-## 4. Complete the Leaderboard with rank-of-me
-- `get_student_leaderboard` already scores by accuracy + cards + streak + AI activity + engagement. Keep it.
-- Add a new RPC `get_my_leaderboard_rank(_user uuid)` returning `{ rank, total, score, percentile, badge_tier }` so a user can see their own number even if outside top 20.
-- Add a "You" sticky row at the bottom of `Leaderboard.tsx` showing the caller's rank + score + computed badge tier (Bronze < 30, Silver 30–60, Gold 60–80, Diamond 80+).
-- Activity-tier helper `src/lib/activityBadge.ts` (pure function) → `{ tier, label, color, icon }` reused by header + leaderboard so they never drift.
+The Challenges page itself (`src/pages/student/Challenges.tsx`) is already fully built — list, badges, enroll, claim. It's just unreachable from the dashboard CTA. Same story for the weak-area button.
 
-## 5. Surface rank + activity badge in the Dashboard header
-- New hook `useMyActivityBadge()` → calls `get_my_leaderboard_rank`, returns `{ rank, total, tier, label }`, `staleTime: 5min`.
-- In `MobileGreetingHeader.tsx`, add a compact pill to the right cluster (between streak and bell): `#{rank} · {tier}` with the tier icon (Crown/Medal/Award/Star) and gradient by tier. Tap → `/leaderboard`.
-- In desktop `DashboardHero` (or its header strip), show the same badge inline next to the user's name.
+The splash screen you screenshotted ("Hmm, that took a while… Reload app") is the pre-React boot fallback in `index.html`. It fires after 12s if React hasn't mounted, which on slow mobile networks happens **before** the first chunk finishes downloading — so reloading sometimes works (cache warms up) and sometimes shows the same screen again.
 
-## 6. Technical notes
-- All DB changes via one migration (seeds + new RPC). Seeds use `INSERT … ON CONFLICT (slug) DO NOTHING` so re-running is safe.
-- RPC signatures:
-  - `public.get_my_leaderboard_rank(_user uuid) RETURNS TABLE(rank int, total int, score numeric, percentile int)` — `STABLE SECURITY DEFINER`, scopes to same 30-day window as `get_student_leaderboard`.
-- Badge tier thresholds and colors live in `src/lib/activityBadge.ts` only; no duplicated logic.
-- No new tables → no new RLS work; `badge_definitions` already public-readable.
-- Keep visuals on the locked White + Gold + Inter palette (no navy).
+## Fixes
 
-```text
-Header (mobile)
-┌────────────────────────────────────────────────┐
-│ [avatar]  Good morning,             [#12 ★Gold] [🔔]
-│           Welcome back, Tope                    │
-│           Let's make today productive.          │
-│  🔥 On a 7-day study streak!                    │
-└────────────────────────────────────────────────┘
+### 1. Register the missing routes (the real fix for the 404)
+
+In `src/components/layout/AnimatedRoutes.tsx`, add aliases next to the existing entries:
+
+```tsx
+<Route path="/student/challenges" element={<PageTransition><Challenges /></PageTransition>} />
+<Route path="/student/weak-area-drill" element={<PageTransition><MasteryBreakdown /></PageTransition>} />
 ```
 
-## Out of scope
-- Tutor leaderboard (already done) — no change.
-- Team challenges — already done; only adding the self-rank for the student tab.
+`MasteryBreakdown` is the per-course weak-area picker, which is what the Quick Action implies. Keeps existing `/challenges` and `/student/weak/:courseId` working for any deep links.
+
+### 2. Harden the boot splash so reloads recover reliably
+
+Edit `index.html`:
+
+- Bump `FALLBACK_MS` from **12 000 → 25 000** so flaky 3G/4G doesn't trip it on a healthy load.
+- Change the Reload button to a cache-busted reload (`?_cb=Date.now()`) so a stuck/stale chunk gets re-requested from the server instead of being served from disk cache again.
+- Add an automatic, **one-time** silent reload on real chunk errors before showing the fallback (mirror what `ErrorBoundary` already does), gated by `sessionStorage["overra_boot_reload_at"]` so we never loop.
+
+### 3. Sweep — confirm nothing else 404s
+
+I already diffed used vs registered `/student/*` paths; those two were the only mismatches. After applying step 1, no other student-area link points at a missing route.
+
+## Files touched
+
+- `src/components/layout/AnimatedRoutes.tsx` — 2 new `<Route>` aliases
+- `index.html` — bump timeout, smarter reload, one-shot chunk-error reload
+
+## Out of scope (explicitly)
+
+- No changes to the Challenges page UI/logic — it's complete.
+- No backend / migration work.
+- No changes to the LeaderboardPage, ActivityFeed, badges modal — those are already wired.
