@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "@/assets/logo.png";
-import splashBgAsset from "../../public/splash-bg.mp4.asset.json";
+
+// Lovable CDN URL of the cinematic splash background (immutable asset).
+// Source pointer: public/splash-bg.mp4.asset.json
+const SPLASH_VIDEO_URL = "/__l5e/assets-v1/937af908-c0d2-4c76-b6a1-09b7f4bf2c7b/splash-bg.mp4";
 
 /**
  * Splash screen — Phase 7A redesign.
