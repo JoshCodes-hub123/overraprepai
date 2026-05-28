@@ -25,12 +25,21 @@ export interface TutorRow {
   score: number;
 }
 
-export function useStudentLeaderboard(limit = 20) {
+export type LeaderboardScope = "weekly" | "overall";
+
+export function useStudentLeaderboard(
+  limit = 20,
+  scope: LeaderboardScope = "overall",
+  courseId: string | null = null,
+) {
   return useQuery({
-    queryKey: ["leaderboard-students", limit],
-    staleTime: 1000 * 60 * 5,
+    queryKey: ["leaderboard-students", limit, scope, courseId],
+    staleTime: 1000 * 60 * 2,
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("get_student_leaderboard", { _limit: limit });
+      const { data, error } = await (supabase.rpc as any)(
+        "get_student_leaderboard_filtered",
+        { _limit: limit, _scope: scope, _course_id: courseId },
+      );
       if (error) throw error;
       return (data ?? []) as StudentRow[];
     },
@@ -45,6 +54,32 @@ export function useTutorLeaderboard(limit = 20) {
       const { data, error } = await (supabase.rpc as any)("get_tutor_leaderboard", { _limit: limit });
       if (error) throw error;
       return (data ?? []) as TutorRow[];
+    },
+  });
+}
+
+export interface ScoringActivityRow {
+  id: string;
+  actor_id: string | null;
+  full_name: string | null;
+  avatar_url: string | null;
+  verb: string;
+  object_type: string;
+  course_id: string | null;
+  meta: Record<string, any> | null;
+  created_at: string;
+}
+
+export function useRecentScoringActivity(limit = 25) {
+  return useQuery({
+    queryKey: ["scoring-activity", limit],
+    staleTime: 1000 * 30,
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)("get_recent_scoring_activity", {
+        _limit: limit,
+      });
+      if (error) throw error;
+      return (data ?? []) as ScoringActivityRow[];
     },
   });
 }
