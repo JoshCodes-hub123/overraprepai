@@ -159,9 +159,13 @@ const TutorApplications = () => {
   const { logAction } = useAuditLog();
   const [applications, setApplications] = useState<TutorApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
+  const [quizzesFor, setQuizzesFor] = useState<{ id: string; name: string } | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!authLoading && !user) {
