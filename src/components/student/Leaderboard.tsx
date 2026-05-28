@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TeamLeaderboard } from "./TeamLeaderboard";
 import { BadgeDetailsModal } from "./BadgeDetailsModal";
 import { ScoringActivityFeed } from "./ScoringActivityFeed";
+import { StateEmpty, StateError } from "@/components/system/StateMessages";
 
 const rankIcon = (rank: number) => {
   if (rank === 1) return <Crown className="w-5 h-5 text-amber-500" />;
