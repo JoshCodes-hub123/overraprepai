@@ -12,6 +12,7 @@ import { TeamLeaderboard } from "./TeamLeaderboard";
 import { BadgeDetailsModal } from "./BadgeDetailsModal";
 import { ScoringActivityFeed } from "./ScoringActivityFeed";
 import { StateEmpty, StateError } from "@/components/system/StateMessages";
+import { resolveAvatarUrl } from "@/lib/avatar";
 
 const rankIcon = (rank: number) => {
   if (rank === 1) return <Crown className="w-5 h-5 text-amber-500" />;
@@ -35,7 +36,7 @@ function StudentCard({ row, rank }: { row: StudentRow; rank: number }) {
     >
       <div className="w-7 flex justify-center shrink-0">{rankIcon(rank)}</div>
       <Avatar className="w-11 h-11 border-2 border-white shadow-sm">
-        <AvatarImage src={row.avatar_url || undefined} />
+        <AvatarImage src={resolveAvatarUrl(row)} alt={row.full_name || "Student"} />
         <AvatarFallback className="bg-amber-100 text-amber-800 font-semibold">
           {row.full_name?.charAt(0)?.toUpperCase() || "?"}
         </AvatarFallback>
@@ -70,7 +71,7 @@ function TutorCard({ row, rank }: { row: TutorRow; rank: number }) {
     >
       <div className="w-7 flex justify-center shrink-0">{rankIcon(rank)}</div>
       <Avatar className="w-11 h-11 border-2 border-white shadow-sm">
-        <AvatarImage src={row.avatar_url || undefined} />
+        <AvatarImage src={resolveAvatarUrl(row)} alt={row.full_name || "Tutor"} />
         <AvatarFallback className="bg-amber-100 text-amber-800 font-semibold">
           {row.full_name?.charAt(0)?.toUpperCase() || "?"}
         </AvatarFallback>
