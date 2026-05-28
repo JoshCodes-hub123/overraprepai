@@ -51,9 +51,11 @@ export default function Pricing() {
       />
     <div className="container mx-auto p-4 max-w-3xl space-y-6">
       <header className="text-center space-y-2">
-        <h1 className="text-3xl font-bold flex items-center justify-center gap-2"><Crown className="w-7 h-7 text-primary"/>Go Pro</h1>
+        <h1 className="text-3xl font-bold flex items-center justify-center gap-2"><Crown className="w-7 h-7 text-primary"/>OverraPrep Pro Plans</h1>
         <p className="text-muted-foreground">Faster AI. Priority coach. Bonus tokens every month.</p>
       </header>
+
+      <h2 className="sr-only">Choose a plan</h2>
 
       <div className="grid md:grid-cols-3 gap-4">
         {(plans.data ?? []).map((p: any) => {

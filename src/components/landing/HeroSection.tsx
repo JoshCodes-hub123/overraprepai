@@ -44,10 +44,10 @@ const HeroSection = () => {
               transition={{ delay: 0.1, duration: 0.55 }}
               className="text-[2.5rem] leading-[1.05] sm:text-5xl lg:text-[4.25rem] font-bold tracking-tight text-foreground"
             >
-              Prepare Smarter.
+              OverraPrep AI — Prepare Smarter.
               <br />
               <span className="bg-gradient-to-r from-[hsl(43_85%_50%)] via-[hsl(43_78%_52%)] to-[hsl(38_75%_45%)] bg-clip-text text-transparent">
-                Perform Better.
+                AI-Powered Exam Preparation
               </span>
             </motion.h1>
 
