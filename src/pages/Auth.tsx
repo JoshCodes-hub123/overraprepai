@@ -503,10 +503,10 @@ const Auth = () => {
             </div>
           ) : (<>
           {/* Sculptural underline tabs */}
-          <div className="flex justify-around mb-7 sm:mb-8 border-b border-[#EAE4D9]">
+          <div className="flex justify-around mb-5 sm:mb-8 border-b border-[#EAE4D9]">
             <button
               onClick={() => setIsSignUp(false)}
-              className={`pb-3 px-4 text-sm font-semibold relative transition-colors ${
+              className={`pb-2.5 sm:pb-3 px-4 text-sm font-semibold relative transition-colors ${
                 !isSignUp
                   ? "text-[#3D3A35] border-b-2 border-[#C5A059] -mb-px"
                   : "text-[#A69D8E] border-b-2 border-transparent hover:text-[#3D3A35]"
@@ -516,7 +516,7 @@ const Auth = () => {
             </button>
             <button
               onClick={() => setIsSignUp(true)}
-              className={`pb-3 px-4 text-sm font-semibold relative transition-colors ${
+              className={`pb-2.5 sm:pb-3 px-4 text-sm font-semibold relative transition-colors ${
                 isSignUp
                   ? "text-[#3D3A35] border-b-2 border-[#C5A059] -mb-px"
                   : "text-[#A69D8E] border-b-2 border-transparent hover:text-[#3D3A35]"
@@ -527,8 +527,8 @@ const Auth = () => {
           </div>
 
           {!isSignUp ? (
-            /* Sign In Form */
-            <form onSubmit={signInForm.handleSubmit(handleSignIn)} className="space-y-4 sm:space-y-5">
+            /* Sign In Form — compact so it fits mobile without scroll */
+            <form onSubmit={signInForm.handleSubmit(handleSignIn)} className="space-y-3 sm:space-y-5">
               {pendingEmail && (
                 <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs sm:text-sm text-amber-900 space-y-2">
                   <div className="flex items-start gap-2">
