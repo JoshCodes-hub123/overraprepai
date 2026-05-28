@@ -102,10 +102,16 @@ const Subscription = () => {
                 key={p.id}
                 plan={p}
                 active={p.id === currentPlanId}
-                onChoose={() => setChosenPlan(p)}
+                onChoose={() => handleUpgrade(p)}
+                loading={launchingPlanId === p.id}
               />
             ))}
           </div>
+          {launchingPlanId && (
+            <p className="mt-3 text-xs text-muted-foreground flex items-center gap-2">
+              <Loader2 className="w-3 h-3 animate-spin" /> Opening secure Flutterwave checkout…
+            </p>
+          )}
 
           <section className="mt-8">
             <h2 className="font-display text-lg font-bold mb-3">Payment history</h2>
