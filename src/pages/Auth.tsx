@@ -1071,7 +1071,9 @@ const Auth = () => {
       </article>
         </div>
     </main>
+    {perfMode && <AuthPerfOverlay videoEnabled={enableBgVideo} />}
     </>
+
   );
 };
 
