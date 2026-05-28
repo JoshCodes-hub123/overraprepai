@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AuthBrandPanel from "@/components/auth/AuthBrandPanel";
 import { mapAuthError } from "@/lib/authErrors";
 import { prefetchStudentDashboard } from "@/lib/routePrefetch";
+import AuthPerfOverlay, { isPerfTestMode, isSimulatedLowEnd } from "@/components/auth/AuthPerfOverlay";
 
 const NIGERIAN_STATES = [
   "Abia","Adamawa","Akwa Ibom","Anambra","Bauchi","Bayelsa","Benue","Borno","Cross River","Delta",
@@ -224,8 +225,11 @@ const Auth = () => {
   // backdrop video entirely and let the poster image carry the page.
   const prefersReducedMotion = useReducedMotion();
   const [enableBgVideo, setEnableBgVideo] = useState(false);
+  const perfMode = isPerfTestMode();
+  const simulateLowEnd = isSimulatedLowEnd();
   useEffect(() => {
     if (prefersReducedMotion) return;
+    if (simulateLowEnd) return; // ?simulate=2g forces the low-data branch
     const conn = (navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
     if (conn?.saveData) return;
     if (conn?.effectiveType && /^(slow-2g|2g)$/.test(conn.effectiveType)) return;
@@ -234,7 +238,7 @@ const Auth = () => {
     const cancel = (window as any).cancelIdleCallback ?? clearTimeout;
     const id = idle(() => setEnableBgVideo(true));
     return () => cancel(id);
-  }, [prefersReducedMotion]);
+  }, [prefersReducedMotion, simulateLowEnd]);
 
   const academicPath = signUpForm.watch("academicPath");
 
