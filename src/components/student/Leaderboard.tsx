@@ -91,6 +91,7 @@ function TutorCard({ row, rank }: { row: TutorRow; rank: number }) {
 export const Leaderboard = () => {
   const students = useStudentLeaderboard(20);
   const tutors = useTutorLeaderboard(20);
+  const { data: me } = useMyActivityBadge();
 
   return (
     <div className="bg-card rounded-2xl border border-amber-100/70 p-5 sm:p-6">
