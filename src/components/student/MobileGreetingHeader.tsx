@@ -30,6 +30,7 @@ export const MobileGreetingHeader = () => {
   const { user, profile, refreshProfile, signOut } = useAuth();
   const { level } = useStudentLevel();
   const { balance } = useTokenBalance();
+  const { freeLeft, dailyLimit } = usePremium();
   const { data: myRank } = useMyActivityBadge();
   const [streak, setStreak] = useState<number>(0);
   const [unread, setUnread] = useState<number>(0);
