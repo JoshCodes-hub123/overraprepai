@@ -86,6 +86,16 @@ const ACCOUNTS: AccountSpec[] = [
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  // Guard: privileged seeding endpoint. Only callable with a shared secret.
+  const expected = Deno.env.get("SEED_SECRET");
+  const provided = req.headers.get("x-seed-secret");
+  if (!expected || provided !== expected) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   // Idempotent one-shot. Safe to call repeatedly: it skips users that already exist.
   const supa = createClient(SUPABASE_URL, SERVICE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
