@@ -166,7 +166,7 @@ Deno.serve(async (req) => {
           courses_to_teach: acc.department ?? "Core sciences",
           bio: acc.bio ?? null,
           status: "approved",
-          specialization: acc.specialization,
+          specialization: "university",
           subjects_taught: [acc.department ?? "Core sciences"],
           years_experience: 5,
           why_join: "To deliver the official OverraPrep learning experience.",
