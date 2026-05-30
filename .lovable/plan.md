@@ -1,136 +1,79 @@
+# Prepaid Wallet Model — Replace ₦2,000/mo Pro
 
-# Simpler Monetization: 5 Daily Credits → ₦2,000/month Pro
+## The model in plain English
 
-We're replacing the token-pack model with a clean, single-decision Freemium flow. One price. One unlock. Strong nudges from teaser previews. Admin gets clear payment visibility.
+- **Wallet is the only way to pay.** Pro subscription is removed entirely.
+- **1 token = ₦25.** Every paid action on the app deducts exactly **1 token** from the wallet — quiz attempt, AI explanation, AI summary, AI quiz generation, flashcards, study pack, study coach, tutor AI chat message, mock exam, notes-to-audio (TTS).
+- **5 free light actions per day** for every student (resets at 00:00 WAT). Free covers: quiz attempts, AI explanations, tutor AI chat messages. Once exhausted, those also cost 1 token.
+- **Heavy actions are always 1 token, no free quota:** AI summary, AI quiz generation, flashcards, study pack, study coach, mock exam, TTS / notes-to-audio.
+- **Exceptions (always free):** quizzes that a tutor or admin explicitly marks free, browsing, leaderboards, SRS review, bookmarks, community, profile.
+- **Top-ups:** ₦100 (4 tokens), ₦300 (12), ₦500 (20), ₦1,000 (40), ₦2,000 (80), + custom amount (min ₦100, rounded to nearest ₦25). Paid via existing Flutterwave flow.
+- **Tutor revenue split for token spend:** 100% platform. Tutors continue to earn from paid live sessions, storefronts, payouts (existing flows untouched).
+- **Hard cutover:** existing Pro/trial flags are wiped. Everyone starts on the wallet with 5 free/day. Any unspent token balances already in `profiles.ai_token_balance` are kept.
 
----
+## Student UX
 
-## 1. The Model (locked, simple)
+1. **Wallet chip** in `MobileGreetingHeader` shows "⚡ {balance} • {free_left}/5 free". Tapping opens `/wallet`.
+2. **`/wallet` page** — current balance in tokens + ₦ equivalent, top-up cards (₦100/₦300/₦500/₦1k/₦2k + custom input), transaction history (debits and credits), "How tokens work" explainer.
+3. **Action attempt flow:**
+   - Light action + free quota left → runs free, decrements `daily_free_used`.
+   - Light action + no free quota + balance ≥ 1 → spends 1 token, toast "−1 token · {balance} left".
+   - Heavy action + balance ≥ 1 → spends 1 token, toast.
+   - Balance = 0 → `SoftPaywallSheet` opens with top-up CTA (no Pro upsell).
+4. **`TeaserPaywall`** still wraps premium outputs (frosted preview) — now CTA says "Spend 1 token to unlock" instead of "Upgrade to Pro".
+5. **Low-balance nudge:** when balance drops below 3, header chip turns amber; toast suggests topping up.
 
-**Free tier — every student, every day:**
-- **5 credits per day**, auto-reset at 00:00 WAT.
-- 1 credit = 1 "AI action" (any of): AI explanation, AI summary, TTS audio, AI quiz generation, AI tutor reply, study pack section, flashcard generation, mock exam grading, study coach reply.
-- Unlimited (no credit): browse courses, take existing quizzes, leaderboards, SRS review, bookmarks, community, profile.
-- When credits hit 0 → **Soft paywall sheet**: "You've used today's 5 free credits. Upgrade to Pro for unlimited access — or come back tomorrow."
+## Admin UX
 
-**Pro tier — ₦2,000 / month:**
-- Unlimited everything (all AI, audio, mock exams, premium tutor content, live sessions, study coach).
-- Pro badge on profile + leaderboard.
-- Priority tutor chat.
-- Audio download.
-- 30 days from activation.
+- **`/admin/payments`** rebuilt for wallet world: list of top-ups (student, ₦ amount, tokens credited, status, txn id), stats cards (Today ₦, This Week ₦, This Month ₦, Total ₦), search by name/email, CSV export, manual credit-tokens action per user (with audit log).
+- **`/admin/tokens`** small page: search any student → see balance, daily-free-used, lifetime spent, manual adjust (+/− with reason → audit log).
+- Existing subscription pages/tabs are removed from admin nav.
 
-**Why this works:**
-- Single price = zero decision fatigue.
-- 5/day = enough to *taste* the magic, not enough to *study* on. Drives conversion.
-- ₦2,000 is below the psychological ₦2,500 threshold and a clean round number for Nigerian students.
+## Technical changes
 
----
-
-## 2. Teaser Previews (the "clue" you asked for)
-
-For every paid action, free users (out of credits OR locked feature) see a **preview before the wall**:
-
-- **Convert notes → audio:** Show first 15 sec of audio playable + waveform + "🔒 Upgrade to Pro to listen to the full 12-minute audio."
-- **AI summary:** Show first paragraph blurred-fade + "🔒 Pro unlocks the full summary (8 more sections)."
-- **AI quiz from notes:** Show 1st question fully + Q2–Q15 blurred + "🔒 Pro unlocks all 15 questions."
-- **AI explanation:** Show first 2 lines + "🔒 Read the full explanation with Pro."
-- **Mock exam:** Show exam metadata (questions, duration, topics) + "🔒 Start exam with Pro."
-- **AI tutor chat:** Show typing indicator + first sentence + "🔒 Continue this conversation with Pro."
-- **Study pack:** Show table of contents + first lesson title only.
-
-Single reusable `<TeaserPaywall>` component handles all of these — content preview slot + frosted/blurred lock overlay + "Upgrade to Pro ₦2,000/mo" CTA + "Maybe later" dismiss.
-
----
-
-## 3. Admin Payments Visibility
-
-New `/admin/payments` page (admins only) showing:
-- **Stats cards:** Today's revenue, this month's revenue, active Pro subs, churn (expired last 7d).
-- **All payments table** (paginated, searchable, filterable):
-  - Columns: Student name + email, amount, Pro start date, expiry date, payment method (Flutterwave / manual), reference ID, status badge (active / expired / pending / failed / refunded).
-  - Filters: status, date range, method.
-  - Search: by name, email, or reference.
-- **Per-row actions:** View full Flutterwave payload, manually extend (gift days), refund (mark only), resend receipt.
-- **Pending manual transfers section** (existing `payment_requests`): list with receipt thumbnail, Approve / Reject buttons.
-- **Export CSV** for accounting.
-
-All admin actions write to `audit_logs`.
-
----
-
-## 4. Extra things I'm adding (things you need but didn't ask for)
-
-These are launch-critical and I recommend including now:
-
-1. **3-day Pro trial on signup** — every new student gets 3 days of Pro free, no card. Massive conversion lift; they experience the product at full power before they ever see a paywall.
-2. **Expiry reminders** — push + email at 3 days, 1 day, and on expiry day. "Your Pro expires tomorrow — renew to keep your streak alive."
-3. **Streak-saver hook** — if a Pro user is about to expire and has a 7+ day streak, paywall copy becomes: "Don't lose your 14-day streak. Renew now."
-4. **Referral reward** — student refers a friend who upgrades → both get 7 bonus Pro days. Cheapest acquisition channel for student apps.
-5. **First-month discount** — first purchase only: ₦1,500 instead of ₦2,000 (25% off). Shown on the paywall as crossed-out price. Renewals are full ₦2,000.
-6. **Pro badge on leaderboard & profile** — social proof. Other students see "✨ Pro" next to top scorers and want it.
-7. **Tutor-content carve-out:** tutor-created premium quizzes still split revenue 70% tutor / 30% platform on the Pro subscription pool, distributed monthly based on consumption share. Keeps tutors incentivized.
-8. **Daily credit counter chip** in header for free users: "⚡ 3/5 today" → tap opens explainer + upgrade CTA.
-9. **Receipt email** on every successful payment (Resend).
-10. **Grace period:** 24h after expiry, user is "Pro (grace)" — can still use the app but a banner says "Your Pro expired — renew to avoid losing access tomorrow."
-
----
-
-## 5. Worked unit economics
-
-Assumptions per Pro user / month:
-- Revenue: **₦2,000** (~$1.30)
-- Costs:
-  - Flutterwave fee (~1.4% + ₦100 capped at ₦2,000): **~₦128**
-  - AI Gateway (heavy user, ~300 actions/mo): **~$0.20 ≈ ₦310**
-  - TTS (Noiz, ~30 audio req/mo): **~$0.06 ≈ ₦95**
-  - Supabase/storage allocation: **~₦50**
-  - **Total cost ≈ ₦583**
-- **Net per Pro user ≈ ₦1,417 (~71% margin)** ✅
-
-At **500 Pro users** → ~₦708,500/month net. At **2,000** → ~₦2.83M/month net.
-
----
-
-## 6. Technical section (for the build phase)
-
-### Database migration
-- Add `subscription_plans` row: `pro` at ₦2,000 (200000 kobo equivalent — we'll store NGN smallest unit), monthly.
-- Add to `profiles`: `daily_credits_used INT DEFAULT 0`, `daily_credits_reset_at TIMESTAMPTZ`, `trial_ends_at TIMESTAMPTZ`.
-- Rewrite RPC `consume_credit(_kind)` → atomic increment, returns `{allowed, used, remaining, reason}`. Pro + trial users always `allowed=true`.
-- RPC `activate_pro(_user_id, _days, _source, _reference, _amount)` — used by webhook + admin.
-- RPC `admin_extend_pro(_user_id, _days, _reason)` — audit-logged.
-- Nightly trigger: reset `daily_credits_used` at 00:00 WAT.
-- On `auth.users` insert trigger: set `trial_ends_at = now() + 3 days`.
+### Database (one migration)
+- `profiles`: keep `ai_token_balance` (int). Add `daily_free_used` (int default 0), `daily_free_reset_at` (timestamptz). Drop `trial_ends_at`, `first_purchase_used`, `is_pro` (also drop dependent function); active subscriptions in `subscriptions` table marked `status='ended'` (data kept for history).
+- New table `wallet_transactions(id, user_id, kind enum['topup','spend','admin_credit','admin_debit','refund'], tokens int, naira_amount int null, action_kind text null, ref_id text null, created_at)`. GRANTs + RLS (user reads own; admin all; service_role all).
+- Update RPC `consume_ai_token(_kind text)`:
+  - Resets `daily_free_used` if last reset < today (Africa/Lagos).
+  - If `_kind` ∈ light set AND `daily_free_used < 5` → increment counter, log row with `kind='spend'` and `tokens=0`, return `{allowed:true, source:'free', balance, free_left}`.
+  - Else if `ai_token_balance >= 1` → decrement balance, insert spend row, return `{allowed:true, source:'token', balance, free_left}`.
+  - Else return `{allowed:false, balance:0, free_left:0}`.
+- New RPC `credit_wallet(_user_id, _tokens, _naira, _ref_id, _kind)` — idempotent on `(ref_id, kind)`.
+- New RPC `admin_adjust_wallet(_user_id, _delta_tokens, _reason)` — admin only, writes wallet_transactions + audit_logs.
+- Cron-less daily reset handled lazily inside `consume_ai_token` (check on every call).
 
 ### Edge functions
-- Keep `flutterwave-init` + `flutterwave-webhook` (already working). Webhook now calls `activate_pro` instead of crediting tokens.
-- New `subscription-expiry-reminders` cron (daily) → notifications + email.
-- Deprecate/disable Paddle token-pack flow (keep code, hide UI).
+- `flutterwave-init`: accept `{ amount_naira }` (min 100), compute `tokens = floor(amount / 25)`, store pending row, return checkout URL. Remove Pro plan logic.
+- `flutterwave-webhook`: on success → call `credit_wallet` with `ref_id = flw_tx_id`, `kind='topup'`. Remove `activate_pro` call.
+- Receipt email via existing Resend function: "₦{amount} added · +{tokens} tokens · Balance {new_balance}".
 
 ### Frontend
-- New `<TeaserPaywall>` component — wraps any locked content with blur + CTA.
-- New `<PaywallSheet>` — full-screen sheet shown on credit exhaustion or feature lock.
-- Rewrite `usePremium` → returns `{ isPro, isTrial, creditsUsed, creditsLeft, requireCredit(kind), requirePro(reason) }`.
-- Replace `useTokenBalance` chip with `<DailyCreditsChip>` (free users) / `<ProBadge>` (Pro users).
-- Wrap all AI action call sites with `requireCredit()` / `requirePro()`.
-- New `/admin/payments` page with stats, table, filters, CSV export.
-- Simplify `/subscription` page: one giant Pro card (₦2,000/mo, first-month ₦1,500), 3-day trial banner if eligible, manual transfer fallback button.
+- `usePremium` → renamed conceptually to `useWallet` (keep file path to avoid churn, but export `{ balance, freeLeft, requireToken(kind), refetch }`). `requireToken` calls `consume_ai_token`; on `allowed:false` opens `SoftPaywallSheet`.
+- `SoftPaywallSheet`: replace Pro card with top-up tiles (₦100/₦300/₦500/₦1k/₦2k + custom) → calls `flutterwave-init`.
+- `TeaserPaywall`: copy → "Spend 1 token to unlock {label}" + balance display + top-up link if balance 0.
+- `DailyCreditsChip` → `WalletChip`: shows `⚡ {balance} · {free_left}/5`.
+- New page `/wallet` (student): balance hero, top-up tiles, transactions list.
+- `/subscription` page repurposed → redirects to `/wallet`.
+- All AI/quiz trigger points already wired to `requireCredit`/`requireToken` continue to work — only the RPC contract changes. Audit each call site, pass correct `kind` ('quiz_attempt', 'ai_explanation', 'ai_summary', 'ai_quiz_gen', 'flashcards', 'study_pack', 'study_coach', 'tutor_chat', 'mock_exam', 'tts'). Light set = `quiz_attempt`, `ai_explanation`, `tutor_chat`.
+- Admin: rebuild `/admin/payments` (wallet top-ups), add `/admin/tokens` (manual adjust). Remove subscription nav items.
 
-### Notifications
-- Pro activated → push + email + in-app.
-- 3d / 1d / 0d expiry → push + email.
-- Trial ending in 24h → push.
-- Admin: new payment received → push to admin role.
+### Cleanup
+- Remove `subscription_plans` reads from UI (table stays for history).
+- Remove `activate_pro`, `grant_signup_trial`, `admin_extend_pro` RPCs.
+- Update memory: replace Hybrid Access Mode + Phase 10.1 entries with "Prepaid Wallet" rule.
 
----
+## Files touched (estimate)
+- 1 SQL migration
+- 2 edge functions edited (`flutterwave-init`, `flutterwave-webhook`)
+- ~6 components: `usePremium`, `SoftPaywallSheet`, `TeaserPaywall`, `DailyCreditsChip`→`WalletChip`, `MobileGreetingHeader`
+- 3 pages: new `/wallet`, rebuilt `/admin/payments`, new `/admin/tokens`; `/subscription` → redirect
+- Memory index update
 
-## 7. What I need from you before building
+## Out of scope (this round)
+- Bonus tokens on bigger top-ups
+- Referral token rewards
+- Tutor revenue share on token spend (locked at 100% platform per your decision)
+- Auto-recharge / saved card
 
-1. **Confirm ₦2,000/month** (vs ₦1,500 or ₦2,500).
-2. **Confirm 5 daily credits** (vs 3 or 7).
-3. **Confirm 3-day free Pro trial on signup** — yes/no.
-4. **Confirm first-month discount ₦1,500** — yes/no.
-5. **Confirm referral reward (7 bonus days each)** — yes/no.
-
-Once you reply to those, I'll switch to build mode and ship the whole thing end-to-end in one go: migration → edge functions → frontend rewrite → admin page → seed → notifications.
+Reply "go" to build, or tell me what to change.

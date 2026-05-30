@@ -1,35 +1,66 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Sparkles, Crown, X, Check } from "lucide-react";
+import { Wallet, X, Zap, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface SoftPaywallSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Plain-English reason ("You've used today's 5 free credits…" or "Mock exams are Pro-only"). */
+  /** Plain-English reason ("Your wallet is empty…"). */
   reason?: string;
-  /** Optional short verb-led label ("Unlock AI summary"). */
+  /** Optional verb-led label ("Unlock AI summary"). */
   action?: string;
 }
 
+const TOP_UPS = [
+  { naira: 100, tokens: 4, badge: "Starter" },
+  { naira: 300, tokens: 12 },
+  { naira: 500, tokens: 20, badge: "Popular" },
+  { naira: 1000, tokens: 40 },
+  { naira: 2000, tokens: 80, badge: "Best value" },
+];
+
 /**
- * Single Pro upgrade paywall. Shown when:
- *  - A free user exhausts their 5 daily credits, or
- *  - A free user tries to start a Pro-only feature.
+ * Wallet top-up paywall. Shown when:
+ *  - A student's wallet hits 0 mid-action, or
+ *  - A premium feature requires a token spend.
  *
- * One price (₦2,000/mo), one CTA → /subscription. No token packs.
+ * Pure prepaid: pick an amount, get tokens credited via Flutterwave webhook.
  */
 export function SoftPaywallSheet({ open, onOpenChange, reason, action }: SoftPaywallSheetProps) {
   const navigate = useNavigate();
+  const [busy, setBusy] = useState<number | "custom" | null>(null);
+  const [customAmount, setCustomAmount] = useState("");
 
-  const heading = action ? `Pro unlocks ${action}` : "You've hit today's free limit";
-  const body =
-    reason ||
-    "Free students get 5 AI credits per day. Pro gives you unlimited access — quizzes, AI tutor, summaries, audio, mock exams.";
+  const heading = action ? `Spend 1 token to unlock ${action}` : "Your wallet is empty";
+  const body = reason || "Top up your wallet to keep learning. 1 token = ₦25 = 1 AI action.";
 
-  const goUpgrade = () => {
-    onOpenChange(false);
-    navigate("/subscription");
+  const startTopUp = async (amountNaira: number) => {
+    if (amountNaira < 100) {
+      toast.error("Minimum top-up is ₦100");
+      return;
+    }
+    setBusy(amountNaira === Number(customAmount) ? "custom" : amountNaira);
+    try {
+      const { data, error } = await supabase.functions.invoke("flutterwave-init", {
+        body: {
+          amount_naira: amountNaira,
+          redirect_url: `${window.location.origin}/wallet`,
+        },
+      });
+      if (error) throw error;
+      const url = (data as any)?.checkout_url;
+      if (!url) throw new Error("No checkout URL returned");
+      window.location.href = url;
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Could not start checkout. Try again.");
+      setBusy(null);
+    }
   };
 
   return (
@@ -39,10 +70,10 @@ export function SoftPaywallSheet({ open, onOpenChange, reason, action }: SoftPay
           className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           onClick={() => onOpenChange(false)}
-          role="dialog" aria-modal="true" aria-label="Upgrade to Pro"
+          role="dialog" aria-modal="true" aria-label="Top up wallet"
         >
           <motion.div
-            className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-amber-100 overflow-hidden"
+            className="relative w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-amber-100 overflow-hidden max-h-[90vh] overflow-y-auto"
             initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
             transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
             onClick={(e) => e.stopPropagation()}
@@ -56,46 +87,73 @@ export function SoftPaywallSheet({ open, onOpenChange, reason, action }: SoftPay
               <X className="h-4 w-4 text-amber-700" />
             </button>
 
-            <div className="px-6 pt-7 pb-6 text-center">
+            <div className="px-6 pt-7 pb-6">
               <div className="mx-auto h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center shadow-inner">
-                <Crown className="h-7 w-7 text-amber-700" strokeWidth={2.2} />
+                <Wallet className="h-7 w-7 text-amber-700" strokeWidth={2.2} />
               </div>
-              <h2 className="mt-4 font-display text-[20px] font-extrabold tracking-tight text-foreground">
+              <h2 className="mt-4 font-display text-[20px] font-extrabold tracking-tight text-foreground text-center">
                 {heading}
               </h2>
-              <p className="mt-1.5 text-[13px] text-muted-foreground leading-snug">{body}</p>
+              <p className="mt-1.5 text-[13px] text-muted-foreground leading-snug text-center">{body}</p>
 
-              <ul className="mt-5 text-left space-y-2 rounded-2xl border border-amber-100 bg-amber-50/50 p-4">
-                {[
-                  "Unlimited AI explanations, summaries & quizzes",
-                  "Unlimited audio lessons (Noiz TTS)",
-                  "All mock exams + AI remediation",
-                  "Priority AI tutor chat + Pro badge",
-                ].map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-[13px] text-amber-900">
-                    <Check className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
-                    <span>{f}</span>
-                  </li>
+              <p className="mt-5 text-[11px] uppercase tracking-wide font-semibold text-amber-700">
+                Top up your wallet
+              </p>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                {TOP_UPS.map((t) => (
+                  <button
+                    key={t.naira}
+                    onClick={() => startTopUp(t.naira)}
+                    disabled={busy !== null}
+                    className="relative text-left rounded-2xl border border-amber-100 hover:border-amber-300 bg-amber-50/40 hover:bg-amber-50 p-3 transition-colors disabled:opacity-60"
+                  >
+                    {t.badge && (
+                      <span className="absolute -top-2 right-2 text-[9px] font-bold uppercase tracking-wide bg-amber-500 text-white px-1.5 py-0.5 rounded">
+                        {t.badge}
+                      </span>
+                    )}
+                    <p className="font-display text-base font-extrabold text-amber-900">
+                      ₦{t.naira.toLocaleString()}
+                    </p>
+                    <p className="text-[11px] text-amber-800 mt-0.5 flex items-center gap-1">
+                      <Zap className="h-3 w-3" /> {t.tokens} tokens
+                    </p>
+                    {busy === t.naira && (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-700 absolute bottom-2 right-2" />
+                    )}
+                  </button>
                 ))}
-              </ul>
-
-              <div className="mt-5 flex items-center justify-center gap-2">
-                <span className="font-display text-3xl font-extrabold text-amber-900">₦2,000</span>
-                <span className="text-[13px] text-muted-foreground">/ month</span>
               </div>
 
-              <Button
-                onClick={goUpgrade}
-                className="mt-5 w-full h-12 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold shadow-[0_8px_24px_-8px_rgba(180,140,40,0.55)]"
-              >
-                <Sparkles className="h-4 w-4 mr-1.5" />
-                Upgrade to Pro
-              </Button>
+              <div className="mt-3 flex gap-2">
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  min={100}
+                  placeholder="Custom amount (₦100+)"
+                  value={customAmount}
+                  onChange={(e) => setCustomAmount(e.target.value)}
+                  className="h-10 text-sm"
+                />
+                <Button
+                  onClick={() => startTopUp(Number(customAmount))}
+                  disabled={busy !== null || !customAmount || Number(customAmount) < 100}
+                  className="h-10 px-4 bg-amber-600 hover:bg-amber-700 text-white"
+                >
+                  {busy === "custom" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Top up"}
+                </Button>
+              </div>
+
+              <p className="mt-3 text-[11px] text-muted-foreground text-center">
+                1 token = ₦25 = 1 AI action · Light actions (quiz, AI explain, tutor chat) get 5 free / day.
+              </p>
+
               <button
-                type="button" onClick={() => onOpenChange(false)}
-                className="mt-2 w-full h-10 text-[13px] text-muted-foreground hover:text-foreground"
+                type="button"
+                onClick={() => { onOpenChange(false); navigate("/wallet"); }}
+                className="mt-3 w-full h-10 text-[13px] text-amber-700 hover:text-amber-900 font-semibold"
               >
-                Maybe later
+                Open full wallet →
               </button>
             </div>
           </motion.div>

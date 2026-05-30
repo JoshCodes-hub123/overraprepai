@@ -5,6 +5,8 @@ const FLW_SECRET_HASH = Deno.env.get('FLW_SECRET_HASH')!
 const SUPA_URL = Deno.env.get('SUPABASE_URL')!
 const SUPA_SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
+const NAIRA_PER_TOKEN = 25
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -35,14 +37,27 @@ Deno.serve(async (req) => {
     }
 
     const reference: string = data?.reference || data?.tx_ref
+    const flwTxId: string = String(data?.id || reference)
     const meta = data?.meta || data?.metadata || {}
     const userId = meta.user_id as string
-    const planId = meta.plan_id as string
-    const durationDays = Number(meta.duration_days || meta.interval_days || 30)
 
-    if (!reference) {
-      console.warn('Missing reference')
+    if (!reference || !userId) {
+      console.warn('Webhook missing reference/user_id', { reference, userId, meta })
       return new Response('Missing reference', { status: 400 })
+    }
+
+    // Derive tokens from meta if present, otherwise from amount.
+    let tokens = Number(meta.tokens)
+    let amountNaira = Number(meta.amount_naira)
+    if (!Number.isFinite(amountNaira) || amountNaira <= 0) {
+      amountNaira = Number(data?.amount) || 0
+    }
+    if (!Number.isFinite(tokens) || tokens <= 0) {
+      tokens = Math.floor(amountNaira / NAIRA_PER_TOKEN)
+    }
+    if (tokens <= 0) {
+      console.warn('Webhook: could not derive tokens', { meta, amountNaira })
+      return new Response('Invalid amount', { status: 400 })
     }
 
     const { data: tx } = await admin
@@ -59,30 +74,21 @@ Deno.serve(async (req) => {
       .from('payment_transactions')
       .update({
         status: 'success',
+        activated: true,
+        activated_at: new Date().toISOString(),
         raw_payload: { ...(tx?.raw_payload ?? {}), flutterwave_event: data },
         updated_at: new Date().toISOString(),
       })
       .eq('reference', reference)
 
-    if (userId && planId) {
-      const { error: rpcErr } = await admin.rpc('activate_pro_subscription', {
-        _user_id: userId,
-        _plan_id: planId,
-        _days: durationDays,
-        _source: 'flutterwave',
-        _reference: reference,
-      })
-      if (rpcErr) console.error('activate_pro_subscription error', rpcErr)
-
-      // Mark first purchase used so future checkouts pay full price
-      await admin
-        .from('profiles')
-        .update({ first_purchase_used: true })
-        .eq('id', userId)
-        .eq('first_purchase_used', false)
-    } else {
-      console.warn('Webhook missing user_id/plan_id in meta', meta)
-    }
+    const { error: rpcErr } = await admin.rpc('credit_wallet', {
+      _user_id: userId,
+      _tokens: tokens,
+      _naira_amount: amountNaira,
+      _ref_id: `flw_${flwTxId}`,
+      _kind: 'topup',
+    })
+    if (rpcErr) console.error('credit_wallet error', rpcErr)
 
     return new Response('ok', { status: 200 })
   } catch (e: any) {

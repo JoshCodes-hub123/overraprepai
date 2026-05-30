@@ -3255,6 +3255,7 @@ export type Database = {
         Row: {
           academic_metadata: Json
           academic_path: Database["public"]["Enums"]["academic_path"] | null
+          ai_token_balance: number
           aspiring_cgpa: number | null
           avatar_url: string | null
           bio: string | null
@@ -3263,6 +3264,8 @@ export type Database = {
           current_cgpa: number | null
           daily_ai_tokens_reset_at: string
           daily_ai_tokens_used: number
+          daily_free_reset_at: string
+          daily_free_used: number
           date_of_birth: string | null
           department: string | null
           email: string
@@ -3297,6 +3300,7 @@ export type Database = {
         Insert: {
           academic_metadata?: Json
           academic_path?: Database["public"]["Enums"]["academic_path"] | null
+          ai_token_balance?: number
           aspiring_cgpa?: number | null
           avatar_url?: string | null
           bio?: string | null
@@ -3305,6 +3309,8 @@ export type Database = {
           current_cgpa?: number | null
           daily_ai_tokens_reset_at?: string
           daily_ai_tokens_used?: number
+          daily_free_reset_at?: string
+          daily_free_used?: number
           date_of_birth?: string | null
           department?: string | null
           email: string
@@ -3339,6 +3345,7 @@ export type Database = {
         Update: {
           academic_metadata?: Json
           academic_path?: Database["public"]["Enums"]["academic_path"] | null
+          ai_token_balance?: number
           aspiring_cgpa?: number | null
           avatar_url?: string | null
           bio?: string | null
@@ -3347,6 +3354,8 @@ export type Database = {
           current_cgpa?: number | null
           daily_ai_tokens_reset_at?: string
           daily_ai_tokens_used?: number
+          daily_free_reset_at?: string
+          daily_free_used?: number
           date_of_birth?: string | null
           department?: string | null
           email?: string
@@ -6829,6 +6838,45 @@ export type Database = {
           },
         ]
       }
+      wallet_transactions: {
+        Row: {
+          action_kind: string | null
+          balance_after: number
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["wallet_txn_kind"]
+          naira_amount: number | null
+          reason: string | null
+          ref_id: string | null
+          tokens: number
+          user_id: string
+        }
+        Insert: {
+          action_kind?: string | null
+          balance_after?: number
+          created_at?: string
+          id?: string
+          kind: Database["public"]["Enums"]["wallet_txn_kind"]
+          naira_amount?: number | null
+          reason?: string | null
+          ref_id?: string | null
+          tokens?: number
+          user_id: string
+        }
+        Update: {
+          action_kind?: string | null
+          balance_after?: number
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["wallet_txn_kind"]
+          naira_amount?: number | null
+          reason?: string | null
+          ref_id?: string | null
+          tokens?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       weakness_signals: {
         Row: {
           course_id: string | null
@@ -7169,6 +7217,10 @@ export type Database = {
         }
         Returns: string
       }
+      admin_adjust_wallet: {
+        Args: { _delta_tokens: number; _reason: string; _user_id: string }
+        Returns: Json
+      }
       admin_change_plan: {
         Args: {
           _days?: number
@@ -7257,15 +7309,17 @@ export type Database = {
         Returns: undefined
       }
       complete_session: { Args: { _booking_id: string }; Returns: undefined }
-      consume_ai_token: {
-        Args: { _daily_limit?: number; _kind?: string }
-        Returns: {
-          allowed: boolean
-          is_pro: boolean
-          remaining: number
-          used: number
-        }[]
-      }
+      consume_ai_token:
+        | { Args: { _kind: string }; Returns: Json }
+        | {
+            Args: { _daily_limit?: number; _kind?: string }
+            Returns: {
+              allowed: boolean
+              is_pro: boolean
+              remaining: number
+              used: number
+            }[]
+          }
       course_in_my_university: {
         Args: { _course_id: string }
         Returns: boolean
@@ -7282,6 +7336,16 @@ export type Database = {
           p_user_id: string
         }
         Returns: string
+      }
+      credit_wallet: {
+        Args: {
+          _kind?: Database["public"]["Enums"]["wallet_txn_kind"]
+          _naira_amount: number
+          _ref_id: string
+          _tokens: number
+          _user_id: string
+        }
+        Returns: Json
       }
       delete_email: {
         Args: { message_id: number; queue_name: string }
@@ -7331,6 +7395,7 @@ export type Database = {
         Returns: {
           academic_metadata: Json
           academic_path: Database["public"]["Enums"]["academic_path"] | null
+          ai_token_balance: number
           aspiring_cgpa: number | null
           avatar_url: string | null
           bio: string | null
@@ -7339,6 +7404,8 @@ export type Database = {
           current_cgpa: number | null
           daily_ai_tokens_reset_at: string
           daily_ai_tokens_used: number
+          daily_free_reset_at: string
+          daily_free_used: number
           date_of_birth: string | null
           department: string | null
           email: string
@@ -7717,6 +7784,13 @@ export type Database = {
         | "study_pack"
         | "audio"
       tutor_material_kind: "pdf" | "note" | "flashcard_set" | "link"
+      wallet_txn_kind:
+        | "topup"
+        | "spend"
+        | "admin_credit"
+        | "admin_debit"
+        | "refund"
+        | "free"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -7877,6 +7951,14 @@ export const Constants = {
         "audio",
       ],
       tutor_material_kind: ["pdf", "note", "flashcard_set", "link"],
+      wallet_txn_kind: [
+        "topup",
+        "spend",
+        "admin_credit",
+        "admin_debit",
+        "refund",
+        "free",
+      ],
     },
   },
 } as const

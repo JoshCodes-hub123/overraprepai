@@ -1,120 +1,130 @@
-import { useCallback, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useCallback, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useMySubscription } from "@/hooks/useSubscription";
+import { toast } from "sonner";
 
 /**
- * Simpler Freemium gate.
+ * Prepaid wallet gate.
  *
- * - Pro = active paid subscription OR within the 2-day signup trial window.
- * - Free users get 5 AI credits / day, reset at midnight.
- * - `requirePro(reason)` opens the upgrade sheet for hard-locked features.
- * - `requireCredit(kind)` consumes 1 credit; if exhausted, opens upgrade sheet
- *    AND returns false so the caller skips the AI call.
+ * - 1 token = ₦25. Every paid AI/quiz action costs 1 token.
+ * - Light actions (`quiz_attempt`, `ai_explanation`, `tutor_chat`) get 5 free
+ *   uses per calendar day (Africa/Lagos). After that they also cost 1 token.
+ * - Heavy actions always cost 1 token (no free quota).
+ * - When the wallet is empty, `requireToken` opens the SoftPaywallSheet
+ *   (top-up CTA) and returns false so callers skip the AI call.
+ *
+ * The hook keeps the legacy `usePremium` export name + a few aliases so the
+ * existing call sites keep working without churn.
  */
 export function usePremium() {
   const { user } = useAuth();
-  const { data: sub, isLoading: subLoading } = useMySubscription();
+  const qc = useQueryClient();
 
-  // Profile row gives us trial_ends_at + daily credit counters
   const profileQuery = useQuery({
-    queryKey: ["premium-profile", user?.id],
+    queryKey: ["wallet-profile", user?.id],
     enabled: !!user?.id,
     staleTime: 30_000,
     queryFn: async () => {
       const { data } = await (supabase as any)
         .from("profiles")
-        .select("trial_ends_at, daily_ai_tokens_used, daily_ai_tokens_reset_at, first_purchase_used")
+        .select("ai_token_balance, daily_free_used, daily_free_reset_at")
         .eq("id", user!.id)
         .maybeSingle();
-      return data as {
-        trial_ends_at: string | null;
-        daily_ai_tokens_used: number | null;
-        daily_ai_tokens_reset_at: string | null;
-        first_purchase_used: boolean | null;
-      } | null;
+      return (data ?? {
+        ai_token_balance: 0,
+        daily_free_used: 0,
+        daily_free_reset_at: null,
+      }) as {
+        ai_token_balance: number | null;
+        daily_free_used: number | null;
+        daily_free_reset_at: string | null;
+      };
     },
   });
 
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState<string | null>(null);
 
-  const isTrial = useMemo(() => {
-    const t = profileQuery.data?.trial_ends_at;
-    return !!t && new Date(t) > new Date();
-  }, [profileQuery.data?.trial_ends_at]);
-
-  const hasPaidPro = useMemo(() => {
-    if (!sub) return false;
-    if (sub.plan_id === "free") return false;
-    if (sub.expires_at && new Date(sub.expires_at) <= new Date()) return false;
-    return sub.status === "active";
-  }, [sub]);
-
-  const isPro = hasPaidPro || isTrial;
-
-  const trialDaysLeft = useMemo(() => {
-    const t = profileQuery.data?.trial_ends_at;
-    if (!t) return 0;
-    const ms = new Date(t).getTime() - Date.now();
-    return ms > 0 ? Math.ceil(ms / (1000 * 60 * 60 * 24)) : 0;
-  }, [profileQuery.data?.trial_ends_at]);
-
-  const creditsUsed = profileQuery.data?.daily_ai_tokens_used ?? 0;
+  const balance = profileQuery.data?.ai_token_balance ?? 0;
+  const freeUsed = profileQuery.data?.daily_free_used ?? 0;
   const dailyLimit = 5;
-  const creditsLeft = isPro ? Infinity : Math.max(dailyLimit - creditsUsed, 0);
+  const freeLeft = Math.max(dailyLimit - freeUsed, 0);
 
-  const requirePro = useCallback((reason: string): boolean => {
-    if (isPro) return true;
-    setUpgradeReason(reason);
-    setUpgradeOpen(true);
-    return false;
-  }, [isPro]);
+  const LIGHT_KINDS = new Set(["quiz_attempt", "ai_explanation", "tutor_chat"]);
+
+  const refetch = () => {
+    profileQuery.refetch();
+    qc.invalidateQueries({ queryKey: ["wallet-profile"] });
+    qc.invalidateQueries({ queryKey: ["wallet-transactions"] });
+  };
 
   /**
-   * Consumes 1 daily credit server-side. Returns true if the AI call may proceed.
-   * Pro/trial users always succeed without decrementing. On exhaustion, opens upgrade sheet.
+   * Consume one allowance for a given action kind. Returns true if the
+   * caller may proceed. On wallet-empty: opens the paywall sheet and returns false.
    */
-  const requireCredit = useCallback(async (kind: string): Promise<boolean> => {
-    if (isPro) return true;
-    const { data, error } = await (supabase as any).rpc("consume_ai_token", {
-      _kind: kind,
-      _daily_limit: dailyLimit,
-    });
+  const requireToken = useCallback(async (kind: string): Promise<boolean> => {
+    const { data, error } = await (supabase as any).rpc("consume_ai_token", { _kind: kind });
     if (error) {
       console.error("consume_ai_token error", error);
-      // Fail-open so a transient error doesn't block paying users
+      // Fail-open so a transient error doesn't block a user mid-flow
       return true;
     }
-    const row = Array.isArray(data) ? data[0] : data;
-    profileQuery.refetch();
-    if (!row?.allowed) {
+    refetch();
+    if (!data?.allowed) {
       setUpgradeReason(
-        `You've used today's ${dailyLimit} free credits. Upgrade to Pro for unlimited AI.`,
+        `Your wallet is empty. Top up to keep using ${kind.replace(/_/g, " ")} and other AI features.`,
       );
       setUpgradeOpen(true);
       return false;
     }
+    if (data.source === "token") {
+      toast.success(`−1 token · ${data.balance} left in wallet`);
+    } else if (LIGHT_KINDS.has(kind)) {
+      // light-action free use — silent
+    }
     return true;
-  }, [isPro, profileQuery]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Backwards-compat alias used by older call sites.
+  const requireCredit = requireToken;
+
+  // No more Pro — everyone is on the wallet. Keep these as no-ops so legacy
+  // gates don't accidentally hide functionality.
+  const requirePro = useCallback((_reason: string): boolean => true, []);
 
   return {
-    isPro,
-    isTrial,
-    hasPaidPro,
-    trialDaysLeft,
-    isLoading: subLoading || profileQuery.isLoading,
-    plan: sub?.plan_id ?? "free",
-    expiresAt: sub?.expires_at ?? null,
-    firstPurchaseUsed: !!profileQuery.data?.first_purchase_used,
-    creditsUsed,
-    creditsLeft,
+    // wallet
+    balance,
+    freeUsed,
+    freeLeft,
     dailyLimit,
+    isLowBalance: balance > 0 && balance < 3,
+    isEmpty: balance <= 0 && freeLeft <= 0,
+    isLoading: profileQuery.isLoading,
+    refetch,
+
+    // gate
+    requireToken,
+    requireCredit,
+    requirePro,
     upgradeOpen,
     upgradeReason,
     setUpgradeOpen,
-    requirePro,
-    requireCredit,
+
+    // legacy aliases (no Pro tier any more — always false)
+    isPro: false,
+    isTrial: false,
+    hasPaidPro: false,
+    trialDaysLeft: 0,
+    plan: "wallet",
+    expiresAt: null as string | null,
+    firstPurchaseUsed: true,
+    creditsUsed: freeUsed,
+    creditsLeft: freeLeft,
   };
 }
+
+// Convenience alias for new code.
+export const useWallet = usePremium;

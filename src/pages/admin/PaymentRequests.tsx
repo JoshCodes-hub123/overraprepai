@@ -7,12 +7,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { CreditCard, ExternalLink, Loader2, Check, X, Download, Crown, Search, Plus } from "lucide-react";
+import { Wallet, Download, Search, Loader2, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { exportToCsv } from "@/lib/exportCsv";
+
+const NAIRA_PER_TOKEN = 25;
 
 const Stat = ({ label, value, sub }: { label: string; value: string; sub?: string }) => (
   <Card className="p-4">
@@ -22,57 +22,34 @@ const Stat = ({ label, value, sub }: { label: string; value: string; sub?: strin
   </Card>
 );
 
-const PaymentRequests = () => {
+const AdminPayments = () => {
   const qc = useQueryClient();
-  const [busy, setBusy] = useState<string | null>(null);
-  const [rejectingId, setRejectingId] = useState<string | null>(null);
-  const [rejectNote, setRejectNote] = useState("");
-  const [proofUrl, setProofUrl] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "success" | "pending" | "failed">("all");
-  const [extendId, setExtendId] = useState<string | null>(null);
-  const [extendDays, setExtendDays] = useState(30);
-  const [extendReason, setExtendReason] = useState("");
+  const [adjustOpen, setAdjustOpen] = useState<{ userId: string; name: string } | null>(null);
+  const [adjustDelta, setAdjustDelta] = useState(0);
+  const [adjustReason, setAdjustReason] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  // --- All Flutterwave transactions ---
-  const { data: txs = [], isLoading: txsLoading } = useQuery({
-    queryKey: ["admin-payment-txs"],
+  const { data: txs = [], isLoading } = useQuery({
+    queryKey: ["admin-wallet-topups"],
     queryFn: async () => {
       const { data: rows } = await (supabase as any)
         .from("payment_transactions")
         .select("*")
+        .eq("plan_id", "wallet_topup")
         .order("created_at", { ascending: false })
         .limit(500);
       const ids = Array.from(new Set((rows ?? []).map((r: any) => r.user_id as string))) as string[];
       const { data: profs } = ids.length
-        ? await supabase.from("profiles").select("id,full_name,email").in("id", ids)
-        : { data: [] as any[] };
-      const map = new Map((profs ?? []).map((p: any) => [p.id, p]));
-      const { data: subs } = ids.length
-        ? await (supabase as any).from("user_subscriptions").select("user_id, expires_at, status").in("user_id", ids).eq("status", "active")
-        : { data: [] as any[] };
-      const subMap = new Map((subs ?? []).map((s: any) => [s.user_id, s]));
-      return (rows ?? []).map((r: any) => ({ ...r, profile: map.get(r.user_id), sub: subMap.get(r.user_id) }));
-    },
-  });
-
-  // --- Pending manual receipts ---
-  const { data: pendingRequests = [] } = useQuery({
-    queryKey: ["admin-payment-requests-pending"],
-    queryFn: async () => {
-      const { data: rows } = await (supabase as any)
-        .from("payment_requests").select("*").eq("status", "pending")
-        .order("created_at", { ascending: false });
-      const ids = Array.from(new Set((rows ?? []).map((r: any) => r.user_id as string))) as string[];
-      const { data: profs } = ids.length
-        ? await supabase.from("profiles").select("id,full_name,email").in("id", ids)
+        ? await supabase.from("profiles").select("id,full_name,email,ai_token_balance").in("id", ids)
         : { data: [] as any[] };
       const map = new Map((profs ?? []).map((p: any) => [p.id, p]));
       return (rows ?? []).map((r: any) => ({ ...r, profile: map.get(r.user_id) }));
     },
   });
 
-  const filteredTxs = useMemo(() => {
+  const filtered = useMemo(() => {
     return txs.filter((t: any) => {
       if (statusFilter !== "all" && t.status !== statusFilter) return false;
       if (!search) return true;
@@ -88,271 +65,171 @@ const PaymentRequests = () => {
   const stats = useMemo(() => {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekStart = new Date(now); weekStart.setDate(weekStart.getDate() - 7);
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const successful = txs.filter((t: any) => t.status === "success");
-    const today = successful.filter((t: any) => new Date(t.created_at) >= todayStart);
-    const month = successful.filter((t: any) => new Date(t.created_at) >= monthStart);
+    const success = txs.filter((t: any) => t.status === "success");
     const sumKobo = (rows: any[]) => rows.reduce((s, r) => s + (r.amount_cents || 0), 0);
-    const activePro = new Set(
-      txs.filter((t: any) => t.sub && new Date(t.sub.expires_at) > now).map((t: any) => t.user_id),
-    ).size;
     return {
-      today: `₦${(sumKobo(today) / 100).toLocaleString()}`,
-      month: `₦${(sumKobo(month) / 100).toLocaleString()}`,
-      activePro: activePro.toString(),
-      successfulCount: successful.length.toString(),
+      today: `₦${(sumKobo(success.filter((t: any) => new Date(t.created_at) >= todayStart)) / 100).toLocaleString()}`,
+      week: `₦${(sumKobo(success.filter((t: any) => new Date(t.created_at) >= weekStart)) / 100).toLocaleString()}`,
+      month: `₦${(sumKobo(success.filter((t: any) => new Date(t.created_at) >= monthStart)) / 100).toLocaleString()}`,
+      total: `₦${(sumKobo(success) / 100).toLocaleString()}`,
+      count: success.length.toString(),
     };
   }, [txs]);
 
-  const openProof = async (path: string) => {
-    const { data } = await supabase.storage.from("payment-proofs").createSignedUrl(path, 600);
-    if (data?.signedUrl) setProofUrl(data.signedUrl);
-    else toast.error("Could not load proof");
-  };
-
-  const approve = async (id: string) => {
-    setBusy(id);
+  const adjust = async () => {
+    if (!adjustOpen || !adjustDelta) return;
+    setBusy(true);
     try {
-      const { error } = await (supabase as any).rpc("approve_payment_request", { _id: id, _note: null });
-      if (error) throw new Error(error.message);
-      toast.success("Approved");
-      qc.invalidateQueries({ queryKey: ["admin-payment-requests-pending"] });
-      qc.invalidateQueries({ queryKey: ["admin-payment-txs"] });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Approve failed");
-    } finally { setBusy(null); }
-  };
-
-  const confirmReject = async () => {
-    if (!rejectingId) return;
-    setBusy(rejectingId);
-    try {
-      const { error } = await (supabase as any).rpc("reject_payment_request", { _id: rejectingId, _note: rejectNote || null });
-      if (error) throw new Error(error.message);
-      toast.success("Rejected");
-      qc.invalidateQueries({ queryKey: ["admin-payment-requests-pending"] });
-      setRejectingId(null); setRejectNote("");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Reject failed");
-    } finally { setBusy(null); }
-  };
-
-  const confirmExtend = async () => {
-    if (!extendId || extendDays <= 0) return;
-    setBusy(extendId);
-    try {
-      const { error } = await (supabase as any).rpc("admin_extend_pro", {
-        _user_id: extendId, _days: extendDays, _reason: extendReason || null,
+      const { data, error } = await (supabase as any).rpc("admin_adjust_wallet", {
+        _user_id: adjustOpen.userId,
+        _delta_tokens: adjustDelta,
+        _reason: adjustReason || null,
       });
-      if (error) throw new Error(error.message);
-      toast.success(`Extended Pro by ${extendDays} days`);
-      qc.invalidateQueries({ queryKey: ["admin-payment-txs"] });
-      setExtendId(null); setExtendDays(30); setExtendReason("");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Extend failed");
-    } finally { setBusy(null); }
+      if (error) throw error;
+      if (data && !data.ok) throw new Error(data.error || "Adjust failed");
+      toast.success(`Wallet adjusted by ${adjustDelta > 0 ? "+" : ""}${adjustDelta}`);
+      setAdjustOpen(null); setAdjustDelta(0); setAdjustReason("");
+      qc.invalidateQueries({ queryKey: ["admin-wallet-topups"] });
+    } catch (e: any) {
+      toast.error(e?.message || "Adjust failed");
+    } finally { setBusy(false); }
   };
 
   const downloadCsv = () => {
     exportToCsv(
-      filteredTxs.map((t: any) => ({
+      filtered.map((t: any) => ({
         date: format(new Date(t.created_at), "yyyy-MM-dd HH:mm"),
         student: t.profile?.full_name || "",
         email: t.profile?.email || "",
-        plan: t.plan_id,
         amount_ngn: (t.amount_cents / 100).toFixed(2),
-        currency: t.currency,
-        provider: t.provider,
+        tokens: Math.floor((t.amount_cents / 100) / NAIRA_PER_TOKEN),
         status: t.status,
         reference: t.reference,
-        pro_expires: t.sub?.expires_at || "",
       })),
-      "payments.csv",
+      "wallet-topups.csv",
     );
   };
 
   return (
     <>
-      <SEO title="Payments" description="Manage subscription payments and revenue." url="https://overraprep.com/admin/payments" noindex />
+      <SEO title="Payments" description="Wallet top-ups and revenue." url="https://overraprepai.com/admin/payments" noindex />
       <div className="min-h-screen bg-background pb-24">
         <DashboardNav role="admin" />
         <main className="container mx-auto px-4 py-6 max-w-6xl">
           <header className="mb-5 flex items-center justify-between gap-3 flex-wrap">
             <h1 className="font-display text-2xl font-bold flex items-center gap-2">
-              <CreditCard className="w-6 h-6 text-amber-500" /> Payments
+              <Wallet className="w-6 h-6 text-amber-500" /> Wallet top-ups
             </h1>
-            <Button size="sm" variant="outline" onClick={downloadCsv} disabled={!filteredTxs.length}>
+            <Button size="sm" variant="outline" onClick={downloadCsv} disabled={!filtered.length}>
               <Download className="w-3.5 h-3.5 mr-1" /> Export CSV
             </Button>
           </header>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <Stat label="Today" value={stats.today} sub="Revenue (successful)" />
-            <Stat label="This month" value={stats.month} sub="Revenue (successful)" />
-            <Stat label="Active Pro" value={stats.activePro} sub="Subscribers right now" />
-            <Stat label="All-time payments" value={stats.successfulCount} sub="Successful charges" />
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+            <Stat label="Today" value={stats.today} sub="Successful" />
+            <Stat label="This week" value={stats.week} sub="Successful" />
+            <Stat label="This month" value={stats.month} sub="Successful" />
+            <Stat label="All-time revenue" value={stats.total} sub="Successful" />
+            <Stat label="Charges" value={stats.count} sub="Successful count" />
           </div>
 
-          {/* Pending manual receipts */}
-          {pendingRequests.length > 0 && (
-            <section className="mb-6">
-              <h2 className="font-display text-base font-bold mb-2">Pending manual receipts ({pendingRequests.length})</h2>
-              <div className="space-y-2">
-                {pendingRequests.map((r: any) => (
-                  <Card key={r.id} className="p-3">
-                    <div className="flex items-start justify-between gap-3 flex-wrap">
-                      <div className="min-w-0">
-                        <p className="font-semibold text-sm">{r.profile?.full_name || r.profile?.email || r.user_id.slice(0, 8)}</p>
-                        <p className="text-[11px] text-muted-foreground">{r.profile?.email}</p>
-                        <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px]">
-                          <Badge variant="outline" className="capitalize">{r.plan_id}</Badge>
-                          <span>{r.currency} {(r.amount_cents / 100).toFixed(2)}</span>
-                          {r.reference && <span>Ref <strong>{r.reference}</strong></span>}
-                          <span className="text-muted-foreground">{format(new Date(r.created_at), "PPp")}</span>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        {r.proof_path && (
-                          <Button size="sm" variant="outline" onClick={() => openProof(r.proof_path)}>
-                            <ExternalLink className="w-3.5 h-3.5 mr-1" /> Proof
-                          </Button>
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, email, reference" className="pl-8 h-9" />
+            </div>
+            {(["all","success","pending","failed"] as const).map((s) => (
+              <Button key={s} size="sm" variant={statusFilter === s ? "default" : "outline"} onClick={() => setStatusFilter(s)} className="h-9 capitalize">
+                {s}
+              </Button>
+            ))}
+          </div>
+
+          <div className="space-y-2">
+            {isLoading ? (
+              <Card className="p-6 text-center text-sm text-muted-foreground">Loading…</Card>
+            ) : filtered.length === 0 ? (
+              <Card className="p-6 text-center text-sm text-muted-foreground">No transactions match the filter.</Card>
+            ) : (
+              filtered.map((t: any) => {
+                const tokens = Math.floor((t.amount_cents / 100) / NAIRA_PER_TOKEN);
+                return (
+                  <Card key={t.id} className="p-3 flex items-start justify-between gap-3 flex-wrap">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm">
+                        {t.profile?.full_name || t.profile?.email || t.user_id.slice(0, 8)}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">{t.profile?.email}</p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px]">
+                        <Badge variant="outline">₦{(t.amount_cents / 100).toLocaleString()}</Badge>
+                        <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
+                          <Zap className="h-3 w-3 mr-1" />{tokens} tokens
+                        </Badge>
+                        <Badge
+                          variant="outline"
+                          className={
+                            t.status === "success" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                            t.status === "pending" ? "bg-amber-50 text-amber-700 border-amber-200" :
+                            "bg-rose-50 text-rose-700 border-rose-200"
+                          }
+                        >
+                          {t.status}
+                        </Badge>
+                        <span className="text-muted-foreground">Ref {t.reference}</span>
+                        <span className="text-muted-foreground">{format(new Date(t.created_at), "MMM d, HH:mm")}</span>
+                        {typeof t.profile?.ai_token_balance === "number" && (
+                          <span className="text-muted-foreground">Wallet: {t.profile.ai_token_balance}</span>
                         )}
-                        <Button size="sm" disabled={busy === r.id}
-                          onClick={() => approve(r.id)}
-                          className="bg-emerald-500 hover:bg-emerald-600 text-white">
-                          {busy === r.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><Check className="w-3.5 h-3.5 mr-1" /> Approve</>}
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => setRejectingId(r.id)}>
-                          <X className="w-3.5 h-3.5 mr-1" /> Reject
-                        </Button>
                       </div>
                     </div>
+                    <Button
+                      size="sm" variant="outline"
+                      onClick={() => setAdjustOpen({ userId: t.user_id, name: t.profile?.full_name || t.profile?.email || t.user_id.slice(0, 8) })}
+                    >
+                      Adjust wallet
+                    </Button>
                   </Card>
-                ))}
-              </div>
-            </section>
-          )}
+                );
+              })
+            )}
+          </div>
 
-          {/* All transactions */}
-          <section>
-            <div className="flex items-center gap-2 mb-3 flex-wrap">
-              <h2 className="font-display text-base font-bold mr-2">All payments</h2>
-              <div className="relative flex-1 min-w-[200px] max-w-xs">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Name, email, reference…" className="h-8 pl-8 text-sm" />
-              </div>
-              {(["all", "success", "pending", "failed"] as const).map((s) => (
-                <Button key={s} size="sm" variant={statusFilter === s ? "default" : "outline"} onClick={() => setStatusFilter(s)} className="h-8 capitalize">
-                  {s}
-                </Button>
-              ))}
-            </div>
-
-            {txsLoading ? (
-              <div className="grid place-items-center py-16 text-muted-foreground"><Loader2 className="w-6 h-6 animate-spin" /></div>
-            ) : filteredTxs.length === 0 ? (
-              <Card className="p-10 text-center text-muted-foreground">No payments match the current filters.</Card>
-            ) : (
-              <Card className="overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/30 text-[11px] uppercase tracking-wide text-muted-foreground">
-                      <tr>
-                        <th className="px-3 py-2 text-left">Student</th>
-                        <th className="px-3 py-2 text-left">Plan</th>
-                        <th className="px-3 py-2 text-right">Amount</th>
-                        <th className="px-3 py-2 text-left">Status</th>
-                        <th className="px-3 py-2 text-left">Pro expires</th>
-                        <th className="px-3 py-2 text-left">Date</th>
-                        <th className="px-3 py-2 text-left">Ref</th>
-                        <th className="px-3 py-2 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredTxs.map((t: any) => (
-                        <tr key={t.id} className="border-t hover:bg-muted/20">
-                          <td className="px-3 py-2">
-                            <p className="font-semibold">{t.profile?.full_name || "—"}</p>
-                            <p className="text-[11px] text-muted-foreground">{t.profile?.email}</p>
-                          </td>
-                          <td className="px-3 py-2"><Badge variant="outline" className="capitalize">{t.plan_id}</Badge></td>
-                          <td className="px-3 py-2 text-right font-semibold">₦{(t.amount_cents / 100).toLocaleString()}</td>
-                          <td className="px-3 py-2">
-                            <Badge variant={t.status === "success" ? "default" : t.status === "failed" ? "destructive" : "secondary"}
-                              className={t.status === "success" ? "bg-emerald-500 hover:bg-emerald-500" : ""}>
-                              {t.status}
-                            </Badge>
-                          </td>
-                          <td className="px-3 py-2 text-[12px] text-muted-foreground">
-                            {t.sub?.expires_at ? format(new Date(t.sub.expires_at), "PP") : "—"}
-                          </td>
-                          <td className="px-3 py-2 text-[12px] text-muted-foreground">
-                            {format(new Date(t.created_at), "PPp")}
-                          </td>
-                          <td className="px-3 py-2 text-[11px] font-mono text-muted-foreground truncate max-w-[140px]">{t.reference}</td>
-                          <td className="px-3 py-2 text-right">
-                            <Button size="sm" variant="ghost" onClick={() => setExtendId(t.user_id)} title="Extend Pro">
-                              <Plus className="w-3.5 h-3.5 mr-1" /> Extend
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+          {/* Adjust dialog (inline panel — keep deps small) */}
+          {adjustOpen && (
+            <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-4" onClick={() => setAdjustOpen(null)}>
+              <Card className="w-full sm:max-w-md p-5" onClick={(e) => e.stopPropagation()}>
+                <h3 className="font-display text-lg font-bold">Adjust wallet for {adjustOpen.name}</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Positive = credit, negative = debit. Logged in audit + wallet transactions.
+                </p>
+                <div className="mt-3 space-y-2">
+                  <Input
+                    type="number"
+                    placeholder="Δ tokens (e.g. 10 or -5)"
+                    value={adjustDelta || ""}
+                    onChange={(e) => setAdjustDelta(Number(e.target.value))}
+                  />
+                  <Input
+                    placeholder="Reason (required for audit)"
+                    value={adjustReason}
+                    onChange={(e) => setAdjustReason(e.target.value)}
+                  />
+                </div>
+                <div className="mt-4 flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setAdjustOpen(null)} disabled={busy}>Cancel</Button>
+                  <Button onClick={adjust} disabled={busy || !adjustDelta} className="bg-amber-600 hover:bg-amber-700 text-white">
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
+                  </Button>
                 </div>
               </Card>
-            )}
-          </section>
+            </div>
+          )}
         </main>
       </div>
-
-      <Dialog open={!!rejectingId} onOpenChange={(o) => !o && setRejectingId(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Reject payment</DialogTitle></DialogHeader>
-          <Textarea value={rejectNote} onChange={(e) => setRejectNote(e.target.value)} placeholder="Reason (sent to the student)" rows={3} />
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setRejectingId(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={confirmReject} disabled={!!busy}>
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Reject"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!extendId} onOpenChange={(o) => !o && setExtendId(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Crown className="w-4 h-4 text-amber-500" /> Extend Pro</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <label className="block text-sm">
-              <span className="text-muted-foreground">Days to add</span>
-              <Input type="number" min={1} value={extendDays} onChange={(e) => setExtendDays(Number(e.target.value) || 0)} />
-            </label>
-            <label className="block text-sm">
-              <span className="text-muted-foreground">Reason (audit log)</span>
-              <Textarea value={extendReason} onChange={(e) => setExtendReason(e.target.value)} rows={2} placeholder="e.g. Gift / refund credit" />
-            </label>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setExtendId(null)}>Cancel</Button>
-            <Button onClick={confirmExtend} disabled={!!busy || extendDays <= 0}>
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "Extend"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!proofUrl} onOpenChange={(o) => !o && setProofUrl(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle>Proof of payment</DialogTitle></DialogHeader>
-          {proofUrl && (
-            proofUrl.match(/\.pdf/i)
-              ? <iframe src={proofUrl} className="w-full h-[70vh] rounded-lg border" />
-              : <img src={proofUrl} alt="Proof" className="w-full max-h-[75vh] object-contain rounded-lg" />
-          )}
-        </DialogContent>
-      </Dialog>
     </>
   );
 };
 
-export default PaymentRequests;
+export default AdminPayments;
