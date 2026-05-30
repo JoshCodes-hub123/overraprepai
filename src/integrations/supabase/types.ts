@@ -3267,6 +3267,7 @@ export type Database = {
           department: string | null
           email: string
           faculty: string | null
+          first_purchase_used: boolean
           flw_customer_id: string | null
           full_name: string | null
           gender: string | null
@@ -3282,6 +3283,7 @@ export type Database = {
           referred_by: string | null
           state_of_origin: string | null
           study_interests: string[] | null
+          trial_ends_at: string | null
           tutor_code: string | null
           tutor_match_prefs: Json
           tutor_specialization:
@@ -3307,6 +3309,7 @@ export type Database = {
           department?: string | null
           email: string
           faculty?: string | null
+          first_purchase_used?: boolean
           flw_customer_id?: string | null
           full_name?: string | null
           gender?: string | null
@@ -3322,6 +3325,7 @@ export type Database = {
           referred_by?: string | null
           state_of_origin?: string | null
           study_interests?: string[] | null
+          trial_ends_at?: string | null
           tutor_code?: string | null
           tutor_match_prefs?: Json
           tutor_specialization?:
@@ -3347,6 +3351,7 @@ export type Database = {
           department?: string | null
           email?: string
           faculty?: string | null
+          first_purchase_used?: boolean
           flw_customer_id?: string | null
           full_name?: string | null
           gender?: string | null
@@ -3362,6 +3367,7 @@ export type Database = {
           referred_by?: string | null
           state_of_origin?: string | null
           study_interests?: string[] | null
+          trial_ends_at?: string | null
           tutor_code?: string | null
           tutor_match_prefs?: Json
           tutor_specialization?:
@@ -7172,6 +7178,10 @@ export type Database = {
         }
         Returns: string
       }
+      admin_extend_pro: {
+        Args: { _days: number; _reason?: string; _user_id: string }
+        Returns: string
+      }
       admin_get_school: {
         Args: { _school_id: string }
         Returns: {
@@ -7333,6 +7343,7 @@ export type Database = {
           department: string | null
           email: string
           faculty: string | null
+          first_purchase_used: boolean
           flw_customer_id: string | null
           full_name: string | null
           gender: string | null
@@ -7348,6 +7359,7 @@ export type Database = {
           referred_by: string | null
           state_of_origin: string | null
           study_interests: string[] | null
+          trial_ends_at: string | null
           tutor_code: string | null
           tutor_match_prefs: Json
           tutor_specialization:
