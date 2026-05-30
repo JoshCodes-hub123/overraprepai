@@ -25,7 +25,10 @@ export default function StorefrontPublic() {
           <div className="flex items-center gap-4">
             <Avatar className="w-20 h-20"><AvatarImage src={profile.avatar_url}/><AvatarFallback>{profile.full_name?.[0] ?? 'T'}</AvatarFallback></Avatar>
             <div className="flex-1">
-              <CardTitle>{profile.full_name}</CardTitle>
+              <CardTitle className="flex items-center gap-2 flex-wrap">
+                {profile.full_name}
+                {profile.is_official && <OfficialBadge size="sm" />}
+              </CardTitle>
               <p className="text-sm text-muted-foreground">{data.headline}</p>
               <div className="flex items-center gap-1 mt-1">
                 {[1,2,3,4,5].map(n => <Star key={n} className={`w-4 h-4 ${n<=Math.round(avg)?'fill-primary text-primary':'text-muted'}`}/>)}
