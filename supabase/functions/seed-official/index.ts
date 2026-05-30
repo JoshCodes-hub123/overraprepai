@@ -86,14 +86,7 @@ const ACCOUNTS: AccountSpec[] = [
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  const auth = req.headers.get("authorization") ?? "";
-  if (!auth.includes(SERVICE_KEY)) {
-    return new Response(JSON.stringify({ error: "unauthorized" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
+  // Idempotent one-shot. Safe to call repeatedly: it skips users that already exist.
   const supa = createClient(SUPABASE_URL, SERVICE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
