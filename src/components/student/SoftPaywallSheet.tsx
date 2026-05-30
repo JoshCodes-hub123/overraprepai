@@ -150,15 +150,15 @@ export function SoftPaywallSheet({ open, onOpenChange, reason, action }: SoftPay
                 <Input
                   type="number"
                   inputMode="numeric"
-                  min={100}
-                  placeholder="Custom amount (₦100+)"
+                  min={250}
+                  placeholder="Custom amount (₦250+)"
                   value={customAmount}
                   onChange={(e) => setCustomAmount(e.target.value)}
                   className="h-10 text-sm"
                 />
                 <Button
                   onClick={() => startTopUp(Number(customAmount))}
-                  disabled={busy !== null || !customAmount || Number(customAmount) < 100}
+                  disabled={busy !== null || !customAmount || Number(customAmount) < 250}
                   className="h-10 px-4 bg-amber-600 hover:bg-amber-700 text-white"
                 >
                   {busy === "custom" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Top up"}
@@ -166,13 +166,22 @@ export function SoftPaywallSheet({ open, onOpenChange, reason, action }: SoftPay
               </div>
 
               <p className="mt-3 text-[11px] text-muted-foreground text-center">
-                1 token = ₦50 = 1 AI action. Top up from ₦250 (5 tokens) and use them anytime.
+                1 token = ₦50 = 1 AI action · 3 free actions reset every day.
               </p>
 
               <button
                 type="button"
+                onClick={() => onOpenChange(false)}
+                className="mt-4 w-full h-11 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-[13px] font-semibold text-amber-800 inline-flex items-center justify-center gap-2 transition"
+              >
+                <Clock className="h-4 w-4" />
+                Come back tomorrow · resets in {resetIn}
+              </button>
+
+              <button
+                type="button"
                 onClick={() => { onOpenChange(false); navigate("/wallet"); }}
-                className="mt-3 w-full h-10 text-[13px] text-amber-700 hover:text-amber-900 font-semibold"
+                className="mt-2 w-full h-9 text-[12px] text-amber-700 hover:text-amber-900 font-semibold"
               >
                 Open full wallet →
               </button>
