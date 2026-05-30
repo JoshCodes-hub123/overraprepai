@@ -145,7 +145,7 @@ export function SoftPaywallSheet({ open, onOpenChange, reason, action }: SoftPay
               </div>
 
               <p className="mt-3 text-[11px] text-muted-foreground text-center">
-                1 token = ₦25 = 1 AI action · Light actions (quiz, AI explain, tutor chat) get 5 free / day.
+                1 token = ₦50 = 1 AI action. Top up from ₦250 (5 tokens) and use them anytime.
               </p>
 
               <button

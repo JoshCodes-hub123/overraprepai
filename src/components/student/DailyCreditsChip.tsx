@@ -9,9 +9,9 @@ import { cn } from "@/lib/utils";
  */
 export function DailyCreditsChip({ className }: { className?: string }) {
   const navigate = useNavigate();
-  const { balance, freeLeft, isLowBalance } = usePremium();
+  const { balance, isLowBalance } = usePremium();
 
-  const empty = balance <= 0 && freeLeft <= 0;
+  const empty = balance <= 0;
   const tone = empty
     ? "bg-rose-50 text-rose-700 border-rose-200"
     : isLowBalance
@@ -27,11 +27,11 @@ export function DailyCreditsChip({ className }: { className?: string }) {
         tone,
         className,
       )}
-      aria-label={`Wallet: ${balance} tokens, ${freeLeft} free today`}
+      aria-label={`Wallet: ${balance} tokens`}
     >
       {empty ? <Wallet className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
       {balance}
-      <span className="opacity-70">·{freeLeft}/5</span>
+      <span className="opacity-70">tokens</span>
     </button>
   );
 }

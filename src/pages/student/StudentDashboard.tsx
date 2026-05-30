@@ -14,6 +14,7 @@ import { CommandPalette, useCommandPaletteHotkey } from "@/components/student/Co
 import { ContinueLearning } from "@/components/student/ContinueLearning";
 import { PickUpWhereYouLeftOff } from "@/components/student/PickUpWhereYouLeftOff";
 import { TopHeader } from "@/components/student/dashboard/TopHeader";
+import { TokenBalanceCard } from "@/components/student/dashboard/TokenBalanceCard";
 import { QuickActionsGrid } from "@/components/student/dashboard/QuickActionsGrid";
 import { KeyFeaturesStrip } from "@/components/student/dashboard/KeyFeaturesStrip";
 import { OpportunityHubPreview } from "@/components/student/dashboard/OpportunityHubPreview";
@@ -67,6 +68,9 @@ const StudentDashboard = () => {
 
             {/* 1. Greeting + streak + bell + avatar */}
             <TopHeader key={`top-${refreshKey}`} />
+
+            {/* Token wallet hero — pinned to the very top */}
+            <TokenBalanceCard />
 
             {/* 2. Hero — Study Pack AI (single intelligent entry point) */}
             <StudyPackHero />
