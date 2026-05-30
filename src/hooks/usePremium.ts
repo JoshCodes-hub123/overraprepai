@@ -47,11 +47,11 @@ export function usePremium() {
   const [upgradeReason, setUpgradeReason] = useState<string | null>(null);
 
   const balance = profileQuery.data?.ai_token_balance ?? 0;
-  const freeUsed = profileQuery.data?.daily_free_used ?? 0;
-  const dailyLimit = 5;
-  const freeLeft = Math.max(dailyLimit - freeUsed, 0);
+  const freeUsed = 0;
+  const dailyLimit = 0;
+  const freeLeft = 0;
 
-  const LIGHT_KINDS = new Set(["quiz_attempt", "ai_explanation", "tutor_chat"]);
+  const LIGHT_KINDS = new Set<string>();
 
   const refetch = () => {
     profileQuery.refetch();
