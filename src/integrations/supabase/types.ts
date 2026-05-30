@@ -7280,6 +7280,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_get_user_wallets: {
+        Args: { _ids: string[] }
+        Returns: {
+          ai_token_balance: number
+          email: string
+          full_name: string
+          id: string
+        }[]
+      }
       admin_revoke_all_sessions: { Args: { _user_id: string }; Returns: number }
       admin_set_tutor_status: {
         Args: { _reason?: string; _status: string; _user_id: string }
@@ -7457,6 +7466,14 @@ export type Database = {
           id: string
           to_email: string
           to_user: string
+        }[]
+      }
+      get_my_wallet: {
+        Args: never
+        Returns: {
+          ai_token_balance: number
+          daily_free_reset_at: string
+          daily_free_used: number
         }[]
       }
       get_public_profile_stats: {

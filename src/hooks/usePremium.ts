@@ -22,12 +22,11 @@ export function usePremium() {
     enabled: !!user?.id,
     staleTime: 30_000,
     queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from("profiles")
-        .select("ai_token_balance, daily_free_used, daily_free_reset_at")
-        .eq("id", user!.id)
-        .maybeSingle();
-      return (data ?? {
+      // Use the SECURITY DEFINER RPC so wallet/free-quota fields are not
+      // exposed via direct table SELECT (column grants are revoked).
+      const { data } = await (supabase as any).rpc("get_my_wallet");
+      const row = Array.isArray(data) ? data[0] : data;
+      return (row ?? {
         ai_token_balance: 0,
         daily_free_used: 0,
         daily_free_reset_at: null,
