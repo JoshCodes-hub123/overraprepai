@@ -287,3 +287,41 @@ const legal = {
   textAlign: 'center' as const,
   margin: '18px 0 0',
 }
+const ctaButton = {
+  backgroundColor: INK,
+  background: `linear-gradient(135deg, ${INK} 0%, #2d2200 100%)`,
+  color: '#ffd24d',
+  fontSize: '15px',
+  fontWeight: 800 as const,
+  letterSpacing: '0.02em',
+  padding: '14px 28px',
+  borderRadius: '12px',
+  textDecoration: 'none',
+  display: 'inline-block',
+  boxShadow: `0 10px 24px -10px ${GOLD}`,
+}
+const linkStyle = { color: GOLD_DEEP, wordBreak: 'break-all' as const, textDecoration: 'underline' }
+const fallbackLabel = {
+  fontSize: '11px',
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.16em',
+  fontWeight: 700 as const,
+  color: MUTED,
+  margin: '16px 0 8px',
+}
+const codeBoxSmall = {
+  background: CREAM,
+  border: `1px dashed ${GOLD}`,
+  borderRadius: '10px',
+  padding: '10px 12px',
+  textAlign: 'center' as const,
+  margin: '0 0 12px',
+}
+const codeTextSmall = {
+  fontFamily: '"SF Mono", Menlo, Consolas, monospace',
+  fontSize: '22px',
+  fontWeight: 800 as const,
+  letterSpacing: '0.28em',
+  color: INK,
+  margin: '0',
+}
