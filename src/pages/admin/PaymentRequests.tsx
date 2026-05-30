@@ -154,8 +154,7 @@ const PaymentRequests = () => {
   };
 
   const downloadCsv = () => {
-    exportCsv(
-      "payments.csv",
+    exportToCsv(
       filteredTxs.map((t: any) => ({
         date: format(new Date(t.created_at), "yyyy-MM-dd HH:mm"),
         student: t.profile?.full_name || "",
@@ -168,6 +167,7 @@ const PaymentRequests = () => {
         reference: t.reference,
         pro_expires: t.sub?.expires_at || "",
       })),
+      "payments.csv",
     );
   };
 
