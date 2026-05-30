@@ -1,140 +1,235 @@
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { usePremium } from "@/hooks/usePremium";
 import { SEO } from "@/components/seo/SEO";
 import DashboardNav from "@/components/layout/DashboardNav";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wallet as WalletIcon, ArrowUpRight, ArrowDownLeft, Send, ShoppingBag, TestTube2 } from "lucide-react";
-import { format } from "date-fns";
-import { Link } from "react-router-dom";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Wallet as WalletIcon, Zap, Plus, Minus, Loader2, ArrowDownLeft, Sparkles, Info,
+} from "lucide-react";
+import { format } from "date-fns";
+import { toast } from "sonner";
 
-const Wallet = () => {
+const NAIRA_PER_TOKEN = 25
+const TOP_UPS = [
+  { naira: 100, tokens: 4 },
+  { naira: 300, tokens: 12 },
+  { naira: 500, tokens: 20, badge: "Popular" },
+  { naira: 1000, tokens: 40 },
+  { naira: 2000, tokens: 80, badge: "Best value" },
+];
+
+type Txn = {
+  id: string;
+  user_id: string;
+  kind: "topup" | "spend" | "free" | "admin_credit" | "admin_debit" | "refund";
+  tokens: number;
+  naira_amount: number | null;
+  action_kind: string | null;
+  reason: string | null;
+  balance_after: number;
+  created_at: string;
+};
+
+const labelFor = (t: Txn) => {
+  switch (t.kind) {
+    case "topup": return "Wallet top-up";
+    case "spend": return `AI · ${t.action_kind?.replace(/_/g, " ") ?? "action"}`;
+    case "free": return `Free · ${t.action_kind?.replace(/_/g, " ") ?? "action"}`;
+    case "admin_credit": return "Admin credit";
+    case "admin_debit": return "Admin debit";
+    case "refund": return "Refund";
+  }
+};
+
+const WalletPage = () => {
   const { user } = useAuth();
-
-  const { data: wallet } = useQuery({
-    queryKey: ["my-wallet", user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from("token_wallets").select("*").eq("user_id", user!.id).maybeSingle();
-      return data;
-    },
-  });
+  const { balance, freeLeft, isLoading } = usePremium();
+  const [custom, setCustom] = useState("");
+  const [busy, setBusy] = useState<number | "custom" | null>(null);
 
   const { data: txns = [] } = useQuery({
-    queryKey: ["my-txns", wallet?.id],
-    enabled: !!wallet?.id,
-    queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from("token_transactions").select("*").eq("wallet_id", wallet.id)
-        .order("created_at", { ascending: false }).limit(30);
-      return data ?? [];
-    },
-  });
-
-  const { data: purchases = [] } = useQuery({
-    queryKey: ["my-token-purchases", user?.id],
+    queryKey: ["wallet-transactions", user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
       const { data } = await (supabase as any)
-        .from("token_purchases").select("*").eq("user_id", user!.id)
-        .order("created_at", { ascending: false }).limit(15);
-      return data ?? [];
+        .from("wallet_transactions")
+        .select("*")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      return (data ?? []) as Txn[];
     },
   });
+
+  const startTopUp = async (amountNaira: number) => {
+    if (!amountNaira || amountNaira < 100) {
+      toast.error("Minimum top-up is ₦100");
+      return;
+    }
+    setBusy(amountNaira === Number(custom) ? "custom" : amountNaira);
+    try {
+      const { data, error } = await supabase.functions.invoke("flutterwave-init", {
+        body: { amount_naira: amountNaira, redirect_url: `${window.location.origin}/wallet` },
+      });
+      if (error) throw error;
+      const url = (data as any)?.checkout_url;
+      if (!url) throw new Error("No checkout URL returned");
+      window.location.href = url;
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Could not start checkout. Try again.");
+      setBusy(null);
+    }
+  };
+
+  const lifetimeSpent = useMemo(
+    () => txns.filter((t) => t.kind === "spend").reduce((s, t) => s + Math.abs(t.tokens), 0),
+    [txns],
+  );
 
   return (
     <>
-      <SEO title="Wallet" description="Your OverraPrep token wallet." url="https://overraprep.com/wallet" />
+      <SEO title="Wallet" description="Top up your OverraPrep wallet and track AI usage." url="https://overraprepai.com/wallet" noindex />
       <div className="min-h-screen bg-background pb-24">
         <DashboardNav role="student" />
-        <main className="container mx-auto px-4 py-6 max-w-2xl">
-          <header className="mb-6">
+        <main className="container mx-auto px-4 py-6 max-w-3xl">
+          <header className="mb-5">
             <h1 className="font-display text-2xl font-bold flex items-center gap-2">
-              <WalletIcon className="w-6 h-6 text-amber-500" /> Wallet
+              <WalletIcon className="w-6 h-6 text-amber-600" /> Wallet
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">Tokens for sessions, premium content, and rewards.</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              1 token = ₦25 = 1 AI action. Quiz, AI explain and tutor chat get 5 free uses every day.
+            </p>
           </header>
 
-          <Card className="p-3 mb-4 border-amber-200 bg-amber-50/60 flex items-center gap-2.5">
-            <TestTube2 className="w-4 h-4 text-amber-700 shrink-0" />
-            <p className="text-xs text-amber-900">
-              <span className="font-semibold">Test mode active.</span> All purchases use Paddle sandbox — no real money is charged.
-            </p>
-          </Card>
-
-          <Card className="p-5 mb-5 border-amber-100 bg-gradient-to-br from-amber-50/60 to-background">
-            <p className="text-xs uppercase tracking-wider font-semibold text-amber-700">Balance</p>
-            <p className="font-display text-4xl font-bold mt-1">{wallet?.balance ?? 0}</p>
-            <p className="text-xs text-muted-foreground mt-1">Earned total: {wallet?.total_earned ?? 0}</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button asChild className="gap-1.5">
-                <Link to="/subscription"><ShoppingBag className="w-4 h-4" /> Buy tokens</Link>
-              </Button>
-              <Button disabled variant="outline" className="gap-1.5" title="Coming soon">
-                <Send className="w-4 h-4" /> Transfer
-              </Button>
+          {/* Balance hero */}
+          <Card className="p-5 bg-gradient-to-br from-amber-50 via-white to-amber-50 border-amber-200 mb-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[11px] uppercase tracking-wide font-semibold text-amber-700">Balance</p>
+                <p className="mt-1 font-display text-4xl font-extrabold text-amber-900 flex items-center gap-2">
+                  <Zap className="w-7 h-7" /> {isLoading ? "—" : balance}
+                  <span className="text-base font-bold text-amber-700">tokens</span>
+                </p>
+                <p className="text-[12px] text-amber-800 mt-1">≈ ₦{(balance * NAIRA_PER_TOKEN).toLocaleString()}</p>
+              </div>
+              <div className="text-right">
+                <Badge variant="outline" className="bg-white/80 border-amber-300 text-amber-800">
+                  {freeLeft}/5 free today
+                </Badge>
+                <p className="text-[11px] text-muted-foreground mt-2">Lifetime spent: {lifetimeSpent}</p>
+              </div>
             </div>
           </Card>
 
-          <h2 className="font-display text-lg font-bold mb-3 flex items-center gap-2">
-            <ShoppingBag className="w-4 h-4 text-amber-600" /> Recent purchases
-          </h2>
-          {purchases.length === 0 ? (
-            <p className="text-sm text-muted-foreground mb-6">No purchases yet.</p>
-          ) : (
-            <div className="space-y-2 mb-6">
-              {purchases.map((p: any) => (
-                <Card key={p.id} className="p-3 flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold truncate">
-                      +{p.tokens_credited} tokens
-                      <Badge variant="outline" className="ml-2 text-[10px] uppercase">{p.environment}</Badge>
-                    </p>
-                    <p className="text-[11px] text-muted-foreground truncate">
-                      {p.price_id} · {format(new Date(p.created_at), "PP p")}
-                    </p>
-                  </div>
-                  <span className="font-bold text-sm text-foreground shrink-0">
-                    {(p.amount_cents / 100).toLocaleString(undefined, { style: "currency", currency: p.currency || "USD" })}
-                  </span>
-                </Card>
+          {/* Top-up grid */}
+          <section className="mb-6">
+            <h2 className="font-display text-base font-bold mb-2">Top up</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {TOP_UPS.map((t) => (
+                <button
+                  key={t.naira}
+                  onClick={() => startTopUp(t.naira)}
+                  disabled={busy !== null}
+                  className="relative text-left rounded-2xl border border-amber-100 hover:border-amber-300 bg-amber-50/40 hover:bg-amber-50 p-3 transition-colors disabled:opacity-60"
+                >
+                  {t.badge && (
+                    <span className="absolute -top-2 right-2 text-[9px] font-bold uppercase tracking-wide bg-amber-500 text-white px-1.5 py-0.5 rounded">
+                      {t.badge}
+                    </span>
+                  )}
+                  <p className="font-display text-base font-extrabold text-amber-900">
+                    ₦{t.naira.toLocaleString()}
+                  </p>
+                  <p className="text-[11px] text-amber-800 mt-0.5 flex items-center gap-1">
+                    <Zap className="h-3 w-3" /> {t.tokens} tokens
+                  </p>
+                  {busy === t.naira && (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-700 absolute bottom-2 right-2" />
+                  )}
+                </button>
               ))}
             </div>
-          )}
-
-          <h2 className="font-display text-lg font-bold mb-3">Recent activity</h2>
-          {txns.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No transactions yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {txns.map((t: any) => {
-                const positive = (t.amount || 0) > 0;
-                return (
-                  <Card key={t.id} className="p-3 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className={`h-8 w-8 rounded-full grid place-items-center shrink-0 ${positive ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}`}>
-                        {positive ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold truncate">{t.description || t.type}</p>
-                        <p className="text-[11px] text-muted-foreground">{format(new Date(t.created_at), "PP p")}</p>
-                      </div>
-                    </div>
-                    <span className={`font-bold text-sm ${positive ? "text-emerald-600" : "text-rose-600"}`}>
-                      {positive ? "+" : ""}{t.amount}
-                    </span>
-                  </Card>
-                );
-              })}
+            <div className="mt-3 flex gap-2">
+              <Input
+                type="number"
+                inputMode="numeric"
+                min={100}
+                placeholder="Custom (₦100+, rounded to ₦25)"
+                value={custom}
+                onChange={(e) => setCustom(e.target.value)}
+                className="h-10"
+              />
+              <Button
+                onClick={() => startTopUp(Number(custom))}
+                disabled={busy !== null || !custom || Number(custom) < 100}
+                className="h-10 bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                {busy === "custom" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Top up"}
+              </Button>
             </div>
-          )}
+          </section>
+
+          {/* Transactions */}
+          <section className="mb-6">
+            <h2 className="font-display text-base font-bold mb-2">Activity</h2>
+            {txns.length === 0 ? (
+              <Card className="p-6 text-center text-sm text-muted-foreground">
+                No transactions yet — top up to get started.
+              </Card>
+            ) : (
+              <div className="space-y-1.5">
+                {txns.map((t) => {
+                  const positive = t.tokens > 0;
+                  return (
+                    <Card key={t.id} className="p-3 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${
+                          positive ? "bg-emerald-50 text-emerald-700" : t.kind === "free" ? "bg-sky-50 text-sky-700" : "bg-rose-50 text-rose-700"
+                        }`}>
+                          {positive ? <Plus className="h-4 w-4" /> : t.kind === "free" ? <Sparkles className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold truncate">{labelFor(t)}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {format(new Date(t.created_at), "MMM d, HH:mm")}
+                            {t.naira_amount ? ` · ₦${t.naira_amount.toLocaleString()}` : ""}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className={`text-sm font-bold ${positive ? "text-emerald-700" : t.kind === "free" ? "text-sky-700" : "text-rose-700"}`}>
+                          {positive ? "+" : ""}{t.tokens}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">bal {t.balance_after}</p>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          <Card className="p-4 bg-amber-50/50 border-amber-100">
+            <p className="text-[12px] text-amber-900 flex items-start gap-2">
+              <Info className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>
+                <strong>How it works.</strong> Every AI action (quiz, summary, study pack, mock exam, notes-to-audio,
+                tutor chat, study coach) costs 1 token. Light actions (quiz attempts, AI explanations, tutor chat)
+                get 5 free uses each day. Browsing, leaderboards, SRS review, bookmarks and community are always free.
+              </span>
+            </p>
+          </Card>
         </main>
       </div>
     </>
   );
 };
 
-export default Wallet;
+export default WalletPage;
