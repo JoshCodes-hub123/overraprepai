@@ -15,11 +15,12 @@ const NAIRA_PER_TOKEN = 50;
  */
 export function TokenBalanceCard() {
   const { profile } = useAuth();
-  const { balance, isLoading, isLowBalance } = usePremium();
+  const { balance, freeLeft, dailyLimit, isLoading, isLowBalance } = usePremium();
 
-  const empty = !isLoading && balance <= 0;
+  const empty = !isLoading && balance <= 0 && freeLeft <= 0;
   const naira = balance * NAIRA_PER_TOKEN;
   const firstName = profile?.full_name?.split(" ")[0] || "Friend";
+  const freePct = Math.round(((dailyLimit - freeLeft) / Math.max(1, dailyLimit)) * 100);
 
   return (
     <motion.div
