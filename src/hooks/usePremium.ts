@@ -7,10 +7,7 @@ import { toast } from "sonner";
 /**
  * Prepaid wallet gate.
  *
- * - 1 token = ₦25. Every paid AI/quiz action costs 1 token.
- * - Light actions (`quiz_attempt`, `ai_explanation`, `tutor_chat`) get 5 free
- *   uses per calendar day (Africa/Lagos). After that they also cost 1 token.
- * - Heavy actions always cost 1 token (no free quota).
+ * - 1 token = ₦50. Every AI/quiz action costs 1 token (no free daily quota).
  * - When the wallet is empty, `requireToken` opens the SoftPaywallSheet
  *   (top-up CTA) and returns false so callers skip the AI call.
  *
