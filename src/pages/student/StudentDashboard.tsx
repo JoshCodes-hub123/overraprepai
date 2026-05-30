@@ -69,6 +69,9 @@ const StudentDashboard = () => {
             {/* 1. Greeting + streak + bell + avatar */}
             <TopHeader key={`top-${refreshKey}`} />
 
+            {/* Token wallet hero — pinned to the very top */}
+            <TokenBalanceCard />
+
             {/* 2. Hero — Study Pack AI (single intelligent entry point) */}
             <StudyPackHero />
 
