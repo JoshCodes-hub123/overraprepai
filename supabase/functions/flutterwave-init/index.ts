@@ -8,7 +8,7 @@ const SUPA_SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 const FLW_V3_PAYMENTS = 'https://api.flutterwave.com/v3/payments'
 
-const NAIRA_PER_TOKEN = 25
+const NAIRA_PER_TOKEN = 50
 const MIN_TOPUP_NAIRA = 100
 
 Deno.serve(async (req) => {
