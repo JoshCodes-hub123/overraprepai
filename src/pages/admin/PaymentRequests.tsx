@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { CreditCard, ExternalLink, Loader2, Check, X, Download, Crown, Search, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { exportCsv } from "@/lib/exportCsv";
+import { exportToCsv } from "@/lib/exportCsv";
 
 const Stat = ({ label, value, sub }: { label: string; value: string; sub?: string }) => (
   <Card className="p-4">
