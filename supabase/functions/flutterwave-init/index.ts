@@ -6,8 +6,10 @@ const SUPA_URL = Deno.env.get('SUPABASE_URL')!
 const SUPA_ANON = Deno.env.get('SUPABASE_ANON_KEY')!
 const SUPA_SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-// Flutterwave V3 "Standard" hosted checkout
 const FLW_V3_PAYMENTS = 'https://api.flutterwave.com/v3/payments'
+
+// First-purchase discount (Pro Monthly only): ₦2,000 → ₦1,500
+const FIRST_MONTH_DISCOUNT_KOBO = 50_000 // 500 NGN
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
@@ -49,39 +51,44 @@ Deno.serve(async (req) => {
 
     const { data: profile } = await admin
       .from('profiles')
-      .select('full_name')
+      .select('full_name, first_purchase_used')
       .eq('id', userId)
       .maybeSingle()
 
+    // First-month discount applies only to Pro Monthly, only on first purchase ever
+    let priceKobo = Number(plan.price_cents)
+    let discountApplied = false
+    if (plan.id === 'pro_monthly' && !(profile as any)?.first_purchase_used) {
+      priceKobo = Math.max(priceKobo - FIRST_MONTH_DISCOUNT_KOBO, 0)
+      discountApplied = true
+    }
+
     const reference = `op_${userId.slice(0, 8)}_${Date.now()}`
-    const amountMajor = Number(plan.price_cents) / 100 // naira
+    const amountMajor = priceKobo / 100
 
     const payload = {
       tx_ref: reference,
       amount: amountMajor,
       currency: plan.currency || 'NGN',
       redirect_url: redirectUrl || 'https://overraprepai.com/subscription',
-      customer: {
-        email,
-        name: (profile?.full_name as string) || email,
-      },
+      customer: { email, name: (profile?.full_name as string) || email },
       customizations: {
         title: 'OverraPrep AI',
-        description: `${plan.name} subscription`,
+        description: discountApplied
+          ? `${plan.name} — First-month special`
+          : `${plan.name} subscription`,
       },
       meta: {
         user_id: userId,
         plan_id: plan.id,
         duration_days: durationDays,
+        discount_applied: discountApplied,
       },
     }
 
     const res = await fetch(FLW_V3_PAYMENTS, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${FLW_SECRET_KEY}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { Authorization: `Bearer ${FLW_SECRET_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
     const json = await res.json()
@@ -95,15 +102,17 @@ Deno.serve(async (req) => {
       plan_id: plan.id,
       provider: 'flutterwave',
       reference,
-      amount_cents: plan.price_cents,
+      amount_cents: priceKobo,
       currency: plan.currency || 'NGN',
       status: 'pending',
-      raw_payload: { flutterwave_init: json.data, duration_days: durationDays },
+      raw_payload: { flutterwave_init: json.data, duration_days: durationDays, discount_applied: discountApplied },
     })
 
     return new Response(JSON.stringify({
       checkout_url: json.data.link,
       reference,
+      discount_applied: discountApplied,
+      amount: amountMajor,
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   } catch (e: any) {
     console.error('flutterwave-init exception', e)
