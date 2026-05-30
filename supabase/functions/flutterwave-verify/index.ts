@@ -93,6 +93,35 @@ Deno.serve(async (req) => {
       return json({ error: rpcErr.message }, 500)
     }
 
+    // Send receipt only on the first credit (skip if idempotent replay)
+    if (!(credit as any)?.idempotent) {
+      try {
+        const { data: prof } = await admin
+          .from('profiles')
+          .select('email, full_name')
+          .eq('id', userId)
+          .maybeSingle()
+        if (prof?.email) {
+          await admin.functions.invoke('send-transactional-email', {
+            body: {
+              templateName: 'topup-receipt',
+              recipientEmail: prof.email,
+              idempotencyKey: `topup-receipt-flw_${flwTxId}`,
+              templateData: {
+                name: (prof.full_name || '').split(' ')[0] || null,
+                amount_naira: amountNaira,
+                tokens,
+                balance: (credit as any)?.balance ?? null,
+                reference,
+              },
+            },
+          })
+        }
+      } catch (mailErr) {
+        console.error('topup receipt email error', mailErr)
+      }
+    }
+
     return json({ ok: true, status: 'credited', tokens, balance: (credit as any)?.balance ?? null, idempotent: (credit as any)?.idempotent ?? false })
   } catch (e: any) {
     console.error('flutterwave-verify exception', e)
