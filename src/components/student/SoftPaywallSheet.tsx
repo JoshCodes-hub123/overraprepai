@@ -55,13 +55,14 @@ export function SoftPaywallSheet({ open, onOpenChange, reason, action }: SoftPay
   const navigate = useNavigate();
   const [busy, setBusy] = useState<number | "custom" | null>(null);
   const [customAmount, setCustomAmount] = useState("");
+  const resetIn = useResetCountdown();
 
-  const heading = action ? `Spend 1 token to unlock ${action}` : "Your wallet is empty";
-  const body = reason || "Top up your wallet to keep learning. 1 token = ₦25 = 1 AI action.";
+  const heading = action ? `Spend 1 token to unlock ${action}` : "Out of free actions";
+  const body = reason || "You've used today's 3 free AI actions and your wallet is empty. Top up to keep going, or come back tomorrow when free actions reset.";
 
   const startTopUp = async (amountNaira: number) => {
-    if (amountNaira < 100) {
-      toast.error("Minimum top-up is ₦100");
+    if (amountNaira < 250) {
+      toast.error("Minimum top-up is ₦250 (5 tokens)");
       return;
     }
     setBusy(amountNaira === Number(customAmount) ? "custom" : amountNaira);
