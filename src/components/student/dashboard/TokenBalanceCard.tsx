@@ -15,11 +15,12 @@ const NAIRA_PER_TOKEN = 50;
  */
 export function TokenBalanceCard() {
   const { profile } = useAuth();
-  const { balance, isLoading, isLowBalance } = usePremium();
+  const { balance, freeLeft, dailyLimit, isLoading, isLowBalance } = usePremium();
 
-  const empty = !isLoading && balance <= 0;
+  const empty = !isLoading && balance <= 0 && freeLeft <= 0;
   const naira = balance * NAIRA_PER_TOKEN;
   const firstName = profile?.full_name?.split(" ")[0] || "Friend";
+  const freePct = Math.round(((dailyLimit - freeLeft) / Math.max(1, dailyLimit)) * 100);
 
   return (
     <motion.div
@@ -89,22 +90,36 @@ export function TokenBalanceCard() {
         </Link>
       </div>
 
-      {/* Status hint */}
+      {/* Free uses today — live ticker */}
       {!isLoading && (
-        <div className="relative mt-3 flex items-center gap-1.5 text-[11px] font-semibold">
-          {empty ? (
-            <span className="text-rose-700">
-              Wallet empty — top up from ₦250 (5 tokens) to keep learning with AI.
+        <div className="relative mt-3 rounded-2xl border border-amber-200/70 bg-white/70 backdrop-blur px-3 py-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 text-[11.5px] font-bold text-amber-900">
+              <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+              Free actions today
+            </div>
+            <span className="text-[12px] font-extrabold tabular-nums text-amber-900">
+              {freeLeft}<span className="text-amber-700/70">/{dailyLimit}</span>
             </span>
-          ) : isLowBalance ? (
-            <span className="text-amber-800 inline-flex items-center gap-1">
-              <Sparkles className="h-3 w-3" /> Running low — top up to avoid interruptions.
-            </span>
-          ) : (
-            <span className="text-amber-800/80 inline-flex items-center gap-1">
-              <Sparkles className="h-3 w-3" /> Tokens deduct automatically as you use AI.
-            </span>
-          )}
+          </div>
+          <div className="mt-1.5 h-1.5 w-full rounded-full bg-amber-100 overflow-hidden">
+            <motion.div
+              key={freeLeft}
+              initial={{ width: 0 }}
+              animate={{ width: `${freePct}%` }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="h-full bg-gradient-to-r from-amber-400 to-amber-600"
+            />
+          </div>
+          <p className="mt-1.5 text-[10.5px] text-amber-800/80 leading-snug">
+            {empty
+              ? "Out of free actions and wallet — top up or come back tomorrow."
+              : freeLeft > 0
+              ? `${freeLeft} free AI action${freeLeft === 1 ? "" : "s"} left · then your wallet covers the rest.`
+              : isLowBalance
+              ? "Free actions used — wallet is running low. Top up to avoid pauses."
+              : "Free actions used — every action now uses 1 token from your wallet."}
+          </p>
         </div>
       )}
     </motion.div>

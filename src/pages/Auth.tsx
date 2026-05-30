@@ -364,7 +364,7 @@ const Auth = () => {
       setVerifyMode(true);
       toast({
         title: "Check your inbox 📬",
-        description: `We sent a 6-digit code to ${data.email}. Enter it below to verify your account.`,
+        description: `We sent a verification link to ${data.email}. Tap it to finish signing up.`,
       });
       setIsSubmitting(false);
       return;
@@ -512,32 +512,50 @@ const Auth = () => {
                 <KeyRound className="w-7 h-7 text-primary-foreground" />
               </div>
               <div>
-                <h2 className="text-xl sm:text-2xl font-display font-bold tracking-tight">Verify your email</h2>
+                <h2 className="text-xl sm:text-2xl font-display font-bold tracking-tight">Check your inbox</h2>
                 <p className="mt-1.5 text-sm text-muted-foreground">
-                  Enter the 6-digit code we sent to <strong className="text-foreground">{pendingEmail}</strong>
+                  We sent a verification link to <strong className="text-foreground">{pendingEmail}</strong>.
+                  Tap it on this device to finish signing up.
                 </p>
               </div>
-              <div className="flex justify-center">
-                <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
-                  <InputOTPGroup>
-                    {[0,1,2,3,4,5].map((i) => (
-                      <InputOTPSlot key={i} index={i} className="h-12 w-10 sm:h-14 sm:w-12 text-lg font-bold" />
-                    ))}
-                  </InputOTPGroup>
-                </InputOTP>
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/60 px-4 py-3 text-left">
+                <p className="text-[12px] font-semibold text-amber-900 leading-snug">
+                  📬 <strong>Open the email</strong> we just sent and tap the gold <strong>"Verify my email"</strong> button.
+                  You'll be signed in automatically.
+                </p>
+                <p className="mt-1.5 text-[11px] text-amber-800/80 leading-snug">
+                  Can't find it? Check your <strong>Spam</strong> or <strong>Promotions</strong> folder. The link expires in 1 hour.
+                </p>
               </div>
-              <Button variant="hero" size="lg" className="w-full" onClick={handleVerifyOtp} disabled={otpSubmitting || otpCode.length !== 6}>
-                {otpSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (<><Sparkles className="w-4 h-4" /> Verify & continue</>)}
-              </Button>
+
+              <details className="text-left rounded-xl border border-border bg-muted/30 px-3 py-2">
+                <summary className="cursor-pointer text-[12px] font-semibold text-muted-foreground select-none">
+                  Link not working? Enter the 6-digit code instead
+                </summary>
+                <div className="mt-3 space-y-3">
+                  <div className="flex justify-center">
+                    <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
+                      <InputOTPGroup>
+                        {[0,1,2,3,4,5].map((i) => (
+                          <InputOTPSlot key={i} index={i} className="h-12 w-10 sm:h-14 sm:w-12 text-lg font-bold" />
+                        ))}
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </div>
+                  <Button variant="hero" size="lg" className="w-full" onClick={handleVerifyOtp} disabled={otpSubmitting || otpCode.length !== 6}>
+                    {otpSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (<><Sparkles className="w-4 h-4" /> Verify with code</>)}
+                  </Button>
+                </div>
+              </details>
+
               <div className="flex items-center justify-between text-xs">
                 <button type="button" onClick={handleResendCode} disabled={resending} className="font-semibold text-primary hover:underline disabled:opacity-50 inline-flex items-center gap-1">
-                  {resending && <Loader2 className="w-3 h-3 animate-spin" />}Resend code
+                  {resending && <Loader2 className="w-3 h-3 animate-spin" />}Resend email
                 </button>
                 <button type="button" onClick={() => { setVerifyMode(false); setIsSignUp(false); }} className="text-muted-foreground hover:text-foreground underline">
                   Use a different email
                 </button>
               </div>
-              <p className="text-[11px] text-muted-foreground pt-2">Code expires in 1 hour. Check spam if you don't see it.</p>
             </div>
           ) : (<>
           {/* Sculptural underline tabs */}

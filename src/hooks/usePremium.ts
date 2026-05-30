@@ -4,15 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
+const DAILY_FREE_LIMIT = 3;
+
 /**
- * Prepaid wallet gate.
+ * Prepaid wallet gate with 3 free AI actions per day.
  *
- * - 1 token = ₦50. Every AI/quiz action costs 1 token (no free daily quota).
- * - When the wallet is empty, `requireToken` opens the SoftPaywallSheet
- *   (top-up CTA) and returns false so callers skip the AI call.
- *
- * The hook keeps the legacy `usePremium` export name + a few aliases so the
- * existing call sites keep working without churn.
+ * - Free quota: 3 AI actions/day for every student, resets at 00:00 Africa/Lagos.
+ * - Then: 1 token = ₦50 per AI action (any kind).
+ * - When both are empty, `requireToken` opens SoftPaywallSheet and returns false.
  */
 export function usePremium() {
   const { user } = useAuth();
@@ -44,11 +43,18 @@ export function usePremium() {
   const [upgradeReason, setUpgradeReason] = useState<string | null>(null);
 
   const balance = profileQuery.data?.ai_token_balance ?? 0;
-  const freeUsed = 0;
-  const dailyLimit = 0;
-  const freeLeft = 0;
-
-  const LIGHT_KINDS = new Set<string>();
+  // Compute today's free usage in Africa/Lagos (lazy reset on server, but mirror here for UI).
+  const rawUsed = profileQuery.data?.daily_free_used ?? 0;
+  const resetAtStr = profileQuery.data?.daily_free_reset_at ?? null;
+  const lagosToday = (() => {
+    const fmt = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit" });
+    return fmt.format(new Date()); // YYYY-MM-DD
+  })();
+  const resetDay = resetAtStr
+    ? new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(resetAtStr))
+    : null;
+  const freeUsed = resetDay && resetDay >= lagosToday ? rawUsed : 0;
+  const freeLeft = Math.max(0, DAILY_FREE_LIMIT - freeUsed);
 
   const refetch = () => {
     profileQuery.refetch();
@@ -56,53 +62,43 @@ export function usePremium() {
     qc.invalidateQueries({ queryKey: ["wallet-transactions"] });
   };
 
-  /**
-   * Consume one allowance for a given action kind. Returns true if the
-   * caller may proceed. On wallet-empty: opens the paywall sheet and returns false.
-   */
   const requireToken = useCallback(async (kind: string): Promise<boolean> => {
     const { data, error } = await (supabase as any).rpc("consume_ai_token", { _kind: kind });
     if (error) {
       console.error("consume_ai_token error", error);
-      // Fail-open so a transient error doesn't block a user mid-flow
-      return true;
+      return true; // fail-open
     }
     refetch();
     if (!data?.allowed) {
       setUpgradeReason(
-        `Your wallet is empty. Top up to keep using ${kind.replace(/_/g, " ")} and other AI features.`,
+        `You've used today's 3 free AI actions and your wallet is empty. Top up to keep going, or come back tomorrow when free actions reset.`,
       );
       setUpgradeOpen(true);
       return false;
     }
     if (data.source === "token") {
       toast.success(`−1 token · ${data.balance} left in wallet`);
-    } else if (LIGHT_KINDS.has(kind)) {
-      // light-action free use — silent
+    } else if (data.source === "free") {
+      const left = data.free_left ?? 0;
+      toast.success(left > 0 ? `Free use · ${left}/${DAILY_FREE_LIMIT} left today` : `Last free use today · top up to keep going`);
     }
     return true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Backwards-compat alias used by older call sites.
   const requireCredit = requireToken;
-
-  // No more Pro — everyone is on the wallet. Keep these as no-ops so legacy
-  // gates don't accidentally hide functionality.
   const requirePro = useCallback((_reason: string): boolean => true, []);
 
   return {
-    // wallet
     balance,
     freeUsed,
     freeLeft,
-    dailyLimit,
+    dailyLimit: DAILY_FREE_LIMIT,
     isLowBalance: balance > 0 && balance < 3,
     isEmpty: balance <= 0 && freeLeft <= 0,
     isLoading: profileQuery.isLoading,
     refetch,
 
-    // gate
     requireToken,
     requireCredit,
     requirePro,
@@ -110,7 +106,6 @@ export function usePremium() {
     upgradeReason,
     setUpgradeOpen,
 
-    // legacy aliases (no Pro tier any more — always false)
     isPro: false,
     isTrial: false,
     hasPaidPro: false,
@@ -123,5 +118,4 @@ export function usePremium() {
   };
 }
 
-// Convenience alias for new code.
 export const useWallet = usePremium;

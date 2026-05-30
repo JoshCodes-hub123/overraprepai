@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Wallet, X, Zap, Loader2 } from "lucide-react";
+import { Wallet, X, Zap, Loader2, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,12 +17,32 @@ interface SoftPaywallSheetProps {
 }
 
 const TOP_UPS = [
-  { naira: 100, tokens: 4, badge: "Starter" },
-  { naira: 300, tokens: 12 },
-  { naira: 500, tokens: 20, badge: "Popular" },
-  { naira: 1000, tokens: 40 },
-  { naira: 2000, tokens: 80, badge: "Best value" },
+  { naira: 250, tokens: 5, badge: "Starter" },
+  { naira: 500, tokens: 10 },
+  { naira: 1000, tokens: 20, badge: "Popular" },
+  { naira: 2000, tokens: 40 },
+  { naira: 5000, tokens: 100, badge: "Best value" },
 ];
+
+function useResetCountdown() {
+  const [label, setLabel] = useState("");
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      // Africa/Lagos = UTC+1, no DST. Build "now in Lagos" as a UTC-shifted clone.
+      const lagos = new Date(now.getTime() + (60 - now.getTimezoneOffset()) * 60_000);
+      const tomorrow = new Date(Date.UTC(lagos.getUTCFullYear(), lagos.getUTCMonth(), lagos.getUTCDate() + 1));
+      const ms = tomorrow.getTime() - lagos.getTime();
+      const h = Math.max(0, Math.floor(ms / 3_600_000));
+      const m = Math.max(0, Math.floor((ms % 3_600_000) / 60_000));
+      setLabel(`${h}h ${m}m`);
+    };
+    tick();
+    const id = setInterval(tick, 30_000);
+    return () => clearInterval(id);
+  }, []);
+  return label;
+}
 
 /**
  * Wallet top-up paywall. Shown when:
@@ -35,13 +55,14 @@ export function SoftPaywallSheet({ open, onOpenChange, reason, action }: SoftPay
   const navigate = useNavigate();
   const [busy, setBusy] = useState<number | "custom" | null>(null);
   const [customAmount, setCustomAmount] = useState("");
+  const resetIn = useResetCountdown();
 
-  const heading = action ? `Spend 1 token to unlock ${action}` : "Your wallet is empty";
-  const body = reason || "Top up your wallet to keep learning. 1 token = ₦25 = 1 AI action.";
+  const heading = action ? `Spend 1 token to unlock ${action}` : "Out of free actions";
+  const body = reason || "You've used today's 3 free AI actions and your wallet is empty. Top up to keep going, or come back tomorrow when free actions reset.";
 
   const startTopUp = async (amountNaira: number) => {
-    if (amountNaira < 100) {
-      toast.error("Minimum top-up is ₦100");
+    if (amountNaira < 250) {
+      toast.error("Minimum top-up is ₦250 (5 tokens)");
       return;
     }
     setBusy(amountNaira === Number(customAmount) ? "custom" : amountNaira);
@@ -129,15 +150,15 @@ export function SoftPaywallSheet({ open, onOpenChange, reason, action }: SoftPay
                 <Input
                   type="number"
                   inputMode="numeric"
-                  min={100}
-                  placeholder="Custom amount (₦100+)"
+                  min={250}
+                  placeholder="Custom amount (₦250+)"
                   value={customAmount}
                   onChange={(e) => setCustomAmount(e.target.value)}
                   className="h-10 text-sm"
                 />
                 <Button
                   onClick={() => startTopUp(Number(customAmount))}
-                  disabled={busy !== null || !customAmount || Number(customAmount) < 100}
+                  disabled={busy !== null || !customAmount || Number(customAmount) < 250}
                   className="h-10 px-4 bg-amber-600 hover:bg-amber-700 text-white"
                 >
                   {busy === "custom" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Top up"}
@@ -145,13 +166,22 @@ export function SoftPaywallSheet({ open, onOpenChange, reason, action }: SoftPay
               </div>
 
               <p className="mt-3 text-[11px] text-muted-foreground text-center">
-                1 token = ₦50 = 1 AI action. Top up from ₦250 (5 tokens) and use them anytime.
+                1 token = ₦50 = 1 AI action · 3 free actions reset every day.
               </p>
 
               <button
                 type="button"
+                onClick={() => onOpenChange(false)}
+                className="mt-4 w-full h-11 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-[13px] font-semibold text-amber-800 inline-flex items-center justify-center gap-2 transition"
+              >
+                <Clock className="h-4 w-4" />
+                Come back tomorrow · resets in {resetIn}
+              </button>
+
+              <button
+                type="button"
                 onClick={() => { onOpenChange(false); navigate("/wallet"); }}
-                className="mt-3 w-full h-10 text-[13px] text-amber-700 hover:text-amber-900 font-semibold"
+                className="mt-2 w-full h-9 text-[12px] text-amber-700 hover:text-amber-900 font-semibold"
               >
                 Open full wallet →
               </button>

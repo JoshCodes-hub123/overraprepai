@@ -11,6 +11,7 @@ import { LevelSwitcherDialog } from "@/components/student/LevelSwitcherDialog";
 import { useStudentLevel } from "@/hooks/useStudentLevel";
 import { celebrateOncePerDay } from "@/lib/celebrate";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
+import { usePremium } from "@/hooks/usePremium";
 import { useMyActivityBadge } from "@/hooks/useMyActivityBadge";
 
 /**
@@ -29,6 +30,7 @@ export const MobileGreetingHeader = () => {
   const { user, profile, refreshProfile, signOut } = useAuth();
   const { level } = useStudentLevel();
   const { balance } = useTokenBalance();
+  const { freeLeft, dailyLimit } = usePremium();
   const { data: myRank } = useMyActivityBadge();
   const [streak, setStreak] = useState<number>(0);
   const [unread, setUnread] = useState<number>(0);
@@ -256,11 +258,17 @@ export const MobileGreetingHeader = () => {
         <button
           type="button"
           onClick={() => navigate("/wallet")}
-          aria-label={`Tokens: ${balance}`}
-          className="inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full border border-amber-300/70 bg-white text-amber-800 text-[12px] font-semibold shadow-sm hover:bg-amber-50 active:scale-95 transition"
+          aria-label={`Tokens: ${balance} · ${freeLeft} of ${dailyLimit} free actions left today`}
+          className={`inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full border text-[12px] font-semibold shadow-sm active:scale-95 transition ${
+            freeLeft === 0 && balance < 3
+              ? "border-amber-400 bg-amber-100 text-amber-900 animate-pulse"
+              : "border-amber-300/70 bg-white text-amber-800 hover:bg-amber-50"
+          }`}
         >
           <Coins className="h-3.5 w-3.5 text-amber-600" />
           <span className="font-extrabold">{balance.toLocaleString()}</span>
+          <span className="opacity-70">·</span>
+          <span className="font-bold">{freeLeft}/{dailyLimit} free</span>
         </button>
         {myRank && myRank.rank > 0 && (() => {
           const { Icon, label, className } = myRank.badge;

@@ -1,79 +1,104 @@
-# Prepaid Wallet Model — Replace ₦2,000/mo Pro
 
-## The model in plain English
+# Launch Polish — Free Daily Tokens, Magic-Link Verify, Dashboard Beautify
 
-- **Wallet is the only way to pay.** Pro subscription is removed entirely.
-- **1 token = ₦25.** Every paid action on the app deducts exactly **1 token** from the wallet — quiz attempt, AI explanation, AI summary, AI quiz generation, flashcards, study pack, study coach, tutor AI chat message, mock exam, notes-to-audio (TTS).
-- **5 free light actions per day** for every student (resets at 00:00 WAT). Free covers: quiz attempts, AI explanations, tutor AI chat messages. Once exhausted, those also cost 1 token.
-- **Heavy actions are always 1 token, no free quota:** AI summary, AI quiz generation, flashcards, study pack, study coach, mock exam, TTS / notes-to-audio.
-- **Exceptions (always free):** quizzes that a tutor or admin explicitly marks free, browsing, leaderboards, SRS review, bookmarks, community, profile.
-- **Top-ups:** ₦100 (4 tokens), ₦300 (12), ₦500 (20), ₦1,000 (40), ₦2,000 (80), + custom amount (min ₦100, rounded to nearest ₦25). Paid via existing Flutterwave flow.
-- **Tutor revenue split for token spend:** 100% platform. Tutors continue to earn from paid live sessions, storefronts, payouts (existing flows untouched).
-- **Hard cutover:** existing Pro/trial flags are wiped. Everyone starts on the wallet with 5 free/day. Any unspent token balances already in `profiles.ai_token_balance` are kept.
+Three things, done carefully so nothing already working breaks.
 
-## Student UX
+---
 
-1. **Wallet chip** in `MobileGreetingHeader` shows "⚡ {balance} • {free_left}/5 free". Tapping opens `/wallet`.
-2. **`/wallet` page** — current balance in tokens + ₦ equivalent, top-up cards (₦100/₦300/₦500/₦1k/₦2k + custom input), transaction history (debits and credits), "How tokens work" explainer.
-3. **Action attempt flow:**
-   - Light action + free quota left → runs free, decrements `daily_free_used`.
-   - Light action + no free quota + balance ≥ 1 → spends 1 token, toast "−1 token · {balance} left".
-   - Heavy action + balance ≥ 1 → spends 1 token, toast.
-   - Balance = 0 → `SoftPaywallSheet` opens with top-up CTA (no Pro upsell).
-4. **`TeaserPaywall`** still wraps premium outputs (frosted preview) — now CTA says "Spend 1 token to unlock" instead of "Upgrade to Pro".
-5. **Low-balance nudge:** when balance drops below 3, header chip turns amber; toast suggests topping up.
+## 1. Bring back 3 free tokens per day (on top of the wallet)
 
-## Admin UX
+**The model**
+- Every student gets **3 free AI actions per day**, resets at 00:00 WAT.
+- Free uses cover **every** AI/quiz action — same scope as paid tokens (quiz attempts, AI explanation, AI summary, quiz gen, flashcards, study pack, study coach, tutor AI chat, mock exam, TTS). No "light vs heavy" split — keeps it simple.
+- Spend order on each action: **free quota first → then wallet tokens**.
+- When **both** are empty → `SoftPaywallSheet` opens with two clear CTAs:
+  1. **"Top up wallet"** (₦250 = 5 tokens, existing Flutterwave flow)
+  2. **"Come back tomorrow"** with a live countdown to midnight WAT (closes the sheet)
 
-- **`/admin/payments`** rebuilt for wallet world: list of top-ups (student, ₦ amount, tokens credited, status, txn id), stats cards (Today ₦, This Week ₦, This Month ₦, Total ₦), search by name/email, CSV export, manual credit-tokens action per user (with audit log).
-- **`/admin/tokens`** small page: search any student → see balance, daily-free-used, lifetime spent, manual adjust (+/− with reason → audit log).
-- Existing subscription pages/tabs are removed from admin nav.
+**Live visibility (what the student sees)**
+- `TokenBalanceCard` (top of dashboard) gets a second row: **"⚡ 3/3 free today"** next to the wallet balance. The number ticks down in real time after each action.
+- `MobileGreetingHeader` wallet pill expands to show **`⚡ {balance} · {freeLeft}/3 free`**. Pill turns amber when `freeLeft === 0 && balance < 3`.
+- Toast after each action:
+  - Free use: `"Free use · {freeLeft}/3 left today"`
+  - Token use: `"−1 token · {balance} left in wallet"`
+- `/wallet` page gets a "Today's free uses" strip above transactions with a small progress bar (3/3 → 0/3) and reset timer.
 
-## Technical changes
+**Backend changes (one migration)**
+- `consume_ai_token(_kind)` RPC updated:
+  1. Lazy daily reset: if `daily_free_reset_at < today (Africa/Lagos)` → set `daily_free_used = 0`, `daily_free_reset_at = now()`.
+  2. If `daily_free_used < 3` → increment, return `{allowed:true, source:'free', balance, free_left}`.
+  3. Else if `ai_token_balance >= 1` → debit 1 token, return `{allowed:true, source:'token', balance, free_left:0}`.
+  4. Else → `{allowed:false, balance:0, free_left:0}`.
+- Free uses log a `wallet_transactions` row with `kind='spend'`, `tokens=0`, `action_kind=_kind` (for analytics + admin visibility).
+- No price change. Wallet stays ₦50 = 1 token, min top-up ₦250.
 
-### Database (one migration)
-- `profiles`: keep `ai_token_balance` (int). Add `daily_free_used` (int default 0), `daily_free_reset_at` (timestamptz). Drop `trial_ends_at`, `first_purchase_used`, `is_pro` (also drop dependent function); active subscriptions in `subscriptions` table marked `status='ended'` (data kept for history).
-- New table `wallet_transactions(id, user_id, kind enum['topup','spend','admin_credit','admin_debit','refund'], tokens int, naira_amount int null, action_kind text null, ref_id text null, created_at)`. GRANTs + RLS (user reads own; admin all; service_role all).
-- Update RPC `consume_ai_token(_kind text)`:
-  - Resets `daily_free_used` if last reset < today (Africa/Lagos).
-  - If `_kind` ∈ light set AND `daily_free_used < 5` → increment counter, log row with `kind='spend'` and `tokens=0`, return `{allowed:true, source:'free', balance, free_left}`.
-  - Else if `ai_token_balance >= 1` → decrement balance, insert spend row, return `{allowed:true, source:'token', balance, free_left}`.
-  - Else return `{allowed:false, balance:0, free_left:0}`.
-- New RPC `credit_wallet(_user_id, _tokens, _naira, _ref_id, _kind)` — idempotent on `(ref_id, kind)`.
-- New RPC `admin_adjust_wallet(_user_id, _delta_tokens, _reason)` — admin only, writes wallet_transactions + audit_logs.
-- Cron-less daily reset handled lazily inside `consume_ai_token` (check on every call).
+**Frontend changes**
+- `usePremium.ts`: re-add `freeLeft` / `dailyLimit=3` to query + return; update `requireToken` to surface `source` and toast accordingly.
+- `TokenBalanceCard.tsx`: add free-uses row + reset countdown.
+- `MobileGreetingHeader.tsx`: expand wallet pill to show free count.
+- `SoftPaywallSheet.tsx`: add second "Come back tomorrow · resets in {hh:mm}" CTA next to top-up tiles.
+- `Wallet.tsx`: add today's-free strip.
 
-### Edge functions
-- `flutterwave-init`: accept `{ amount_naira }` (min 100), compute `tokens = floor(amount / 25)`, store pending row, return checkout URL. Remove Pro plan logic.
-- `flutterwave-webhook`: on success → call `credit_wallet` with `ref_id = flw_tx_id`, `kind='topup'`. Remove `activate_pro` call.
-- Receipt email via existing Resend function: "₦{amount} added · +{tokens} tokens · Balance {new_balance}".
+---
 
-### Frontend
-- `usePremium` → renamed conceptually to `useWallet` (keep file path to avoid churn, but export `{ balance, freeLeft, requireToken(kind), refetch }`). `requireToken` calls `consume_ai_token`; on `allowed:false` opens `SoftPaywallSheet`.
-- `SoftPaywallSheet`: replace Pro card with top-up tiles (₦100/₦300/₦500/₦1k/₦2k + custom) → calls `flutterwave-init`.
-- `TeaserPaywall`: copy → "Spend 1 token to unlock {label}" + balance display + top-up link if balance 0.
-- `DailyCreditsChip` → `WalletChip`: shows `⚡ {balance} · {free_left}/5`.
-- New page `/wallet` (student): balance hero, top-up tiles, transactions list.
-- `/subscription` page repurposed → redirects to `/wallet`.
-- All AI/quiz trigger points already wired to `requireCredit`/`requireToken` continue to work — only the RPC contract changes. Audit each call site, pass correct `kind` ('quiz_attempt', 'ai_explanation', 'ai_summary', 'ai_quiz_gen', 'flashcards', 'study_pack', 'study_coach', 'tutor_chat', 'mock_exam', 'tts'). Light set = `quiz_attempt`, `ai_explanation`, `tutor_chat`.
-- Admin: rebuild `/admin/payments` (wallet top-ups), add `/admin/tokens` (manual adjust). Remove subscription nav items.
+## 2. Email verification → magic link (instead of 6-digit code)
 
-### Cleanup
-- Remove `subscription_plans` reads from UI (table stays for history).
-- Remove `activate_pro`, `grant_signup_trial`, `admin_extend_pro` RPCs.
-- Update memory: replace Hybrid Access Mode + Phase 10.1 entries with "Prepaid Wallet" rule.
+Right now new signups receive a numeric OTP. Switch to a one-click verification link.
 
-## Files touched (estimate)
-- 1 SQL migration
-- 2 edge functions edited (`flutterwave-init`, `flutterwave-webhook`)
-- ~6 components: `usePremium`, `SoftPaywallSheet`, `TeaserPaywall`, `DailyCreditsChip`→`WalletChip`, `MobileGreetingHeader`
-- 3 pages: new `/wallet`, rebuilt `/admin/payments`, new `/admin/tokens`; `/subscription` → redirect
-- Memory index update
+- Update `auth-email-hook` signup template (`supabase/functions/_shared/email-templates/signup.tsx`) to render the `{{ .ConfirmationURL }}` as the primary CTA button. Keep the OTP as a tiny fallback line ("Or use code: ###") so nothing breaks if a user is on an old client.
+- `src/pages/Auth.tsx`: when `signUp()` succeeds, show "Check your email and tap the verification link" instead of the code-entry field. Remove the OTP input UI from the signup path (keep it available for password recovery if used).
+- `Auth.tsx` already handles the redirect-back session via `onAuthStateChange`, so no extra route is needed. `emailRedirectTo` stays `${window.location.origin}/`.
 
-## Out of scope (this round)
-- Bonus tokens on bigger top-ups
-- Referral token rewards
-- Tutor revenue share on token spend (locked at 100% platform per your decision)
-- Auto-recharge / saved card
+---
 
-Reply "go" to build, or tell me what to change.
+## 3. Dashboard beautify + responsive launch polish
+
+Keep the current design language (white + gold + Inter, the look you already love). Tighten it, not redesign it.
+
+**Top of dashboard (priority order, mobile-first)**
+1. `MobileGreetingHeader` (existing) — avatar + greeting + streak/level/wallet pills.
+2. `TokenBalanceCard` (existing, upgraded) — wallet balance + free-uses row + Top-up CTA. Becomes the visual anchor: bigger gold-gradient surface, profile avatar inset on the left, clear ₦-value subtitle, single primary CTA.
+3. `StudyPackHero` (existing) — keep.
+4. `QuickActions` 6-tile grid — audit spacing so it's 2 cols on ≤360 px (currently feels cramped on 370 px).
+
+**Responsive sweep (every breakpoint from 320 → 1920)**
+- Container padding: `px-4` mobile → `px-6` sm → `px-8` lg. Currently inconsistent.
+- All cards use `rounded-2xl` + `shadow-[0_4px_20px_-8px_rgba(180,140,40,0.18)]` for a uniform gold-tinted depth.
+- Touch targets ≥44 px on mobile (audit `QuickActions`, pill buttons, header icon buttons — most are fine, a few are 36-40 px).
+- Bottom nav: confirm safe-area inset padding so FAB doesn't clip on iPhone notches.
+- `/wallet`, `/subscription` (→ redirect), `/install`, `/notifications` all get the same container rhythm.
+
+**Beautify, lightly**
+- Gold gradient refinement on `TokenBalanceCard` (subtle radial highlight top-left).
+- Soft entrance stagger (framer-motion, already in the project) on dashboard sections — 60 ms delay each, max 240 ms total. No new dependencies.
+- Empty states on `/wallet` transactions get a small illustration + "Top up to get started" CTA.
+
+**Not touching:** splash, onboarding, tutor pages, admin — those are stable per memory and out of scope.
+
+---
+
+## Technical details
+
+- **One DB migration:** update `consume_ai_token` RPC only. No new tables, no schema changes.
+- **No new edge functions.** `flutterwave-*` and email functions are unchanged in behavior (signup template body changes, that's it).
+- **Files touched (~9):**
+  - `supabase/migrations/<new>.sql`
+  - `src/hooks/usePremium.ts`
+  - `src/components/student/dashboard/TokenBalanceCard.tsx`
+  - `src/components/student/MobileGreetingHeader.tsx`
+  - `src/components/student/SoftPaywallSheet.tsx`
+  - `src/pages/student/Wallet.tsx`
+  - `src/pages/student/StudentDashboard.tsx` (spacing + stagger)
+  - `src/pages/Auth.tsx` (magic-link UX)
+  - `supabase/functions/_shared/email-templates/signup.tsx`
+- **Memory update:** revise Core rule — "Prepaid Wallet" now reads "3 free AI actions/day + wallet (₦50 = 1 token, min top-up ₦250)."
+
+---
+
+## Out of scope (call out so you can confirm)
+
+- Bonus tokens on bigger top-ups, referral token rewards, auto-recharge — not in this round.
+- Tutor revenue share on token spend — stays 100% platform per earlier decision.
+- Any redesign of splash, onboarding, tutor or admin areas.
+
+Reply **"go"** to build, or tell me what to change (e.g. "make it 5 free not 3", "drop the come-back-tomorrow CTA", "keep OTP code option visible").
