@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { ProfileStatBlocks } from "@/components/profile/ProfileStatBlocks";
+import { OfficialBadge } from "@/components/profile/OfficialBadge";
 
 type Role = "student" | "tutor" | "admin" | "school" | "parent";
 
@@ -22,6 +23,7 @@ interface PublicProfile {
   tutor_code: string | null;
   bio: string | null;
   created_at: string | null;
+  is_official?: boolean | null;
 }
 
 const PublicProfile = () => {
@@ -40,7 +42,7 @@ const PublicProfile = () => {
         supabase
           .from("profiles")
           .select(
-            "id, full_name, avatar_url, profile_image_url, cover_photo_url, department, level, state_of_origin, tutor_code, bio, created_at",
+            "id, full_name, avatar_url, profile_image_url, cover_photo_url, department, level, state_of_origin, tutor_code, bio, created_at, is_official",
           )
           .eq("id", userId)
           .maybeSingle(),
@@ -127,6 +129,16 @@ const PublicProfile = () => {
               : null,
           }}
         />
+
+        {profile.is_official && (
+          <div className="mt-4 flex items-center gap-2 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-white px-4 py-3">
+            <OfficialBadge size="md" />
+            <span className="text-[13px] text-amber-900 font-medium">
+              Verified by OverraPrep · this is an official account.
+            </span>
+          </div>
+        )}
+
 
         {profile.bio && (
           <section className="mt-6 bg-card rounded-2xl border border-border p-6">

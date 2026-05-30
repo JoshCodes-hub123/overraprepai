@@ -6,6 +6,8 @@ import { useOpportunities, useOpportunityBookmarks, useOpportunitiesRealtime, ty
 import { OpportunityCard } from "@/components/opportunities/OpportunityCard";
 import RecommendedOpportunities from "@/components/opportunities/RecommendedOpportunities";
 import { SuggestOpportunityDialog } from "@/components/opportunities/SuggestOpportunityDialog";
+import { OpportunitiesHero } from "@/components/opportunities/OpportunitiesHero";
+import { OpportunityTicker } from "@/components/opportunities/OpportunityTicker";
 
 const CATEGORIES: { id: OpportunityCategory | "all"; label: string }[] = [
   { id: "all", label: "All" },
@@ -42,11 +44,11 @@ export default function Opportunities() {
         </header>
 
         <main className="container mx-auto px-4 py-5 max-w-3xl">
-          <p className="text-[12.5px] text-muted-foreground mb-3">
-            Curated internships, scholarships and programs for university students.
-          </p>
+          <OpportunityTicker className="mb-4" />
+          <OpportunitiesHero liveCount={items.length} />
 
           {cat === "all" && <RecommendedOpportunities />}
+
 
           <div className="flex gap-1.5 overflow-x-auto pb-2 mb-4 -mx-1 px-1">
             <button

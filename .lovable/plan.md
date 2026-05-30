@@ -1,76 +1,84 @@
-# Launch Seed: Official Accounts, Courses, Scholarships
 
-## 1. Official accounts (created via Supabase Auth admin API in a one-shot edge function `seed-official`)
+# Launch polish: Official badge + Opportunities glow-up + Dashboard smoke-test
 
-All accounts use the single inbox **overraprepofficial@gmail.com** via Gmail `+` aliases so every email lands in the same place. Passwords are auto-generated 16-char strong, printed **once** in chat after the seed runs, then never stored in code.
+Four shipped outcomes, in this order. No business-logic or token changes — pure frontend/presentation + a tiny realtime ticker query.
 
-| Role  | Email                                    | Display name              | tutor_code |
-|-------|------------------------------------------|---------------------------|------------|
-| admin | overraprepofficial@gmail.com             | OverraPrep Admin          | —          |
-| tutor | overraprepofficial+math@gmail.com        | OverraPrep Math Faculty   | TUT-MATH   |
-| tutor | overraprepofficial+physics@gmail.com     | OverraPrep Physics Faculty| TUT-PHYS   |
-| tutor | overraprepofficial+chem@gmail.com        | OverraPrep Chem Faculty   | TUT-CHEM   |
+---
 
-For each tutor: profile gets gold OverraPrep avatar + cover, `tutor_status='approved'`, bio, `tutor_public_profiles` row, `tutor_storefronts` row, auto-approved `tutor_applications` record. Admin gets `user_roles` row `admin`.
+## 1. Official badge (gold, everywhere it matters)
 
-## 2. Launch courses (FUTA 100-level core, university='FUTA')
+Render a gold "Official" badge anywhere a profile surfaces, gated by `profiles.is_official = true` (already in DB).
 
-Inserted via `supabase--insert` after accounts exist.
+- **New component** `src/components/profile/OfficialBadge.tsx` — gold gradient pill, `Verified` (lucide BadgeCheck) icon, sizes `xs | sm | md`, matches the existing `PremiumBadge` visual language but in OverraPrep gold (no purple).
+- **Wire into**:
+  - `PublicProfile`, `EditProfile` header
+  - Tutor cards: `TutorAttribution`, `FavoriteTutors`, `StorefrontPublic`, `CourseHub` tutor strip
+  - Quiz / material author lines wherever `profile.full_name` is rendered
+  - Announcement author chip
+  - Chat / DM author names in `ThreadView` and `Inbox`
+- A single `useIsOfficial(userId)` hook reads from a memoized React Query cache so we don't N+1.
 
-1. **MTH101 — Elementary Mathematics I (Calculus)** → Math Faculty
-2. **PHY101 — General Physics I (Mechanics & Properties of Matter)** → Physics Faculty
-3. **CHM101 — General Chemistry I** → Chem Faculty
+---
 
-Each course (`courses` table) gets: code, name, department, faculty (SAAT/SOS), level='100', `is_active=true`, description, cover image (existing gold gradient asset).
+## 2. Opportunity Hub — make it a place tutors and partners want to be featured
 
-### Per-course resources
-- **2 quizzes** (10 well-crafted MCQs each, with explanations) → `quizzes` + `quiz_questions` + `quiz_questions` link table, owned by the matching tutor, auto-approved/public.
-- **1 study material** (`study_materials`) — concise topical notes (3–5 sections) authored by the tutor.
-- **1 curriculum** (`tutor_curricula` + 4 `tutor_curriculum_topics`) outlining weeks 1–4.
-- **1 survival kit entry** (`course_survival_kits`) — top formulas / common pitfalls.
-- **1 tutor announcement** welcoming students.
+Treat `/opportunities` and `/opportunities/:id` as the marquee surface.
 
-## 3. Scholarships & opportunities (5, inserted into `opportunities`)
+### `/opportunities` (list)
+- Editorial hero band at the top: large display headline ("Scholarships, internships & competitions, curated for Nigerian students."), soft gold gradient with subtle noise texture, count badge ("12 live this week"), and a primary "Submit your program" CTA → opens existing `SuggestOpportunityDialog`.
+- Featured rail: top 3 opportunities by `deadline ASC` rendered as large bento cards with cover image, category chip, organization wordmark, deadline countdown, and amount/level chips.
+- Category chips become pill segmented control (sticky on scroll), with counts per category.
+- Cards: upgrade `OpportunityCard` to glass surface, taller cover with gradient scrim, deadline pill in top-right (green > 14 days, amber 3–14, red < 3), bookmark heart, "New" gold badge for `created_at < 48h`, and a hover lift.
+- Empty/saved states get illustrated gold icons.
 
-Status='published', posted_by=admin, real public info + verified apply URLs:
+### `/opportunities/:id` (detail)
+- Magazine layout: full-bleed cover (with `object-cover` blur scrim fallback when missing), breadcrumb back, sticky right-rail "Apply" card with deadline countdown, eligibility checklist (uses existing `recommend_opportunities` match signals to show ✅ "Matches your department", etc.), share-to-WhatsApp, copy-link.
+- Body uses prose typography (Inter), pull-quote treatment for organization mission, related opportunities at bottom.
+- "Posted by OverraPrep ✓" line uses the new OfficialBadge.
 
-1. MTN Foundation Scholarship Scheme for Science & Tech Students
-2. NNPC/Total National Merit Scholarship
-3. Agbami Medical & Engineering Professionals Scholarship
-4. Chevron NMA University Scholarship
-5. GE Foundation Scholar-Leaders Program
+### Dashboard preview (`OpportunityHubPreview`)
+- Promote to a richer cardset: keep small footprint but add hero card + 3 mini cards layout on `sm:` and up.
 
-Each: title, organization, category, description (2–3 paragraphs), deadline (latest known cycle), apply_url, cover_image_url (themed gold gradient), university='FUTA'.
+---
 
-## 4. Dashboard wiring check (read-only audit, fixes only if broken)
+## 3. Live opportunities ticker (the "scrolling notifications" the user asked for)
 
-I will verify each surface shows the seeded data and patch the query/RLS if not:
-- **Student dashboard** — Fresh Courses, Announcements feed, Opportunities widget, Featured Tutors.
-- **Course page (`/course/:id`)** — quizzes list, study materials, curriculum, survival kit, tutor card.
-- **Tutor dashboard** — each tutor sees their course, quizzes, students count, earnings (₦0).
-- **Admin dashboard** — sees 3 tutors approved, 3 courses, 5 opportunities, audit log entry.
-- **Opportunities page (`/opportunities`)** — 5 cards render with bookmarking working.
+A single horizontal marquee strip the student sees on:
+- Student dashboard (just below `TokenBalanceCard`)
+- `/opportunities` page top
 
-## 5. Implementation steps
+**Component**: `src/components/opportunities/OpportunityTicker.tsx`
+- Pulls latest 8 published opportunities (`useOpportunities({ limit: 8 })`).
+- Realtime: subscribes to `opportunities` table — new INSERT prepends an item and triggers a gold flash + tiny chime (uses existing celebrate util, no new audio).
+- CSS marquee (Tailwind keyframe `animate-marquee` added to `tailwind.config.ts`), pauses on hover/touch, gradient fade-mask on both edges.
+- Each item: 🎓 icon → "New scholarship · MTN Foundation · closes in 14d" → tap routes to detail.
+- Respects `prefers-reduced-motion` (falls back to static carousel with auto-rotate every 6s).
 
-1. Migration: add `is_official boolean default false` to `profiles` (so we can badge official accounts) and a `seed_official_marker` flag we can re-run idempotently.
-2. New edge function `seed-official` (admin-only invoke, gated by a one-time `SEED_TOKEN` secret) that:
-   - Calls `supabase.auth.admin.createUser` for the 4 accounts (email_confirm=true).
-   - Generates strong passwords, returns them in the JSON response **once**.
-   - Inserts profiles, user_roles, tutor_applications (approved), tutor_public_profiles, tutor_storefronts, tutor_onboarding rows.
-3. After accounts exist, run a single `supabase--insert` batch to seed:
-   - 3 courses, 6 quizzes + 60 questions, 3 study materials, 3 curricula + 12 topics, 3 survival kits, 3 announcements, 5 opportunities.
-4. Run the function once via Test tab, capture passwords, present them to the user in chat in a copy-block, instruct user to rotate after first login.
-5. Light UI: add a subtle gold "Official" badge on tutor cards where `is_official=true`.
-6. Audit each dashboard route in the preview, fix any missing query/RLS.
+---
+
+## 4. Dashboard smoke-test + polish pass
+
+Walk every dashboard against the seeded data and fix anything that doesn't render cleanly. No business-logic changes — only presentation/empty-state/responsiveness fixes.
+
+Routes audited (370px and 1280px):
+- `/student/dashboard` — confirm `CourseQuizzesSection` shows the 3 seeded courses with the 2 quizzes each; `OpportunityHubPreview` shows the 5 scholarships; new ticker renders.
+- `/tutor/dashboard` (math/physics/chem accounts) — confirm seeded quizzes, curriculum, announcement appear; tutor profile shows OfficialBadge.
+- `/admin/*` — confirm the 4 official accounts visible in users list with badge.
+- `/opportunities` & `/opportunities/:id` — new design.
+- `/courses` & `/courses/:id` — confirm seeded curricula render.
+
+Fixes applied as needed (typical findings: padding on small screens, sticky-header overlap, empty-state copy, broken image fallbacks). Each fix is small and surgical — listed in the final summary.
+
+---
 
 ## Out of scope
-- No payment, no new design system, no notifications redesign — purely seeding + minimum wiring.
-- Real scholarship deadlines are point-in-time; admin can later edit them in `/admin/opportunities`.
 
-## Confirm before I build
-- ✅ Use Gmail `+aliases` for the 3 tutor accounts? (alternative: all 4 share one email — not possible, Supabase requires unique emails)
-- ✅ FUTA 100L MTH101 / PHY101 / CHM101 as the 3 launch courses?
-- ✅ Print generated passwords in chat once (you save them, then rotate)?
+- No token economy / paywall changes.
+- No new database tables. (`is_official`, `opportunities`, `profiles` already exist.)
+- No new edge functions.
+- No auth changes.
+- No payment changes.
 
-Reply "go" to build, or tell me what to swap.
+## Deliverable
+
+A short post-flight summary listing: badge component + wire-in sites, opportunities list/detail/ticker files, every smoke-test fix made, and 4 before/after screenshots (dashboard, opportunities list, opportunity detail, tutor profile with badge).

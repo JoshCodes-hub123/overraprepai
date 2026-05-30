@@ -22,6 +22,7 @@ import { StudentSpotlight } from "@/components/student/dashboard/StudentSpotligh
 import { ExamCountdownCard } from "@/components/student/dashboard/ExamCountdownCard";
 import { CourseQuizzesSection } from "@/components/student/dashboard/CourseQuizzesSection";
 import { ExploreFeaturesGrid } from "@/components/student/dashboard/ExploreFeaturesGrid";
+import { OpportunityTicker } from "@/components/opportunities/OpportunityTicker";
 
 // Warm likely-next route bundles when the dashboard mounts.
 if (typeof window !== "undefined") prefetchDashboardNeighbors();
@@ -71,6 +72,13 @@ const StudentDashboard = () => {
 
             {/* Token wallet hero — pinned to the very top */}
             <TokenBalanceCard />
+
+            {/* Live opportunities ticker — scholarships & internships streaming in */}
+            <div className="mb-4">
+              <OpportunityTicker />
+            </div>
+
+
 
             {/* 2. Hero — Study Pack AI (single intelligent entry point) */}
             <StudyPackHero />
