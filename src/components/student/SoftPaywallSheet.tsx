@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Wallet, X, Zap, Loader2 } from "lucide-react";
+import { Wallet, X, Zap, Loader2, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,12 +17,32 @@ interface SoftPaywallSheetProps {
 }
 
 const TOP_UPS = [
-  { naira: 100, tokens: 4, badge: "Starter" },
-  { naira: 300, tokens: 12 },
-  { naira: 500, tokens: 20, badge: "Popular" },
-  { naira: 1000, tokens: 40 },
-  { naira: 2000, tokens: 80, badge: "Best value" },
+  { naira: 250, tokens: 5, badge: "Starter" },
+  { naira: 500, tokens: 10 },
+  { naira: 1000, tokens: 20, badge: "Popular" },
+  { naira: 2000, tokens: 40 },
+  { naira: 5000, tokens: 100, badge: "Best value" },
 ];
+
+function useResetCountdown() {
+  const [label, setLabel] = useState("");
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      // Africa/Lagos = UTC+1, no DST. Build "now in Lagos" as a UTC-shifted clone.
+      const lagos = new Date(now.getTime() + (60 - now.getTimezoneOffset()) * 60_000);
+      const tomorrow = new Date(Date.UTC(lagos.getUTCFullYear(), lagos.getUTCMonth(), lagos.getUTCDate() + 1));
+      const ms = tomorrow.getTime() - lagos.getTime();
+      const h = Math.max(0, Math.floor(ms / 3_600_000));
+      const m = Math.max(0, Math.floor((ms % 3_600_000) / 60_000));
+      setLabel(`${h}h ${m}m`);
+    };
+    tick();
+    const id = setInterval(tick, 30_000);
+    return () => clearInterval(id);
+  }, []);
+  return label;
+}
 
 /**
  * Wallet top-up paywall. Shown when:
