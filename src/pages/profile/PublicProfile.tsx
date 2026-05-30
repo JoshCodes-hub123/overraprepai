@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { ProfileStatBlocks } from "@/components/profile/ProfileStatBlocks";
+import { OfficialBadge } from "@/components/profile/OfficialBadge";
 
 type Role = "student" | "tutor" | "admin" | "school" | "parent";
 
@@ -22,6 +23,7 @@ interface PublicProfile {
   tutor_code: string | null;
   bio: string | null;
   created_at: string | null;
+  is_official?: boolean | null;
 }
 
 const PublicProfile = () => {
