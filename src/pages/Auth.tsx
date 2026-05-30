@@ -364,7 +364,7 @@ const Auth = () => {
       setVerifyMode(true);
       toast({
         title: "Check your inbox 📬",
-        description: `We sent a 6-digit code to ${data.email}. Enter it below to verify your account.`,
+        description: `We sent a verification link to ${data.email}. Tap it to finish signing up.`,
       });
       setIsSubmitting(false);
       return;
