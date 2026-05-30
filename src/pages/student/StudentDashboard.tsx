@@ -73,6 +73,13 @@ const StudentDashboard = () => {
             {/* Token wallet hero — pinned to the very top */}
             <TokenBalanceCard />
 
+            {/* Live opportunities ticker — scholarships & internships streaming in */}
+            <div className="mb-4">
+              <OpportunityTicker />
+            </div>
+
+
+
             {/* 2. Hero — Study Pack AI (single intelligent entry point) */}
             <StudyPackHero />
 
