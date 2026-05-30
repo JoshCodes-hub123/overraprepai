@@ -22,6 +22,7 @@ import { StudentSpotlight } from "@/components/student/dashboard/StudentSpotligh
 import { ExamCountdownCard } from "@/components/student/dashboard/ExamCountdownCard";
 import { CourseQuizzesSection } from "@/components/student/dashboard/CourseQuizzesSection";
 import { ExploreFeaturesGrid } from "@/components/student/dashboard/ExploreFeaturesGrid";
+import { OpportunityTicker } from "@/components/opportunities/OpportunityTicker";
 
 // Warm likely-next route bundles when the dashboard mounts.
 if (typeof window !== "undefined") prefetchDashboardNeighbors();
