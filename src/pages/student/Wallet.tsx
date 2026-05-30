@@ -15,13 +15,14 @@ import {
 import { format } from "date-fns";
 import { toast } from "sonner";
 
-const NAIRA_PER_TOKEN = 25
+const NAIRA_PER_TOKEN = 50
+const MIN_NAIRA = 250
 const TOP_UPS = [
-  { naira: 100, tokens: 4 },
-  { naira: 300, tokens: 12 },
-  { naira: 500, tokens: 20, badge: "Popular" },
-  { naira: 1000, tokens: 40 },
-  { naira: 2000, tokens: 80, badge: "Best value" },
+  { naira: 250, tokens: 5 },
+  { naira: 500, tokens: 10, badge: "Popular" },
+  { naira: 1000, tokens: 20 },
+  { naira: 2000, tokens: 40 },
+  { naira: 5000, tokens: 100, badge: "Best value" },
 ];
 
 type Txn = {
@@ -123,8 +124,8 @@ const WalletPage = () => {
   });
 
   const startTopUp = async (amountNaira: number) => {
-    if (!amountNaira || amountNaira < 100) {
-      toast.error("Minimum top-up is ₦100");
+    if (!amountNaira || amountNaira < MIN_NAIRA) {
+      toast.error(`Minimum top-up is ₦${MIN_NAIRA}`);
       return;
     }
     setBusy(amountNaira === Number(custom) ? "custom" : amountNaira);
@@ -159,7 +160,7 @@ const WalletPage = () => {
               <WalletIcon className="w-6 h-6 text-amber-600" /> Wallet
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              1 token = ₦25 = 1 AI action. Quiz, AI explain and tutor chat get 5 free uses every day.
+              1 token = ₦50 = 1 AI action. Top up from ₦250 (5 tokens) and use them anytime.
             </p>
           </header>
 
@@ -176,7 +177,7 @@ const WalletPage = () => {
               </div>
               <div className="text-right">
                 <Badge variant="outline" className="bg-white/80 border-amber-300 text-amber-800">
-                  {freeLeft}/5 free today
+                  ₦{NAIRA_PER_TOKEN}/token
                 </Badge>
                 <p className="text-[11px] text-muted-foreground mt-2">Lifetime spent: {lifetimeSpent}</p>
               </div>
@@ -215,15 +216,15 @@ const WalletPage = () => {
               <Input
                 type="number"
                 inputMode="numeric"
-                min={100}
-                placeholder="Custom (₦100+, rounded to ₦25)"
+                min={MIN_NAIRA}
+                placeholder={`Custom (₦${MIN_NAIRA}+, rounded to ₦${NAIRA_PER_TOKEN})`}
                 value={custom}
                 onChange={(e) => setCustom(e.target.value)}
                 className="h-10"
               />
               <Button
                 onClick={() => startTopUp(Number(custom))}
-                disabled={busy !== null || !custom || Number(custom) < 100}
+                disabled={busy !== null || !custom || Number(custom) < MIN_NAIRA}
                 className="h-10 bg-amber-600 hover:bg-amber-700 text-white"
               >
                 {busy === "custom" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Top up"}
@@ -276,8 +277,8 @@ const WalletPage = () => {
               <Info className="h-4 w-4 mt-0.5 shrink-0" />
               <span>
                 <strong>How it works.</strong> Every AI action (quiz, summary, study pack, mock exam, notes-to-audio,
-                tutor chat, study coach) costs 1 token. Light actions (quiz attempts, AI explanations, tutor chat)
-                get 5 free uses each day. Browsing, leaderboards, SRS review, bookmarks and community are always free.
+                tutor chat, study coach) costs 1 token. Browsing, leaderboards, SRS review, bookmarks and community
+                are always free. Top up from ₦250 to get 5 tokens.
               </span>
             </p>
           </Card>
