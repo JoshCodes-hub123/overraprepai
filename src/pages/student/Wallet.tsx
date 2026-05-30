@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { usePremium } from "@/hooks/usePremium";
@@ -49,9 +49,64 @@ const labelFor = (t: Txn) => {
 
 const WalletPage = () => {
   const { user } = useAuth();
-  const { balance, freeLeft, isLoading } = usePremium();
+  const { balance, freeLeft, isLoading, refetch } = usePremium();
+  const qc = useQueryClient();
   const [custom, setCustom] = useState("");
   const [busy, setBusy] = useState<number | "custom" | null>(null);
+  const [verifying, setVerifying] = useState(false);
+
+  // Reconcile redirect from Flutterwave: if URL has tx_ref/transaction_id,
+  // call flutterwave-verify so a missed webhook still credits the wallet.
+  useEffect(() => {
+    if (!user?.id) return;
+    const url = new URL(window.location.href);
+    const txRef = url.searchParams.get("tx_ref");
+    const txId = url.searchParams.get("transaction_id");
+    const flwStatus = url.searchParams.get("status");
+    if (!txRef && !txId) return;
+
+    // Clear params from address bar
+    url.searchParams.delete("tx_ref");
+    url.searchParams.delete("transaction_id");
+    url.searchParams.delete("status");
+    window.history.replaceState({}, "", url.pathname + url.search);
+
+    if (flwStatus && /cancel|fail/i.test(flwStatus)) {
+      toast.error("Payment was cancelled.");
+      return;
+    }
+
+    (async () => {
+      setVerifying(true);
+      try {
+        const { data, error } = await supabase.functions.invoke("flutterwave-verify", {
+          body: { tx_ref: txRef ?? undefined, transaction_id: txId ?? undefined },
+        });
+        if (error) throw error;
+        const d = data as any;
+        if (d?.ok) {
+          if (d.idempotent) {
+            toast.success("Payment already credited ✓");
+          } else {
+            toast.success(`Top-up successful · +${d.tokens} tokens`);
+          }
+          refetch();
+          qc.invalidateQueries({ queryKey: ["wallet-transactions"] });
+        } else if (d?.status === "pending") {
+          toast.message("Payment still processing — refresh in a moment.");
+        } else {
+          toast.error(d?.message || "Could not verify payment yet. We'll try again on refresh.");
+        }
+      } catch (e: any) {
+        console.error("verify error", e);
+        toast.error("Could not verify payment. Contact support if money was deducted.");
+      } finally {
+        setVerifying(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
 
   const { data: txns = [] } = useQuery({
     queryKey: ["wallet-transactions", user?.id],
