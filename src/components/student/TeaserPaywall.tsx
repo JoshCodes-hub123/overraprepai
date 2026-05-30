@@ -24,7 +24,7 @@ interface TeaserPaywallProps {
  * they'd be unlocking.
  */
 export function TeaserPaywall({ children, unlocks, hint, className, forceUnlocked }: TeaserPaywallProps) {
-  const { balance, freeLeft } = usePremium();
+  const { balance } = usePremium();
   const [open, setOpen] = useState(false);
 
   if (forceUnlocked) return <>{children}</>;
@@ -32,9 +32,7 @@ export function TeaserPaywall({ children, unlocks, hint, className, forceUnlocke
   const cta =
     balance > 0
       ? `Spend 1 token to unlock`
-      : freeLeft > 0
-        ? `Use 1 free credit to unlock`
-        : `Top up your wallet to unlock`;
+      : `Top up your wallet to unlock`;
 
   return (
     <div className={cn("relative overflow-hidden rounded-2xl border border-amber-100", className)}>
@@ -52,7 +50,7 @@ export function TeaserPaywall({ children, unlocks, hint, className, forceUnlocke
         {hint && <p className="mt-0.5 text-[12px] text-muted-foreground">{hint}</p>}
         <p className="mt-1 text-[11px] text-amber-700 font-semibold flex items-center justify-center gap-1">
           <Zap className="h-3 w-3" />
-          Wallet: {balance} tokens · {freeLeft}/5 free today
+          Wallet: {balance} tokens
         </p>
         <Button
           size="sm"
