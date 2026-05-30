@@ -33,15 +33,17 @@ export const SignupEmail = ({
   recipient,
   token,
   fullName,
+  confirmationUrl,
 }: SignupEmailProps) => {
   const firstName = (fullName || '').trim().split(/\s+/)[0]
   const greeting = firstName ? `Welcome, ${firstName} ✨` : 'Welcome to OverraPrep AI ✨'
   const code = (token || '------').toString()
+  const verifyUrl = confirmationUrl || '#'
 
   return (
     <Html lang="en" dir="ltr">
       <Head />
-      <Preview>Your OverraPrep AI verification code: {code}</Preview>
+      <Preview>Tap to verify your OverraPrep AI account</Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Gold brand header */}
@@ -68,14 +70,26 @@ export const SignupEmail = ({
               and finally beat exam stress — powered by AI tutors built around <em>you</em>.
             </Text>
 
-            <Text style={label}>Verify {recipient} with this 6-digit code:</Text>
+            <Text style={label}>Verify {recipient} — one tap:</Text>
 
-            <Section style={codeBox}>
-              <Text style={codeText}>{code}</Text>
+            <Section style={{ textAlign: 'center', margin: '0 0 18px' }}>
+              <Button href={verifyUrl} style={ctaButton}>
+                ✨ Verify my email
+              </Button>
             </Section>
 
             <Text style={muted}>
-              This code expires in <strong>1 hour</strong>. Don't share it with anyone —
+              Or copy this link into your browser:{' '}
+              <Link href={verifyUrl} style={linkStyle}>{verifyUrl}</Link>
+            </Text>
+
+            <Text style={fallbackLabel}>Having trouble? Use this 6-digit code instead:</Text>
+            <Section style={codeBoxSmall}>
+              <Text style={codeTextSmall}>{code}</Text>
+            </Section>
+
+            <Text style={muted}>
+              This link &amp; code expire in <strong>1 hour</strong>. Don't share them with anyone —
               not even an OverraPrep team member.
             </Text>
 
