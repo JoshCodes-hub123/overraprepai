@@ -8,8 +8,8 @@ const SUPA_SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 const FLW_V3_PAYMENTS = 'https://api.flutterwave.com/v3/payments'
 
-// First-purchase discount (Pro Monthly only): ₦2,000 → ₦1,500
-const FIRST_MONTH_DISCOUNT_KOBO = 50_000 // 500 NGN
+const NAIRA_PER_TOKEN = 25
+const MIN_TOPUP_NAIRA = 100
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
@@ -29,60 +29,45 @@ Deno.serve(async (req) => {
     const email = claims.claims.email as string
 
     const body = await req.json().catch(() => ({}))
-    const planId = body?.plan_id as string | undefined
+    const rawAmount = Number(body?.amount_naira)
     const redirectUrl = body?.redirect_url as string | undefined
 
-    if (!planId) {
-      return new Response(JSON.stringify({ error: 'Missing plan_id' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    if (!Number.isFinite(rawAmount) || rawAmount < MIN_TOPUP_NAIRA) {
+      return new Response(JSON.stringify({ error: `Minimum top-up is ₦${MIN_TOPUP_NAIRA}` }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Round DOWN to nearest ₦25 so we always credit whole tokens.
+    const amountNaira = Math.floor(rawAmount / NAIRA_PER_TOKEN) * NAIRA_PER_TOKEN
+    const tokens = amountNaira / NAIRA_PER_TOKEN
+    if (tokens < 1) {
+      return new Response(JSON.stringify({ error: 'Amount too small for 1 token' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
     const admin = createClient(SUPA_URL, SUPA_SERVICE)
-    const { data: plan, error: planErr } = await admin
-      .from('subscription_plans')
-      .select('id, name, price_cents, currency, interval, features')
-      .eq('id', planId)
-      .eq('is_active', true)
-      .maybeSingle()
-    if (planErr || !plan) {
-      return new Response(JSON.stringify({ error: 'Plan not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
-    }
-
-    const durationDays = Number((plan.features as any)?.duration_days || 30)
-
     const { data: profile } = await admin
-      .from('profiles')
-      .select('full_name, first_purchase_used')
-      .eq('id', userId)
-      .maybeSingle()
+      .from('profiles').select('full_name').eq('id', userId).maybeSingle()
 
-    // First-month discount applies only to Pro Monthly, only on first purchase ever
-    let priceKobo = Number(plan.price_cents)
-    let discountApplied = false
-    if (plan.id === 'pro_monthly' && !(profile as any)?.first_purchase_used) {
-      priceKobo = Math.max(priceKobo - FIRST_MONTH_DISCOUNT_KOBO, 0)
-      discountApplied = true
-    }
-
-    const reference = `op_${userId.slice(0, 8)}_${Date.now()}`
-    const amountMajor = priceKobo / 100
+    const reference = `wallet_${userId.slice(0, 8)}_${Date.now()}`
 
     const payload = {
       tx_ref: reference,
-      amount: amountMajor,
-      currency: plan.currency || 'NGN',
-      redirect_url: redirectUrl || 'https://overraprepai.com/subscription',
+      amount: amountNaira,
+      currency: 'NGN',
+      redirect_url: redirectUrl || 'https://overraprepai.com/wallet',
       customer: { email, name: (profile?.full_name as string) || email },
       customizations: {
-        title: 'OverraPrep AI',
-        description: discountApplied
-          ? `${plan.name} — First-month special`
-          : `${plan.name} subscription`,
+        title: 'OverraPrep Wallet',
+        description: `Top up · ${tokens} tokens (₦${amountNaira.toLocaleString()})`,
       },
       meta: {
         user_id: userId,
-        plan_id: plan.id,
-        duration_days: durationDays,
-        discount_applied: discountApplied,
+        kind: 'wallet_topup',
+        tokens,
+        amount_naira: amountNaira,
       },
     }
 
@@ -99,20 +84,20 @@ Deno.serve(async (req) => {
 
     await admin.from('payment_transactions').insert({
       user_id: userId,
-      plan_id: plan.id,
+      plan_id: 'wallet_topup',
       provider: 'flutterwave',
       reference,
-      amount_cents: priceKobo,
-      currency: plan.currency || 'NGN',
+      amount_cents: amountNaira * 100,
+      currency: 'NGN',
       status: 'pending',
-      raw_payload: { flutterwave_init: json.data, duration_days: durationDays, discount_applied: discountApplied },
+      raw_payload: { flutterwave_init: json.data, tokens, amount_naira: amountNaira },
     })
 
     return new Response(JSON.stringify({
       checkout_url: json.data.link,
       reference,
-      discount_applied: discountApplied,
-      amount: amountMajor,
+      amount: amountNaira,
+      tokens,
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   } catch (e: any) {
     console.error('flutterwave-init exception', e)
