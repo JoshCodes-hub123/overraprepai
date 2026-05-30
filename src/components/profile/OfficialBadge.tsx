@@ -46,8 +46,7 @@ export function useIsOfficial(userId?: string | null) {
     enabled: !!userId,
     staleTime: 10 * 60_000,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
+      const { data } = await (supabase.from as any)("profiles")
         .select("is_official")
         .eq("user_id", userId!)
         .maybeSingle();
