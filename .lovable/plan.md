@@ -1,104 +1,76 @@
+# Launch Seed: Official Accounts, Courses, Scholarships
 
-# Launch Polish — Free Daily Tokens, Magic-Link Verify, Dashboard Beautify
+## 1. Official accounts (created via Supabase Auth admin API in a one-shot edge function `seed-official`)
 
-Three things, done carefully so nothing already working breaks.
+All accounts use the single inbox **overraprepofficial@gmail.com** via Gmail `+` aliases so every email lands in the same place. Passwords are auto-generated 16-char strong, printed **once** in chat after the seed runs, then never stored in code.
 
----
+| Role  | Email                                    | Display name              | tutor_code |
+|-------|------------------------------------------|---------------------------|------------|
+| admin | overraprepofficial@gmail.com             | OverraPrep Admin          | —          |
+| tutor | overraprepofficial+math@gmail.com        | OverraPrep Math Faculty   | TUT-MATH   |
+| tutor | overraprepofficial+physics@gmail.com     | OverraPrep Physics Faculty| TUT-PHYS   |
+| tutor | overraprepofficial+chem@gmail.com        | OverraPrep Chem Faculty   | TUT-CHEM   |
 
-## 1. Bring back 3 free tokens per day (on top of the wallet)
+For each tutor: profile gets gold OverraPrep avatar + cover, `tutor_status='approved'`, bio, `tutor_public_profiles` row, `tutor_storefronts` row, auto-approved `tutor_applications` record. Admin gets `user_roles` row `admin`.
 
-**The model**
-- Every student gets **3 free AI actions per day**, resets at 00:00 WAT.
-- Free uses cover **every** AI/quiz action — same scope as paid tokens (quiz attempts, AI explanation, AI summary, quiz gen, flashcards, study pack, study coach, tutor AI chat, mock exam, TTS). No "light vs heavy" split — keeps it simple.
-- Spend order on each action: **free quota first → then wallet tokens**.
-- When **both** are empty → `SoftPaywallSheet` opens with two clear CTAs:
-  1. **"Top up wallet"** (₦250 = 5 tokens, existing Flutterwave flow)
-  2. **"Come back tomorrow"** with a live countdown to midnight WAT (closes the sheet)
+## 2. Launch courses (FUTA 100-level core, university='FUTA')
 
-**Live visibility (what the student sees)**
-- `TokenBalanceCard` (top of dashboard) gets a second row: **"⚡ 3/3 free today"** next to the wallet balance. The number ticks down in real time after each action.
-- `MobileGreetingHeader` wallet pill expands to show **`⚡ {balance} · {freeLeft}/3 free`**. Pill turns amber when `freeLeft === 0 && balance < 3`.
-- Toast after each action:
-  - Free use: `"Free use · {freeLeft}/3 left today"`
-  - Token use: `"−1 token · {balance} left in wallet"`
-- `/wallet` page gets a "Today's free uses" strip above transactions with a small progress bar (3/3 → 0/3) and reset timer.
+Inserted via `supabase--insert` after accounts exist.
 
-**Backend changes (one migration)**
-- `consume_ai_token(_kind)` RPC updated:
-  1. Lazy daily reset: if `daily_free_reset_at < today (Africa/Lagos)` → set `daily_free_used = 0`, `daily_free_reset_at = now()`.
-  2. If `daily_free_used < 3` → increment, return `{allowed:true, source:'free', balance, free_left}`.
-  3. Else if `ai_token_balance >= 1` → debit 1 token, return `{allowed:true, source:'token', balance, free_left:0}`.
-  4. Else → `{allowed:false, balance:0, free_left:0}`.
-- Free uses log a `wallet_transactions` row with `kind='spend'`, `tokens=0`, `action_kind=_kind` (for analytics + admin visibility).
-- No price change. Wallet stays ₦50 = 1 token, min top-up ₦250.
+1. **MTH101 — Elementary Mathematics I (Calculus)** → Math Faculty
+2. **PHY101 — General Physics I (Mechanics & Properties of Matter)** → Physics Faculty
+3. **CHM101 — General Chemistry I** → Chem Faculty
 
-**Frontend changes**
-- `usePremium.ts`: re-add `freeLeft` / `dailyLimit=3` to query + return; update `requireToken` to surface `source` and toast accordingly.
-- `TokenBalanceCard.tsx`: add free-uses row + reset countdown.
-- `MobileGreetingHeader.tsx`: expand wallet pill to show free count.
-- `SoftPaywallSheet.tsx`: add second "Come back tomorrow · resets in {hh:mm}" CTA next to top-up tiles.
-- `Wallet.tsx`: add today's-free strip.
+Each course (`courses` table) gets: code, name, department, faculty (SAAT/SOS), level='100', `is_active=true`, description, cover image (existing gold gradient asset).
 
----
+### Per-course resources
+- **2 quizzes** (10 well-crafted MCQs each, with explanations) → `quizzes` + `quiz_questions` + `quiz_questions` link table, owned by the matching tutor, auto-approved/public.
+- **1 study material** (`study_materials`) — concise topical notes (3–5 sections) authored by the tutor.
+- **1 curriculum** (`tutor_curricula` + 4 `tutor_curriculum_topics`) outlining weeks 1–4.
+- **1 survival kit entry** (`course_survival_kits`) — top formulas / common pitfalls.
+- **1 tutor announcement** welcoming students.
 
-## 2. Email verification → magic link (instead of 6-digit code)
+## 3. Scholarships & opportunities (5, inserted into `opportunities`)
 
-Right now new signups receive a numeric OTP. Switch to a one-click verification link.
+Status='published', posted_by=admin, real public info + verified apply URLs:
 
-- Update `auth-email-hook` signup template (`supabase/functions/_shared/email-templates/signup.tsx`) to render the `{{ .ConfirmationURL }}` as the primary CTA button. Keep the OTP as a tiny fallback line ("Or use code: ###") so nothing breaks if a user is on an old client.
-- `src/pages/Auth.tsx`: when `signUp()` succeeds, show "Check your email and tap the verification link" instead of the code-entry field. Remove the OTP input UI from the signup path (keep it available for password recovery if used).
-- `Auth.tsx` already handles the redirect-back session via `onAuthStateChange`, so no extra route is needed. `emailRedirectTo` stays `${window.location.origin}/`.
+1. MTN Foundation Scholarship Scheme for Science & Tech Students
+2. NNPC/Total National Merit Scholarship
+3. Agbami Medical & Engineering Professionals Scholarship
+4. Chevron NMA University Scholarship
+5. GE Foundation Scholar-Leaders Program
 
----
+Each: title, organization, category, description (2–3 paragraphs), deadline (latest known cycle), apply_url, cover_image_url (themed gold gradient), university='FUTA'.
 
-## 3. Dashboard beautify + responsive launch polish
+## 4. Dashboard wiring check (read-only audit, fixes only if broken)
 
-Keep the current design language (white + gold + Inter, the look you already love). Tighten it, not redesign it.
+I will verify each surface shows the seeded data and patch the query/RLS if not:
+- **Student dashboard** — Fresh Courses, Announcements feed, Opportunities widget, Featured Tutors.
+- **Course page (`/course/:id`)** — quizzes list, study materials, curriculum, survival kit, tutor card.
+- **Tutor dashboard** — each tutor sees their course, quizzes, students count, earnings (₦0).
+- **Admin dashboard** — sees 3 tutors approved, 3 courses, 5 opportunities, audit log entry.
+- **Opportunities page (`/opportunities`)** — 5 cards render with bookmarking working.
 
-**Top of dashboard (priority order, mobile-first)**
-1. `MobileGreetingHeader` (existing) — avatar + greeting + streak/level/wallet pills.
-2. `TokenBalanceCard` (existing, upgraded) — wallet balance + free-uses row + Top-up CTA. Becomes the visual anchor: bigger gold-gradient surface, profile avatar inset on the left, clear ₦-value subtitle, single primary CTA.
-3. `StudyPackHero` (existing) — keep.
-4. `QuickActions` 6-tile grid — audit spacing so it's 2 cols on ≤360 px (currently feels cramped on 370 px).
+## 5. Implementation steps
 
-**Responsive sweep (every breakpoint from 320 → 1920)**
-- Container padding: `px-4` mobile → `px-6` sm → `px-8` lg. Currently inconsistent.
-- All cards use `rounded-2xl` + `shadow-[0_4px_20px_-8px_rgba(180,140,40,0.18)]` for a uniform gold-tinted depth.
-- Touch targets ≥44 px on mobile (audit `QuickActions`, pill buttons, header icon buttons — most are fine, a few are 36-40 px).
-- Bottom nav: confirm safe-area inset padding so FAB doesn't clip on iPhone notches.
-- `/wallet`, `/subscription` (→ redirect), `/install`, `/notifications` all get the same container rhythm.
+1. Migration: add `is_official boolean default false` to `profiles` (so we can badge official accounts) and a `seed_official_marker` flag we can re-run idempotently.
+2. New edge function `seed-official` (admin-only invoke, gated by a one-time `SEED_TOKEN` secret) that:
+   - Calls `supabase.auth.admin.createUser` for the 4 accounts (email_confirm=true).
+   - Generates strong passwords, returns them in the JSON response **once**.
+   - Inserts profiles, user_roles, tutor_applications (approved), tutor_public_profiles, tutor_storefronts, tutor_onboarding rows.
+3. After accounts exist, run a single `supabase--insert` batch to seed:
+   - 3 courses, 6 quizzes + 60 questions, 3 study materials, 3 curricula + 12 topics, 3 survival kits, 3 announcements, 5 opportunities.
+4. Run the function once via Test tab, capture passwords, present them to the user in chat in a copy-block, instruct user to rotate after first login.
+5. Light UI: add a subtle gold "Official" badge on tutor cards where `is_official=true`.
+6. Audit each dashboard route in the preview, fix any missing query/RLS.
 
-**Beautify, lightly**
-- Gold gradient refinement on `TokenBalanceCard` (subtle radial highlight top-left).
-- Soft entrance stagger (framer-motion, already in the project) on dashboard sections — 60 ms delay each, max 240 ms total. No new dependencies.
-- Empty states on `/wallet` transactions get a small illustration + "Top up to get started" CTA.
+## Out of scope
+- No payment, no new design system, no notifications redesign — purely seeding + minimum wiring.
+- Real scholarship deadlines are point-in-time; admin can later edit them in `/admin/opportunities`.
 
-**Not touching:** splash, onboarding, tutor pages, admin — those are stable per memory and out of scope.
+## Confirm before I build
+- ✅ Use Gmail `+aliases` for the 3 tutor accounts? (alternative: all 4 share one email — not possible, Supabase requires unique emails)
+- ✅ FUTA 100L MTH101 / PHY101 / CHM101 as the 3 launch courses?
+- ✅ Print generated passwords in chat once (you save them, then rotate)?
 
----
-
-## Technical details
-
-- **One DB migration:** update `consume_ai_token` RPC only. No new tables, no schema changes.
-- **No new edge functions.** `flutterwave-*` and email functions are unchanged in behavior (signup template body changes, that's it).
-- **Files touched (~9):**
-  - `supabase/migrations/<new>.sql`
-  - `src/hooks/usePremium.ts`
-  - `src/components/student/dashboard/TokenBalanceCard.tsx`
-  - `src/components/student/MobileGreetingHeader.tsx`
-  - `src/components/student/SoftPaywallSheet.tsx`
-  - `src/pages/student/Wallet.tsx`
-  - `src/pages/student/StudentDashboard.tsx` (spacing + stagger)
-  - `src/pages/Auth.tsx` (magic-link UX)
-  - `supabase/functions/_shared/email-templates/signup.tsx`
-- **Memory update:** revise Core rule — "Prepaid Wallet" now reads "3 free AI actions/day + wallet (₦50 = 1 token, min top-up ₦250)."
-
----
-
-## Out of scope (call out so you can confirm)
-
-- Bonus tokens on bigger top-ups, referral token rewards, auto-recharge — not in this round.
-- Tutor revenue share on token spend — stays 100% platform per earlier decision.
-- Any redesign of splash, onboarding, tutor or admin areas.
-
-Reply **"go"** to build, or tell me what to change (e.g. "make it 5 free not 3", "drop the come-back-tomorrow CTA", "keep OTP code option visible").
+Reply "go" to build, or tell me what to swap.
