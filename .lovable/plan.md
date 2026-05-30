@@ -1,106 +1,136 @@
 
-# Phase 7B.1 — Payments, Free/Pro gating, and launch seed
+# Simpler Monetization: 5 Daily Credits → ₦2,000/month Pro
 
-This is the first of four sub-phases. We get money + accounts + content live first, then move to onboarding/empty states (7B.2), referrals/notifications/trust (7B.3), and analytics/offline/polish (7B.4).
-
----
-
-## 1. Free vs Pro model (final)
-
-**Free tier (calibrated to convert, not to frustrate):**
-- Unlimited: quizzes, reading materials, flashcards review (SRS), leaderboards, community, courses browsing.
-- **10 AI tokens per day** shared bucket across:
-  - 1 token = 1 AI explanation / 1 summary paragraph / 1 TTS audio request / 1 AI study pack section / 1 tutor AI chat reply.
-- Hits zero → soft paywall sheet: *"You've used today's 10 free AI tokens. Upgrade to Pro for unlimited AI, or come back tomorrow."*
-- Resets at 00:00 WAT.
-
-**Pro tier (₦2,500 / month — single plan to start):**
-- Unlimited AI everything, audio downloads, advanced analytics, priority tutor chat, badge on profile.
-- 30 days from activation date.
-
-This gives students real value free (they can study all day) but the AI features — which are the magic — create the upgrade pressure.
+We're replacing the token-pack model with a clean, single-decision Freemium flow. One price. One unlock. Strong nudges from teaser previews. Admin gets clear payment visibility.
 
 ---
 
-## 2. Payment flow — Paystack (automatic) + manual fallback
+## 1. The Model (locked, simple)
 
-### Primary: Paystack inline checkout
-1. Student taps **Upgrade to Pro** on `/subscription`.
-2. Paystack popup opens (card / bank transfer / USSD / Opay / Moniepoint).
-3. On success, Paystack calls our `paystack-webhook` edge function.
-4. Webhook verifies signature with `PAYSTACK_SECRET_KEY`, calls `activate_pro_subscription` RPC.
-5. User's `plan_id` flips to `pro`, `expires_at = now() + 30 days`. UI updates in real-time via Supabase subscription.
-6. Receipt email sent via Resend.
+**Free tier — every student, every day:**
+- **5 credits per day**, auto-reset at 00:00 WAT.
+- 1 credit = 1 "AI action" (any of): AI explanation, AI summary, TTS audio, AI quiz generation, AI tutor reply, study pack section, flashcard generation, mock exam grading, study coach reply.
+- Unlimited (no credit): browse courses, take existing quizzes, leaderboards, SRS review, bookmarks, community, profile.
+- When credits hit 0 → **Soft paywall sheet**: "You've used today's 5 free credits. Upgrade to Pro for unlimited access — or come back tomorrow."
 
-**Why Paystack over Moniepoint manual:** instant activation, no admin work per payment, students trust the in-app flow, ~1.5% fee is worth it. Your Moniepoint account `8145472586` becomes a **settlement account** — Paystack deposits the net amount there automatically.
+**Pro tier — ₦2,000 / month:**
+- Unlimited everything (all AI, audio, mock exams, premium tutor content, live sessions, study coach).
+- Pro badge on profile + leaderboard.
+- Priority tutor chat.
+- Audio download.
+- 30 days from activation.
 
-### Fallback: Manual transfer + receipt upload
-For students with card issues:
-- "Pay by bank transfer" button → shows your Moniepoint details (`8145472586 Joshua Abayomi`).
-- Student uploads receipt screenshot to `payment-proofs` bucket.
-- Admin sees pending requests in `/admin/payments`, can **Approve** (activates Pro 30 days) or **Reject** (with reason).
-- Already half-built (`payment_requests` table + `SubmitPaymentDialog` exist) — we just wire admin actions + notifications.
-
----
-
-## 3. Seed data (combining your requests = heavy realistic seed)
-
-You'll get:
-- **1 admin account** — you give me email + password before I run the seed.
-- **4 approved tutor accounts** with TUT-XXXX codes, profile photos, bios.
-- **1 Pro demo student** (`plan_id=pro`, expires in 30 days) so you can showcase the Pro experience.
-- **3 demo free students** to populate leaderboard.
-- **12 FUTA courses** spread across faculties (Computing, Engineering, Sciences, Management).
-- **60 quizzes** (5 per course), each with 8–15 MCQs, mix of difficulties.
-- **~40 flashcard decks** tied to courses.
-- **6 sample audio lessons** (short TTS-generated).
-- **Seeded activity** — fake quiz attempts spread over the last 14 days so the leaderboard and activity feed look alive on day one.
-
-Done via one idempotent `seed-launch-data` edge function so it's safe to re-run.
+**Why this works:**
+- Single price = zero decision fatigue.
+- 5/day = enough to *taste* the magic, not enough to *study* on. Drives conversion.
+- ₦2,000 is below the psychological ₦2,500 threshold and a clean round number for Nigerian students.
 
 ---
 
-## 4. Implementation steps
+## 2. Teaser Previews (the "clue" you asked for)
 
-### Database (single migration)
-- Add `subscription_plans` row: `pro` at `250000` kobo (₦2,500) NGN, 30-day cycle.
-- Update `user_subscriptions` to support `pro` plan.
-- New table `payment_transactions` (paystack reference, amount, status, user_id, raw payload).
-- New columns on `profiles`: `daily_ai_tokens_used`, `daily_ai_tokens_reset_at`.
-- RPC `consume_ai_token(_user_id, _kind)` — atomically increments, returns `{allowed, used, remaining}`. Pro users always get `allowed=true`.
-- RPC `activate_pro_subscription(_user_id, _months, _source, _reference)` — used by webhook and admin approval.
-- RPC `admin_change_plan(_user_id, _plan, _days)` — admin override (for refunds, gifts, manual approvals). Audit-logged.
-- Trigger: nightly reset of `daily_ai_tokens_used`.
+For every paid action, free users (out of credits OR locked feature) see a **preview before the wall**:
+
+- **Convert notes → audio:** Show first 15 sec of audio playable + waveform + "🔒 Upgrade to Pro to listen to the full 12-minute audio."
+- **AI summary:** Show first paragraph blurred-fade + "🔒 Pro unlocks the full summary (8 more sections)."
+- **AI quiz from notes:** Show 1st question fully + Q2–Q15 blurred + "🔒 Pro unlocks all 15 questions."
+- **AI explanation:** Show first 2 lines + "🔒 Read the full explanation with Pro."
+- **Mock exam:** Show exam metadata (questions, duration, topics) + "🔒 Start exam with Pro."
+- **AI tutor chat:** Show typing indicator + first sentence + "🔒 Continue this conversation with Pro."
+- **Study pack:** Show table of contents + first lesson title only.
+
+Single reusable `<TeaserPaywall>` component handles all of these — content preview slot + frosted/blurred lock overlay + "Upgrade to Pro ₦2,000/mo" CTA + "Maybe later" dismiss.
+
+---
+
+## 3. Admin Payments Visibility
+
+New `/admin/payments` page (admins only) showing:
+- **Stats cards:** Today's revenue, this month's revenue, active Pro subs, churn (expired last 7d).
+- **All payments table** (paginated, searchable, filterable):
+  - Columns: Student name + email, amount, Pro start date, expiry date, payment method (Flutterwave / manual), reference ID, status badge (active / expired / pending / failed / refunded).
+  - Filters: status, date range, method.
+  - Search: by name, email, or reference.
+- **Per-row actions:** View full Flutterwave payload, manually extend (gift days), refund (mark only), resend receipt.
+- **Pending manual transfers section** (existing `payment_requests`): list with receipt thumbnail, Approve / Reject buttons.
+- **Export CSV** for accounting.
+
+All admin actions write to `audit_logs`.
+
+---
+
+## 4. Extra things I'm adding (things you need but didn't ask for)
+
+These are launch-critical and I recommend including now:
+
+1. **3-day Pro trial on signup** — every new student gets 3 days of Pro free, no card. Massive conversion lift; they experience the product at full power before they ever see a paywall.
+2. **Expiry reminders** — push + email at 3 days, 1 day, and on expiry day. "Your Pro expires tomorrow — renew to keep your streak alive."
+3. **Streak-saver hook** — if a Pro user is about to expire and has a 7+ day streak, paywall copy becomes: "Don't lose your 14-day streak. Renew now."
+4. **Referral reward** — student refers a friend who upgrades → both get 7 bonus Pro days. Cheapest acquisition channel for student apps.
+5. **First-month discount** — first purchase only: ₦1,500 instead of ₦2,000 (25% off). Shown on the paywall as crossed-out price. Renewals are full ₦2,000.
+6. **Pro badge on leaderboard & profile** — social proof. Other students see "✨ Pro" next to top scorers and want it.
+7. **Tutor-content carve-out:** tutor-created premium quizzes still split revenue 70% tutor / 30% platform on the Pro subscription pool, distributed monthly based on consumption share. Keeps tutors incentivized.
+8. **Daily credit counter chip** in header for free users: "⚡ 3/5 today" → tap opens explainer + upgrade CTA.
+9. **Receipt email** on every successful payment (Resend).
+10. **Grace period:** 24h after expiry, user is "Pro (grace)" — can still use the app but a banner says "Your Pro expired — renew to avoid losing access tomorrow."
+
+---
+
+## 5. Worked unit economics
+
+Assumptions per Pro user / month:
+- Revenue: **₦2,000** (~$1.30)
+- Costs:
+  - Flutterwave fee (~1.4% + ₦100 capped at ₦2,000): **~₦128**
+  - AI Gateway (heavy user, ~300 actions/mo): **~$0.20 ≈ ₦310**
+  - TTS (Noiz, ~30 audio req/mo): **~$0.06 ≈ ₦95**
+  - Supabase/storage allocation: **~₦50**
+  - **Total cost ≈ ₦583**
+- **Net per Pro user ≈ ₦1,417 (~71% margin)** ✅
+
+At **500 Pro users** → ~₦708,500/month net. At **2,000** → ~₦2.83M/month net.
+
+---
+
+## 6. Technical section (for the build phase)
+
+### Database migration
+- Add `subscription_plans` row: `pro` at ₦2,000 (200000 kobo equivalent — we'll store NGN smallest unit), monthly.
+- Add to `profiles`: `daily_credits_used INT DEFAULT 0`, `daily_credits_reset_at TIMESTAMPTZ`, `trial_ends_at TIMESTAMPTZ`.
+- Rewrite RPC `consume_credit(_kind)` → atomic increment, returns `{allowed, used, remaining, reason}`. Pro + trial users always `allowed=true`.
+- RPC `activate_pro(_user_id, _days, _source, _reference, _amount)` — used by webhook + admin.
+- RPC `admin_extend_pro(_user_id, _days, _reason)` — audit-logged.
+- Nightly trigger: reset `daily_credits_used` at 00:00 WAT.
+- On `auth.users` insert trigger: set `trial_ends_at = now() + 3 days`.
 
 ### Edge functions
-- `paystack-init` — creates a transaction, returns `authorization_url` + `reference`.
-- `paystack-webhook` — verifies HMAC SHA512 with `PAYSTACK_SECRET_KEY`, idempotent on reference, calls `activate_pro_subscription`.
-- `seed-launch-data` — idempotent seed runner.
-
-### Secrets needed (I'll ask via add_secret)
-- `PAYSTACK_SECRET_KEY` (you create at paystack.com → Settings → API Keys)
-- `PAYSTACK_PUBLIC_KEY` (publishable, stored in code)
+- Keep `flutterwave-init` + `flutterwave-webhook` (already working). Webhook now calls `activate_pro` instead of crediting tokens.
+- New `subscription-expiry-reminders` cron (daily) → notifications + email.
+- Deprecate/disable Paddle token-pack flow (keep code, hide UI).
 
 ### Frontend
-- Replace existing `Subscription.tsx` Pro plan card → wire to Paystack inline (`@paystack/inline-js`).
-- Rewrite `usePremium` / `useTokenBalance` to call new RPCs.
-- Hook `consume_ai_token` into every AI call site (AI tutor, summary, TTS, study pack, explanation). If `allowed=false`, open `SoftPaywallSheet`.
-- Add **Pro badge** to profile + leaderboard.
-- New admin page `/admin/payments` — pending receipts list + Approve/Reject buttons + override "Change plan" action per user.
-- Top-bar wallet chip already exists — point it at the new daily-tokens RPC.
+- New `<TeaserPaywall>` component — wraps any locked content with blur + CTA.
+- New `<PaywallSheet>` — full-screen sheet shown on credit exhaustion or feature lock.
+- Rewrite `usePremium` → returns `{ isPro, isTrial, creditsUsed, creditsLeft, requireCredit(kind), requirePro(reason) }`.
+- Replace `useTokenBalance` chip with `<DailyCreditsChip>` (free users) / `<ProBadge>` (Pro users).
+- Wrap all AI action call sites with `requireCredit()` / `requirePro()`.
+- New `/admin/payments` page with stats, table, filters, CSV export.
+- Simplify `/subscription` page: one giant Pro card (₦2,000/mo, first-month ₦1,500), 3-day trial banner if eligible, manual transfer fallback button.
 
 ### Notifications
 - Pro activated → push + email + in-app.
-- Receipt approved/rejected → notification.
-- 3 days before Pro expires → reminder push.
+- 3d / 1d / 0d expiry → push + email.
+- Trial ending in 24h → push.
+- Admin: new payment received → push to admin role.
 
 ---
 
-## 5. What I need from you before I start building
+## 7. What I need from you before building
 
-1. **Admin login** — what email + password should I create the admin account with?
-2. **Paystack account** — sign up at paystack.com (free, 5 minutes), then I'll request `PAYSTACK_SECRET_KEY` via the secret prompt. Your Moniepoint `8145472586` is added inside Paystack as your settlement account.
-3. **Confirm the Pro price** — I've defaulted to **₦2,500/month**. Common alternatives: ₦1,500 (aggressive), ₦3,000 (premium), ₦5,000 (semester pass). Tell me if you want a different number.
-4. **Confirm daily free quota** — I've defaulted to **10 AI tokens/day**. Want it higher (15) or lower (5)?
+1. **Confirm ₦2,000/month** (vs ₦1,500 or ₦2,500).
+2. **Confirm 5 daily credits** (vs 3 or 7).
+3. **Confirm 3-day free Pro trial on signup** — yes/no.
+4. **Confirm first-month discount ₦1,500** — yes/no.
+5. **Confirm referral reward (7 bonus days each)** — yes/no.
 
-Once you confirm those four, I'll switch to build mode and ship 7B.1 end-to-end. Phases 7B.2 → 7B.4 follow after you've tested the money flow with a real student.
+Once you reply to those, I'll switch to build mode and ship the whole thing end-to-end in one go: migration → edge functions → frontend rewrite → admin page → seed → notifications.
