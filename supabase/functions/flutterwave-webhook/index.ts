@@ -73,6 +73,13 @@ Deno.serve(async (req) => {
         _reference: reference,
       })
       if (rpcErr) console.error('activate_pro_subscription error', rpcErr)
+
+      // Mark first purchase used so future checkouts pay full price
+      await admin
+        .from('profiles')
+        .update({ first_purchase_used: true })
+        .eq('id', userId)
+        .eq('first_purchase_used', false)
     } else {
       console.warn('Webhook missing user_id/plan_id in meta', meta)
     }
