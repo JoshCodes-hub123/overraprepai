@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
       })
       .eq('reference', reference)
 
-    const { error: rpcErr } = await admin.rpc('credit_wallet', {
+    const { data: credit, error: rpcErr } = await admin.rpc('credit_wallet', {
       _user_id: userId,
       _tokens: tokens,
       _naira_amount: amountNaira,
@@ -89,6 +89,33 @@ Deno.serve(async (req) => {
       _kind: 'topup',
     })
     if (rpcErr) console.error('credit_wallet error', rpcErr)
+
+    // Fire-and-forget receipt email (don't block webhook ack)
+    try {
+      const { data: prof } = await admin
+        .from('profiles')
+        .select('email, full_name')
+        .eq('id', userId)
+        .maybeSingle()
+      if (prof?.email) {
+        await admin.functions.invoke('send-transactional-email', {
+          body: {
+            templateName: 'topup-receipt',
+            recipientEmail: prof.email,
+            idempotencyKey: `topup-receipt-flw_${flwTxId}`,
+            templateData: {
+              name: (prof.full_name || '').split(' ')[0] || null,
+              amount_naira: amountNaira,
+              tokens,
+              balance: (credit as any)?.balance ?? null,
+              reference,
+            },
+          },
+        })
+      }
+    } catch (mailErr) {
+      console.error('topup receipt email error', mailErr)
+    }
 
     return new Response('ok', { status: 200 })
   } catch (e: any) {

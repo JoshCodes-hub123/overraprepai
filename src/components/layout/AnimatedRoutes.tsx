@@ -137,6 +137,7 @@ const Review = lazy(() => import("@/pages/student/Review"));
 const Sessions = lazy(() => import("@/pages/sessions/Sessions"));
 const TutorSessions = lazy(() => import("@/pages/tutor/TutorSessions"));
 const Install = lazy(() => import("@/pages/Install"));
+const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
 const MockExams = lazy(() => import("@/pages/exams/MockExams"));
 const MockExamTake = lazy(() => import("@/pages/exams/MockExamTake"));
 const MockExamResult = lazy(() => import("@/pages/exams/MockExamResult"));
@@ -532,6 +533,7 @@ export const AnimatedRoutes = () => {
           <Route path="/sessions" element={<PageTransition><Sessions /></PageTransition>} />
           <Route path="/tutor/sessions" element={<PageTransition><TutorSessions /></PageTransition>} />
           <Route path="/install" element={<PageTransition><Install /></PageTransition>} />
+          <Route path="/unsubscribe" element={<PageTransition><Unsubscribe /></PageTransition>} />
           <Route path="/exams" element={<PageTransition><MockExams /></PageTransition>} />
           <Route path="/exams/:examId/take" element={<PageTransition><MockExamTake /></PageTransition>} />
           <Route path="/exams/:examId/result/:attemptId" element={<PageTransition><MockExamResult /></PageTransition>} />
