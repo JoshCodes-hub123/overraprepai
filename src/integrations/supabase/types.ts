@@ -3276,6 +3276,7 @@ export type Database = {
           gender: string | null
           hobbies: string[] | null
           id: string
+          is_official: boolean
           level: string | null
           linkedin_handle: string | null
           matric_no: string | null
@@ -3321,6 +3322,7 @@ export type Database = {
           gender?: string | null
           hobbies?: string[] | null
           id: string
+          is_official?: boolean
           level?: string | null
           linkedin_handle?: string | null
           matric_no?: string | null
@@ -3366,6 +3368,7 @@ export type Database = {
           gender?: string | null
           hobbies?: string[] | null
           id?: string
+          is_official?: boolean
           level?: string | null
           linkedin_handle?: string | null
           matric_no?: string | null
@@ -7416,6 +7419,7 @@ export type Database = {
           gender: string | null
           hobbies: string[] | null
           id: string
+          is_official: boolean
           level: string | null
           linkedin_handle: string | null
           matric_no: string | null
