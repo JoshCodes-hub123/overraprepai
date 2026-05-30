@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
     };
     if (acc.role === "tutor") {
       profilePatch.tutor_code = acc.tutor_code;
-      profilePatch.tutor_specialization = acc.specialization;
+      profilePatch.tutor_specialization = "university";
       profilePatch.tutor_status = "approved";
       profilePatch.academic_path = "university";
       profilePatch.faculty = "Faculty of Science";
