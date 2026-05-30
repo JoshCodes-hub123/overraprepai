@@ -42,7 +42,7 @@ const AdminPayments = () => {
         .limit(500);
       const ids = Array.from(new Set((rows ?? []).map((r: any) => r.user_id as string))) as string[];
       const { data: profs } = ids.length
-        ? await supabase.from("profiles").select("id,full_name,email,ai_token_balance").in("id", ids)
+        ? await (supabase as any).rpc("admin_get_user_wallets", { _ids: ids })
         : { data: [] as any[] };
       const map = new Map((profs ?? []).map((p: any) => [p.id, p]));
       return (rows ?? []).map((r: any) => ({ ...r, profile: map.get(r.user_id) }));
