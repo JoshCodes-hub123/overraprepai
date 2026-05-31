@@ -30,6 +30,7 @@ export default function Opportunities() {
     : (primaryRole as any) === "school_owner" ? "/school/dashboard"
     : (primaryRole as any) === "parent" ? "/parent/dashboard"
     : "/student/dashboard";
+  const [cat, setCat] = useState<OpportunityCategory | "all">("all");
   const [savedOnly, setSavedOnly] = useState(false);
   const { data: items = [], isLoading } = useOpportunities(
     cat === "all" ? undefined : { category: cat },
