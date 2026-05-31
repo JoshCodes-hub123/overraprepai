@@ -14,6 +14,14 @@ const CAT_LABEL: Record<string, string> = {
 
 export default function Spotlight() {
   const { data: items = [], isLoading } = useSpotlights();
+  const navigate = useNavigate();
+  const { primaryRole } = useAuth();
+  const home =
+    primaryRole === "admin" ? "/admin/dashboard"
+    : primaryRole === "tutor" ? "/tutor/dashboard"
+    : (primaryRole as any) === "school_owner" ? "/school/dashboard"
+    : (primaryRole as any) === "parent" ? "/parent/dashboard"
+    : "/student/dashboard";
 
   return (
     <>
