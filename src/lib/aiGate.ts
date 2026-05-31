@@ -11,6 +11,7 @@
  *   if (!ok) return;          // paywall is already open
  *   await callEdgeFn();
  */
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -85,7 +86,6 @@ export const aiGate = {
   },
 };
 
-import { useEffect, useState } from "react";
 export function useAIGateState() {
   const [s, setS] = useState<GateState>(state);
   useEffect(() => aiGate.subscribe(setS), []);
