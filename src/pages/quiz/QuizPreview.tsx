@@ -210,6 +210,11 @@ const QuizPreview = () => {
   const handlePurchaseSuccess = () => {
     setHasPurchased(true);
     setShowPurchaseDialog(false);
+    // Celebratory unlock toast
+    toast.success("🎉 You have unlocked this quiz — go on to succeed!", {
+      duration: 3200,
+      description: "Starting now…",
+    });
     // Refresh wallet
     if (user) {
       supabase
@@ -221,6 +226,12 @@ const QuizPreview = () => {
           if (data) setWallet(data);
         });
     }
+    // Auto-launch the quiz
+    setTimeout(() => {
+      if (!quiz) return;
+      if (quiz.is_simulation) navigate(`/quiz/${quiz.id}/simulation`);
+      else navigate(`/quiz/${quiz.id}/practice`);
+    }, 900);
   };
 
   if (isLoading || authLoading) {
