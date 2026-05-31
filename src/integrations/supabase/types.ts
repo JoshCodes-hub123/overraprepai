@@ -1631,6 +1631,7 @@ export type Database = {
           name: string
           path_type: Database["public"]["Enums"]["academic_path"]
           university: string
+          university_code: string | null
           updated_at: string
         }
         Insert: {
@@ -1646,6 +1647,7 @@ export type Database = {
           name: string
           path_type?: Database["public"]["Enums"]["academic_path"]
           university?: string
+          university_code?: string | null
           updated_at?: string
         }
         Update: {
@@ -1661,9 +1663,18 @@ export type Database = {
           name?: string
           path_type?: Database["public"]["Enums"]["academic_path"]
           university?: string
+          university_code?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "courses_university_code_fkey"
+            columns: ["university_code"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       device_login_history: {
         Row: {
@@ -2722,6 +2733,7 @@ export type Database = {
           status: Database["public"]["Enums"]["opportunity_status"]
           title: string
           university: string | null
+          university_code: string | null
           updated_at: string
           view_count: number
         }
@@ -2740,6 +2752,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["opportunity_status"]
           title: string
           university?: string | null
+          university_code?: string | null
           updated_at?: string
           view_count?: number
         }
@@ -2758,10 +2771,19 @@ export type Database = {
           status?: Database["public"]["Enums"]["opportunity_status"]
           title?: string
           university?: string | null
+          university_code?: string | null
           updated_at?: string
           view_count?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_university_code_fkey"
+            columns: ["university_code"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       opportunity_applications: {
         Row: {
@@ -3277,6 +3299,7 @@ export type Database = {
           hobbies: string[] | null
           id: string
           is_official: boolean
+          is_pending_verification: boolean
           level: string | null
           linkedin_handle: string | null
           matric_no: string | null
@@ -3323,6 +3346,7 @@ export type Database = {
           hobbies?: string[] | null
           id: string
           is_official?: boolean
+          is_pending_verification?: boolean
           level?: string | null
           linkedin_handle?: string | null
           matric_no?: string | null
@@ -3369,6 +3393,7 @@ export type Database = {
           hobbies?: string[] | null
           id?: string
           is_official?: boolean
+          is_pending_verification?: boolean
           level?: string | null
           linkedin_handle?: string | null
           matric_no?: string | null
@@ -3862,6 +3887,7 @@ export type Database = {
           token_cost: number
           topic_id: string | null
           tutor_id: string | null
+          university_code: string | null
         }
         Insert: {
           course_id: string
@@ -3880,6 +3906,7 @@ export type Database = {
           token_cost?: number
           topic_id?: string | null
           tutor_id?: string | null
+          university_code?: string | null
         }
         Update: {
           course_id?: string
@@ -3898,6 +3925,7 @@ export type Database = {
           token_cost?: number
           topic_id?: string | null
           tutor_id?: string | null
+          university_code?: string | null
         }
         Relationships: [
           {
@@ -3934,6 +3962,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "topics"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quizzes_university_code_fkey"
+            columns: ["university_code"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["code"]
           },
         ]
       }
@@ -6255,6 +6290,7 @@ export type Database = {
           slug: string | null
           title: string
           tutor_id: string
+          university_code: string | null
           updated_at: string
         }
         Insert: {
@@ -6267,6 +6303,7 @@ export type Database = {
           slug?: string | null
           title: string
           tutor_id: string
+          university_code?: string | null
           updated_at?: string
         }
         Update: {
@@ -6279,9 +6316,18 @@ export type Database = {
           slug?: string | null
           title?: string
           tutor_id?: string
+          university_code?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tutor_curricula_university_code_fkey"
+            columns: ["university_code"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       tutor_curriculum_materials: {
         Row: {
@@ -6341,6 +6387,7 @@ export type Database = {
           order_index: number
           summary: string | null
           title: string
+          university_code: string | null
           updated_at: string
         }
         Insert: {
@@ -6350,6 +6397,7 @@ export type Database = {
           order_index?: number
           summary?: string | null
           title: string
+          university_code?: string | null
           updated_at?: string
         }
         Update: {
@@ -6359,6 +6407,7 @@ export type Database = {
           order_index?: number
           summary?: string | null
           title?: string
+          university_code?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -6368,6 +6417,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tutor_curricula"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tutor_curriculum_topics_university_code_fkey"
+            columns: ["university_code"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["code"]
           },
         ]
       }
@@ -6592,6 +6648,7 @@ export type Database = {
           is_published: boolean
           slug: string
           tutor_id: string
+          university_code: string | null
           updated_at: string
         }
         Insert: {
@@ -6602,6 +6659,7 @@ export type Database = {
           is_published?: boolean
           slug: string
           tutor_id: string
+          university_code?: string | null
           updated_at?: string
         }
         Update: {
@@ -6612,7 +6670,91 @@ export type Database = {
           is_published?: boolean
           slug?: string
           tutor_id?: string
+          university_code?: string | null
           updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tutor_storefronts_university_code_fkey"
+            columns: ["university_code"]
+            isOneToOne: false
+            referencedRelation: "universities"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      universities: {
+        Row: {
+          city: string | null
+          code: string
+          created_at: string
+          is_active: boolean
+          name: string
+          short_name: string | null
+          state: string | null
+          type: string | null
+          website: string | null
+        }
+        Insert: {
+          city?: string | null
+          code: string
+          created_at?: string
+          is_active?: boolean
+          name: string
+          short_name?: string | null
+          state?: string | null
+          type?: string | null
+          website?: string | null
+        }
+        Update: {
+          city?: string | null
+          code?: string
+          created_at?: string
+          is_active?: boolean
+          name?: string
+          short_name?: string | null
+          state?: string | null
+          type?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      university_requests: {
+        Row: {
+          city: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          requested_by: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          website: string | null
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          requested_by: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          website?: string | null
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          requested_by?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          website?: string | null
         }
         Relationships: []
       }
@@ -7429,6 +7571,7 @@ export type Database = {
           hobbies: string[] | null
           id: string
           is_official: boolean
+          is_pending_verification: boolean
           level: string | null
           linkedin_handle: string | null
           matric_no: string | null
@@ -7728,6 +7871,7 @@ export type Database = {
           status: Database["public"]["Enums"]["opportunity_status"]
           title: string
           university: string | null
+          university_code: string | null
           updated_at: string
           view_count: number
         }[]

@@ -7,6 +7,8 @@ import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/reac
 import { BrowserRouter } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import InstallNudge from "@/components/system/InstallNudge";
+import GlobalPaywall from "@/components/system/GlobalPaywall";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import AnimatedRoutes from "@/components/layout/AnimatedRoutes";
 import BiometricUnlock from "@/components/native/BiometricUnlock";
@@ -117,6 +119,7 @@ const App = () => {
           <Toaster />
           <Sonner />
           <InstallPrompt />
+          <GlobalPaywall />
           <OfflineBanner />
           <NetworkStatus />
             <UpdatePrompt />
@@ -131,6 +134,7 @@ const App = () => {
               <BiometricUnlock>
                 <PaymentTestModeBanner />
                 <EmailVerificationBanner />
+                <InstallNudge />
                 
                 <main id="main-content" className="pb-16 md:pb-0">
                   <AnimatedRoutes />
