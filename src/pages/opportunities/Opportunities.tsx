@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { ArrowLeft, Bookmark } from "lucide-react";
 import { SEO } from "@/components/seo/SEO";
 import { useOpportunities, useOpportunityBookmarks, useOpportunitiesRealtime, type OpportunityCategory } from "@/hooks/useOpportunities";
