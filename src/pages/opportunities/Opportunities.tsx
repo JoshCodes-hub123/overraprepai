@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { ArrowLeft, Bookmark } from "lucide-react";
 import { SEO } from "@/components/seo/SEO";
 import { useOpportunities, useOpportunityBookmarks, useOpportunitiesRealtime, type OpportunityCategory } from "@/hooks/useOpportunities";
@@ -21,6 +22,14 @@ const CATEGORIES: { id: OpportunityCategory | "all"; label: string }[] = [
 
 export default function Opportunities() {
   useOpportunitiesRealtime();
+  const navigate = useNavigate();
+  const { primaryRole } = useAuth();
+  const home =
+    primaryRole === "admin" ? "/admin/dashboard"
+    : primaryRole === "tutor" ? "/tutor/dashboard"
+    : (primaryRole as any) === "school_owner" ? "/school/dashboard"
+    : (primaryRole as any) === "parent" ? "/parent/dashboard"
+    : "/student/dashboard";
   const [cat, setCat] = useState<OpportunityCategory | "all">("all");
   const [savedOnly, setSavedOnly] = useState(false);
   const { data: items = [], isLoading } = useOpportunities(
@@ -35,7 +44,7 @@ export default function Opportunities() {
       <div className="min-h-screen bg-background">
         <header className="bg-card border-b border-amber-100/70 sticky top-0 z-30">
           <div className="container mx-auto px-4 h-14 flex items-center gap-3">
-            <Link to="/student/dashboard" className="text-muted-foreground"><ArrowLeft className="h-5 w-5" /></Link>
+            <button onClick={() => navigate(home)} className="text-muted-foreground" aria-label="Back to dashboard"><ArrowLeft className="h-5 w-5" /></button>
             <h1 className="font-display text-base font-bold">Opportunity Hub</h1>
             <div className="ml-auto">
               <SuggestOpportunityDialog />
