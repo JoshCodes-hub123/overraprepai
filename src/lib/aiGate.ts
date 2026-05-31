@@ -30,7 +30,7 @@ export const aiGate = {
   subscribe(l: Listener) {
     listeners.add(l);
     l(state);
-    return () => listeners.delete(l);
+    return () => { listeners.delete(l); };
   },
   setOpen(open: boolean) {
     state = { ...state, open };
