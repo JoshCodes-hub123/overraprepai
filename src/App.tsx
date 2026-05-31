@@ -119,7 +119,6 @@ const App = () => {
           <Toaster />
           <Sonner />
           <InstallPrompt />
-          <GlobalPaywall />
           <OfflineBanner />
           <NetworkStatus />
             <UpdatePrompt />
@@ -135,6 +134,7 @@ const App = () => {
                 <PaymentTestModeBanner />
                 <EmailVerificationBanner />
                 <InstallNudge />
+                <GlobalPaywall />
                 
                 <main id="main-content" className="pb-16 md:pb-0">
                   <AnimatedRoutes />
