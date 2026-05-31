@@ -1,84 +1,102 @@
 
-# Launch polish: Official badge + Opportunities glow-up + Dashboard smoke-test
+# Next Milestone: Token Paywall, Open Universities & Install Push
 
-Four shipped outcomes, in this order. No business-logic or token changes — pure frontend/presentation + a tiny realtime ticker query.
-
----
-
-## 1. Official badge (gold, everywhere it matters)
-
-Render a gold "Official" badge anywhere a profile surfaces, gated by `profiles.is_official = true` (already in DB).
-
-- **New component** `src/components/profile/OfficialBadge.tsx` — gold gradient pill, `Verified` (lucide BadgeCheck) icon, sizes `xs | sm | md`, matches the existing `PremiumBadge` visual language but in OverraPrep gold (no purple).
-- **Wire into**:
-  - `PublicProfile`, `EditProfile` header
-  - Tutor cards: `TutorAttribution`, `FavoriteTutors`, `StorefrontPublic`, `CourseHub` tutor strip
-  - Quiz / material author lines wherever `profile.full_name` is rendered
-  - Announcement author chip
-  - Chat / DM author names in `ThreadView` and `Inbox`
-- A single `useIsOfficial(userId)` hook reads from a memoized React Query cache so we don't N+1.
+Five focused workstreams shipped together so the next publish is a real upgrade — not just polish.
 
 ---
 
-## 2. Opportunity Hub — make it a place tutors and partners want to be featured
+## 1. Phase 10.1 — Wire the Token Paywall into every AI action (priority #1)
 
-Treat `/opportunities` and `/opportunities/:id` as the marquee surface.
+The `SoftPaywallSheet` and `TokenBalanceCard` exist but no AI action actually opens the sheet. We'll add a single shared hook and wire it everywhere AI is consumed.
 
-### `/opportunities` (list)
-- Editorial hero band at the top: large display headline ("Scholarships, internships & competitions, curated for Nigerian students."), soft gold gradient with subtle noise texture, count badge ("12 live this week"), and a primary "Submit your program" CTA → opens existing `SuggestOpportunityDialog`.
-- Featured rail: top 3 opportunities by `deadline ASC` rendered as large bento cards with cover image, category chip, organization wordmark, deadline countdown, and amount/level chips.
-- Category chips become pill segmented control (sticky on scroll), with counts per category.
-- Cards: upgrade `OpportunityCard` to glass surface, taller cover with gradient scrim, deadline pill in top-right (green > 14 days, amber 3–14, red < 3), bookmark heart, "New" gold badge for `created_at < 48h`, and a hover lift.
-- Empty/saved states get illustrated gold icons.
+- New hook `useAIGate()` that wraps the existing `consume_ai_token(_kind)` RPC:
+  - Spends free daily use first, then a wallet token.
+  - On `{ allowed: false }` → opens `SoftPaywallSheet` with the live "resets in Xh Ym" countdown.
+  - Returns a `gate(kind, fn)` helper so call sites just do `await gate('ai_chat', () => callEdgeFn())`.
+- Wire `useAIGate` into:
+  - AI Tutor chat (`ai-tutor-chat`)
+  - Quiz "Explain answer" (`ai-explanation`)
+  - Audio Learning / TTS (`text-to-speech`)
+  - Chat with Notes (`chat-with-notes`)
+  - Summarize material / thread (`summarize-material`, `summarize-thread`)
+  - Study Coach (`study-coach`), Library AI (`library-ai`), Theory hints/eval
+- Every dashboard header + mobile greeting already shows `{balance} · {freeLeft}/3 free`. We'll make the pill open `/wallet` on tap and pulse gold for 1s after each consumption so students *see* the meter move.
+- Add a 1-time onboarding bubble: "You get 3 free AI uses every day. Top up only when you need more."
 
-### `/opportunities/:id` (detail)
-- Magazine layout: full-bleed cover (with `object-cover` blur scrim fallback when missing), breadcrumb back, sticky right-rail "Apply" card with deadline countdown, eligibility checklist (uses existing `recommend_opportunities` match signals to show ✅ "Matches your department", etc.), share-to-WhatsApp, copy-link.
-- Body uses prose typography (Inter), pull-quote treatment for organization mission, related opportunities at bottom.
-- "Posted by OverraPrep ✓" line uses the new OfficialBadge.
+## 2. Open universities to ALL Nigerian schools
 
-### Dashboard preview (`OpportunityHubPreview`)
-- Promote to a richer cardset: keep small footprint but add hero card + 3 mini cards layout on `sm:` and up.
+Today `universities.ts` only ships FUTA + OAU. We'll open it up without breaking existing scoping.
+
+- Replace the hard-coded map with a database-backed `universities` table seeded with **~170 Nigerian universities** (federal, state, private — code + name + city + type).
+- Onboarding `ChooseUniversity.tsx`:
+  - Searchable dropdown of every university.
+  - "My school isn't listed → Request it" path opens a tiny form (name, city, optional website). Saves to a new `university_requests` table with status `pending`. Student is set to that university with `is_pending_verification = true` so they can still use the app while admin reviews.
+- Faculty/Department steps gracefully fall back to free-text entry when a school has no curated faculty list yet (most won't on day 1). Admins can fill curated lists later from `/admin/universities`.
+- New admin page `/admin/universities` to approve requests, edit names, add faculties/departments.
+
+## 3. Per-school resources & batching (equal access for every uni)
+
+Tutors and admins should be able to create resources scoped to their school, and students should see the school batch on each course/resource.
+
+- Every content table that already has a `university` text field (courses, quizzes, tutor_curricula, opportunities, announcements) becomes a real FK to `universities.code`. Existing FUTA/OAU rows are preserved.
+- New helper `useUniversityScope()` returns the student's university; every "My Courses", "Library", "Audio Learning", "Course Hub", "Opportunities" list filters by it by default with a "Show all universities" toggle for cross-school browsing.
+- New badge component `<UniBadge code="FUTA" />` (gold pill with school short code) shown on every:
+  - Course card
+  - Tutor profile / Storefront
+  - Opportunity card
+  - Announcement
+  - Quiz preview
+- Tutor dashboard "Create resource" forms (`quiz`, `curriculum`, `material`, `opportunity`) auto-default to the tutor's primary school and let them multi-select extra schools if they teach across campuses. Admins can target any school.
+- Admins get a "Switch active school context" picker in `/admin` so they can curate per-university content without changing their own profile.
+
+## 4. Constant "Install the app" push
+
+Make install impossible to ignore without being spammy.
+
+- Global `InstallNudge` banner (slim gold bar at top of dashboard) shown to non-installed users — dismiss for 7 days, reappears once.
+- Floating "Get the app" CTA on every public page (`/`, `/storefront/:tutor`, `/opportunities`, `/quiz/:id`) that opens `/install` in a sheet.
+- After every quiz completion → toast "Save your streak forever. Install OverraPrep →".
+- After top-up success → toast "Tip: install the app so your wallet is one tap away".
+- Add native `beforeinstallprompt` capture + Android/iOS-specific instructions on `/install` (already partially there — we'll polish copy and add a 30s screen-recorded GIF preview).
+
+## 5. Official tutor + admin credentials
+
+- Run the existing `seed-official` edge function (already in repo) to provision the **OverraPrep Official Tutor** and **Admin** accounts.
+- Capture the generated email + temporary password in the function response and **email them to you** via the existing transactional pipeline (one-time delivery, marked sensitive).
+- You'll be asked for the destination email address as the very first build step.
 
 ---
 
-## 3. Live opportunities ticker (the "scrolling notifications" the user asked for)
+## Technical Details (skip if not interested)
 
-A single horizontal marquee strip the student sees on:
-- Student dashboard (just below `TokenBalanceCard`)
-- `/opportunities` page top
-
-**Component**: `src/components/opportunities/OpportunityTicker.tsx`
-- Pulls latest 8 published opportunities (`useOpportunities({ limit: 8 })`).
-- Realtime: subscribes to `opportunities` table — new INSERT prepends an item and triggers a gold flash + tiny chime (uses existing celebrate util, no new audio).
-- CSS marquee (Tailwind keyframe `animate-marquee` added to `tailwind.config.ts`), pauses on hover/touch, gradient fade-mask on both edges.
-- Each item: 🎓 icon → "New scholarship · MTN Foundation · closes in 14d" → tap routes to detail.
-- Respects `prefers-reduced-motion` (falls back to static carousel with auto-rotate every 6s).
-
----
-
-## 4. Dashboard smoke-test + polish pass
-
-Walk every dashboard against the seeded data and fix anything that doesn't render cleanly. No business-logic changes — only presentation/empty-state/responsiveness fixes.
-
-Routes audited (370px and 1280px):
-- `/student/dashboard` — confirm `CourseQuizzesSection` shows the 3 seeded courses with the 2 quizzes each; `OpportunityHubPreview` shows the 5 scholarships; new ticker renders.
-- `/tutor/dashboard` (math/physics/chem accounts) — confirm seeded quizzes, curriculum, announcement appear; tutor profile shows OfficialBadge.
-- `/admin/*` — confirm the 4 official accounts visible in users list with badge.
-- `/opportunities` & `/opportunities/:id` — new design.
-- `/courses` & `/courses/:id` — confirm seeded curricula render.
-
-Fixes applied as needed (typical findings: padding on small screens, sticky-header overlap, empty-state copy, broken image fallbacks). Each fix is small and surgical — listed in the final summary.
+- **DB migrations**
+  - `universities (code pk, name, city, type, is_active)` — seeded with full Nigerian list.
+  - `university_requests (id, requested_by, name, city, website, status, reviewed_by, reviewed_at)`.
+  - Add `university_code` FKs on `courses`, `quizzes`, `tutor_curricula`, `opportunities`, `announcements`, `materials` (nullable for cross-school). Backfill from existing `university` text column.
+  - Add `is_pending_verification boolean default false` to `profiles`.
+  - RLS: read `universities` to `anon` + `authenticated`; `university_requests` insert by `authenticated`, read/update by admins only.
+  - GRANTs on all new tables.
+- **Edge fns**
+  - No new fns — all AI gating uses the existing `consume_ai_token` RPC.
+  - Trigger `seed-official` once via curl from the agent; capture creds; send via `send-transactional-email` template `official-credentials`.
+- **Client**
+  - `src/hooks/useAIGate.ts` (new) — single source of truth for free→token→paywall flow.
+  - `src/components/common/UniBadge.tsx` (new).
+  - `src/components/install/InstallNudge.tsx` (new) — uses `localStorage` for 7-day dismiss.
+  - Refactor 8–10 AI call sites to `await gate(...)`.
+  - `ChooseUniversity.tsx` becomes a Combobox + "Request school" sheet.
+  - `/admin/universities` (new admin page).
+- **Verification**
+  - Unit-test `useAIGate` (free → token → paywall transitions).
+  - Smoke: log in as official student → use AI 3× → see paywall → top-up → continue.
+  - Smoke: sign up with a non-FUTA/OAU school → see badge on dashboard → tutor creates a resource for that school → student sees it.
 
 ---
 
-## Out of scope
+## What you'll see after this ships
 
-- No token economy / paywall changes.
-- No new database tables. (`is_official`, `opportunities`, `profiles` already exist.)
-- No new edge functions.
-- No auth changes.
-- No payment changes.
-
-## Deliverable
-
-A short post-flight summary listing: badge component + wire-in sites, opportunities list/detail/ticker files, every smoke-test fix made, and 4 before/after screenshots (dashboard, opportunities list, opportunity detail, tutor profile with badge).
+1. Every AI button respects the 3-free + wallet rule and surfaces the paywall sheet.
+2. Any Nigerian student can pick their actual university at signup (or request a new one).
+3. Tutors/admins create resources tagged to a specific school; students see only their school's content by default with a one-tap "Browse all schools" escape hatch.
+4. Install CTAs everywhere — banner + floating button + post-action toasts.
+5. The official OverraPrep Tutor + Admin credentials land in your inbox.
