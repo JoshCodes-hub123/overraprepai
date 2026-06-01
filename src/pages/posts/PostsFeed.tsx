@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, Heart, MessageCircle, Sparkles } from "lucide-react";
 import { SEO } from "@/components/seo/SEO";
 import { usePosts, type PostType } from "@/hooks/usePosts";
