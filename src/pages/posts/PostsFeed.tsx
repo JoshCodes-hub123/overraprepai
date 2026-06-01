@@ -22,8 +22,15 @@ const typeBadge: Record<PostType, string> = {
 
 export default function PostsFeed() {
   const [tab, setTab] = useState<PostType | "all">("all");
-  const { user } = useAuth();
+  const { user, primaryRole } = useAuth();
   const { data: posts = [], isLoading } = usePosts({ type: tab });
+  const navigate = useNavigate();
+  const home =
+    primaryRole === "admin" ? "/admin/dashboard"
+    : primaryRole === "tutor" ? "/tutor/dashboard"
+    : (primaryRole as any) === "school_owner" ? "/school/dashboard"
+    : (primaryRole as any) === "parent" ? "/parent/dashboard"
+    : "/student/dashboard";
 
   return (
     <>
@@ -31,7 +38,7 @@ export default function PostsFeed() {
       <div className="min-h-screen bg-background">
         <header className="bg-card border-b border-amber-100/70 sticky top-0 z-30">
           <div className="container mx-auto px-4 h-14 flex items-center gap-3">
-            <Link to="/" className="text-muted-foreground"><ArrowLeft className="h-5 w-5" /></Link>
+            <button onClick={() => navigate(home)} className="text-muted-foreground" aria-label="Back to dashboard"><ArrowLeft className="h-5 w-5" /></button>
             <h1 className="font-display text-base font-bold">Stories & Opportunities</h1>
             {user && (
               <Link to="/posts/new"
