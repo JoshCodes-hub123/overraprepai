@@ -51,7 +51,7 @@ const MeHubPage = () => {
           {
             title: "Help & legal",
             tiles: [
-              { to: "/preparation-settings", label: "Study Preferences", description: "Goals & schedule", icon: Settings },
+              { to: "/profile/preparation", label: "Study Preferences", description: "Goals & schedule", icon: Settings },
               { to: "/install", label: "Install App", description: "Add to home screen", icon: BookMarked },
             ],
           },

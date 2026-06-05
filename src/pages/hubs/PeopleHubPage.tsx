@@ -20,7 +20,7 @@ const PeopleHubPage = () => (
       {
         title: "Talk & share",
         tiles: [
-          { to: "/inbox", label: "Messages", description: "Direct chats", icon: MessageCircle },
+          { to: "/chat", label: "Messages", description: "Direct chats", icon: MessageCircle },
           { to: "/feed", label: "Feed", description: "Posts from students", icon: Newspaper },
           { to: "/qa", label: "Q&A Board", description: "Ask anything", icon: HelpCircle },
           { to: "/sessions", label: "Live Sessions", description: "Join a class", icon: Video },
