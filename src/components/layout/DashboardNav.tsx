@@ -92,10 +92,7 @@ export const DashboardNav = ({ role }: DashboardNavProps) => {
   // for students so the app no longer shows two competing navigations.
   if (role === "student") return null;
 
-  const links = linksByRole[role].filter((link) => {
-    if (role !== "student" || !link.paths) return true;
-    return academicPath ? link.paths.includes(academicPath) : true;
-  });
+  const links = linksByRole[role];
 
   return (
     <nav aria-label="Dashboard navigation" className="border-b border-border bg-card/50 backdrop-blur-sm">
