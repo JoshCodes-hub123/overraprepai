@@ -87,6 +87,11 @@ export const DashboardNav = ({ role }: DashboardNavProps) => {
   const { profile } = useAuth();
   const academicPath = profile?.academic_path ?? null;
 
+  // The student experience is now driven entirely by the 5-tab spine
+  // (Home · Study · Practice · People · Me). Collapse the legacy top nav
+  // for students so the app no longer shows two competing navigations.
+  if (role === "student") return null;
+
   const links = linksByRole[role].filter((link) => {
     if (role !== "student" || !link.paths) return true;
     return academicPath ? link.paths.includes(academicPath) : true;
