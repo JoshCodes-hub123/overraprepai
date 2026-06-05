@@ -7,11 +7,11 @@ import { motion } from "framer-motion";
 interface Tab { to: string; label: string; icon: LucideIcon; }
 
 const STUDENT_TABS: Tab[] = [
-  { to: "/student/dashboard", label: "Home",      icon: Home },
-  { to: "/learn",             label: "Learn",     icon: BookOpen },
-  { to: "/student/readiness", label: "Practice",  icon: Target },
-  { to: "/community",         label: "Community", icon: Users },
-  { to: "/profile/edit",      label: "Profile",   icon: User },
+  { to: "/student/dashboard", label: "Home",     icon: Home },
+  { to: "/study",             label: "Study",    icon: BookOpen },
+  { to: "/practice",          label: "Practice", icon: Target },
+  { to: "/people",            label: "People",   icon: Users },
+  { to: "/me",                label: "Me",       icon: User },
 ];
 
 const SCHOOL_TABS: Tab[] = [
@@ -52,7 +52,7 @@ export const BottomTabBar = () => {
   // (so admins/tutors previewing the student dashboard still see the quick footer).
   const isStudentRoute =
     location.pathname.startsWith("/student") ||
-    ["/learn", "/study-packs", "/chat", "/profile/edit", "/notifications", "/library", "/review", "/courses"].some((p) =>
+    ["/learn", "/study", "/practice", "/people", "/me", "/study-packs", "/chat", "/profile/edit", "/notifications", "/library", "/review", "/courses", "/wallet"].some((p) =>
       location.pathname.startsWith(p)
     );
 

@@ -185,6 +185,10 @@ const ActivityFeed = lazy(() => import("@/pages/student/ActivityFeed"));
 const Challenges = lazy(() => import("@/pages/student/Challenges"));
 const AdminChallenges = lazy(() => import("@/pages/admin/AdminChallenges"));
 const StudyMode = lazy(() => import("@/pages/student/StudyMode"));
+const StudyHubPage = lazy(() => import("@/pages/hubs/StudyHubPage"));
+const PracticeHubPage = lazy(() => import("@/pages/hubs/PracticeHubPage"));
+const PeopleHubPage = lazy(() => import("@/pages/hubs/PeopleHubPage"));
+const MeHubPage = lazy(() => import("@/pages/hubs/MeHubPage"));
 import { DashboardSkeleton } from "@/components/student/dashboard/DashboardSkeleton";
 
 export const AnimatedRoutes = () => {
@@ -438,6 +442,10 @@ export const AnimatedRoutes = () => {
           <Route path="/cgpa" element={<PageTransition><CGPACalculator /></PageTransition>} />
           <Route path="/study-packs" element={<PageTransition><StudyPacks /></PageTransition>} />
           <Route path="/learn" element={<PageTransition><Learn /></PageTransition>} />
+          <Route path="/study" element={<PageTransition><StudyHubPage /></PageTransition>} />
+          <Route path="/practice" element={<PageTransition><PracticeHubPage /></PageTransition>} />
+          <Route path="/people" element={<PageTransition><PeopleHubPage /></PageTransition>} />
+          <Route path="/me" element={<PageTransition><MeHubPage /></PageTransition>} />
           <Route path="/library" element={<PageTransition><Library /></PageTransition>} />
           <Route path="/library/analytics" element={<PageTransition><UploadAnalytics /></PageTransition>} />
           <Route path="/library/offline-downloads" element={<PageTransition><OfflineDownloads /></PageTransition>} />
