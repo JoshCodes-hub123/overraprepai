@@ -41,9 +41,8 @@ export function prefetchDashboardNeighbors() {
 export function prefetchStudentDashboard() {
   prefetchRoutes({
     studentDashboard: () => import("@/pages/student/StudentDashboard"),
-    studyPackHero:    () => import("@/components/student/StudyPackHero"),
-    continueLearning: () => import("@/components/student/ContinueLearning"),
-    quickActions:     () => import("@/components/student/dashboard/QuickActionsGrid"),
     topHeader:        () => import("@/components/student/dashboard/TopHeader"),
+    todayCard:        () => import("@/components/student/dashboard/TodayCard"),
+    heroQuest:        () => import("@/components/student/dashboard/HeroQuestCard"),
   });
 }
