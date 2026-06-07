@@ -236,6 +236,37 @@ const EditProfile = () => {
     }
   };
 
+  const handleOrgLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !user) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+    if (file.size > 1024 * 1024) {
+      toast.error("Logo must be less than 1MB");
+      return;
+    }
+    setIsUploadingOrgLogo(true);
+    try {
+      const fileExt = (file.name.split(".").pop() || "png").toLowerCase();
+      const path = `${user.id}/org-logo-${Date.now()}.${fileExt}`;
+      const { error: upErr } = await supabase.storage
+        .from("tutor-profiles")
+        .upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const publicUrl = supabase.storage.from("tutor-profiles").getPublicUrl(path).data.publicUrl;
+      setOrganisationLogoUrl(publicUrl);
+      toast.success("Logo uploaded — remember to Save");
+    } catch (err: any) {
+      console.error("Org logo upload failed", err);
+      toast.error("Failed to upload logo", { description: err?.message });
+    } finally {
+      setIsUploadingOrgLogo(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!user) return;
 
