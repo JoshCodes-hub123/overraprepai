@@ -37,6 +37,7 @@ import {
   X as XIcon,
 } from "lucide-react";
 import { FollowTutorButton } from "@/components/tutor/FollowTutorButton";
+import { TutorOrgBadge } from "@/components/tutor/TutorOrgBadge";
 
 interface Tutor {
   id: string;
@@ -46,6 +47,8 @@ interface Tutor {
   department: string | null;
   bio: string | null;
   specialization: string | null;
+  organisation_name: string | null;
+  organisation_logo_url: string | null;
   quizCount: number;
   studentCount: number;
   averageRating: number;
@@ -138,7 +141,7 @@ const BrowseTutors = () => {
         // Fetch tutor profiles
         const { data: profiles, error: profileError } = await supabase
           .from("profiles")
-          .select("id, full_name, profile_image_url, tutor_code, department, tutor_specialization")
+          .select("id, full_name, profile_image_url, tutor_code, department, tutor_specialization, organisation_name, organisation_logo_url")
           .in("id", tutorIds);
 
         if (profileError) throw profileError;
