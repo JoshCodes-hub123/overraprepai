@@ -25,6 +25,7 @@ import FlashcardProgressStrip from "@/components/courses/FlashcardProgressStrip"
 import { CourseChat } from "@/components/course/CourseChat";
 import { useTrackCourseOpen } from "@/hooks/useRecentlyOpenedCourses";
 import { EmptyState } from "@/components/shell/EmptyState";
+import { QuizCard } from "@/components/quiz/QuizCard";
 
 const VALID_TABS = ["documents", "flashcards", "quizzes", "audio", "ai", "images", "discuss"] as const;
 type TabValue = typeof VALID_TABS[number];
@@ -335,21 +336,11 @@ const CourseHub = () => {
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
                 {quizzes.map((q: any) => (
-                  <Link key={q.id} to={`/quiz/${q.id}`}>
-                    <Card className="p-3 hover:border-amber-300 transition">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-violet-500/10 text-violet-600 flex items-center justify-center shrink-0">
-                          <ClipboardList className="w-5 h-5" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="font-semibold text-sm line-clamp-2">{q.title}</h3>
-                          <p className="text-[11px] text-muted-foreground mt-1">
-                            {q.question_count} questions · {q.duration_minutes} min
-                          </p>
-                        </div>
-                      </div>
-                    </Card>
-                  </Link>
+                  <QuizCard
+                    key={q.id}
+                    quiz={{ ...q, course_code: course.code }}
+                    variant="full"
+                  />
                 ))}
               </div>
             )}
