@@ -387,41 +387,51 @@ const BrowseTutors = () => {
       <DashboardNav role={navRole} />
       <DashboardBreadcrumb role={navRole} />
 
-      <main className="container mx-auto px-4 py-8">
-        {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="font-display text-3xl font-bold text-foreground mb-2">
-            Browse Tutors
-          </h1>
-          <p className="text-muted-foreground">
-            Discover verified tutors and explore their quiz content
-          </p>
-        </div>
+      <main className="container mx-auto px-4 py-6">
+        {/* Premium Hero */}
+        <div className="relative overflow-hidden rounded-3xl border border-amber-200/60 bg-gradient-to-br from-amber-50 via-white to-amber-50/40 p-6 sm:p-8 mb-6 shadow-sm">
+          <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-amber-200/40 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-amber-100/50 blur-3xl pointer-events-none" />
+          <div className="relative">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 border border-amber-200 text-amber-800 text-xs font-semibold mb-3">
+              <GraduationCap className="w-3.5 h-3.5" />
+              Find a Tutor
+            </div>
+            <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-2 leading-tight">
+              {tutors.length > 0 ? `${tutors.length} verified tutor${tutors.length !== 1 ? "s" : ""} ready to help you ace your exams` : "Find a verified tutor"}
+            </h1>
+            <p className="text-sm sm:text-base text-muted-foreground max-w-xl">
+              Search by name, tutor code, department, or course code. Filter by path, price, and rating to find your perfect match.
+            </p>
 
-        {/* Filters */}
-        <div className="bg-card rounded-xl border border-border p-4 mb-6">
-          <div className="flex flex-col lg:flex-row lg:flex-wrap gap-3">
-            <div className="relative flex-1 min-w-[220px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            {/* Big hero search */}
+            <div className="relative mt-5 max-w-2xl">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-amber-700/70" />
               <Input
-                placeholder="Search by name, code, department, or course (e.g. CSC201)..."
+                placeholder="Search tutors, courses (e.g. CSC201), departments..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-12 pr-10 h-12 text-base rounded-2xl border-amber-200/80 bg-white shadow-sm focus-visible:ring-amber-400"
+                autoFocus
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
                   aria-label="Clear search"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted text-muted-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-muted text-muted-foreground"
                 >
-                  <XIcon className="w-3.5 h-3.5" />
+                  <XIcon className="w-4 h-4" />
                 </button>
               )}
             </div>
+          </div>
+        </div>
 
+        {/* Sticky Filters */}
+        <div className="sticky top-16 z-40 -mx-4 px-4 py-3 bg-background/85 backdrop-blur-md border-b border-border/60 mb-5">
+          <div className="flex flex-wrap gap-2">
             <Select value={selectedSpec} onValueChange={setSelectedSpec}>
-              <SelectTrigger className="w-full sm:w-[150px]">
+              <SelectTrigger className="w-auto h-9 rounded-full text-xs">
                 <SelectValue placeholder="Path" />
               </SelectTrigger>
               <SelectContent>
@@ -433,37 +443,33 @@ const BrowseTutors = () => {
             </Select>
 
             <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-              <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectTrigger className="w-auto h-9 rounded-full text-xs">
                 <SelectValue placeholder="All Departments" />
               </SelectTrigger>
               <SelectContent className="max-h-72">
                 <SelectItem value="all">All Departments</SelectItem>
                 {departments.map((dept) => (
-                  <SelectItem key={dept} value={dept}>
-                    {dept}
-                  </SelectItem>
+                  <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
             <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <BookOpen className="w-4 h-4 mr-2" />
+              <SelectTrigger className="w-auto h-9 rounded-full text-xs">
+                <BookOpen className="w-3.5 h-3.5 mr-1.5" />
                 <SelectValue placeholder="All Courses" />
               </SelectTrigger>
               <SelectContent className="max-h-72">
                 <SelectItem value="all">All Courses</SelectItem>
                 {courses.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.code} — {c.name}
-                  </SelectItem>
+                  <SelectItem key={c.id} value={c.id}>{c.code} — {c.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
             <Select value={selectedPrice} onValueChange={setSelectedPrice}>
-              <SelectTrigger className="w-full sm:w-[170px]">
-                <Coins className="w-4 h-4 mr-2" />
+              <SelectTrigger className="w-auto h-9 rounded-full text-xs">
+                <Coins className="w-3.5 h-3.5 mr-1.5" />
                 <SelectValue placeholder="Any price" />
               </SelectTrigger>
               <SelectContent>
@@ -473,9 +479,22 @@ const BrowseTutors = () => {
               </SelectContent>
             </Select>
 
+            <Select value={minRating} onValueChange={setMinRating}>
+              <SelectTrigger className="w-auto h-9 rounded-full text-xs">
+                <Star className="w-3.5 h-3.5 mr-1.5" />
+                <SelectValue placeholder="Min rating" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">Any rating</SelectItem>
+                <SelectItem value="3">3.0+ stars</SelectItem>
+                <SelectItem value="4">4.0+ stars</SelectItem>
+                <SelectItem value="4.5">4.5+ stars</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-full sm:w-[160px]">
-                <ArrowUpDown className="w-4 h-4 mr-2" />
+              <SelectTrigger className="w-auto h-9 rounded-full text-xs ml-auto">
+                <ArrowUpDown className="w-3.5 h-3.5 mr-1.5" />
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
@@ -487,24 +506,19 @@ const BrowseTutors = () => {
                 <SelectItem value="price-desc">Price: high to low</SelectItem>
               </SelectContent>
             </Select>
+          </div>
 
-            <Select value={minRating} onValueChange={setMinRating}>
-              <SelectTrigger className="w-full sm:w-[150px]">
-                <Star className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="Min rating" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0">Any rating</SelectItem>
-                <SelectItem value="3">3.0+ stars</SelectItem>
-                <SelectItem value="4">4.0+ stars</SelectItem>
-                <SelectItem value="4.5">4.5+ stars</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {(searchQuery || selectedDepartment !== "all" || selectedCourse !== "all" || selectedPrice !== "all" || selectedSpec !== "all" || minRating !== "0") && (
-              <Button
-                variant="ghost"
-                size="sm"
+          {/* Active filter chips */}
+          {(searchQuery || selectedDepartment !== "all" || selectedCourse !== "all" || selectedPrice !== "all" || selectedSpec !== "all" || minRating !== "0") && (
+            <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+              <span className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">Active:</span>
+              {searchQuery && <FilterChip label={`"${searchQuery}"`} onClear={() => setSearchQuery("")} />}
+              {selectedSpec !== "all" && <FilterChip label={`Path: ${selectedSpec}`} onClear={() => setSelectedSpec("all")} />}
+              {selectedDepartment !== "all" && <FilterChip label={selectedDepartment} onClear={() => setSelectedDepartment("all")} />}
+              {selectedCourse !== "all" && <FilterChip label={courses.find((c) => c.id === selectedCourse)?.code || "Course"} onClear={() => setSelectedCourse("all")} />}
+              {selectedPrice !== "all" && <FilterChip label={PRICE_BUCKETS.find((b) => b.value === selectedPrice)?.label || "Price"} onClear={() => setSelectedPrice("all")} />}
+              {minRating !== "0" && <FilterChip label={`${minRating}+ stars`} onClear={() => setMinRating("0")} />}
+              <button
                 onClick={() => {
                   setSearchQuery("");
                   setSelectedDepartment("all");
@@ -513,17 +527,17 @@ const BrowseTutors = () => {
                   setSelectedSpec("all");
                   setMinRating("0");
                 }}
+                className="text-[11px] font-semibold text-amber-700 hover:text-amber-900 underline-offset-2 hover:underline ml-1"
               >
-                <XIcon className="w-4 h-4 mr-1" /> Clear filters
-              </Button>
-            )}
-          </div>
+                Clear all
+              </button>
+            </div>
+          )}
         </div>
-
 
         {/* Results Count */}
         <p className="text-sm text-muted-foreground mb-4">
-          {filteredTutors.length} tutor{filteredTutors.length !== 1 ? "s" : ""} found
+          <span className="font-semibold text-foreground">{filteredTutors.length}</span> tutor{filteredTutors.length !== 1 ? "s" : ""} found
           {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
         </p>
 
