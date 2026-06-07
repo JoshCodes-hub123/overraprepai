@@ -10,9 +10,7 @@ import { DashboardOfflineBanner } from "@/components/dashboard/DashboardOfflineB
 import HeroQuestCard from "@/components/student/dashboard/HeroQuestCard";
 import { CommandPalette, useCommandPaletteHotkey } from "@/components/student/CommandPalette";
 import { TopHeader } from "@/components/student/dashboard/TopHeader";
-import { TokenBalanceCard } from "@/components/student/dashboard/TokenBalanceCard";
 import { TodayCard } from "@/components/student/dashboard/TodayCard";
-import { ExamCountdownCard } from "@/components/student/dashboard/ExamCountdownCard";
 import { SolutionHub } from "@/components/student/dashboard/SolutionHub";
 import { CourseQuizzesSection } from "@/components/student/dashboard/CourseQuizzesSection";
 
