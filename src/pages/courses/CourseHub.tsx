@@ -80,13 +80,34 @@ const CourseHub = () => {
     queryFn: async () => {
       let q = supabase
         .from("quizzes")
-        .select("id, title, description, duration_minutes, question_count, is_premium, topic_id")
+        .select("id, title, description, duration_minutes, question_count, is_premium, token_cost, topic_id, tutor_id, created_at")
         .eq("course_id", courseId)
         .eq("is_active", true)
         .order("created_at", { ascending: false });
       if (topicFilter) q = q.eq("topic_id", topicFilter);
       const { data } = await q;
-      return data ?? [];
+      const rows = data ?? [];
+      const tutorIds = [...new Set(rows.map((r: any) => r.tutor_id).filter(Boolean))] as string[];
+      const tutorMap = new Map<string, any>();
+      if (tutorIds.length) {
+        const { data: tutors } = await (supabase as any)
+          .from("profiles")
+          .select("id, full_name, avatar_url, profile_image_url, organisation_name, organisation_logo_url")
+          .in("id", tutorIds);
+        (tutors ?? []).forEach((t: any) => tutorMap.set(t.id, t));
+      }
+      return rows.map((r: any) => ({
+        ...r,
+        tutor: r.tutor_id ? (() => {
+          const t = tutorMap.get(r.tutor_id);
+          return t ? {
+            id: t.id, full_name: t.full_name,
+            avatar_url: t.avatar_url || t.profile_image_url,
+            organisation_name: t.organisation_name,
+            organisation_logo_url: t.organisation_logo_url,
+          } : null;
+        })() : null,
+      }));
     },
   });
 
