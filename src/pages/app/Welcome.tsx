@@ -31,18 +31,23 @@ const Welcome = () => {
       : (primaryRole as any) === "parent" ? "/parent/dashboard"
       : "/student/dashboard";
 
+    // Only restore a saved route when it belongs to the user's current role
+    // section. Otherwise an admin/tutor who once visited a student page would
+    // be sent back there on the next login instead of their real dashboard.
+    const rolePrefix =
+      primaryRole === "admin" ? "/admin"
+      : primaryRole === "tutor" ? "/tutor"
+      : (primaryRole as any) === "school_owner" ? "/school"
+      : (primaryRole as any) === "parent" ? "/parent"
+      : "/student";
+
     let dest = roleHome;
     try {
       const saved = localStorage.getItem(`overra_last_route:${user.id}`);
-      // Only restore safe, in-app routes — never auth/install/quiz-take/etc.
       if (
         saved &&
-        saved.startsWith("/") &&
+        saved.startsWith(rolePrefix) &&
         !saved.startsWith("//") &&
-        !saved.startsWith("/auth") &&
-        !saved.startsWith("/install") &&
-        !saved.startsWith("/onboarding") &&
-        !saved.startsWith("/start") &&
         saved !== "/"
       ) {
         dest = saved;
@@ -50,6 +55,7 @@ const Welcome = () => {
     } catch { /* localStorage unavailable */ }
     navigate(dest, { replace: true });
   }, [user, primaryRole, isLoading, navigate]);
+
 
   const handleSplashDone = () => {
     try {
