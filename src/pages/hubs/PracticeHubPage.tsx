@@ -1,6 +1,6 @@
 import {
   Target, ClipboardCheck, Zap, BarChart3, Download,
-  Trophy, FileText, Sparkles, Calculator, Award,
+  Sparkles, Calculator,
 } from "lucide-react";
 import HubPage from "@/components/hub/HubPage";
 
@@ -29,10 +29,7 @@ const PracticeHubPage = () => (
       {
         title: "Results & growth",
         tiles: [
-          { to: "/my-report-card", label: "My Report Card", description: "Verified progress", icon: Award },
           { to: "/student/smart-summary", label: "Smart Summary", description: "AI study insights", icon: Sparkles },
-          { to: "/leaderboard", label: "Leaderboard", description: "How you rank", icon: Trophy },
-          { to: "/theory", label: "Theory Practice", description: "Long-answer evaluation", icon: FileText },
         ],
       },
     ]}

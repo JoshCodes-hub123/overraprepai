@@ -1,6 +1,6 @@
 import {
   BookOpen, Layers, Sparkles, Library, LifeBuoy, Headphones,
-  MessageSquare, FileText, History, Compass, FolderOpen, Brain,
+  MessageSquare, FileText, History, Compass, Brain,
 } from "lucide-react";
 import HubPage from "@/components/hub/HubPage";
 
@@ -21,7 +21,6 @@ const StudyHubPage = () => (
         title: "Materials & resources",
         tiles: [
           { to: "/study-hub", label: "Study Hub", description: "Past questions & summaries", icon: Library },
-          { to: "/library", label: "My Library", description: "Your uploads & resources", icon: FolderOpen },
           { to: "/theory", label: "Theory Prep", description: "Long-answer practice", icon: FileText },
           { to: "/survival-kits", label: "Survival Kits", description: "Course rescue packs", icon: LifeBuoy },
         ],
