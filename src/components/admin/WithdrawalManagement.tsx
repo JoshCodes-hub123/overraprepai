@@ -65,21 +65,19 @@ export function WithdrawalManagement() {
       if (error) throw error;
 
       if (requestsData) {
-        const requestsWithTutors = await Promise.all(
-          requestsData.map(async (req) => {
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("email, full_name")
-              .eq("id", req.tutor_id)
-              .single();
-
-            return {
-              ...req,
-              tutor_email: profile?.email || "Unknown",
-              tutor_name: profile?.full_name || "Unknown Tutor",
-            };
-          })
-        );
+        const ids = Array.from(new Set(requestsData.map((r) => r.tutor_id).filter(Boolean)));
+        const { data: contacts } = ids.length
+          ? await (supabase as any).rpc("admin_get_profile_contacts", { _ids: ids })
+          : { data: [] as any[] };
+        const byId = new Map<string, any>((contacts ?? []).map((c: any) => [c.id, c]));
+        const requestsWithTutors = requestsData.map((req) => {
+          const profile = byId.get(req.tutor_id);
+          return {
+            ...req,
+            tutor_email: profile?.email || "Unknown",
+            tutor_name: profile?.full_name || "Unknown Tutor",
+          };
+        });
         setRequests(requestsWithTutors);
       }
     } catch (error) {
