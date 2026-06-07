@@ -613,6 +613,15 @@ const BrowseTutors = () => {
                             {tutor.department}
                           </Badge>
                         )}
+                        {tutor.organisation_name && (
+                          <div className="mt-1.5">
+                            <TutorOrgBadge
+                              name={tutor.organisation_name}
+                              logoUrl={tutor.organisation_logo_url}
+                              size="sm"
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
 
