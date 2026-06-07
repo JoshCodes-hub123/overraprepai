@@ -81,7 +81,7 @@ export const TeamCard = () => {
         const memberIds = membersData.map(m => m.user_id);
         const { data: profiles, error: profilesError } = await supabase
           .from("profiles")
-          .select("id, full_name, email")
+          .select("id, full_name")
           .in("id", memberIds);
 
         if (profilesError) throw profilesError;
