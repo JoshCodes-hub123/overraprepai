@@ -32,41 +32,17 @@ const studentSteps = [
     icon: Sparkles,
     title: "Welcome to OverraPrep AI!",
     description:
-      "Your AI-powered exam preparation companion designed specifically for FUTA students. Let's show you around!",
+      "Your AI exam prep companion. Practice quizzes, get instant explanations, and track your progress — all in one place.",
     color: "text-primary",
     bgColor: "bg-primary/10",
   },
   {
     icon: Brain,
-    title: "Practice Mode",
+    title: "How it works",
     description:
-      "Take untimed practice quizzes with immediate feedback. Perfect for learning at your own pace and understanding concepts deeply.",
+      "You get 3 free AI actions every day. Use them for smart explanations, summaries, and AI tutor chats. Need more? Top up your wallet anytime.",
     color: "text-accent",
     bgColor: "bg-accent/10",
-  },
-  {
-    icon: Trophy,
-    title: "CBT Simulation",
-    description:
-      "Experience real exam conditions with timed mock tests. Build confidence and improve your time management skills.",
-    color: "text-secondary-foreground",
-    bgColor: "bg-secondary",
-  },
-  {
-    icon: Coins,
-    title: "Token System",
-    description:
-      "You start with free tokens! Use them to unlock premium quizzes created by verified tutors. Purchase more tokens anytime.",
-    color: "text-accent",
-    bgColor: "bg-accent/10",
-  },
-  {
-    icon: GraduationCap,
-    title: "Become a Tutor",
-    description:
-      "Got knowledge to share? Apply to become a tutor, create quiz content, and earn money from your expertise!",
-    color: "text-primary",
-    bgColor: "bg-primary/10",
   },
 ];
 
