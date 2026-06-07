@@ -3304,6 +3304,8 @@ export type Database = {
           linkedin_handle: string | null
           matric_no: string | null
           onboarding_completed: boolean
+          organisation_logo_url: string | null
+          organisation_name: string | null
           phone: string | null
           profile_image_url: string | null
           referral_code: string | null
@@ -3351,6 +3353,8 @@ export type Database = {
           linkedin_handle?: string | null
           matric_no?: string | null
           onboarding_completed?: boolean
+          organisation_logo_url?: string | null
+          organisation_name?: string | null
           phone?: string | null
           profile_image_url?: string | null
           referral_code?: string | null
@@ -3398,6 +3402,8 @@ export type Database = {
           linkedin_handle?: string | null
           matric_no?: string | null
           onboarding_completed?: boolean
+          organisation_logo_url?: string | null
+          organisation_name?: string | null
           phone?: string | null
           profile_image_url?: string | null
           referral_code?: string | null
@@ -7641,6 +7647,8 @@ export type Database = {
           linkedin_handle: string | null
           matric_no: string | null
           onboarding_completed: boolean
+          organisation_logo_url: string | null
+          organisation_name: string | null
           phone: string | null
           profile_image_url: string | null
           referral_code: string | null
