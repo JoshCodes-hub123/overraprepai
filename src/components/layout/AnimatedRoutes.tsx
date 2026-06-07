@@ -442,10 +442,10 @@ export const AnimatedRoutes = () => {
           <Route path="/cgpa" element={<PageTransition><CGPACalculator /></PageTransition>} />
           <Route path="/study-packs" element={<PageTransition><StudyPacks /></PageTransition>} />
           <Route path="/learn" element={<PageTransition><Learn /></PageTransition>} />
-          <Route path="/study" element={<PageTransition><StudyHubPage /></PageTransition>} />
-          <Route path="/practice" element={<PageTransition><PracticeHubPage /></PageTransition>} />
-          <Route path="/people" element={<PageTransition><PeopleHubPage /></PageTransition>} />
-          <Route path="/me" element={<PageTransition><MeHubPage /></PageTransition>} />
+          <Route path="/study" element={<RoleRoute allow={["student"]}><PageTransition><StudyHubPage /></PageTransition></RoleRoute>} />
+          <Route path="/practice" element={<RoleRoute allow={["student"]}><PageTransition><PracticeHubPage /></PageTransition></RoleRoute>} />
+          <Route path="/people" element={<RoleRoute allow={["student"]}><PageTransition><PeopleHubPage /></PageTransition></RoleRoute>} />
+          <Route path="/me" element={<RoleRoute allow={["student"]}><PageTransition><MeHubPage /></PageTransition></RoleRoute>} />
           <Route path="/library" element={<PageTransition><Library /></PageTransition>} />
           <Route path="/library/analytics" element={<PageTransition><UploadAnalytics /></PageTransition>} />
           <Route path="/library/offline-downloads" element={<PageTransition><OfflineDownloads /></PageTransition>} />
