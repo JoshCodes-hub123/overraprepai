@@ -19,6 +19,9 @@ const MeHubPage = () => {
 
   return (
     <>
+      <div className="container mx-auto max-w-3xl px-4 pt-5">
+        <TokenBalanceCard />
+      </div>
       <HubPage
         eyebrow="Me"
         title="Your account"
