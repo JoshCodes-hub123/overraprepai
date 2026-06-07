@@ -23,7 +23,6 @@ interface TeamMember {
   user_id: string;
   profile?: {
     full_name: string | null;
-    email: string;
   };
 }
 
