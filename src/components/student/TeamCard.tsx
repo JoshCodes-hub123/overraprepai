@@ -336,7 +336,7 @@ export const TeamCard = () => {
                 {member.user_id === team.created_by && (
                   <Crown className="w-3 h-3 text-yellow-500" />
                 )}
-                <span>{member.profile?.full_name || member.profile?.email || "Unknown"}</span>
+                <span>{member.profile?.full_name || "Unknown"}</span>
               </div>
             ))}
           </div>
