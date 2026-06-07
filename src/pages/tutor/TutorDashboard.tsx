@@ -630,4 +630,82 @@ const TutorDashboard = () => {
   );
 };
 
+function scrollToId(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+const toneStyles: Record<string, { ring: string; chip: string; btn: string; iconBg: string }> = {
+  gold:    { ring: "border-amber-200/70 hover:border-amber-400",   chip: "bg-amber-100 text-amber-800",   btn: "bg-amber-500 hover:bg-amber-600 text-white",   iconBg: "bg-amber-100 text-amber-700" },
+  emerald: { ring: "border-emerald-200/70 hover:border-emerald-400", chip: "bg-emerald-100 text-emerald-800", btn: "bg-emerald-600 hover:bg-emerald-700 text-white", iconBg: "bg-emerald-100 text-emerald-700" },
+  violet:  { ring: "border-violet-200/70 hover:border-violet-400", chip: "bg-violet-100 text-violet-800",  btn: "bg-violet-600 hover:bg-violet-700 text-white",  iconBg: "bg-violet-100 text-violet-700" },
+};
+
+interface JobLink {
+  label: string;
+  to?: string;
+  onClick?: () => void;
+  icon?: React.ComponentType<{ className?: string }>;
+  hidden?: boolean;
+}
+
+function JobCard({
+  tone,
+  step,
+  title,
+  subtitle,
+  primary,
+  links,
+}: {
+  tone: "gold" | "emerald" | "violet";
+  step: string;
+  title: string;
+  subtitle: string;
+  primary: { label: string; onClick: () => void };
+  links: JobLink[];
+}) {
+  const s = toneStyles[tone];
+  return (
+    <div className={cn("group relative rounded-2xl border bg-card p-5 transition-all duration-300 hover:shadow-lg", s.ring)}>
+      <div className="flex items-center gap-2 mb-2">
+        <span className={cn("text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full", s.chip)}>Step {step}</span>
+      </div>
+      <h3 className="font-display text-lg font-bold tracking-tight text-foreground">{title}</h3>
+      <p className="text-sm text-muted-foreground mt-1 mb-4">{subtitle}</p>
+
+      <Button size="sm" className={cn("w-full justify-between rounded-full font-semibold", s.btn)} onClick={primary.onClick}>
+        {primary.label}
+        <ArrowRight className="w-4 h-4" />
+      </Button>
+
+      <ul className="mt-4 space-y-1.5">
+        {links.filter((l) => !l.hidden).map((link) => {
+          const Icon = link.icon ?? ArrowRight;
+          const inner = (
+            <span className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-lg text-sm text-foreground/80 hover:bg-muted hover:text-foreground transition-colors">
+              <span className={cn("inline-flex items-center justify-center w-6 h-6 rounded-md", s.iconBg)}>
+                <Icon className="w-3.5 h-3.5" />
+              </span>
+              <span className="flex-1">{link.label}</span>
+              <ChevronRightIcon />
+            </span>
+          );
+          return (
+            <li key={link.label}>
+              {link.to ? (
+                <Link to={link.to}>{inner}</Link>
+              ) : (
+                <button type="button" className="w-full" onClick={link.onClick}>{inner}</button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function ChevronRightIcon() {
+  return <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/60" />;
+}
+
 export default TutorDashboard;
