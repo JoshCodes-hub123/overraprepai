@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { OnboardingDialog } from "@/components/onboarding/OnboardingDialog";
 import { SEO } from "@/components/seo/SEO";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   LogOut,
   Plus,
@@ -13,14 +14,19 @@ import {
   Coins,
   TrendingUp,
   FileText,
-  ChevronRight,
   Loader2,
-  Edit,
-  Eye,
   GraduationCap,
   BarChart3,
   User,
-  Sparkles
+  Sparkles,
+  Megaphone,
+  HelpCircle,
+  MessageCircle,
+  Store,
+  ArrowRight,
+  AlertCircle,
+  BookOpen,
+  Image as ImageIcon,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import DashboardNav from "@/components/layout/DashboardNav";
@@ -38,18 +44,11 @@ import { OnboardingChecklist } from "@/components/tutor/OnboardingChecklist";
 import { SkeletonDashboard } from "@/components/ui/premium-skeletons";
 import { DashboardHero } from "@/components/dashboard/DashboardHero";
 import { PremiumStatCard } from "@/components/dashboard/PremiumStatCard";
-import { QuickActions } from "@/components/dashboard/QuickActions";
 import { SuggestOpportunityDialog } from "@/components/opportunities/SuggestOpportunityDialog";
 import { PullToRefresh } from "@/components/native/PullToRefresh";
 import { DashboardOfflineBanner } from "@/components/dashboard/DashboardOfflineBanner";
 import { LastUpdatedBadge } from "@/components/dashboard/LastUpdatedBadge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash2, AlertCircle, BookOpen, Image as ImageIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Course {
   id: string;
@@ -402,232 +401,183 @@ const TutorDashboard = () => {
           onCreateQuiz={() => navigate("/tutor/courses")}
         />
 
-        {/* Primary Actions (single, consolidated row) */}
-        <div className="flex flex-wrap gap-2 sm:gap-3 mb-8">
-          <Button onClick={() => navigate("/tutor/courses")} className="bg-amber-500 hover:bg-amber-600 text-white">
-            <BookOpen className="w-4 h-4 mr-2" />
-            Manage courses & upload quizzes
-          </Button>
-          <Button variant="outline" onClick={() => setShowCreateCourse(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            New course
-          </Button>
-        </div>
-
-        {/* Premium Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-8">
-          <PremiumStatCard
-            icon={Coins}
-            label="Total earnings"
-            value={earnings.totalEarnings}
-            tone="gold"
-            hint="lifetime tokens"
-            delay={0}
-          />
-          <PremiumStatCard
-            icon={TrendingUp}
-            label="This month"
-            value={earnings.thisMonthEarnings}
-            tone="emerald"
-            delay={0.05}
-          />
-          <PremiumStatCard
-            icon={Users}
-            label="Students reached"
-            value={earnings.totalStudents}
-            tone="violet"
-            delay={0.1}
-          />
-          <PremiumStatCard
-            icon={BarChart3}
-            label="Quiz attempts"
-            value={earnings.totalAttempts}
-            tone="sapphire"
-            delay={0.15}
-          />
-        </div>
-
-        {/* Quick Actions */}
-        <QuickActions
-          subtitle="Run your studio in three clicks"
-          actions={[
-            {
-              icon: Plus,
-              label: "Upload bulk quizzes",
-              description: "Open a course → Quizzes tab to upload or AI-generate",
-              onClick: () => navigate("/tutor/courses"),
-              tone: "gold",
-            },
-            {
-              icon: ImageIcon,
-              label: "Question Cards",
-              description: "Design branded shareable cards (PNG/PDF)",
-              to: "/tutor/question-cards",
-              tone: "violet",
-            },
-            {
-              icon: AlertCircle,
-              label: "Review Pending Reports",
-              description: "Address student-flagged questions",
-              onClick: () => {
-                document
-                  .getElementById("question-reports")
-                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
-              },
-              tone: "rose",
-            },
-            {
-              icon: FileText,
-              label: "Lecture Notes",
-              description: "Upload PDFs, slides & materials",
-              to: "/lecture-notes",
-              tone: "emerald",
-            },
-            {
-              icon: Users,
-              label: "Inbox",
-              description: "Chat with your students",
-              to: "/messages",
-              tone: "sapphire",
-            },
-            {
-              icon: Sparkles,
-              label: "Announcements",
-              description: "Broadcast updates to students",
-              to: "/announcements",
-              tone: "violet",
-            },
-            {
-              icon: User,
-              label: "Q&A Board",
-              description: "Answer student questions",
-              to: "/qa",
-              tone: "slate",
-            },
-            {
-              icon: BookOpen,
-              label: "My Curricula",
-              description: "Build courses with topics + AI flashcards",
-              to: "/tutor/curricula",
-              tone: "gold",
-            },
-            {
-              icon: BookOpen,
-              label: "My Courses",
-              description: "Pick courses you handle",
-              to: "/tutor/courses",
-              tone: "rose",
-            },
-            {
-              icon: Users,
-              label: "Community Wall",
-              description: "Talk with the community",
-              to: "/community-wall",
-              tone: "sapphire",
-            },
-          ]}
-        />
-
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-xl font-bold text-foreground">Your Courses</h2>
-            <Button variant="ghost" size="sm" onClick={() => setShowCreateCourse(true)}>
-              <Plus className="w-4 h-4 mr-1" />
-              Add Course
-            </Button>
+        {/* Earnings & impact (at a glance) */}
+        <section className="mb-8">
+          <h2 className="font-display text-lg md:text-xl font-bold tracking-tight mb-3">
+            Your impact at a glance
+          </h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            <PremiumStatCard icon={Coins} label="Total earnings" value={earnings.totalEarnings} tone="gold" hint="lifetime tokens" delay={0} />
+            <PremiumStatCard icon={TrendingUp} label="This month" value={earnings.thisMonthEarnings} tone="emerald" delay={0.05} />
+            <PremiumStatCard icon={Users} label="Students reached" value={earnings.totalStudents} tone="violet" delay={0.1} />
+            <PremiumStatCard icon={BarChart3} label="Quiz attempts" value={earnings.totalAttempts} tone="sapphire" delay={0.15} />
           </div>
+        </section>
 
-          {courses.length === 0 ? (
-            <div className="bg-muted/30 rounded-xl p-8 text-center">
-              <GraduationCap className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-foreground font-medium mb-2">No courses yet</p>
-              <p className="text-sm text-muted-foreground mb-4">
-                Create your first course to start adding questions and quizzes.
-              </p>
-              <Button onClick={() => setShowCreateCourse(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Create Course
-              </Button>
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {courses.map((course) => (
-                <div
-                  key={course.id}
-                  className="bg-card rounded-xl border border-border p-5 hover:shadow-lg hover:border-primary/30 transition-all duration-300"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded">
-                        {course.code}
-                      </span>
-                      <h3 className="font-display font-semibold text-foreground mt-2">
-                        {course.name}
-                      </h3>
-                    </div>
-                  </div>
+        {/* Three jobs — answers "what should I do?" */}
+        <section className="mb-10">
+          <div className="mb-3">
+            <h2 className="font-display text-lg md:text-xl font-bold tracking-tight">What would you like to do?</h2>
+            <p className="text-sm text-muted-foreground">Pick one of three jobs — each opens the right tool.</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-4">
+            <JobCard
+              tone="gold"
+              step="1"
+              title="Teach"
+              subtitle="Build courses, upload quizzes, share notes"
+              primary={{ label: "Manage courses", onClick: () => navigate("/tutor/courses") }}
+              links={[
+                { label: "Create a new course", onClick: () => setShowCreateCourse(true), icon: Plus },
+                { label: "Build a curriculum", to: "/tutor/curricula", icon: BookOpen },
+                { label: "Upload lecture notes", to: "/lecture-notes", icon: FileText },
+                { label: "Design question cards", to: "/tutor/question-cards", icon: ImageIcon },
+              ]}
+            />
+            <JobCard
+              tone="emerald"
+              step="2"
+              title="Grow"
+              subtitle="Earn from your work and reach more students"
+              primary={{ label: "Open Growth Studio", onClick: () => navigate("/tutor/growth") }}
+              links={[
+                { label: "Edit your storefront", to: "/tutor/storefront", icon: Store },
+                { label: "Request payout", onClick: () => setShowWithdrawal(true), icon: Coins },
+                { label: "See full analytics", onClick: () => scrollToId("analytics"), icon: BarChart3 },
+                { label: "Post an opportunity", onClick: () => {/* handled by dialog button below */}, icon: Sparkles, hidden: true },
+              ]}
+            />
+            <JobCard
+              tone="violet"
+              step="3"
+              title="Connect"
+              subtitle="Reply to students, broadcast, and run your community"
+              primary={{ label: "Open inbox", onClick: () => navigate("/messages") }}
+              links={[
+                { label: "Send an announcement", to: "/announcements", icon: Megaphone },
+                { label: "Answer Q&A board", to: "/qa", icon: HelpCircle },
+                { label: "Manage your community", onClick: () => scrollToId("community"), icon: Users },
+                { label: "Community wall", to: "/community-wall", icon: MessageCircle },
+              ]}
+            />
+          </div>
+        </section>
 
-                  {course.description && (
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                      {course.description}
-                    </p>
-                  )}
+        {/* Studio — grouped tabs so panels don't all pile on each other */}
+        <section className="mb-10">
+          <div className="mb-3">
+            <h2 className="font-display text-lg md:text-xl font-bold tracking-tight">Your studio</h2>
+            <p className="text-sm text-muted-foreground">Everything you've created — switch tabs to focus.</p>
+          </div>
+          <Tabs defaultValue="courses">
+            <TabsList className="w-full justify-start overflow-x-auto flex-nowrap whitespace-nowrap">
+              <TabsTrigger value="courses"><BookOpen className="w-4 h-4 mr-1.5" />Courses</TabsTrigger>
+              <TabsTrigger value="quizzes"><FileText className="w-4 h-4 mr-1.5" />Quizzes</TabsTrigger>
+              <TabsTrigger value="reports"><AlertCircle className="w-4 h-4 mr-1.5" />Reports</TabsTrigger>
+              <TabsTrigger value="analytics"><BarChart3 className="w-4 h-4 mr-1.5" />Analytics</TabsTrigger>
+              <TabsTrigger value="community"><Users className="w-4 h-4 mr-1.5" />Community</TabsTrigger>
+              <TabsTrigger value="announcements"><Megaphone className="w-4 h-4 mr-1.5" />Announcements</TabsTrigger>
+            </TabsList>
 
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                    <span>{course.topics_count} topics</span>
-                    <span>{course.questions_count} questions</span>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => navigate(`/tutor/courses/${course.id}/manage`)}
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Add quizzes
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => navigate("/lecture-notes")}
-                    >
-                      <FileText className="w-4 h-4 mr-1" />
-                      Notes
-                    </Button>
-                  </div>
+            <TabsContent value="courses" className="mt-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-display text-base font-semibold text-foreground">Your Courses</h3>
+                <Button variant="ghost" size="sm" onClick={() => setShowCreateCourse(true)}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Course
+                </Button>
+              </div>
+              {courses.length === 0 ? (
+                <div className="bg-muted/30 rounded-xl p-8 text-center">
+                  <GraduationCap className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-foreground font-medium mb-2">No courses yet</p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Create your first course to start adding questions and quizzes.
+                  </p>
+                  <Button onClick={() => setShowCreateCourse(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Course
+                  </Button>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              ) : (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {courses.map((course) => (
+                    <div
+                      key={course.id}
+                      className="bg-card rounded-xl border border-border p-5 hover:shadow-lg hover:border-primary/30 transition-all duration-300"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded">
+                            {course.code}
+                          </span>
+                          <h3 className="font-display font-semibold text-foreground mt-2">
+                            {course.name}
+                          </h3>
+                        </div>
+                      </div>
+                      {course.description && (
+                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                          {course.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                        <span>{course.topics_count} topics</span>
+                        <span>{course.questions_count} questions</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => navigate(`/tutor/courses/${course.id}/manage`)}
+                        >
+                          <Plus className="w-4 h-4 mr-1" />
+                          Add quizzes
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => navigate("/lecture-notes")}
+                        >
+                          <FileText className="w-4 h-4 mr-1" />
+                          Notes
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
 
-        {/* Quiz Management Section */}
-        <div className="mb-8">
-          <QuizManagement />
-        </div>
+            <TabsContent value="quizzes" className="mt-4">
+              <QuizManagement />
+            </TabsContent>
 
-        {/* Analytics Dashboard */}
-        <div className="mb-8">
-          <TutorAnalytics />
-        </div>
+            <TabsContent value="reports" className="mt-4">
+              <div id="question-reports" className="scroll-mt-24">
+                <QuestionReports />
+              </div>
+            </TabsContent>
 
-        {/* Announcements (Phase 8) */}
-        <div className="mb-8">
-          <TutorAnnouncementsPanel />
-        </div>
+            <TabsContent value="analytics" className="mt-4">
+              <div id="analytics" className="scroll-mt-24">
+                <TutorAnalytics />
+              </div>
+            </TabsContent>
 
-        {/* Tutor Community */}
-        <div className="mb-8">
-          <TutorCommunityManager quizzes={quizzes} />
-        </div>
+            <TabsContent value="community" className="mt-4">
+              <div id="community" className="scroll-mt-24">
+                <TutorCommunityManager quizzes={quizzes} />
+              </div>
+            </TabsContent>
 
-        {/* Question Reports Section */}
-        <div id="question-reports" className="mb-8 scroll-mt-24">
-          <QuestionReports />
-        </div>
+            <TabsContent value="announcements" className="mt-4">
+              <TutorAnnouncementsPanel />
+            </TabsContent>
+          </Tabs>
+        </section>
       </main>
 
       {/* Dialogs */}
@@ -679,5 +629,83 @@ const TutorDashboard = () => {
     </>
   );
 };
+
+function scrollToId(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+const toneStyles: Record<string, { ring: string; chip: string; btn: string; iconBg: string }> = {
+  gold:    { ring: "border-amber-200/70 hover:border-amber-400",   chip: "bg-amber-100 text-amber-800",   btn: "bg-amber-500 hover:bg-amber-600 text-white",   iconBg: "bg-amber-100 text-amber-700" },
+  emerald: { ring: "border-emerald-200/70 hover:border-emerald-400", chip: "bg-emerald-100 text-emerald-800", btn: "bg-emerald-600 hover:bg-emerald-700 text-white", iconBg: "bg-emerald-100 text-emerald-700" },
+  violet:  { ring: "border-violet-200/70 hover:border-violet-400", chip: "bg-violet-100 text-violet-800",  btn: "bg-violet-600 hover:bg-violet-700 text-white",  iconBg: "bg-violet-100 text-violet-700" },
+};
+
+interface JobLink {
+  label: string;
+  to?: string;
+  onClick?: () => void;
+  icon?: React.ComponentType<{ className?: string }>;
+  hidden?: boolean;
+}
+
+function JobCard({
+  tone,
+  step,
+  title,
+  subtitle,
+  primary,
+  links,
+}: {
+  tone: "gold" | "emerald" | "violet";
+  step: string;
+  title: string;
+  subtitle: string;
+  primary: { label: string; onClick: () => void };
+  links: JobLink[];
+}) {
+  const s = toneStyles[tone];
+  return (
+    <div className={cn("group relative rounded-2xl border bg-card p-5 transition-all duration-300 hover:shadow-lg", s.ring)}>
+      <div className="flex items-center gap-2 mb-2">
+        <span className={cn("text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full", s.chip)}>Step {step}</span>
+      </div>
+      <h3 className="font-display text-lg font-bold tracking-tight text-foreground">{title}</h3>
+      <p className="text-sm text-muted-foreground mt-1 mb-4">{subtitle}</p>
+
+      <Button size="sm" className={cn("w-full justify-between rounded-full font-semibold", s.btn)} onClick={primary.onClick}>
+        {primary.label}
+        <ArrowRight className="w-4 h-4" />
+      </Button>
+
+      <ul className="mt-4 space-y-1.5">
+        {links.filter((l) => !l.hidden).map((link) => {
+          const Icon = link.icon ?? ArrowRight;
+          const inner = (
+            <span className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded-lg text-sm text-foreground/80 hover:bg-muted hover:text-foreground transition-colors">
+              <span className={cn("inline-flex items-center justify-center w-6 h-6 rounded-md", s.iconBg)}>
+                <Icon className="w-3.5 h-3.5" />
+              </span>
+              <span className="flex-1">{link.label}</span>
+              <ChevronRightIcon />
+            </span>
+          );
+          return (
+            <li key={link.label}>
+              {link.to ? (
+                <Link to={link.to}>{inner}</Link>
+              ) : (
+                <button type="button" className="w-full" onClick={link.onClick}>{inner}</button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function ChevronRightIcon() {
+  return <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/60" />;
+}
 
 export default TutorDashboard;
