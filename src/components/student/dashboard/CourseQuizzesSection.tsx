@@ -51,21 +51,52 @@ export const CourseQuizzesSection = () => {
       const ids = courses.map((c) => c.id);
       const { data: quizzes } = await supabase
         .from("quizzes")
-        .select("id, title, question_count, duration_minutes, course_id, is_active")
+        .select("id, title, description, question_count, duration_minutes, course_id, is_active, is_premium, token_cost, tutor_id, created_at")
         .in("course_id", ids)
         .eq("is_active", true)
         .order("created_at", { ascending: false })
         .limit(80);
 
+      // Pull tutor profile info (incl. organisation) in one shot
+      const tutorIds = [
+        ...new Set(((quizzes ?? []) as any[]).map((q) => q.tutor_id).filter(Boolean)),
+      ] as string[];
+      const tutorMap = new Map<string, any>();
+      if (tutorIds.length > 0) {
+        const { data: tutors } = await (supabase as any)
+          .from("profiles")
+          .select("id, full_name, avatar_url, profile_image_url, organisation_name, organisation_logo_url")
+          .in("id", tutorIds);
+        (tutors ?? []).forEach((t: any) => tutorMap.set(t.id, t));
+      }
+
       if (cancelled) return;
 
-      const byCourse = new Map<string, QuizRow[]>();
+      const courseById = new Map(courses.map((c) => [c.id, c]));
+      const byCourse = new Map<string, QuizCardData[]>();
       for (const q of (quizzes ?? []) as any[]) {
         const arr = byCourse.get(q.course_id) ?? [];
-        if (arr.length < 3) arr.push({
-          id: q.id, title: q.title,
-          question_count: q.question_count, duration_minutes: q.duration_minutes,
-        });
+        if (arr.length < 3) {
+          const t = q.tutor_id ? tutorMap.get(q.tutor_id) : null;
+          arr.push({
+            id: q.id,
+            title: q.title,
+            description: q.description,
+            question_count: q.question_count,
+            duration_minutes: q.duration_minutes,
+            is_premium: q.is_premium,
+            token_cost: q.token_cost,
+            created_at: q.created_at,
+            course_code: courseById.get(q.course_id)?.code,
+            tutor: t ? {
+              id: t.id,
+              full_name: t.full_name,
+              avatar_url: t.avatar_url || t.profile_image_url,
+              organisation_name: t.organisation_name,
+              organisation_logo_url: t.organisation_logo_url,
+            } : null,
+          });
+        }
         byCourse.set(q.course_id, arr);
       }
 
