@@ -3427,6 +3427,13 @@ export type Database = {
             foreignKeyName: "profiles_referred_by_fkey"
             columns: ["referred_by"]
             isOneToOne: false
+            referencedRelation: "public_tutor_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
             referencedRelation: "tutor_public_profiles"
             referencedColumns: ["id"]
           },
@@ -7209,6 +7216,51 @@ export type Database = {
       }
     }
     Views: {
+      public_tutor_profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          department: string | null
+          faculty: string | null
+          full_name: string | null
+          id: string | null
+          profile_image_url: string | null
+          tutor_code: string | null
+          tutor_specialization:
+            | Database["public"]["Enums"]["academic_path"]
+            | null
+          university: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          department?: string | null
+          faculty?: string | null
+          full_name?: string | null
+          id?: string | null
+          profile_image_url?: string | null
+          tutor_code?: string | null
+          tutor_specialization?:
+            | Database["public"]["Enums"]["academic_path"]
+            | null
+          university?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          department?: string | null
+          faculty?: string | null
+          full_name?: string | null
+          id?: string | null
+          profile_image_url?: string | null
+          tutor_code?: string | null
+          tutor_specialization?:
+            | Database["public"]["Enums"]["academic_path"]
+            | null
+          university?: string | null
+        }
+        Relationships: []
+      }
       schools_public: {
         Row: {
           address: string | null
@@ -7599,6 +7651,21 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      get_my_sensitive_profile: {
+        Args: never
+        Returns: {
+          ai_token_balance: number
+          daily_ai_tokens_used: number
+          daily_free_used: number
+          date_of_birth: string
+          first_purchase_used: boolean
+          flw_customer_id: string
+          matric_no: string
+          phone: string
+          referred_by: string
+          trial_ends_at: string
+        }[]
       }
       get_my_sent_transfers: {
         Args: never
