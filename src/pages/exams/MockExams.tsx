@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { usePublishedExams, useMyAttempts } from "@/hooks/useMockExams";
 import { SEO } from "@/components/seo/SEO";
+import { EmptyState } from "@/components/ui/empty-state";
 import { format } from "date-fns";
 
 export default function MockExams() {
