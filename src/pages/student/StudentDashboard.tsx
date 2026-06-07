@@ -13,6 +13,8 @@ import { TopHeader } from "@/components/student/dashboard/TopHeader";
 import { TokenBalanceCard } from "@/components/student/dashboard/TokenBalanceCard";
 import { TodayCard } from "@/components/student/dashboard/TodayCard";
 import { ExamCountdownCard } from "@/components/student/dashboard/ExamCountdownCard";
+import { SolutionHub } from "@/components/student/dashboard/SolutionHub";
+import { CourseQuizzesSection } from "@/components/student/dashboard/CourseQuizzesSection";
 
 // Warm likely-next route bundles when the dashboard mounts.
 if (typeof window !== "undefined") prefetchDashboardNeighbors();
