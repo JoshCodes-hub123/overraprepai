@@ -13,6 +13,8 @@ import { TopHeader } from "@/components/student/dashboard/TopHeader";
 import { TokenBalanceCard } from "@/components/student/dashboard/TokenBalanceCard";
 import { TodayCard } from "@/components/student/dashboard/TodayCard";
 import { ExamCountdownCard } from "@/components/student/dashboard/ExamCountdownCard";
+import { SolutionHub } from "@/components/student/dashboard/SolutionHub";
+import { CourseQuizzesSection } from "@/components/student/dashboard/CourseQuizzesSection";
 
 // Warm likely-next route bundles when the dashboard mounts.
 if (typeof window !== "undefined") prefetchDashboardNeighbors();
@@ -55,16 +57,22 @@ const StudentDashboard = () => {
             {/* 1. Greeting + streak + bell */}
             <TopHeader key={`top-${refreshKey}`} />
 
-            {/* 2. Wallet — core to the model */}
+            {/* 2. Solution Hub — Quizzes, AI Summary, AI Tutor (HERO) */}
+            <SolutionHub />
+
+            {/* 3. Quizzes from your courses — students came here for this */}
+            <CourseQuizzesSection key={`cq-${refreshKey}`} />
+
+            {/* 4. Wallet */}
             <TokenBalanceCard />
 
-            {/* 3. Today — single primary CTA */}
+            {/* 5. Today — single primary CTA */}
             <TodayCard key={`today-${refreshKey}`} />
 
-            {/* 4. 7-day hero quest — daily habit loop */}
+            {/* 6. 7-day hero quest — daily habit loop */}
             <HeroQuestCard />
 
-            {/* 5. Exam countdown — only renders when an active goal exists */}
+            {/* 7. Exam countdown — only renders when an active goal exists */}
             <ExamCountdownCard />
           </main>
         </div>

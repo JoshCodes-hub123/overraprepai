@@ -90,6 +90,9 @@ const EditProfile = () => {
   const [xHandle, setXHandle] = useState("");
   const [interests, setInterests] = useState("");
   const [hobbies, setHobbies] = useState("");
+  const [organisationName, setOrganisationName] = useState("");
+  const [organisationLogoUrl, setOrganisationLogoUrl] = useState<string | null>(null);
+  const [isUploadingOrgLogo, setIsUploadingOrgLogo] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -117,6 +120,8 @@ const EditProfile = () => {
       setXHandle(p.x_handle || "");
       setInterests((p.study_interests || []).join(", "));
       setHobbies((p.hobbies || []).join(", "));
+      setOrganisationName(p.organisation_name || "");
+      setOrganisationLogoUrl(p.organisation_logo_url || null);
     }
   }, [profile]);
 
@@ -231,6 +236,37 @@ const EditProfile = () => {
     }
   };
 
+  const handleOrgLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !user) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+    if (file.size > 1024 * 1024) {
+      toast.error("Logo must be less than 1MB");
+      return;
+    }
+    setIsUploadingOrgLogo(true);
+    try {
+      const fileExt = (file.name.split(".").pop() || "png").toLowerCase();
+      const path = `${user.id}/org-logo-${Date.now()}.${fileExt}`;
+      const { error: upErr } = await supabase.storage
+        .from("tutor-profiles")
+        .upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const publicUrl = supabase.storage.from("tutor-profiles").getPublicUrl(path).data.publicUrl;
+      setOrganisationLogoUrl(publicUrl);
+      toast.success("Logo uploaded — remember to Save");
+    } catch (err: any) {
+      console.error("Org logo upload failed", err);
+      toast.error("Failed to upload logo", { description: err?.message });
+    } finally {
+      setIsUploadingOrgLogo(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!user) return;
 
@@ -272,6 +308,8 @@ const EditProfile = () => {
           x_handle: xHandle.trim() || null,
           study_interests: toArr(interests),
           hobbies: toArr(hobbies),
+          organisation_name: organisationName.trim() || null,
+          organisation_logo_url: organisationLogoUrl,
         } as any)
         .eq("id", user.id);
 
@@ -525,6 +563,63 @@ const EditProfile = () => {
             <div className="space-y-2">
               <Label>Hobbies <span className="text-xs text-muted-foreground">(comma separated)</span></Label>
               <Input value={hobbies} onChange={(e) => setHobbies(e.target.value)} placeholder="Football, Music, Reading" />
+            </div>
+
+            {/* Organisation (tutors / partners) */}
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/40 p-4 space-y-3">
+              <div>
+                <h3 className="font-display font-bold text-sm text-foreground">Your organisation <span className="text-xs font-normal text-muted-foreground">(optional)</span></h3>
+                <p className="text-xs text-muted-foreground">Shown as a badge next to your name on quizzes and your tutor profile.</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="org-name">Organisation name</Label>
+                <Input
+                  id="org-name"
+                  value={organisationName}
+                  onChange={(e) => setOrganisationName(e.target.value)}
+                  placeholder="e.g. FUTA · Mech Eng, TopRank Tutors, Independent"
+                  maxLength={60}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Organisation logo</Label>
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-lg border border-amber-200 bg-white flex items-center justify-center overflow-hidden shrink-0">
+                    {organisationLogoUrl ? (
+                      <img src={organisationLogoUrl} alt="Org logo" className="w-full h-full object-cover" />
+                    ) : (
+                      <ImageIcon className="w-4 h-4 text-amber-500" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label
+                      htmlFor="org-logo-upload"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-amber-300 text-amber-800 text-xs font-semibold cursor-pointer hover:bg-amber-50"
+                    >
+                      {isUploadingOrgLogo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
+                      {organisationLogoUrl ? "Change logo" : "Upload logo"}
+                    </label>
+                    {organisationLogoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setOrganisationLogoUrl(null)}
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        Remove
+                      </button>
+                    )}
+                    <input
+                      id="org-logo-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleOrgLogoUpload}
+                      disabled={isUploadingOrgLogo}
+                    />
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground">PNG or JPG, square works best, under 1MB.</p>
+              </div>
             </div>
 
             <div className="space-y-2">

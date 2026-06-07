@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useFavoriteTutors } from "@/hooks/useFavoriteTutors";
+import { TutorOrgBadge } from "@/components/tutor/TutorOrgBadge";
 
 interface TutorData {
   id: string;
@@ -35,6 +36,8 @@ interface TutorData {
   profile_image_url: string | null;
   tutor_code: string | null;
   department: string | null;
+  organisation_name?: string | null;
+  organisation_logo_url?: string | null;
 }
 
 interface TutorApplication {
@@ -109,7 +112,7 @@ const TutorProfile = () => {
         // Fetch tutor profile
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
-          .select("id, full_name, profile_image_url, tutor_code, department")
+          .select("id, full_name, profile_image_url, tutor_code, department, organisation_name, organisation_logo_url")
           .eq("id", tutorId)
           .maybeSingle();
 
@@ -354,7 +357,17 @@ const TutorProfile = () => {
               )}
 
               {tutor.department && (
-                <p className="text-muted-foreground mb-4">{tutor.department}</p>
+                <p className="text-muted-foreground mb-2">{tutor.department}</p>
+              )}
+
+              {tutor.organisation_name && (
+                <div className="mb-3 flex justify-center md:justify-start">
+                  <TutorOrgBadge
+                    name={tutor.organisation_name}
+                    logoUrl={tutor.organisation_logo_url}
+                    size="md"
+                  />
+                </div>
               )}
 
               {application?.bio && (

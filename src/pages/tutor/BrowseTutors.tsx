@@ -37,6 +37,7 @@ import {
   X as XIcon,
 } from "lucide-react";
 import { FollowTutorButton } from "@/components/tutor/FollowTutorButton";
+import { TutorOrgBadge } from "@/components/tutor/TutorOrgBadge";
 
 interface Tutor {
   id: string;
@@ -46,6 +47,8 @@ interface Tutor {
   department: string | null;
   bio: string | null;
   specialization: string | null;
+  organisation_name: string | null;
+  organisation_logo_url: string | null;
   quizCount: number;
   studentCount: number;
   averageRating: number;
@@ -138,7 +141,7 @@ const BrowseTutors = () => {
         // Fetch tutor profiles
         const { data: profiles, error: profileError } = await supabase
           .from("profiles")
-          .select("id, full_name, profile_image_url, tutor_code, department, tutor_specialization")
+          .select("id, full_name, profile_image_url, tutor_code, department, tutor_specialization, organisation_name, organisation_logo_url")
           .in("id", tutorIds);
 
         if (profileError) throw profileError;
@@ -235,12 +238,14 @@ const BrowseTutors = () => {
             : 0;
           const prices = pricesByTutor.get(p.id) || [];
           return {
-            id: p.id,
+          id: p.id,
             full_name: p.full_name,
             profile_image_url: p.profile_image_url,
             tutor_code: p.tutor_code,
             department: p.department,
             specialization: (p as any).tutor_specialization || null,
+            organisation_name: (p as any).organisation_name || null,
+            organisation_logo_url: (p as any).organisation_logo_url || null,
             bio: bioMap.get(p.id) || null,
             quizCount: quizCountMap.get(p.id) || 0,
             studentCount: studentsByTutor.get(p.id)?.size || 0,
@@ -607,6 +612,15 @@ const BrowseTutors = () => {
                           <Badge variant="secondary" className="mt-1 text-xs">
                             {tutor.department}
                           </Badge>
+                        )}
+                        {tutor.organisation_name && (
+                          <div className="mt-1.5">
+                            <TutorOrgBadge
+                              name={tutor.organisation_name}
+                              logoUrl={tutor.organisation_logo_url}
+                              size="sm"
+                            />
+                          </div>
                         )}
                       </div>
                     </div>

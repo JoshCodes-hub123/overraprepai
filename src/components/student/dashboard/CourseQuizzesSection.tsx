@@ -1,21 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ClipboardList, BookOpen, ArrowRight, Sparkles, Loader2 } from "lucide-react";
+import { BookOpen, ArrowRight, Sparkles, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { QuizCard, type QuizCardData } from "@/components/quiz/QuizCard";
 
-interface QuizRow {
-  id: string;
-  title: string;
-  question_count: number | null;
-  duration_minutes: number | null;
-}
 interface CourseGroup {
   id: string;
   code: string;
   name: string;
-  quizzes: QuizRow[];
+  quizzes: QuizCardData[];
 }
 
 /**
@@ -56,21 +51,52 @@ export const CourseQuizzesSection = () => {
       const ids = courses.map((c) => c.id);
       const { data: quizzes } = await supabase
         .from("quizzes")
-        .select("id, title, question_count, duration_minutes, course_id, is_active")
+        .select("id, title, description, question_count, duration_minutes, course_id, is_active, is_premium, token_cost, tutor_id, created_at")
         .in("course_id", ids)
         .eq("is_active", true)
         .order("created_at", { ascending: false })
         .limit(80);
 
+      // Pull tutor profile info (incl. organisation) in one shot
+      const tutorIds = [
+        ...new Set(((quizzes ?? []) as any[]).map((q) => q.tutor_id).filter(Boolean)),
+      ] as string[];
+      const tutorMap = new Map<string, any>();
+      if (tutorIds.length > 0) {
+        const { data: tutors } = await (supabase as any)
+          .from("profiles")
+          .select("id, full_name, avatar_url, profile_image_url, organisation_name, organisation_logo_url")
+          .in("id", tutorIds);
+        (tutors ?? []).forEach((t: any) => tutorMap.set(t.id, t));
+      }
+
       if (cancelled) return;
 
-      const byCourse = new Map<string, QuizRow[]>();
+      const courseById = new Map(courses.map((c) => [c.id, c]));
+      const byCourse = new Map<string, QuizCardData[]>();
       for (const q of (quizzes ?? []) as any[]) {
         const arr = byCourse.get(q.course_id) ?? [];
-        if (arr.length < 3) arr.push({
-          id: q.id, title: q.title,
-          question_count: q.question_count, duration_minutes: q.duration_minutes,
-        });
+        if (arr.length < 3) {
+          const t = q.tutor_id ? tutorMap.get(q.tutor_id) : null;
+          arr.push({
+            id: q.id,
+            title: q.title,
+            description: q.description,
+            question_count: q.question_count,
+            duration_minutes: q.duration_minutes,
+            is_premium: q.is_premium,
+            token_cost: q.token_cost,
+            created_at: q.created_at,
+            course_code: courseById.get(q.course_id)?.code,
+            tutor: t ? {
+              id: t.id,
+              full_name: t.full_name,
+              avatar_url: t.avatar_url || t.profile_image_url,
+              organisation_name: t.organisation_name,
+              organisation_logo_url: t.organisation_logo_url,
+            } : null,
+          });
+        }
         byCourse.set(q.course_id, arr);
       }
 
@@ -157,30 +183,11 @@ export const CourseQuizzesSection = () => {
                   View all
                 </Link>
               </div>
-              <ul className="space-y-1.5">
+              <div className="space-y-2">
                 {g.quizzes.map((q) => (
-                  <li key={q.id}>
-                    <Link
-                      to={`/quiz/${q.id}`}
-                      className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-amber-50/60 transition group"
-                    >
-                      <span className="shrink-0 h-9 w-9 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center">
-                        <ClipboardList className="w-4 h-4" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[13.5px] font-semibold text-neutral-800 truncate">{q.title}</p>
-                        <p className="text-[11px] text-neutral-500">
-                          {q.question_count ?? "—"} questions
-                          {q.duration_minutes ? ` · ${q.duration_minutes} min` : ""}
-                        </p>
-                      </div>
-                      <span className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-500 text-white text-[11px] font-bold shadow-sm group-hover:bg-amber-600 transition">
-                        Start <ArrowRight className="w-3 h-3" />
-                      </span>
-                    </Link>
-                  </li>
+                  <QuizCard key={q.id} quiz={{ ...q, course_code: q.course_code ?? g.code }} />
                 ))}
-              </ul>
+              </div>
             </motion.div>
           ))}
         </div>

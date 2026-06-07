@@ -1,102 +1,124 @@
+## Goal
 
-# Next Milestone: Token Paywall, Open Universities & Install Push
+Three intertwined fixes:
+1. **Student dashboard is solution-first** — quizzes, AI document summary, and AI tutor are the very first thing every student sees.
+2. **Every quiz looks like a product** — rich, attractive, well-described card with the tutor's face, name, and organisation badge.
+3. **Tutors carry their organisation everywhere** — free-text org name + logo on their profile, surfaced on quiz cards and tutor pages, kept off noisy surfaces to stay clean.
 
-Five focused workstreams shipped together so the next publish is a real upgrade — not just polish.
-
----
-
-## 1. Phase 10.1 — Wire the Token Paywall into every AI action (priority #1)
-
-The `SoftPaywallSheet` and `TokenBalanceCard` exist but no AI action actually opens the sheet. We'll add a single shared hook and wire it everywhere AI is consumed.
-
-- New hook `useAIGate()` that wraps the existing `consume_ai_token(_kind)` RPC:
-  - Spends free daily use first, then a wallet token.
-  - On `{ allowed: false }` → opens `SoftPaywallSheet` with the live "resets in Xh Ym" countdown.
-  - Returns a `gate(kind, fn)` helper so call sites just do `await gate('ai_chat', () => callEdgeFn())`.
-- Wire `useAIGate` into:
-  - AI Tutor chat (`ai-tutor-chat`)
-  - Quiz "Explain answer" (`ai-explanation`)
-  - Audio Learning / TTS (`text-to-speech`)
-  - Chat with Notes (`chat-with-notes`)
-  - Summarize material / thread (`summarize-material`, `summarize-thread`)
-  - Study Coach (`study-coach`), Library AI (`library-ai`), Theory hints/eval
-- Every dashboard header + mobile greeting already shows `{balance} · {freeLeft}/3 free`. We'll make the pill open `/wallet` on tap and pulse gold for 1s after each consumption so students *see* the meter move.
-- Add a 1-time onboarding bubble: "You get 3 free AI uses every day. Top up only when you need more."
-
-## 2. Open universities to ALL Nigerian schools
-
-Today `universities.ts` only ships FUTA + OAU. We'll open it up without breaking existing scoping.
-
-- Replace the hard-coded map with a database-backed `universities` table seeded with **~170 Nigerian universities** (federal, state, private — code + name + city + type).
-- Onboarding `ChooseUniversity.tsx`:
-  - Searchable dropdown of every university.
-  - "My school isn't listed → Request it" path opens a tiny form (name, city, optional website). Saves to a new `university_requests` table with status `pending`. Student is set to that university with `is_pending_verification = true` so they can still use the app while admin reviews.
-- Faculty/Department steps gracefully fall back to free-text entry when a school has no curated faculty list yet (most won't on day 1). Admins can fill curated lists later from `/admin/universities`.
-- New admin page `/admin/universities` to approve requests, edit names, add faculties/departments.
-
-## 3. Per-school resources & batching (equal access for every uni)
-
-Tutors and admins should be able to create resources scoped to their school, and students should see the school batch on each course/resource.
-
-- Every content table that already has a `university` text field (courses, quizzes, tutor_curricula, opportunities, announcements) becomes a real FK to `universities.code`. Existing FUTA/OAU rows are preserved.
-- New helper `useUniversityScope()` returns the student's university; every "My Courses", "Library", "Audio Learning", "Course Hub", "Opportunities" list filters by it by default with a "Show all universities" toggle for cross-school browsing.
-- New badge component `<UniBadge code="FUTA" />` (gold pill with school short code) shown on every:
-  - Course card
-  - Tutor profile / Storefront
-  - Opportunity card
-  - Announcement
-  - Quiz preview
-- Tutor dashboard "Create resource" forms (`quiz`, `curriculum`, `material`, `opportunity`) auto-default to the tutor's primary school and let them multi-select extra schools if they teach across campuses. Admins can target any school.
-- Admins get a "Switch active school context" picker in `/admin` so they can curate per-university content without changing their own profile.
-
-## 4. Constant "Install the app" push
-
-Make install impossible to ignore without being spammy.
-
-- Global `InstallNudge` banner (slim gold bar at top of dashboard) shown to non-installed users — dismiss for 7 days, reappears once.
-- Floating "Get the app" CTA on every public page (`/`, `/storefront/:tutor`, `/opportunities`, `/quiz/:id`) that opens `/install` in a sheet.
-- After every quiz completion → toast "Save your streak forever. Install OverraPrep →".
-- After top-up success → toast "Tip: install the app so your wallet is one tap away".
-- Add native `beforeinstallprompt` capture + Android/iOS-specific instructions on `/install` (already partially there — we'll polish copy and add a 30s screen-recorded GIF preview).
-
-## 5. Official tutor + admin credentials
-
-- Run the existing `seed-official` edge function (already in repo) to provision the **OverraPrep Official Tutor** and **Admin** accounts.
-- Capture the generated email + temporary password in the function response and **email them to you** via the existing transactional pipeline (one-time delivery, marked sensitive).
-- You'll be asked for the destination email address as the very first build step.
+No clutter. No new tabs piled on. Existing pieces get re-ordered, re-skinned, and lightly extended.
 
 ---
 
-## Technical Details (skip if not interested)
+## 1. Solution Hub on the dashboard (top of `StudentDashboard.tsx`)
 
-- **DB migrations**
-  - `universities (code pk, name, city, type, is_active)` — seeded with full Nigerian list.
-  - `university_requests (id, requested_by, name, city, website, status, reviewed_by, reviewed_at)`.
-  - Add `university_code` FKs on `courses`, `quizzes`, `tutor_curricula`, `opportunities`, `announcements`, `materials` (nullable for cross-school). Backfill from existing `university` text column.
-  - Add `is_pending_verification boolean default false` to `profiles`.
-  - RLS: read `universities` to `anon` + `authenticated`; `university_requests` insert by `authenticated`, read/update by admins only.
-  - GRANTs on all new tables.
-- **Edge fns**
-  - No new fns — all AI gating uses the existing `consume_ai_token` RPC.
-  - Trigger `seed-official` once via curl from the agent; capture creds; send via `send-transactional-email` template `official-credentials`.
-- **Client**
-  - `src/hooks/useAIGate.ts` (new) — single source of truth for free→token→paywall flow.
-  - `src/components/common/UniBadge.tsx` (new).
-  - `src/components/install/InstallNudge.tsx` (new) — uses `localStorage` for 7-day dismiss.
-  - Refactor 8–10 AI call sites to `await gate(...)`.
-  - `ChooseUniversity.tsx` becomes a Combobox + "Request school" sheet.
-  - `/admin/universities` (new admin page).
-- **Verification**
-  - Unit-test `useAIGate` (free → token → paywall transitions).
-  - Smoke: log in as official student → use AI 3× → see paywall → top-up → continue.
-  - Smoke: sign up with a non-FUTA/OAU school → see badge on dashboard → tutor creates a resource for that school → student sees it.
+New order on `/student/dashboard`:
+
+```text
+1. TopHeader (greeting + streak + bell)              [unchanged]
+2. SolutionHub  ← NEW, the hero
+3. CourseQuizzesSection  ← promoted from hubs into Home
+4. TokenBalanceCard                                  [moved down]
+5. TodayCard
+6. HeroQuestCard
+7. ExamCountdownCard
+```
+
+### New component: `src/components/student/dashboard/SolutionHub.tsx`
+A single block titled **"What do you want to do?"** with 3 large gold-bordered tiles:
+
+- **Take a Quiz** → `/courses` (primary, biggest, gold-filled). Subtext: "Practice past questions with instant AI explanations." Live badge: `{N} new quizzes this week` from `quizzes.created_at`.
+- **Summarize a Document** → `/library` (Personal Library upload + AI summary). Subtext: "Upload notes or a PDF — get the key points in seconds."
+- **Ask AI Tutor** → `/ai-tutor`. Subtext: "Stuck on a topic? Get a step-by-step walkthrough."
+
+Each tile: icon in a soft amber chip, bold title, one-line subtext, "Open →" affordance. Mobile = stacked, desktop = 3-col grid. Uses existing semantic tokens (no raw colors).
+
+### Promote `CourseQuizzesSection`
+Already exists and is great — just import it into `StudentDashboard.tsx` directly under SolutionHub so quizzes for the student's own courses are immediately visible without a tab switch.
 
 ---
 
-## What you'll see after this ships
+## 2. Rich quiz cards (collapsible)
 
-1. Every AI button respects the 3-free + wallet rule and surfaces the paywall sheet.
-2. Any Nigerian student can pick their actual university at signup (or request a new one).
-3. Tutors/admins create resources tagged to a specific school; students see only their school's content by default with a one-tap "Browse all schools" escape hatch.
-4. Install CTAs everywhere — banner + floating button + post-action toasts.
-5. The official OverraPrep Tutor + Admin credentials land in your inbox.
+### New component: `src/components/quiz/QuizCard.tsx`
+One shared card used by `CourseQuizzesSection`, course `CourseHub` quizzes tab, and Browse views.
+
+**Always visible (rich top):**
+- Course code chip (gold outline) · difficulty pill · "NEW" badge if `created_at` within 7 days
+- Big title (font-display, 2-line clamp)
+- Tutor row: `TutorAvatar` (32px) + tutor name + **org badge** (small pill with org logo + org name, falls back to text-only if no logo)
+- Meta strip: `{question_count} questions · {duration_minutes} min · {attempts} taken · ⭐ {avg_rating}`
+- Primary **Start** button (amber, full width on mobile) + secondary "Preview" link
+
+**Collapsible "More details" (chevron toggle):**
+- Quiz description (`quizzes.description`)
+- Topics covered (first 5 from `quiz_questions.topic` distinct) as chips
+- Tutor bio one-liner + "View tutor →" link to `/tutor/{tutor_id}` public profile
+- Last attempt summary if the student has one (score + date)
+
+Animation: framer-motion height auto, ease-out 180ms. State is local (per card). No layout shift in surrounding list.
+
+### Wire-up
+- `CourseQuizzesSection.tsx` — replace the inline `<li>` list with `<QuizCard variant="compact-rich" />`. Query is extended to also pull `description`, `tutor_id`, and the tutor join (name, avatar_url, organisation_name, organisation_logo_url).
+- `pages/courses/CourseHub.tsx` quizzes tab — same component, `variant="full"`.
+- `pages/tutor/BrowseTutors.tsx` — unchanged for now (already polished), but the tutor card now also shows the org badge.
+
+---
+
+## 3. Tutor organisation + picture
+
+### Schema
+Add two columns to `profiles`:
+- `organisation_name TEXT` (free-text, nullable)
+- `organisation_logo_url TEXT` (nullable, public URL in existing `tutor-profiles` bucket)
+
+No new table — keeps it simple per your "free-text + logo" pick. No admin curation required.
+
+### Tutor edit screen (`pages/profile/EditProfile.tsx` tutor section, or `pages/tutor/TutorOnboarding.tsx` if that's where tutors edit their public info — will detect and use the right one)
+Add a **"Your organisation"** card:
+- Text input: "Organisation name" (e.g. "FUTA · Mechanical Engineering", "TopRank Tutors", "Independent")
+- Logo uploader: drag-drop, 1MB max, square, uploaded to `tutor-profiles/{user_id}/org-logo.webp` via existing upload helper
+- Tiny live preview of the badge as it will appear on quiz cards
+
+### Display surfaces (chosen for clarity, not clutter)
+- **Quiz cards** (new `QuizCard` above) — avatar + name + org badge
+- **Public tutor profile** `/tutor/:id` — hero shows large avatar, name, and org badge under name
+- **BrowseTutors result cards** — small org pill under tutor name
+- Skipped (to stay clean): leaderboards, message lists, comment authors → these stay as avatar + name only.
+
+### New component: `src/components/tutor/TutorOrgBadge.tsx`
+Small reusable pill: `<img logo /> + name` with sizes `xs | sm | md`, gracefully renders name-only when no logo. Used everywhere above.
+
+---
+
+## Technical section
+
+**Files added**
+- `src/components/student/dashboard/SolutionHub.tsx`
+- `src/components/quiz/QuizCard.tsx`
+- `src/components/tutor/TutorOrgBadge.tsx`
+
+**Files edited**
+- `src/pages/student/StudentDashboard.tsx` — insert SolutionHub + CourseQuizzesSection, reorder.
+- `src/components/student/dashboard/CourseQuizzesSection.tsx` — extend query with tutor join + description; render `QuizCard`.
+- `src/pages/courses/CourseHub.tsx` — quizzes tab uses `QuizCard`.
+- `src/pages/tutor/BrowseTutors.tsx` — render `TutorOrgBadge` on result card.
+- `src/pages/profile/EditProfile.tsx` (or tutor onboarding equivalent) — add org name + logo fields.
+
+**Migration**
+```sql
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS organisation_name TEXT,
+  ADD COLUMN IF NOT EXISTS organisation_logo_url TEXT;
+```
+(No new RLS — existing `profiles` policies already cover read/write by owner + public read of public fields.)
+
+**Data fetch**
+Existing `quizzes` query gains a `profiles!quizzes_tutor_id_fkey (id, full_name, avatar_url, organisation_name, organisation_logo_url)` join. React Query keys updated so cache invalidates cleanly.
+
+**Design tokens**
+All new UI uses semantic tokens (`bg-card`, `text-foreground`, `border-amber-100`, `bg-amber-500`, etc.) — no raw hex. Honors the locked white + gold + Inter system.
+
+**Non-goals (explicitly out of scope this round)**
+- Admin-curated partner list (your pick was free-text only).
+- Changing the tutor dashboard.
+- Touching auth, payments, or the wallet.

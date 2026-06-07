@@ -25,6 +25,7 @@ import FlashcardProgressStrip from "@/components/courses/FlashcardProgressStrip"
 import { CourseChat } from "@/components/course/CourseChat";
 import { useTrackCourseOpen } from "@/hooks/useRecentlyOpenedCourses";
 import { EmptyState } from "@/components/shell/EmptyState";
+import { QuizCard } from "@/components/quiz/QuizCard";
 
 const VALID_TABS = ["documents", "flashcards", "quizzes", "audio", "ai", "images", "discuss"] as const;
 type TabValue = typeof VALID_TABS[number];
@@ -80,13 +81,34 @@ const CourseHub = () => {
     queryFn: async () => {
       let q = supabase
         .from("quizzes")
-        .select("id, title, description, duration_minutes, question_count, is_premium, topic_id")
+        .select("id, title, description, duration_minutes, question_count, is_premium, token_cost, topic_id, tutor_id, created_at")
         .eq("course_id", courseId)
         .eq("is_active", true)
         .order("created_at", { ascending: false });
       if (topicFilter) q = q.eq("topic_id", topicFilter);
       const { data } = await q;
-      return data ?? [];
+      const rows = data ?? [];
+      const tutorIds = [...new Set(rows.map((r: any) => r.tutor_id).filter(Boolean))] as string[];
+      const tutorMap = new Map<string, any>();
+      if (tutorIds.length) {
+        const { data: tutors } = await (supabase as any)
+          .from("profiles")
+          .select("id, full_name, avatar_url, profile_image_url, organisation_name, organisation_logo_url")
+          .in("id", tutorIds);
+        (tutors ?? []).forEach((t: any) => tutorMap.set(t.id, t));
+      }
+      return rows.map((r: any) => ({
+        ...r,
+        tutor: r.tutor_id ? (() => {
+          const t = tutorMap.get(r.tutor_id);
+          return t ? {
+            id: t.id, full_name: t.full_name,
+            avatar_url: t.avatar_url || t.profile_image_url,
+            organisation_name: t.organisation_name,
+            organisation_logo_url: t.organisation_logo_url,
+          } : null;
+        })() : null,
+      }));
     },
   });
 
@@ -314,21 +336,11 @@ const CourseHub = () => {
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
                 {quizzes.map((q: any) => (
-                  <Link key={q.id} to={`/quiz/${q.id}`}>
-                    <Card className="p-3 hover:border-amber-300 transition">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-violet-500/10 text-violet-600 flex items-center justify-center shrink-0">
-                          <ClipboardList className="w-5 h-5" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="font-semibold text-sm line-clamp-2">{q.title}</h3>
-                          <p className="text-[11px] text-muted-foreground mt-1">
-                            {q.question_count} questions · {q.duration_minutes} min
-                          </p>
-                        </div>
-                      </div>
-                    </Card>
-                  </Link>
+                  <QuizCard
+                    key={q.id}
+                    quiz={{ ...q, course_code: course.code }}
+                    variant="full"
+                  />
                 ))}
               </div>
             )}
