@@ -79,17 +79,12 @@ export const SignupEmail = ({
             </Section>
 
             <Text style={muted}>
-              Or copy this link into your browser:{' '}
-              <Link href={verifyUrl} style={linkStyle}>{verifyUrl}</Link>
+              Button not working?{' '}
+              <Link href={verifyUrl} style={linkStyle}>Tap here to verify</Link>.
             </Text>
 
-            <Text style={fallbackLabel}>Having trouble? Use this 6-digit code instead:</Text>
-            <Section style={codeBoxSmall}>
-              <Text style={codeTextSmall}>{code}</Text>
-            </Section>
-
             <Text style={muted}>
-              This link &amp; code expire in <strong>1 hour</strong>. Don't share them with anyone —
+              This link expires in <strong>1 hour</strong>. Don't share it with anyone —
               not even an OverraPrep team member.
             </Text>
 
