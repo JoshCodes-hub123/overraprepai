@@ -70,8 +70,14 @@ export default function ChooseUniversity() {
         is_pending_verification: false,
       } as any)
       .eq("id", user.id);
+    if (error) { setSavingCode(null); toast.error(error.message); return; }
+    // Defensive: ensure a student role row exists (older accounts may have
+    // signed up before the handle_new_user trigger, leaving RLS-gated reads
+    // silently failing). Idempotent — onConflict ignores duplicates.
+    await (supabase as any)
+      .from("user_roles")
+      .upsert({ user_id: user.id, role: "student" }, { onConflict: "user_id,role", ignoreDuplicates: true });
     setSavingCode(null);
-    if (error) { toast.error(error.message); return; }
     await refreshProfile();
     navigate("/onboarding/faculty");
   };
