@@ -23,7 +23,6 @@ interface TeamMember {
   user_id: string;
   profile?: {
     full_name: string | null;
-    email: string;
   };
 }
 
@@ -81,7 +80,7 @@ export const TeamCard = () => {
         const memberIds = membersData.map(m => m.user_id);
         const { data: profiles, error: profilesError } = await supabase
           .from("profiles")
-          .select("id, full_name, email")
+          .select("id, full_name")
           .in("id", memberIds);
 
         if (profilesError) throw profilesError;
@@ -337,7 +336,7 @@ export const TeamCard = () => {
                 {member.user_id === team.created_by && (
                   <Crown className="w-3 h-3 text-yellow-500" />
                 )}
-                <span>{member.profile?.full_name || member.profile?.email || "Unknown"}</span>
+                <span>{member.profile?.full_name || "Unknown"}</span>
               </div>
             ))}
           </div>

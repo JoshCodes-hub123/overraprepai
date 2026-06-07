@@ -7431,6 +7431,19 @@ export type Database = {
         Args: { _days: number; _reason?: string; _user_id: string }
         Returns: string
       }
+      admin_get_profile_contacts: {
+        Args: { _ids: string[] }
+        Returns: {
+          created_at: string
+          department: string
+          email: string
+          full_name: string
+          id: string
+          phone: string
+          tutor_code: string
+          university: string
+        }[]
+      }
       admin_get_school: {
         Args: { _school_id: string }
         Returns: {

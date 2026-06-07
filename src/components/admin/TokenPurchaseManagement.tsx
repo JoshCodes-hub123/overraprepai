@@ -65,21 +65,19 @@ export function TokenPurchaseManagement() {
 
       // Fetch user details for each request
       if (requestsData) {
-        const requestsWithUsers = await Promise.all(
-          requestsData.map(async (req) => {
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("email, full_name")
-              .eq("id", req.user_id)
-              .single();
-
-            return {
-              ...req,
-              user_email: profile?.email || "Unknown",
-              user_name: profile?.full_name || "Unknown User",
-            };
-          })
-        );
+        const ids = Array.from(new Set(requestsData.map((r) => r.user_id).filter(Boolean)));
+        const { data: contacts } = ids.length
+          ? await (supabase as any).rpc("admin_get_profile_contacts", { _ids: ids })
+          : { data: [] as any[] };
+        const byId = new Map<string, any>((contacts ?? []).map((c: any) => [c.id, c]));
+        const requestsWithUsers = requestsData.map((req) => {
+          const profile = byId.get(req.user_id);
+          return {
+            ...req,
+            user_email: profile?.email || "Unknown",
+            user_name: profile?.full_name || "Unknown User",
+          };
+        });
         setRequests(requestsWithUsers);
       }
     } catch (error) {

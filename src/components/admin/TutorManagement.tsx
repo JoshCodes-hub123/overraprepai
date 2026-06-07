@@ -98,13 +98,14 @@ export function TutorManagement() {
         .eq("role", "tutor");
 
       if (tutorRoles) {
+        const ids = tutorRoles.map((r) => r.user_id);
+        const { data: contacts } = ids.length
+          ? await (supabase as any).rpc("admin_get_profile_contacts", { _ids: ids })
+          : { data: [] as any[] };
+        const profileById = new Map<string, any>((contacts ?? []).map((c: any) => [c.id, c]));
         const tutorsWithData = await Promise.all(
           tutorRoles.map(async (role) => {
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("full_name, email, department")
-              .eq("id", role.user_id)
-              .single();
+            const profile = profileById.get(role.user_id) || {};
 
             const { count: coursesCount } = await supabase
               .from("courses")

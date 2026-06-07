@@ -82,14 +82,11 @@ export const AuditLogs = () => {
       const adminIds = [...new Set(logs.map((log) => log.admin_id))];
       if (adminIds.length === 0) return {};
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, email")
-        .in("id", adminIds);
+      const { data, error } = await (supabase as any).rpc("admin_get_profile_contacts", { _ids: adminIds });
 
       if (error) throw error;
 
-      return data.reduce((acc, profile) => {
+      return (data ?? []).reduce((acc: any, profile: any) => {
         acc[profile.id] = profile;
         return acc;
       }, {} as Record<string, { full_name: string | null; email: string }>);
