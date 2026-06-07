@@ -156,9 +156,10 @@ const Auth = () => {
     if (intent === "tutor") return "/apply-tutor";
     if (intent === "school_owner") return "/school/register";
     if (intent === "parent") return "/parent/dashboard";
-    // Fresh student signup → kick off the "I'm New" onboarding chain so we can
-    // collect university / faculty / department / level before the dashboard.
-    if (justSignedUp) return "/onboarding/university";
+    // Zero-friction entry: new and returning students go straight to the
+    // dashboard. University / faculty / level can be picked later from the
+    // profile screen — no forced onboarding chain.
+    if (justSignedUp) return "/student/dashboard";
     // Resume where the user left off, if we have a saved route for this account.
     try {
       const uid = user?.id;
@@ -171,11 +172,7 @@ const Auth = () => {
     if (primaryRole === "tutor") return "/tutor/dashboard";
     if (primaryRole === "school_owner" || primaryRole === "school_admin" || primaryRole === "teacher") return "/school/dashboard";
     if (primaryRole === "parent") return "/parent/dashboard";
-    // Existing student returning: if their profile still hasn't picked a
-    // university (legacy / abandoned signup), resume onboarding instead of
-    // dropping them on a half-personalised dashboard.
-    const needsOnboarding = !!user && primaryRole === "student" && !(profile as any)?.university;
-    return needsOnboarding ? "/onboarding/university" : "/student/dashboard";
+    return "/student/dashboard";
   };
 
   useEffect(() => {
