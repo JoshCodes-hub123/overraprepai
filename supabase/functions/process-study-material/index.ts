@@ -19,27 +19,62 @@ const KIND_INSTRUCTIONS: Record<Kind, string> = {
     "Predict likely exam questions a Nigerian university lecturer would ask from this material. Return JSON array of objects { question: string, type: 'objective'|'theory', probability: 'high'|'medium'|'low', reasoning: string }. Return 8-15 items.",
 };
 
+// Hard cap on bytes we will ever pull into memory from storage. Prevents
+// edge-function OOM on large PDFs/DOCX uploads. Anything bigger falls back
+// to AI generation from title + description only.
+const MAX_FETCH_BYTES = 1_500_000; // ~1.5 MB
+const MAX_TEXT_CHARS = 60_000;
+
 async function extractText(fileUrl: string, fileType: string): Promise<string> {
-  const res = await fetch(fileUrl);
-  if (!res.ok) throw new Error(`Failed to fetch file: ${res.status}`);
+  const lowerType = (fileType || "").toLowerCase();
+  const isTexty =
+    lowerType.includes("text") ||
+    lowerType.includes("markdown") ||
+    lowerType.includes("json") ||
+    lowerType.includes("csv");
 
-  // Plain text / markdown
-  if (fileType.includes("text") || fileType.includes("markdown")) {
-    return await res.text();
-  }
+  // Binary formats (pdf, docx, pptx, images, etc.) — do NOT pull into memory.
+  // The AI step will rely on title + description (and optional signed URL note).
+  if (!isTexty) return "";
 
-  // PDF / DOCX / PPTX — let Gemini read the raw bytes via inline base64 in a follow-up step.
-  // For now, attempt naive text extraction; fall back to base64 marker the AI step will detect.
   try {
-    const text = await res.text();
-    // crude check: if it's binary-looking, return empty so AI step uses file URL fallback
-    const printableRatio =
-      text.split("").filter((c) => {
-        const code = c.charCodeAt(0);
-        return code === 9 || code === 10 || code === 13 || (code >= 32 && code < 127);
-      }).length / Math.max(text.length, 1);
-    if (printableRatio > 0.85) return text.slice(0, 60000);
-    return "";
+    const res = await fetch(fileUrl);
+    if (!res.ok) return "";
+
+    // Skip if file is too large to safely buffer in edge runtime memory.
+    const len = Number(res.headers.get("content-length") || "0");
+    if (len && len > MAX_FETCH_BYTES) {
+      res.body?.cancel();
+      return "";
+    }
+
+    // Stream up to MAX_FETCH_BYTES, then abort.
+    const reader = res.body?.getReader();
+    if (!reader) return "";
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > MAX_FETCH_BYTES) {
+        await reader.cancel();
+        break;
+      }
+      chunks.push(value);
+    }
+    const merged = new Uint8Array(total > MAX_FETCH_BYTES ? MAX_FETCH_BYTES : total);
+    let offset = 0;
+    for (const c of chunks) {
+      if (offset + c.byteLength > merged.length) {
+        merged.set(c.subarray(0, merged.length - offset), offset);
+        break;
+      }
+      merged.set(c, offset);
+      offset += c.byteLength;
+    }
+    const text = new TextDecoder("utf-8", { fatal: false }).decode(merged);
+    return text.slice(0, MAX_TEXT_CHARS);
   } catch {
     return "";
   }
@@ -120,7 +155,7 @@ ${material.description ? `DESCRIPTION: ${material.description}\n` : ""}
 TASK: ${KIND_INSTRUCTIONS[kind]}
 
 CONTENT:
-${extracted ? extracted.slice(0, 50000) : `[Binary file. Source URL: ${signed.signedUrl}. Use the title and description above plus general academic knowledge.]`}`;
+${extracted ? extracted.slice(0, MAX_TEXT_CHARS) : `[Binary or large file — generate from title and description plus general academic knowledge for this course topic.]`}`;
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
