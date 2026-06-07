@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { usePublishedExams, useMyAttempts } from "@/hooks/useMockExams";
 import { SEO } from "@/components/seo/SEO";
+import { EmptyState } from "@/components/ui/empty-state";
 import { format } from "date-fns";
 
 export default function MockExams() {
@@ -24,10 +25,12 @@ export default function MockExams() {
           <h2 className="text-sm font-semibold mb-2">Available exams</h2>
           {isLoading ? <Loader2 className="w-6 h-6 mx-auto mt-8 animate-spin" />
             : exams.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground rounded-xl border bg-card">
-                <FileText className="w-10 h-10 mx-auto mb-2 opacity-40" />
-                <p className="text-sm">No mock exams published yet.</p>
-              </div>
+              <EmptyState
+                icon={FileText}
+                title="No mock exams yet"
+                description="Full-length CBT exams will appear here once your tutors publish them. In the meantime, sharpen up with practice quizzes."
+                action={{ label: "Browse practice quizzes", onClick: () => nav("/practice") }}
+              />
             ) : (
               <div className="space-y-2">
                 {exams.map(e => (
