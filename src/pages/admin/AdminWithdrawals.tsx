@@ -15,11 +15,20 @@ export default function AdminWithdrawals() {
   const { data } = useQuery({
     queryKey: ['admin-withdrawals'],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data: rows } = await supabase
         .from('withdrawal_requests')
-        .select('*, profiles!withdrawal_requests_tutor_id_fkey(full_name, tutor_code, email)')
+        .select('*, profiles!withdrawal_requests_tutor_id_fkey(full_name, tutor_code)')
         .order('created_at', { ascending: false }).limit(100);
-      return data ?? [];
+      const tutorIds = Array.from(new Set((rows ?? []).map((r: any) => r.tutor_id).filter(Boolean)));
+      let emailMap: Record<string, string> = {};
+      if (tutorIds.length > 0) {
+        const { data: contacts } = await (supabase as any).rpc('admin_get_profile_contacts', { _ids: tutorIds });
+        emailMap = Object.fromEntries((contacts ?? []).map((c: any) => [c.id, c.email]));
+      }
+      return (rows ?? []).map((r: any) => ({
+        ...r,
+        profiles: { ...(r.profiles ?? {}), email: emailMap[r.tutor_id] ?? null },
+      }));
     },
   });
 
