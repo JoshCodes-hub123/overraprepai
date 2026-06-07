@@ -100,12 +100,11 @@ export default function SmartSummary() {
     queryKey: ["profile", user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("full_name, matric_no, university, onboarding_completed")
-        .eq("id", user!.id)
-        .maybeSingle();
-      return data;
+      // Sensitive cols (matric_no) are not selectable from the table; use the
+      // SECURITY DEFINER RPC that returns the caller's own profile.
+      const { data } = await (supabase as any).rpc("get_my_profile");
+      const row = Array.isArray(data) ? data[0] : data;
+      return row as { full_name: string | null; matric_no: string | null; university: string | null; onboarding_completed: boolean | null } | null;
     },
   });
 
