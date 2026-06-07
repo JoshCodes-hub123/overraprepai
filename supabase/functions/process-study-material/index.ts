@@ -155,7 +155,7 @@ ${material.description ? `DESCRIPTION: ${material.description}\n` : ""}
 TASK: ${KIND_INSTRUCTIONS[kind]}
 
 CONTENT:
-${extracted ? extracted.slice(0, 50000) : `[Binary file. Source URL: ${signed.signedUrl}. Use the title and description above plus general academic knowledge.]`}`;
+${extracted ? extracted.slice(0, MAX_TEXT_CHARS) : `[Binary or large file — generate from title and description plus general academic knowledge for this course topic.]`}`;
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
