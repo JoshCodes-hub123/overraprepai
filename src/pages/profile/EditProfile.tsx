@@ -90,6 +90,9 @@ const EditProfile = () => {
   const [xHandle, setXHandle] = useState("");
   const [interests, setInterests] = useState("");
   const [hobbies, setHobbies] = useState("");
+  const [organisationName, setOrganisationName] = useState("");
+  const [organisationLogoUrl, setOrganisationLogoUrl] = useState<string | null>(null);
+  const [isUploadingOrgLogo, setIsUploadingOrgLogo] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -117,6 +120,8 @@ const EditProfile = () => {
       setXHandle(p.x_handle || "");
       setInterests((p.study_interests || []).join(", "));
       setHobbies((p.hobbies || []).join(", "));
+      setOrganisationName(p.organisation_name || "");
+      setOrganisationLogoUrl(p.organisation_logo_url || null);
     }
   }, [profile]);
 
@@ -272,6 +277,8 @@ const EditProfile = () => {
           x_handle: xHandle.trim() || null,
           study_interests: toArr(interests),
           hobbies: toArr(hobbies),
+          organisation_name: organisationName.trim() || null,
+          organisation_logo_url: organisationLogoUrl,
         } as any)
         .eq("id", user.id);
 
