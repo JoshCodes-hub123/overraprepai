@@ -27,8 +27,7 @@ export default function AdminTrust() {
       (hist ?? []).forEach((d: any) => grouped.set(d.user_id, (grouped.get(d.user_id) ?? 0) + 1));
       const userIds = Array.from(grouped.entries()).filter(([, n]) => n >= minDevices).map(([id]) => id).slice(0, 50);
       if (userIds.length === 0) return [];
-      const { data: profiles } = await (supabase.from as any)("profiles")
-        .select("id, full_name, email, university, created_at").in("id", userIds);
+      const { data: profiles } = await (supabase as any).rpc("admin_get_profile_contacts", { _ids: userIds });
       return (profiles ?? []).map((p: any) => ({ ...p, devices: grouped.get(p.id) ?? 0 })) as Row[];
     },
   });
