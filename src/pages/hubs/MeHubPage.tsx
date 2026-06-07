@@ -6,6 +6,7 @@ import HubPage from "@/components/hub/HubPage";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { TokenBalanceCard } from "@/components/student/dashboard/TokenBalanceCard";
 
 const MeHubPage = () => {
   const { signOut } = useAuth();
