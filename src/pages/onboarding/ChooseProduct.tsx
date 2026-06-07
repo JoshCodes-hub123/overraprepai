@@ -26,7 +26,9 @@ const ChooseProduct = () => {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <img src={logo} alt="OverraPrep" className="h-7 w-auto" />
-          <div className="w-8" />
+          <span className="text-xs font-semibold tracking-[0.2em] text-muted-foreground uppercase">
+            1 of 2
+          </span>
         </header>
 
         <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center pb-8">
