@@ -82,6 +82,19 @@ const PRICE_BUCKETS = [
 
 const TUTORS_PER_PAGE = 9;
 
+const FilterChip = ({ label, onClear }: { label: string; onClear: () => void }) => (
+  <span className="inline-flex items-center gap-1 h-6 pl-2.5 pr-1 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-medium">
+    {label}
+    <button
+      onClick={onClear}
+      aria-label={`Remove ${label}`}
+      className="w-4 h-4 inline-flex items-center justify-center rounded-full hover:bg-amber-200/70"
+    >
+      <XIcon className="w-3 h-3" />
+    </button>
+  </span>
+);
+
 const BrowseTutors = () => {
   const navigate = useNavigate();
   const { primaryRole, profile } = useAuth();
