@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { OnboardingDialog } from "@/components/onboarding/OnboardingDialog";
 import { SEO } from "@/components/seo/SEO";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   LogOut,
   Plus,
@@ -13,14 +14,19 @@ import {
   Coins,
   TrendingUp,
   FileText,
-  ChevronRight,
   Loader2,
-  Edit,
-  Eye,
   GraduationCap,
   BarChart3,
   User,
-  Sparkles
+  Sparkles,
+  Megaphone,
+  HelpCircle,
+  MessageCircle,
+  Store,
+  ArrowRight,
+  AlertCircle,
+  BookOpen,
+  Image as ImageIcon,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import DashboardNav from "@/components/layout/DashboardNav";
@@ -38,18 +44,11 @@ import { OnboardingChecklist } from "@/components/tutor/OnboardingChecklist";
 import { SkeletonDashboard } from "@/components/ui/premium-skeletons";
 import { DashboardHero } from "@/components/dashboard/DashboardHero";
 import { PremiumStatCard } from "@/components/dashboard/PremiumStatCard";
-import { QuickActions } from "@/components/dashboard/QuickActions";
 import { SuggestOpportunityDialog } from "@/components/opportunities/SuggestOpportunityDialog";
 import { PullToRefresh } from "@/components/native/PullToRefresh";
 import { DashboardOfflineBanner } from "@/components/dashboard/DashboardOfflineBanner";
 import { LastUpdatedBadge } from "@/components/dashboard/LastUpdatedBadge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash2, AlertCircle, BookOpen, Image as ImageIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Course {
   id: string;
