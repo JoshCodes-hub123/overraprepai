@@ -238,12 +238,14 @@ const BrowseTutors = () => {
             : 0;
           const prices = pricesByTutor.get(p.id) || [];
           return {
-            id: p.id,
+          id: p.id,
             full_name: p.full_name,
             profile_image_url: p.profile_image_url,
             tutor_code: p.tutor_code,
             department: p.department,
             specialization: (p as any).tutor_specialization || null,
+            organisation_name: (p as any).organisation_name || null,
+            organisation_logo_url: (p as any).organisation_logo_url || null,
             bio: bioMap.get(p.id) || null,
             quizCount: quizCountMap.get(p.id) || 0,
             studentCount: studentsByTutor.get(p.id)?.size || 0,
