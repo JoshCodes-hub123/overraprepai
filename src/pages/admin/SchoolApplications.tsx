@@ -68,11 +68,8 @@ export default function AdminSchoolApplications() {
       let ownerEmail = school.email;
       let ownerName = school.principal_name;
       if (school.owner_id) {
-        const { data: owner } = await supabase
-          .from("profiles")
-          .select("email, full_name")
-          .eq("id", school.owner_id)
-          .maybeSingle();
+        const { data: owners } = await (supabase as any).rpc("admin_get_profile_contacts", { _ids: [school.owner_id] });
+        const owner = owners?.[0];
         if (owner?.email) ownerEmail = owner.email;
         if (owner?.full_name) ownerName = owner.full_name;
       }
