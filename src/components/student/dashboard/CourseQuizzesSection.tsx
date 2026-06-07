@@ -1,21 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ClipboardList, BookOpen, ArrowRight, Sparkles, Loader2 } from "lucide-react";
+import { BookOpen, ArrowRight, Sparkles, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { QuizCard, type QuizCardData } from "@/components/quiz/QuizCard";
 
-interface QuizRow {
-  id: string;
-  title: string;
-  question_count: number | null;
-  duration_minutes: number | null;
-}
 interface CourseGroup {
   id: string;
   code: string;
   name: string;
-  quizzes: QuizRow[];
+  quizzes: QuizCardData[];
 }
 
 /**
