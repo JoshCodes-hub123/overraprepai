@@ -158,19 +158,20 @@ export const PurchaseQuizDialog = ({
         });
       }
 
-      // Send email notification to the student
+      // Send email notification to the student (use the verified auth email)
+      const studentEmail = user.email;
       const { data: profile } = await supabase
         .from("profiles")
-        .select("email, full_name")
+        .select("full_name")
         .eq("id", user.id)
         .single();
 
-      if (profile?.email) {
+      if (studentEmail) {
         await sendNotification({
           type: "quiz_purchased",
-          to: profile.email,
+          to: studentEmail,
           data: {
-            studentName: profile.full_name || "Student",
+            studentName: profile?.full_name || "Student",
             quizTitle: quiz.title,
             courseName: quiz.course?.name || "N/A",
             questionCount: quiz.question_count || 20,
