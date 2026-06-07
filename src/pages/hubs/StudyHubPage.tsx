@@ -1,6 +1,6 @@
 import {
   BookOpen, Layers, Sparkles, Library, LifeBuoy, Headphones,
-  MessageSquare, FileText, History, Compass, FolderOpen, Brain,
+  MessageSquare, FileText, History, Compass, Brain,
 } from "lucide-react";
 import HubPage from "@/components/hub/HubPage";
 
