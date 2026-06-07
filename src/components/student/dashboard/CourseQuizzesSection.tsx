@@ -183,30 +183,11 @@ export const CourseQuizzesSection = () => {
                   View all
                 </Link>
               </div>
-              <ul className="space-y-1.5">
+              <div className="space-y-2">
                 {g.quizzes.map((q) => (
-                  <li key={q.id}>
-                    <Link
-                      to={`/quiz/${q.id}`}
-                      className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-amber-50/60 transition group"
-                    >
-                      <span className="shrink-0 h-9 w-9 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center">
-                        <ClipboardList className="w-4 h-4" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[13.5px] font-semibold text-neutral-800 truncate">{q.title}</p>
-                        <p className="text-[11px] text-neutral-500">
-                          {q.question_count ?? "—"} questions
-                          {q.duration_minutes ? ` · ${q.duration_minutes} min` : ""}
-                        </p>
-                      </div>
-                      <span className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-500 text-white text-[11px] font-bold shadow-sm group-hover:bg-amber-600 transition">
-                        Start <ArrowRight className="w-3 h-3" />
-                      </span>
-                    </Link>
-                  </li>
+                  <QuizCard key={q.id} quiz={{ ...q, course_code: q.course_code ?? g.code }} />
                 ))}
-              </ul>
+              </div>
             </motion.div>
           ))}
         </div>
