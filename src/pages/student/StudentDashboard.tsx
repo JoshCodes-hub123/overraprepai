@@ -49,30 +49,38 @@ const StudentDashboard = () => {
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
       <PullToRefresh onRefresh={onRefresh}>
         <div className="min-h-screen bg-background pb-24 md:pb-12">
-          <main className="container mx-auto px-4 pt-5 sm:pt-7 max-w-2xl">
+          <main className="container mx-auto px-4 pt-5 sm:pt-7 max-w-2xl space-y-5">
             <DashboardOfflineBanner onReattempt={onRefresh} />
 
             {/* 1. Greeting + streak + bell */}
             <TopHeader key={`top-${refreshKey}`} />
 
             {/* 2. Solution Hub — Quizzes, AI Summary, AI Tutor (HERO) */}
-            <SolutionHub />
+            <section aria-labelledby="solution-hub-label">
+              <p id="solution-hub-label" className="mb-2 px-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-700/90">
+                What do you want to do?
+              </p>
+              <SolutionHub />
+            </section>
 
-            {/* 3. Quizzes from your courses — students came here for this */}
-            <CourseQuizzesSection key={`cq-${refreshKey}`} />
+            {/* soft divider */}
+            <div className="border-t border-amber-100/60" aria-hidden />
 
-            {/* 4. Wallet */}
-            <TokenBalanceCard />
+            {/* 3. Quizzes from your courses */}
+            <section aria-labelledby="course-quizzes-label">
+              <p id="course-quizzes-label" className="mb-2 px-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-700/90">
+                Quizzes from your courses
+              </p>
+              <CourseQuizzesSection key={`cq-${refreshKey}`} />
+            </section>
 
-            {/* 5. Today — single primary CTA */}
+            {/* 4. Today — single primary CTA */}
             <TodayCard key={`today-${refreshKey}`} />
 
-            {/* 6. 7-day hero quest — daily habit loop */}
+            {/* 5. 7-day hero quest — daily habit loop */}
             <HeroQuestCard />
-
-            {/* 7. Exam countdown — only renders when an active goal exists */}
-            <ExamCountdownCard />
           </main>
+
         </div>
 
         <OnboardingDialog
