@@ -21,7 +21,6 @@ const StudyHubPage = () => (
         title: "Materials & resources",
         tiles: [
           { to: "/study-hub", label: "Study Hub", description: "Past questions & summaries", icon: Library },
-          { to: "/library", label: "My Library", description: "Your uploads & resources", icon: FolderOpen },
           { to: "/theory", label: "Theory Prep", description: "Long-answer practice", icon: FileText },
           { to: "/survival-kits", label: "Survival Kits", description: "Course rescue packs", icon: LifeBuoy },
         ],
