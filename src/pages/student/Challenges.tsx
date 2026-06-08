@@ -38,21 +38,15 @@ export default function Challenges() {
       <SEO title="Weekly Challenges" description="Earn badges and tokens by hitting weekly study goals." noindex />
       <div className="min-h-screen bg-background">
         <main className="container mx-auto px-4 pt-5 pb-24 max-w-3xl">
-          <Link to="/student/dashboard" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground mb-3 hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" /> Dashboard
-          </Link>
-
-          <header className="mb-5">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-semibold mb-2">
-              <Sparkles className="h-3 w-3" /> Weekly challenges
-            </div>
-            <h1 className="font-display text-2xl md:text-3xl font-extrabold tracking-tight">
-              Push yourself this week
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Pick a challenge, hit the goal, claim tokens and a badge. Calm progress, real momentum.
-            </p>
-          </header>
+          <div className="mb-5">
+            <PremiumPageHero
+              eyebrow="WEEKLY CHALLENGES"
+              title="Push yourself this week"
+              subtitle="Pick a challenge, hit the goal, claim tokens and a badge. Calm progress, real momentum."
+              icon={Trophy}
+              back="/student/dashboard"
+            />
+          </div>
 
           {/* My badges */}
           {badges.length > 0 && (
