@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
-import { BookOpen, PenSquare, Headphones, Bot } from "lucide-react";
+import { BookOpen, FileText, Headphones, Bot } from "lucide-react";
 
 const ACTIONS = [
-  { label: "Study",    to: "/study",    icon: BookOpen,   tint: "bg-amber-100 text-amber-700" },
-  { label: "Practice", to: "/practice", icon: PenSquare,  tint: "bg-emerald-100 text-emerald-700" },
-  { label: "Audio",    to: "/audio",    icon: Headphones, tint: "bg-violet-100 text-violet-700" },
-  { label: "Ask AI",   to: "/ai-tutor", icon: Bot,        tint: "bg-sky-100 text-sky-700" },
+  { label: "Study",      to: "/study",                  icon: BookOpen,   tint: "bg-amber-100 text-amber-700" },
+  { label: "Smart Notes",to: "/student/smart-summary",  icon: FileText,   tint: "bg-emerald-100 text-emerald-700" },
+  { label: "Audio",      to: "/audio-learning",         icon: Headphones, tint: "bg-violet-100 text-violet-700" },
+  { label: "Ask AI",     to: "/ai-tutor",               icon: Bot,        tint: "bg-sky-100 text-sky-700" },
 ];
 
 export function QuickActions4() {
