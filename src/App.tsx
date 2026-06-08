@@ -36,12 +36,35 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 1,
-      gcTime: 1000 * 60 * 10,
+      // Keep cache warm for 24h so returning users see the dashboard
+      // instantly while fresh data hydrates in the background.
+      gcTime: 1000 * 60 * 60 * 24,
       refetchOnWindowFocus: false,
       retry: 1,
     },
   },
 });
+
+// Persist the React Query cache to localStorage. On a return visit the
+// dashboard paints from cache in <1s while live data revalidates.
+try {
+  // Lazy import to avoid blocking first paint.
+  void import("@tanstack/react-query-persist-client").then(({ persistQueryClient }) => {
+    void import("@tanstack/query-sync-storage-persister").then(({ createSyncStoragePersister }) => {
+      const persister = createSyncStoragePersister({
+        storage: window.localStorage,
+        key: "overra-rq-cache-v1",
+        throttleTime: 1500,
+      });
+      persistQueryClient({
+        queryClient,
+        persister,
+        maxAge: 1000 * 60 * 60 * 24, // 24h
+        buster: "v1",
+      });
+    });
+  });
+} catch { /* noop */ }
 
 // Auto-register push when a user signs in (native only).
 function PushBootstrap() {
