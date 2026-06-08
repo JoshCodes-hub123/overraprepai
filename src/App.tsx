@@ -15,6 +15,7 @@ import BiometricUnlock from "@/components/native/BiometricUnlock";
 import OfflineBanner from "@/components/native/OfflineBanner";
 import BottomTabBar from "@/components/app-shell/BottomTabBar";
 import NewStudyPackFAB from "@/components/student/NewStudyPackFAB";
+import StudentMenuFab from "@/components/student/StudentMenuFab";
 import MiniPlayerBar from "@/components/audio/MiniPlayerBar";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import EmailVerificationBanner from "@/components/auth/EmailVerificationBanner";
@@ -140,6 +141,7 @@ const App = () => {
                   <AnimatedRoutes />
                 </main>
                 <BottomTabBar />
+                <StudentMenuFab />
                 <NewStudyPackFAB />
                 <ReportProblemFab />
                 <MiniPlayerBar />
