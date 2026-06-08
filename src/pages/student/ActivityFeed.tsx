@@ -4,6 +4,7 @@ import { ArrowLeft, Upload, Megaphone, BookOpen, Briefcase, Star, ChevronRight }
 import { formatDistanceToNow, isToday, isYesterday, format, isThisWeek } from "date-fns";
 import { SEO } from "@/components/seo/SEO";
 import { useActivityFeed, type ActivityEvent } from "@/hooks/useActivityFeed";
+import { PremiumPageHero } from "@/components/shell/PremiumPageHero";
 
 const ICONS: Record<string, any> = {
   uploaded_note: Upload,
