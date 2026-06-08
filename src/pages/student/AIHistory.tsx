@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { ChevronLeft, Download, Filter, History, Loader2, RefreshCw, Search, Sparkles, Trash2, X } from "lucide-react";
+import { PremiumPageHero } from "@/components/shell/PremiumPageHero";
 import DashboardNav from "@/components/layout/DashboardNav";
 import { DashboardBreadcrumb } from "@/components/layout/DashboardBreadcrumb";
 import { SEO } from "@/components/seo/SEO";
@@ -138,48 +139,45 @@ const AIHistory = () => {
         <DashboardBreadcrumb role={navRole} />
 
         <main className="container mx-auto px-4 py-6 max-w-5xl">
-          <Link to="/library" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-3">
-            <ChevronLeft className="w-3.5 h-3.5" /> Back to Library
-          </Link>
-
-          <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h1 className="font-display text-2xl font-bold flex items-center gap-2">
-                <History className="w-6 h-6 text-amber-600" /> AI Generation History
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Every quiz, flashcard, summary and audio lesson you've generated — searchable and exportable.
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={load}>
-                <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Refresh
-              </Button>
-              <Button size="sm" onClick={exportCsv} className="bg-amber-500 hover:bg-amber-600 text-white">
-                <Download className="w-3.5 h-3.5 mr-1.5" /> Export CSV
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" disabled={rows.length === 0}>
-                    <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Clear all
+          <div className="mb-5">
+            <PremiumPageHero
+              eyebrow="AI HISTORY"
+              title="Everything your AI has made for you"
+              subtitle="Every quiz, flashcard, summary and audio lesson — searchable and exportable."
+              icon={History}
+              back="/library"
+              right={
+                <>
+                  <Button variant="outline" size="sm" onClick={load}>
+                    <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Refresh
                   </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Clear all AI history?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This permanently removes every AI generation record from your account. The generated quizzes, flashcards and summaries themselves stay in your Library.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleClearAll} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                      Yes, clear everything
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
+                  <Button size="sm" onClick={exportCsv} className="bg-amber-500 hover:bg-amber-600 text-white">
+                    <Download className="w-3.5 h-3.5 mr-1.5" /> Export CSV
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" disabled={rows.length === 0}>
+                        <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Clear all
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Clear all AI history?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This permanently removes every AI generation record from your account. The generated quizzes, flashcards and summaries themselves stay in your Library.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleClearAll} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          Yes, clear everything
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
+              }
+            />
           </div>
 
           <Card className="mb-4 border-amber-100">
