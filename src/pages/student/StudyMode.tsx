@@ -49,6 +49,9 @@ export default function StudyMode() {
 
   const generate = async () => {
     if (!courseId) return;
+    const { aiGate } = await import("@/lib/aiGate");
+    const ok = await aiGate.consume("mock_exam_generate", { action: "Generate Mock Exam" });
+    if (!ok) return;
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke("readiness-exam-generate", { body: { course_id: courseId, count: 10 } });
