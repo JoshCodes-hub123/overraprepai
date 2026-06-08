@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Sparkles, Target, Calendar, TrendingDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { PremiumPageHero } from '@/components/shell/PremiumPageHero';
 
 interface Attempt { score: number | null; total_questions: number | null; quiz_id: string }
 interface Quiz { id: string; title: string }
