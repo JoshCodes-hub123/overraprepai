@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, ExternalLink } from "lucide-react";
+import { PremiumPageHero } from "@/components/shell/PremiumPageHero";
 import { SEO } from "@/components/seo/SEO";
 import { useSpotlights } from "@/hooks/useSpotlights";
 import { useAuth } from "@/hooks/useAuth";
