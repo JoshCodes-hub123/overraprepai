@@ -28,13 +28,16 @@ export default function Spotlight() {
     <>
       <SEO title="Student Spotlight — OverraPrep AI" description="Celebrating outstanding students." />
       <div className="min-h-screen bg-background">
-        <header className="bg-card border-b border-amber-100/70 sticky top-0 z-30">
-          <div className="container mx-auto px-4 h-14 flex items-center gap-3">
-            <button onClick={() => navigate(home)} className="text-muted-foreground" aria-label="Back to dashboard"><ArrowLeft className="h-5 w-5" /></button>
-            <h1 className="font-display text-base font-bold">Student Spotlight</h1>
-          </div>
-        </header>
         <main className="container mx-auto px-4 py-5 max-w-3xl">
+          <div className="mb-5">
+            <PremiumPageHero
+              eyebrow="STUDENT SPOTLIGHT"
+              title="Celebrating outstanding students"
+              subtitle="Top graduates, innovators, scholarship and hackathon winners."
+              icon={Star}
+              back={home}
+            />
+          </div>
           {isLoading ? (
             <p className="text-sm text-muted-foreground py-12 text-center">Loading…</p>
           ) : items.length === 0 ? (
