@@ -61,14 +61,15 @@ const Referrals = () => {
       <div className="min-h-screen bg-background pb-24">
         <DashboardNav role="student" />
         <main className="container mx-auto px-4 py-6 max-w-3xl">
-          <header className="mb-6">
-            <h1 className="font-display text-2xl font-bold flex items-center gap-2">
-              <Gift className="w-6 h-6 text-amber-500" /> Refer & Earn
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Share OverraPrep with friends. You both earn tokens when they complete their first quiz.
-            </p>
-          </header>
+          <div className="mb-6">
+            <PremiumPageHero
+              eyebrow="REFER & EARN"
+              title="Invite friends, earn tokens"
+              subtitle="Share OverraPrep with friends. You both earn tokens when they complete their first quiz."
+              icon={Gift}
+              back
+            />
+          </div>
 
           <Card className="p-5 mb-5 border-amber-100 bg-gradient-to-br from-amber-50/60 to-background">
             <p className="text-xs uppercase tracking-wider font-semibold text-amber-700">Your referral code</p>
