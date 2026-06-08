@@ -139,6 +139,27 @@ const QuizPractice = () => {
 
       if (quizError) throw quizError;
 
+      // Token gate: tutor-made quizzes must be unlocked first.
+      // Free: your own quizzes (tutor_id == you) and AI/system quizzes (tutor_id is null).
+      const needsGate = !!quizData.tutor_id && quizData.tutor_id !== user.id;
+      if (needsGate) {
+        const { data: unlockRow } = await (supabase as any)
+          .from("quiz_unlocks")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("quiz_id", quizId)
+          .maybeSingle();
+        if (!unlockRow) {
+          setQuiz({
+            ...quizData,
+            course: quizData.courses as { code: string; name: string },
+          });
+          setNeedsUnlock(true);
+          setIsLoading(false);
+          return;
+        }
+      }
+
       setQuiz({
         ...quizData,
         course: quizData.courses as { code: string; name: string }
