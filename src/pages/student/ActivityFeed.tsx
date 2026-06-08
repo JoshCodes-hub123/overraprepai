@@ -75,16 +75,14 @@ export default function ActivityFeed() {
     <>
       <SEO title="Activity Feed — OverraPrep AI" description="What's happening across your academic ecosystem." />
       <div className="min-h-screen bg-background">
-        <header className="bg-card border-b border-amber-100/70 sticky top-0 z-30">
-          <div className="container mx-auto px-4 h-14 flex items-center gap-3">
-            <Link to="/student/dashboard" className="text-muted-foreground" aria-label="Back to dashboard">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-            <h1 className="font-display text-base font-bold">Activity</h1>
-          </div>
-        </header>
-
         <main className="container mx-auto px-4 py-5 max-w-2xl space-y-6">
+          <PremiumPageHero
+            eyebrow="ACTIVITY"
+            title="What's new across your prep"
+            subtitle="Tutor uploads, opportunities, announcements and spotlights — all in one feed."
+            icon={Star}
+            back="/student/dashboard"
+          />
           {isLoading ? (
             <p className="text-sm text-muted-foreground text-center py-12">Loading…</p>
           ) : groups.length === 0 ? (
