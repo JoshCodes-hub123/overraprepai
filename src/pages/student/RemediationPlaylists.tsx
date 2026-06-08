@@ -32,15 +32,16 @@ export default function RemediationPlaylists() {
   return (
     <div className="min-h-screen bg-background pb-20">
       <SEO title="My Remediation Playlists" description="Track AI study plans against weak topics." />
-      <header className="flex items-center gap-2 px-3 py-3 border-b sticky top-0 bg-background/95 backdrop-blur z-10">
-        <Button variant="ghost" size="icon" onClick={() => nav(-1)}><ArrowLeft className="w-5 h-5" /></Button>
-        <div className="flex-1">
-          <h1 className="text-base font-semibold">My Study Plans</h1>
-          <p className="text-xs text-muted-foreground">AI-generated remediation, tracked against weak topics</p>
-        </div>
-      </header>
-
       <div className="max-w-2xl mx-auto px-4 py-4">
+        <div className="mb-4">
+          <PremiumPageHero
+            eyebrow="STUDY PLANS"
+            title="My remediation playlists"
+            subtitle="AI-generated study plans, tracked against your weak topics."
+            icon={Bookmark}
+            back
+          />
+        </div>
         {isLoading ? (
           <Loader2 className="w-6 h-6 mx-auto mt-12 animate-spin text-primary" />
         ) : lists.length === 0 ? (
