@@ -163,19 +163,21 @@ const AIHistory = () => {
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>Clear all AI history?</AlertDialogTitle>
-                        <AlertDialogDescription></AlertDialogDescription>
-                      This permanently removes every AI generation record from your account. The generated quizzes, flashcards and summaries themselves stay in your Library.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleClearAll} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                      Yes, clear everything
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
+                        <AlertDialogDescription>
+                          This permanently removes every AI generation record from your account. The generated quizzes, flashcards and summaries themselves stay in your Library.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleClearAll} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          Yes, clear everything
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
+              }
+            />
           </div>
 
           <Card className="mb-4 border-amber-100">
