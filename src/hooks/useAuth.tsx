@@ -51,6 +51,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Single-active-session enforcement (graceful sign-out if a newer login replaces this device)
   useSingleSession(user?.id);
 
+  // Heartbeat last_seen_at for the daily reminder targeting (every 5 min)
+  useEffect(() => {
+    if (!user?.id) return;
+    const ping = () => {
+      supabase.from("profiles").update({ last_seen_at: new Date().toISOString() }).eq("id", user.id).then(() => {});
+    };
+    ping();
+    const t = window.setInterval(ping, 5 * 60 * 1000);
+    const onFocus = () => ping();
+    window.addEventListener("focus", onFocus);
+    return () => { window.clearInterval(t); window.removeEventListener("focus", onFocus); };
+  }, [user?.id]);
+
   const fetchUserData = useCallback(async (userId: string) => {
     try {
       // Use SECURITY DEFINER RPC so the owner can read their own full row
