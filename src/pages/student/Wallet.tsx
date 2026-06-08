@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { PremiumPageHero } from "@/components/shell/PremiumPageHero";
 
 const NAIRA_PER_TOKEN = 50
 const MIN_NAIRA = 250
