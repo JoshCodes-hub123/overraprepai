@@ -24,7 +24,7 @@ const NAV_BY_ROLE: Record<Role, { label: string; to: string; icon: any }[]> = {
     { label: "Moderation",     to: "/admin/moderation",    icon: FileText },
     { label: "Token Purchases",to: "/admin/payment-requests", icon: Coins },
     { label: "Withdrawals",    to: "/admin/withdrawals",   icon: Banknote },
-    { label: "Schools",        to: "/admin/schools",       icon: Building2 },
+    // { label: "Schools",        to: "/admin/schools",       icon: Building2 }, // paused — university focus
     { label: "Challenges",     to: "/admin/challenges",    icon: Target },
     { label: "Opportunities",  to: "/admin/opportunities", icon: Briefcase },
     { label: "Announcements",  to: "/admin/broadcast",     icon: Megaphone },

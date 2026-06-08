@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { GraduationCap, Building2, ChevronRight, ArrowLeft, Sparkles } from "lucide-react";
+import { GraduationCap, ChevronRight, ArrowLeft, Sparkles } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { SEO } from "@/components/seo/SEO";
 
@@ -71,15 +71,10 @@ const ChooseProduct = () => {
               gradient="from-primary/20 via-primary/5 to-transparent"
               onClick={() => navigate("/start/persona")}
             />
-            <ProductCard
-              delay={0.3}
-              icon={Building2}
-              title="School Management"
-              subtitle="For school owners running attendance, fees, results and more."
-              gradient="from-accent/20 via-accent/5 to-transparent"
-              onClick={() => navigate("/school/intro")}
-            />
           </div>
+          <p className="mt-5 text-[12px] text-muted-foreground/80">
+            School Management is coming back soon.
+          </p>
 
           <button
             onClick={() => navigate("/auth?mode=signin")}

@@ -5,7 +5,7 @@ import {
 import {
   Menu, Home, BookOpen, Library, Layers, Headphones, Bot, Users,
   Briefcase, GraduationCap, Trophy, Bell, Settings, HelpCircle, Crown,
-  ArrowRight,
+  ArrowRight, FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
@@ -14,8 +14,9 @@ const NAV = [
   { label: "Dashboard",        to: "/student/dashboard",            icon: Home },
   { label: "My Courses",       to: "/courses",                      icon: BookOpen },
   { label: "Library",          to: "/library",                      icon: Library },
+  { label: "Smart Notes",      to: "/student/smart-summary",        icon: FileText },
   { label: "Flashcards",       to: "/flashcards",                   icon: Layers },
-  { label: "Audio Learning",   to: "/audio",                        icon: Headphones },
+  { label: "Audio Learning",   to: "/audio-learning",               icon: Headphones },
   { label: "AI Tutor",         to: "/ai-tutor",                     icon: Bot },
   { label: "Community",        to: "/community",                    icon: Users },
   { label: "Opportunities Hub",to: "/opportunities",                icon: Briefcase },

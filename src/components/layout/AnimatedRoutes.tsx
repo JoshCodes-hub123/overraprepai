@@ -440,7 +440,10 @@ export const AnimatedRoutes = () => {
           <Route path="/student/offline" element={<PageTransition><OfflinePractice /></PageTransition>} />
           <Route path="/student/offline/:setId" element={<PageTransition><OfflineRunner /></PageTransition>} />
           <Route path="/audio-learning" element={<PageTransition><AudioLearning /></PageTransition>} />
+          <Route path="/audio" element={<Navigate to="/audio-learning" replace />} />
           <Route path="/student/smart-summary" element={<PageTransition><SmartSummary /></PageTransition>} />
+          <Route path="/smart-notes" element={<Navigate to="/student/smart-summary" replace />} />
+          <Route path="/notes" element={<Navigate to="/student/smart-summary" replace />} />
           <Route path="/cgpa" element={<PageTransition><CGPACalculator /></PageTransition>} />
           <Route path="/study-packs" element={<PageTransition><StudyPacks /></PageTransition>} />
           <Route path="/learn" element={<PageTransition><Learn /></PageTransition>} />
