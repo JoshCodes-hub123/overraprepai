@@ -28,16 +28,16 @@ export function CommunityMomentCard() {
   return (
     <Link
       to="/community"
-      className="flex items-center gap-3 rounded-2xl border border-amber-100 bg-gradient-to-r from-amber-50/70 via-white to-white p-3 hover:shadow-sm transition"
+      className="flex items-center gap-3 rounded-2xl border border-amber-100 bg-gradient-to-r from-amber-50 via-white to-orange-50/40 p-3 hover:shadow-md hover:border-amber-200 transition group"
     >
-      <span className="h-10 w-10 rounded-full bg-amber-100 inline-flex items-center justify-center shrink-0">
-        <Users className="w-5 h-5 text-amber-700" />
+      <span className="h-11 w-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 inline-flex items-center justify-center shrink-0 shadow-md shadow-amber-500/30 group-hover:scale-105 transition-transform">
+        <Users className="w-5 h-5 text-white" strokeWidth={2.2} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="font-display text-[13px] font-bold leading-tight">{message}</p>
+        <p className="font-display text-[13px] font-bold leading-tight text-neutral-900">{message}</p>
         <p className="text-[11.5px] text-neutral-500 leading-tight mt-0.5">Keep pushing, you're not alone!</p>
       </div>
-      <span className="inline-flex items-center gap-1 text-[12px] font-bold text-amber-700 shrink-0">
+      <span className="inline-flex items-center gap-1 text-[12px] font-bold text-amber-700 shrink-0 group-hover:translate-x-0.5 transition-transform">
         Join <ArrowRight className="w-3.5 h-3.5" />
       </span>
     </Link>
