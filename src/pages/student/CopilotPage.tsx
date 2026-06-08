@@ -50,10 +50,14 @@ export default function CopilotPage() {
 
   return (
     <div className="container max-w-3xl py-6 px-4 space-y-4">
-      <header className="flex items-center gap-2">
-        <Sparkles className="w-6 h-6 text-primary" />
-        <h1 className="text-2xl font-bold">AI Copilot</h1>
-      </header>
+      <PremiumPageHero
+        eyebrow="AI COPILOT"
+        title="Your exam-day copilot"
+        subtitle="Plan your countdown, see your weak topics, and get personalised next steps."
+        icon={Sparkles}
+        back="/student/dashboard"
+      />
+
 
       <Card>
         <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Calendar className="w-4 h-4" /> Exam day</CardTitle></CardHeader>
