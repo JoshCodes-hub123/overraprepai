@@ -158,6 +158,33 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_pricing: {
+        Row: {
+          cost: number
+          description: string | null
+          free_eligible: boolean
+          kind: string
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          cost: number
+          description?: string | null
+          free_eligible?: boolean
+          kind: string
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          cost?: number
+          description?: string | null
+          free_eligible?: boolean
+          kind?: string
+          label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ai_tutor_messages: {
         Row: {
           content: string
@@ -3288,6 +3315,7 @@ export type Database = {
           daily_ai_tokens_used: number
           daily_free_reset_at: string
           daily_free_used: number
+          daily_reminder_enabled: boolean
           date_of_birth: string | null
           department: string | null
           email: string
@@ -3300,6 +3328,7 @@ export type Database = {
           id: string
           is_official: boolean
           is_pending_verification: boolean
+          last_reminder_sent_at: string | null
           level: string | null
           linkedin_handle: string | null
           matric_no: string | null
@@ -3310,6 +3339,7 @@ export type Database = {
           profile_image_url: string | null
           referral_code: string | null
           referred_by: string | null
+          reminder_hour_lagos: number
           state_of_origin: string | null
           study_interests: string[] | null
           trial_ends_at: string | null
@@ -3337,6 +3367,7 @@ export type Database = {
           daily_ai_tokens_used?: number
           daily_free_reset_at?: string
           daily_free_used?: number
+          daily_reminder_enabled?: boolean
           date_of_birth?: string | null
           department?: string | null
           email: string
@@ -3349,6 +3380,7 @@ export type Database = {
           id: string
           is_official?: boolean
           is_pending_verification?: boolean
+          last_reminder_sent_at?: string | null
           level?: string | null
           linkedin_handle?: string | null
           matric_no?: string | null
@@ -3359,6 +3391,7 @@ export type Database = {
           profile_image_url?: string | null
           referral_code?: string | null
           referred_by?: string | null
+          reminder_hour_lagos?: number
           state_of_origin?: string | null
           study_interests?: string[] | null
           trial_ends_at?: string | null
@@ -3386,6 +3419,7 @@ export type Database = {
           daily_ai_tokens_used?: number
           daily_free_reset_at?: string
           daily_free_used?: number
+          daily_reminder_enabled?: boolean
           date_of_birth?: string | null
           department?: string | null
           email?: string
@@ -3398,6 +3432,7 @@ export type Database = {
           id?: string
           is_official?: boolean
           is_pending_verification?: boolean
+          last_reminder_sent_at?: string | null
           level?: string | null
           linkedin_handle?: string | null
           matric_no?: string | null
@@ -3408,6 +3443,7 @@ export type Database = {
           profile_image_url?: string | null
           referral_code?: string | null
           referred_by?: string | null
+          reminder_hour_lagos?: number
           state_of_origin?: string | null
           study_interests?: string[] | null
           trial_ends_at?: string | null
@@ -3881,6 +3917,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      quiz_unlocks: {
+        Row: {
+          cost_paid: number
+          id: string
+          quiz_id: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          cost_paid?: number
+          id?: string
+          quiz_id: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          cost_paid?: number
+          id?: string
+          quiz_id?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       quizzes: {
         Row: {
@@ -6850,6 +6910,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_devices: {
+        Row: {
+          created_at: string
+          fingerprint: string
+          id: string
+          is_active: boolean
+          last_seen_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          fingerprint: string
+          id?: string
+          is_active?: boolean
+          last_seen_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          fingerprint?: string
+          id?: string
+          is_active?: boolean
+          last_seen_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_performance_snapshots: {
         Row: {
           created_at: string
@@ -7631,6 +7721,7 @@ export type Database = {
           daily_ai_tokens_used: number
           daily_free_reset_at: string
           daily_free_used: number
+          daily_reminder_enabled: boolean
           date_of_birth: string | null
           department: string | null
           email: string
@@ -7643,6 +7734,7 @@ export type Database = {
           id: string
           is_official: boolean
           is_pending_verification: boolean
+          last_reminder_sent_at: string | null
           level: string | null
           linkedin_handle: string | null
           matric_no: string | null
@@ -7653,6 +7745,7 @@ export type Database = {
           profile_image_url: string | null
           referral_code: string | null
           referred_by: string | null
+          reminder_hour_lagos: number
           state_of_origin: string | null
           study_interests: string[] | null
           trial_ends_at: string | null
@@ -7978,6 +8071,10 @@ export type Database = {
         Args: { _token: string; _ua: string }
         Returns: undefined
       }
+      register_device: {
+        Args: { _fingerprint: string; _user_agent?: string }
+        Returns: Json
+      }
       reject_payment_request: {
         Args: { _id: string; _note?: string }
         Returns: undefined
@@ -8005,6 +8102,8 @@ export type Database = {
         }[]
       }
       start_dm: { Args: { _other_user: string }; Returns: string }
+      unlock_quiz: { Args: { _quiz_id: string }; Returns: Json }
+      verify_device: { Args: { _fingerprint: string }; Returns: Json }
     }
     Enums: {
       academic_path: "secondary" | "jamb" | "university"
