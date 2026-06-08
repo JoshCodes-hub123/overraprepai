@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import DashboardNav from "@/components/layout/DashboardNav";
 import { DashboardBreadcrumb } from "@/components/layout/DashboardBreadcrumb";
 import { SEO } from "@/components/seo/SEO";
+import { PremiumPageHero } from "@/components/shell/PremiumPageHero";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
