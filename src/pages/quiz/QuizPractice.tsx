@@ -28,6 +28,7 @@ import { ImageZoomModal, ClickableQuestionImage } from "@/components/quiz/ImageZ
 import { SpeakButton } from "@/components/audio/SpeakButton";
 import { haptic } from "@/lib/native";
 import PreQuizTimerDialog from "@/components/quiz/PreQuizTimerDialog";
+import { UnlockQuizSheet } from "@/components/student/UnlockQuizSheet";
 
 interface Question {
   id: string;
@@ -425,6 +426,34 @@ const QuizPractice = () => {
           <p className="text-muted-foreground">Loading quiz...</p>
         </div>
       </div>
+    );
+  }
+
+  if (needsUnlock && quiz) {
+    return (
+      <>
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
+          <div className="text-center max-w-sm">
+            <div className="mx-auto h-16 w-16 rounded-full bg-amber-100 grid place-items-center mb-4">
+              <Sparkles className="h-8 w-8 text-amber-600" />
+            </div>
+            <h2 className="font-display text-xl font-bold mb-2">{quiz.title}</h2>
+            <p className="text-sm text-muted-foreground mb-6">
+              Unlock this quiz with your tokens. Once unlocked, you can replay it forever for free.
+            </p>
+            <Button onClick={() => { /* sheet auto-opens via prop below */ }} className="w-full">
+              See unlock cost
+            </Button>
+          </div>
+        </div>
+        <UnlockQuizSheet
+          open={true}
+          onOpenChange={(v) => { if (!v) navigate(-1); }}
+          quizId={quiz.id}
+          quizTitle={quiz.title}
+          onUnlocked={() => { setNeedsUnlock(false); setIsLoading(true); fetchQuizData(); }}
+        />
+      </>
     );
   }
 
