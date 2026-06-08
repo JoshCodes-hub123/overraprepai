@@ -565,6 +565,9 @@ export const AnimatedRoutes = () => {
           <Route path="/admin/trust" element={<AdminRoute><PageTransition><AdminTrust /></PageTransition></AdminRoute>} />
           <Route path="/admin/broadcast" element={<AdminRoute><PageTransition><AdminBroadcast /></PageTransition></AdminRoute>} />
           <Route path="/search" element={<PageTransition><SmartSearch /></PageTransition>} />
+          <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
+          <Route path="/help" element={<PageTransition><HelpSupport /></PageTransition>} />
+          <Route path="/support" element={<Navigate to="/help" replace />} />
           <Route
             path="/live/:slotId"
             element={
