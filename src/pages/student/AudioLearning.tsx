@@ -26,6 +26,7 @@ import { SpeedSheet } from "@/components/audio/SpeedSheet";
 import { sanitizeForTts } from "@/lib/sanitizeForTts";
 import { exportSummaryPdf } from "@/lib/exportSummaryPdf";
 import { supabase } from "@/integrations/supabase/client";
+import { PremiumPageHero } from "@/components/shell/PremiumPageHero";
 
 const MAX_CHARS = 50000;
 const SPEEDS = [0.85, 1, 1.25, 1.5, 2];
