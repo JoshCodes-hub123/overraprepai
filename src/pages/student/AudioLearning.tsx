@@ -533,26 +533,22 @@ const AudioLearning = () => {
         description="Turn notes into audio using your phone's voice with built-in lo-fi, rain and ocean focus sounds."
         url="/audio-learning" />
       <div className="min-h-screen bg-background pb-12">
-        <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-amber-200/50">
-          <div className="container mx-auto px-4 h-14 flex items-center gap-2 max-w-3xl">
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-              <ArrowLeft className="w-4 h-4 mr-1" /> Back
-            </Button>
-            <div className="ml-auto flex items-center gap-2">
-              {scopeLabel && (
+        <main className="container mx-auto px-4 pt-4 pb-5 max-w-3xl space-y-5">
+          <PremiumPageHero
+            eyebrow="AUDIO LEARNING"
+            title="Listen. Learn. Repeat."
+            subtitle="Turn any document into focus-friendly audio with lo-fi, rain, or ocean in the background."
+            icon={Headphones}
+            back
+            size="sm"
+            right={
+              scopeLabel ? (
                 <span className="hidden sm:inline-flex">
                   <LevelChip label={scopeLabel} />
                 </span>
-              )}
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700">
-                <Headphones className="w-3.5 h-3.5" />
-                <span className="font-bold text-xs tracking-wide">AUDIO LEARNING</span>
-              </span>
-            </div>
-          </div>
-        </header>
-
-        <main className="container mx-auto px-4 py-5 max-w-3xl space-y-5">
+              ) : null
+            }
+          />
           {/* PREMIUM NOW-PLAYING CARD */}
           <motion.div
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
