@@ -10,6 +10,7 @@ import {
 import { sm2, forecastByDay } from "@/lib/srs";
 import { SEO } from "@/components/seo/SEO";
 import { format } from "date-fns";
+import { PremiumPageHero } from "@/components/shell/PremiumPageHero";
 
 const GRADES = [
   { q: 0, label: "Again", desc: "Forgot", color: "bg-red-500 hover:bg-red-600" },
