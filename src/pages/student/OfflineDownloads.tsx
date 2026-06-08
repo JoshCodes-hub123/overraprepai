@@ -105,17 +105,15 @@ const OfflineDownloads = () => {
         <DashboardBreadcrumb role={navRole} />
 
         <main className="container mx-auto px-4 py-6 max-w-4xl">
-          <Link to="/library" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-3">
-            <ChevronLeft className="w-3.5 h-3.5" /> Back to Library
-          </Link>
-
+        <main className="container mx-auto px-4 py-6 max-w-4xl">
           <div className="mb-5">
-            <h1 className="font-display text-2xl font-bold flex items-center gap-2">
-              <CloudDownload className="w-6 h-6 text-amber-600" /> Offline Downloads
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Tutor materials cached on this device. They open instantly even when you're offline.
-            </p>
+            <PremiumPageHero
+              eyebrow="OFFLINE DOWNLOADS"
+              title="Study even when you're offline"
+              subtitle="Tutor materials cached on this device. They open instantly without a connection."
+              icon={CloudDownload}
+              back="/library"
+            />
           </div>
 
           <Card className="mb-5 border-amber-100 bg-gradient-to-br from-amber-50/50 to-background">
