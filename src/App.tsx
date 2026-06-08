@@ -57,7 +57,7 @@ try {
         throttleTime: 1500,
       });
       persistQueryClient({
-        queryClient,
+        queryClient: queryClient as any,
         persister,
         maxAge: 1000 * 60 * 60 * 24, // 24h
         buster: "v1",
