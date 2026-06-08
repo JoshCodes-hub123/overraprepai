@@ -10,6 +10,7 @@ import {
 import { sm2, forecastByDay } from "@/lib/srs";
 import { SEO } from "@/components/seo/SEO";
 import { format } from "date-fns";
+import { PremiumPageHero } from "@/components/shell/PremiumPageHero";
 
 const GRADES = [
   { q: 0, label: "Again", desc: "Forgot", color: "bg-red-500 hover:bg-red-600" },
@@ -64,20 +65,21 @@ export default function Review() {
   return (
     <div className="min-h-screen bg-background pb-20">
       <SEO title="Daily Review" description="Spaced repetition queue" />
-      <header className="flex items-center gap-2 px-3 py-3 border-b sticky top-0 bg-background/95 backdrop-blur z-10">
-        <Button variant="ghost" size="icon" onClick={() => nav(-1)}><ArrowLeft className="w-5 h-5" /></Button>
-        <div className="flex-1">
-          <h1 className="text-base font-semibold">Daily Review</h1>
-          <p className="text-xs text-muted-foreground">
-            {stats ? `${Math.max(0, stats.due - idx)} due · ${stats.total} total` : "Loading..."}
-          </p>
-        </div>
-        {!online && (
-          <span className="flex items-center gap-1 text-[10px] font-medium text-amber-700 bg-amber-100 px-2 py-1 rounded-full">
-            <WifiOff className="w-3 h-3" /> Offline
-          </span>
-        )}
-      </header>
+      <div className="max-w-md mx-auto px-4 pt-4">
+        <PremiumPageHero
+          eyebrow="DAILY REVIEW"
+          title="Lock it into memory"
+          subtitle={stats ? `${Math.max(0, stats.due - idx)} due · ${stats.total} total in your deck` : "Loading your review queue…"}
+          icon={Sparkles}
+          back
+          size="sm"
+          right={!online ? (
+            <span className="flex items-center gap-1 text-[10px] font-medium text-amber-800 bg-white/85 border border-amber-200 px-2 py-1 rounded-full">
+              <WifiOff className="w-3 h-3" /> Offline
+            </span>
+          ) : null}
+        />
+      </div>
 
       <div className="max-w-md mx-auto px-4 py-6">
         {isLoading ? (
