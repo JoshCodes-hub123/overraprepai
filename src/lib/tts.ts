@@ -143,6 +143,11 @@ export async function speak(text: string, opts: SpeakOpts = {}): Promise<TtsResu
     throw new Error("No text to speak");
   }
 
+  // Token gate (3 tokens per AI audio)
+  const { aiGate } = await import("@/lib/aiGate");
+  const ok = await aiGate.consume("audio_tts", { action: "Audio (Text-to-Speech)" });
+  if (!ok) throw new Error("Insufficient tokens for audio");
+
   // 1) Try Overra
   try {
     const blob = await tryOverra(text, { voice, onWarming: opts.onWarming });

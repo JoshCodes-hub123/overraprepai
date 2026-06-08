@@ -74,6 +74,14 @@ export const ExportStudyPackDialog = ({ open, onOpenChange, courseCode, courseNa
       return;
     }
 
+    // Token gate: 4 tokens for study pack generation, 2 for PDF export only
+    const { aiGate } = await import("@/lib/aiGate");
+    const gateKind = generateMissing ? "study_pack_generate" : (format === "pdf" ? "pdf_export" : null);
+    if (gateKind) {
+      const ok = await aiGate.consume(gateKind, { action: gateKind === "study_pack_generate" ? "Generate Study Pack" : "Export to PDF" });
+      if (!ok) return;
+    }
+
     setBusy(true);
     try {
       const built: StudyPackMaterial[] = [];
