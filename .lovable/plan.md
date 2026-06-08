@@ -1,41 +1,76 @@
-# Student Dashboard V2 — Premium Redesign
+# Plan: Speed, Reminders, Device Lock, Token Economy
 
-Matches the attached mockup: white surface, gold accents, dark "Today's Focus" card, slide-out left sidebar, 5-tab bottom nav (already in place).
+## 1. Performance — return visit under 4s
 
-## New files (under `src/components/student/dashboard/v2/`)
+- Persist React Query cache in `localStorage` (24h) via `@tanstack/query-persist-client-core` + `createSyncStoragePersister`. Returning users see the dashboard instantly while fresh data hydrates in the background.
+- Add `<link rel="preconnect">` to Supabase + Flutterwave in `index.html`.
+- Wrap heavy dashboard sections in `React.lazy` + Suspense skeletons (HeroGreeting, CommunityMomentCard, OpportunitySnapshot).
+- Mark the splash gold-orb `<canvas>` and lottie/framer scenes with `loading="lazy"` and `prefers-reduced-motion` skip.
+- Prefetch top 5 routes on idle (already partial — extend `prefetchDashboardNeighbors`).
+- Keep manifest-only PWA — no service worker (preview safety).
 
-1. **`TopAppBar.tsx`** — `☰` (opens `SidebarMenu`), centered OverraPrep wordmark + tagline, bell with unread badge (realtime), avatar → `/profile/edit`.
-2. **`SidebarMenu.tsx`** — left-side `Sheet`. Nav rows: Dashboard, My Courses, Library, Flashcards, Audio Learning, AI Tutor, Community, Opportunities Hub, Scholarships (`/opportunities?type=scholarship`), Leaderboard, Notifications, Settings, Help & Support. Active state = amber bg. Bottom "Go Premium" mini card linking to `/wallet`.
-3. **`HeroGreeting.tsx`** — time-aware greeting + name, one subline, then a 3-cell inline stat strip: 🔥 Day Streak (from `study_streaks`), 🎯 Readiness (from latest `readiness_attempts.score_pct`), ⭐ Hero Points (derived from `useProfileStats`: `quizzes*10 + cards*2 + streak*5`).
-4. **`TodayFocusCard.tsx`** — dark `bg-neutral-900` card. Up to 3 prioritised rows + single gold "Continue Learning" CTA:
-   - Most recent enrolled course → continue
-   - SRS due count (`useDueCards`) → `/review`
-   - First active quiz across enrolled courses → `/courses/:id?tab=quizzes`
-   Empty state: "Pick your courses to see today's plan".
-5. **`CourseRail.tsx`** — horizontal snap scroll of compact 160-px course tiles with SVG progress ring (gold/emerald/indigo rotating), code + name. Trailing "+ Add Course" tile; when `count >= 12` shows disabled "Maximum 12 courses reached." Empty state with "Select Courses" CTA.
-6. **`QuickActions4.tsx`** — 4 tiles (Study, Practice, Audio, Ask AI) → `/study`, `/practice`, `/audio`, `/ai-tutor`.
-7. **`OpportunitySnapshot.tsx`** — top 2 from `useOpportunities({ limit: 2 })`. Category icon + title + "Apply before {date}". "View All" link.
-8. **`CommunityMomentCard.tsx`** — single soft card. Today's `quiz_attempts` count → "{N} students practised on OverraPrep today" (fallback copy when 0). Links to `/community`.
+## 2. Daily "come study" reminder — push + email fallback
 
-## Edits
+- Web Push: VAPID keys in secrets, `subscribe-push` edge fn stores subscription in `push_subscriptions`. Service worker `firebase-messaging-sw.js`-style file just for push (allowed exception, outside the kill-switch).
+- Daily `pg_cron` at 18:00 Africa/Lagos calls `daily-reminder` edge fn → for each active student: send web push first, if no push subscription OR `last_active_at < 24h` also send email via existing Resend setup.
+- Reminder copy: "Your daily 3 free AI actions reset — keep your streak alive 🔥"
+- Opt-out toggle in `/settings`.
 
-- **`src/pages/student/StudentDashboard.tsx`** — replace body with the new ordered stack:
-  `TopAppBar → HeroGreeting → TodayFocusCard → CourseRail → QuickActions4 → OpportunitySnapshot → CommunityMomentCard`.
-  Container stays `max-w-2xl` mobile-first, `space-y-5`. Removes use of `TopHeader`, `SolutionHub`, `CourseQuizzesSection`, `TodayCard`, `HeroQuestCard` on this page (files themselves untouched).
+## 3. One device per account — auto-replace + alert
 
-## Design rules (locked)
-- White bg, `bg-card` surfaces, `border-amber-100` hairlines, amber-500/600 accent only.
-- `rounded-2xl`/`rounded-3xl`, soft `shadow-sm`, framer-motion fade/translate 300-400 ms.
-- Inter + `font-display` headings; eyebrows `text-[10px] uppercase tracking-[0.22em] text-amber-700/80`.
-- Every section has a graceful empty state.
-- Mobile-first 360 px → no horizontal overflow; desktop centers in `max-w-2xl`.
+- New `user_devices` table (`user_id, fingerprint, user_agent, ip, last_seen_at, is_active`).
+- On every login, frontend computes fingerprint (FingerprintJS-lite: UA + screen + tz hash) and calls `register_device` RPC → marks all prior devices inactive, inserts current as active, returns `replaced_count`.
+- App-load guard: `useDeviceGuard` calls `verify_device` every 30s + on focus. If current fingerprint ≠ active → forced sign-out + toast: "Your account is in use on another device. Sign in again to continue."
+- Email + in-app notification when replacement happens.
 
-## Out of scope
-- No DB migrations, no token/wallet logic changes (wallet stays in Me hub).
-- `BottomTabBar` untouched (already Home/Study/Practice/People/Me).
-- Old dashboard component files kept on disk (may be reused elsewhere).
+## 4. Token economy — usage-based pricing
 
-## Verification
-- View `/student/dashboard` at 360×800 and 1336 — no overflow.
-- Sidebar opens/closes; every link navigates.
-- Empty states render for 0 courses / 0 opportunities.
+Central pricing table `ai_pricing(kind text PK, cost int, label text)` seeded with:
+
+| Action | Cost (tokens) | Free daily? |
+|---|---|---|
+| ai_chat (AI tutor msg) | 1 | yes (3/day) |
+| ai_explain (per question) | 1 | yes |
+| ai_summary | 1 | yes |
+| flashcards_generate | 1 | yes |
+| quiz_generate | 2 | no |
+| pdf_export | 2 | no |
+| audio_tts | 3 | no |
+| study_pack_generate | 4 | no |
+| mock_exam_generate | 5 | no |
+| unlock_quiz (per quiz) | 2 | no |
+| unlock_audio_pack | 3 | no |
+
+### Always FREE (no token, no quota)
+Dashboard · Library browsing · Reading your own notes/uploads · Leaderboards · Profile · Bookmarks · Reports · Streak · DMs & chat (human-to-human) · Reviewing past quiz attempts · SRS card reviews · Viewing announcements/opportunities · Re-taking a quiz you've already unlocked.
+
+### Token-gated
+Every AI generation above + unlocking any tutor quiz, mock exam, audio pack, PDF download.
+
+### Backend
+- Migrate `consume_ai_token(_kind)` → reads cost from `ai_pricing`, debits N tokens (not 1). Free-daily quota still applies but only to kinds flagged `free_eligible=true`.
+- New `unlock_quiz(_quiz_id)` RPC: checks `quiz_unlocks(user_id, quiz_id)`; if missing, debits the unlock cost, inserts row. Returns `{allowed, cost, balance}`.
+- New `quiz_unlocks` table — items "save" to the user forever, replay free.
+- New `low_balance_warn` toast at balance ≤ 3 tokens with "Top up" CTA.
+
+### Frontend
+- `usePremium` exposes `priceFor(kind)`.
+- `SoftPaywallSheet` shows exact cost.
+- `QuizPractice` start gate: if not unlocked → show "Unlock for X tokens" sheet; on success → start quiz, future replays free.
+- Same gate added to: audio playback start, PDF export button, flashcard generator submit, summary generator submit, study-pack generator, mock-exam start.
+- TokenBalanceCard adds a "Low balance" amber ribbon when ≤3.
+
+## Technical notes
+
+- All new tables: `GRANT` block + RLS as per project standards.
+- `ai_pricing` is read-only to `authenticated`, writable only via migration.
+- `quiz_unlocks` and `user_devices` policies scoped to `auth.uid()`.
+- Web Push needs new secret `VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY` (I'll request them once you approve).
+- Edge fns: `subscribe-push`, `daily-reminder`, `register-device-email`.
+
+## Out of scope this round
+- Native Capacitor push (web push covers PWA users).
+- Refunds of tokens on failed AI calls (will add try/catch refund in a follow-up).
+- Tutor-set custom quiz prices (default 2; tutor override later).
+
+Reply "go" and I'll build it end-to-end. If you want to change any cost or split it into smaller drops, tell me now.
