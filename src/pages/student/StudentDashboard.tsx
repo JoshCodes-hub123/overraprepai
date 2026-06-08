@@ -7,19 +7,21 @@ import { OnboardingDialog } from "@/components/onboarding/OnboardingDialog";
 import { SEO } from "@/components/seo/SEO";
 import { PullToRefresh } from "@/components/native/PullToRefresh";
 import { DashboardOfflineBanner } from "@/components/dashboard/DashboardOfflineBanner";
-import HeroQuestCard from "@/components/student/dashboard/HeroQuestCard";
 import { CommandPalette, useCommandPaletteHotkey } from "@/components/student/CommandPalette";
-import { TopHeader } from "@/components/student/dashboard/TopHeader";
-import { TodayCard } from "@/components/student/dashboard/TodayCard";
-import { SolutionHub } from "@/components/student/dashboard/SolutionHub";
-import { CourseQuizzesSection } from "@/components/student/dashboard/CourseQuizzesSection";
 
-// Warm likely-next route bundles when the dashboard mounts.
+import { TopAppBar } from "@/components/student/dashboard/v2/TopAppBar";
+import { HeroGreeting } from "@/components/student/dashboard/v2/HeroGreeting";
+import { TodayFocusCard } from "@/components/student/dashboard/v2/TodayFocusCard";
+import { CourseRail } from "@/components/student/dashboard/v2/CourseRail";
+import { QuickActions4 } from "@/components/student/dashboard/v2/QuickActions4";
+import { OpportunitySnapshot } from "@/components/student/dashboard/v2/OpportunitySnapshot";
+import { CommunityMomentCard } from "@/components/student/dashboard/v2/CommunityMomentCard";
+
 if (typeof window !== "undefined") prefetchDashboardNeighbors();
 
 /**
- * Student dashboard — slim "one screen, one job" Home.
- * Five blocks only. Everything else lives in Study / Practice / People / Me hubs.
+ * Student Dashboard V2 — premium, calm, mobile-first "what's next" screen.
+ * Apple × Notion × Duolingo. White + gold + Inter only.
  */
 const StudentDashboard = () => {
   const navigate = useNavigate();
@@ -42,45 +44,24 @@ const StudentDashboard = () => {
     <>
       <SEO
         title="Student Dashboard"
-        description="Your academic home — your next step, your wallet, and your daily quest in one calm view."
+        description="Your calm academic home — know exactly what to do next."
         noindex={true}
         url="https://overraprep.com/student/dashboard"
       />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
       <PullToRefresh onRefresh={onRefresh}>
         <div className="min-h-screen bg-background pb-24 md:pb-12">
-          <main className="container mx-auto px-4 pt-5 sm:pt-7 max-w-2xl space-y-5">
+          <main className="container mx-auto px-4 pt-2 max-w-2xl space-y-5">
+            <TopAppBar />
             <DashboardOfflineBanner onReattempt={onRefresh} />
 
-            {/* 1. Greeting + streak + bell */}
-            <TopHeader key={`top-${refreshKey}`} />
-
-            {/* 2. Solution Hub — Quizzes, AI Summary, AI Tutor (HERO) */}
-            <section aria-labelledby="solution-hub-label">
-              <p id="solution-hub-label" className="mb-2 px-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-700/90">
-                What do you want to do?
-              </p>
-              <SolutionHub />
-            </section>
-
-            {/* soft divider */}
-            <div className="border-t border-amber-100/60" aria-hidden />
-
-            {/* 3. Quizzes from your courses */}
-            <section aria-labelledby="course-quizzes-label">
-              <p id="course-quizzes-label" className="mb-2 px-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-amber-700/90">
-                Quizzes from your courses
-              </p>
-              <CourseQuizzesSection key={`cq-${refreshKey}`} />
-            </section>
-
-            {/* 4. Today — single primary CTA */}
-            <TodayCard key={`today-${refreshKey}`} />
-
-            {/* 5. 7-day hero quest — daily habit loop */}
-            <HeroQuestCard />
+            <HeroGreeting key={`hg-${refreshKey}`} />
+            <TodayFocusCard key={`tf-${refreshKey}`} />
+            <CourseRail key={`cr-${refreshKey}`} />
+            <QuickActions4 />
+            <OpportunitySnapshot key={`os-${refreshKey}`} />
+            <CommunityMomentCard key={`cm-${refreshKey}`} />
           </main>
-
         </div>
 
         <OnboardingDialog

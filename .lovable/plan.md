@@ -1,57 +1,41 @@
-## 1. Fix missing student role after university pick
+# Student Dashboard V2 — Premium Redesign
 
-**Cause:** `handle_new_user` trigger inserts a `student` row in `user_roles`, but some older accounts (created before the trigger, or where the trigger errored on referral lookup) reach `ChooseUniversity` without a role. `useAuth` papers over it client-side (falls back to `["student"]`) but no row exists in DB, so RLS-gated reads (favorites, bookmarks, leaderboards) silently fail.
+Matches the attached mockup: white surface, gold accents, dark "Today's Focus" card, slide-out left sidebar, 5-tab bottom nav (already in place).
 
-**Fix:** in `src/pages/onboarding/ChooseUniversity.tsx`, when the user picks a university, also defensively upsert a `student` row:
-```ts
-await supabase.from("user_roles").upsert(
-  { user_id: user.id, role: "student" },
-  { onConflict: "user_id,role", ignoreDuplicates: true }
-);
-```
-Runs alongside the profile update. Idempotent — no-op for users who already have the role. No migration needed.
+## New files (under `src/components/student/dashboard/v2/`)
 
-## 2. Redesign the student dashboard — simple, beautiful, calm
+1. **`TopAppBar.tsx`** — `☰` (opens `SidebarMenu`), centered OverraPrep wordmark + tagline, bell with unread badge (realtime), avatar → `/profile/edit`.
+2. **`SidebarMenu.tsx`** — left-side `Sheet`. Nav rows: Dashboard, My Courses, Library, Flashcards, Audio Learning, AI Tutor, Community, Opportunities Hub, Scholarships (`/opportunities?type=scholarship`), Leaderboard, Notifications, Settings, Help & Support. Active state = amber bg. Bottom "Go Premium" mini card linking to `/wallet`.
+3. **`HeroGreeting.tsx`** — time-aware greeting + name, one subline, then a 3-cell inline stat strip: 🔥 Day Streak (from `study_streaks`), 🎯 Readiness (from latest `readiness_attempts.score_pct`), ⭐ Hero Points (derived from `useProfileStats`: `quizzes*10 + cards*2 + streak*5`).
+4. **`TodayFocusCard.tsx`** — dark `bg-neutral-900` card. Up to 3 prioritised rows + single gold "Continue Learning" CTA:
+   - Most recent enrolled course → continue
+   - SRS due count (`useDueCards`) → `/review`
+   - First active quiz across enrolled courses → `/courses/:id?tab=quizzes`
+   Empty state: "Pick your courses to see today's plan".
+5. **`CourseRail.tsx`** — horizontal snap scroll of compact 160-px course tiles with SVG progress ring (gold/emerald/indigo rotating), code + name. Trailing "+ Add Course" tile; when `count >= 12` shows disabled "Maximum 12 courses reached." Empty state with "Select Courses" CTA.
+6. **`QuickActions4.tsx`** — 4 tiles (Study, Practice, Audio, Ask AI) → `/study`, `/practice`, `/audio`, `/ai-tutor`.
+7. **`OpportunitySnapshot.tsx`** — top 2 from `useOpportunities({ limit: 2 })`. Category icon + title + "Apply before {date}". "View All" link.
+8. **`CommunityMomentCard.tsx`** — single soft card. Today's `quiz_attempts` count → "{N} students practised on OverraPrep today" (fallback copy when 0). Links to `/community`.
 
-New order on `/student/dashboard` (5 blocks, nothing else):
+## Edits
 
-```text
-┌─────────────────────────────────────┐
-│  TopHeader  (greeting · streak · 🔔) │
-├─────────────────────────────────────┤
-│         SolutionHub (hero)          │   3 gold tiles: Quiz · Summarize · AI Tutor
-├─────────────────────────────────────┤
-│   Quizzes from your courses         │   CourseQuizzesSection (rich QuizCards)
-├─────────────────────────────────────┤
-│   Today  (one primary CTA)          │
-├─────────────────────────────────────┤
-│   7-day Hero Quest                  │
-└─────────────────────────────────────┘
-```
+- **`src/pages/student/StudentDashboard.tsx`** — replace body with the new ordered stack:
+  `TopAppBar → HeroGreeting → TodayFocusCard → CourseRail → QuickActions4 → OpportunitySnapshot → CommunityMomentCard`.
+  Container stays `max-w-2xl` mobile-first, `space-y-5`. Removes use of `TopHeader`, `SolutionHub`, `CourseQuizzesSection`, `TodayCard`, `HeroQuestCard` on this page (files themselves untouched).
 
-**Removed from dashboard:** `TokenBalanceCard`, `ExamCountdownCard` (countdown is already visible inside Quest + Today; keeps the page calm).
-
-**Polish pass (presentation only, semantic tokens, no new deps):**
-- Tighter vertical rhythm: consistent `space-y-4` between blocks, `pt-5` at top.
-- Section eyebrow labels (uppercase, tracked) above SolutionHub and CourseQuizzes so blocks read as separate "rooms".
-- SolutionHub: slightly larger touch targets on mobile, gentle stagger entrance, gold-on-white only (matches locked palette).
-- Soft divider line (`border-t border-amber-100/50`) between SolutionHub and CourseQuizzes.
-
-## 3. Move wallet/tokens to the Me hub
-
-- Replace the existing plain "Wallet" tile inside `MeHubPage` with the full `TokenBalanceCard` rendered at the top of the page (above the section tiles). Same component, same data, just relocated.
-- Keep the "Wallet" tile in the Account section as a deep link to `/wallet` for top-ups (so the card + the tile coexist — card for at-a-glance, tile for action).
-
-## Files
-
-**Edit**
-- `src/pages/onboarding/ChooseUniversity.tsx` — upsert student role on pick
-- `src/pages/student/StudentDashboard.tsx` — remove `TokenBalanceCard` + `ExamCountdownCard` imports/usage, add section eyebrows, tighten spacing
-- `src/pages/hubs/MeHubPage.tsx` — render `<TokenBalanceCard />` at the top
-
-**No new files. No migrations. No business-logic changes** (token economy, paywall, free-uses behavior all untouched — only where the card is displayed changes).
+## Design rules (locked)
+- White bg, `bg-card` surfaces, `border-amber-100` hairlines, amber-500/600 accent only.
+- `rounded-2xl`/`rounded-3xl`, soft `shadow-sm`, framer-motion fade/translate 300-400 ms.
+- Inter + `font-display` headings; eyebrows `text-[10px] uppercase tracking-[0.22em] text-amber-700/80`.
+- Every section has a graceful empty state.
+- Mobile-first 360 px → no horizontal overflow; desktop centers in `max-w-2xl`.
 
 ## Out of scope
-- Restructuring tutor dashboard (already done in earlier turn)
-- Wallet logic, paywall, free-uses
-- Onboarding flow beyond the role-upsert defensive fix
+- No DB migrations, no token/wallet logic changes (wallet stays in Me hub).
+- `BottomTabBar` untouched (already Home/Study/Practice/People/Me).
+- Old dashboard component files kept on disk (may be reused elsewhere).
+
+## Verification
+- View `/student/dashboard` at 360×800 and 1336 — no overflow.
+- Sidebar opens/closes; every link navigates.
+- Empty states render for 0 courses / 0 opportunities.
