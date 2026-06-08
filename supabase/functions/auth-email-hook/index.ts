@@ -40,6 +40,8 @@ const SITE_NAME = "OverraPrep AI"
 const SENDER_DOMAIN = "notify.overraprepai.com"
 const ROOT_DOMAIN = "overraprepai.com"
 const FROM_DOMAIN = "notify.overraprepai.com" // Domain shown in From address (may be root or sender subdomain)
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+const TEMP_RESEND_FALLBACK_FROM = `${SITE_NAME} <onboarding@resend.dev>`
 
 // Sample data for preview mode ONLY (not used in actual email sending).
 // URLs are baked in at scaffold time from the project's real data.
@@ -244,7 +246,9 @@ async function handleWebhook(req: Request): Promise<Response> {
     plainText: true,
   })
 
-  // Enqueue email for async processing by the dispatcher (process-email-queue).
+  // Temporary bridge while the branded sender domain DNS is still pending:
+  // send auth emails directly through the existing Resend key so new students
+  // can verify accounts immediately. Remove this branch after DNS verifies.
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -259,6 +263,65 @@ async function handleWebhook(req: Request): Promise<Response> {
     recipient_email: payload.data.email,
     status: 'pending',
   })
+
+  if (RESEND_API_KEY) {
+    const resendResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: TEMP_RESEND_FALLBACK_FROM,
+        to: [payload.data.email],
+        subject: EMAIL_SUBJECTS[emailType] || 'Notification',
+        html,
+        text,
+      }),
+    })
+
+    const resendBody = await resendResponse.text()
+
+    if (!resendResponse.ok) {
+      console.error('Temporary Resend auth email failed', {
+        run_id,
+        emailType,
+        status: resendResponse.status,
+        body: resendBody,
+      })
+      await supabase.from('email_send_log').insert({
+        message_id: messageId,
+        template_name: emailType,
+        recipient_email: payload.data.email,
+        status: 'failed',
+        error_message: `Resend fallback failed: ${resendResponse.status} ${resendBody}`,
+      })
+      return new Response(JSON.stringify({ error: 'Failed to send email' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    await supabase.from('email_send_log').insert({
+      message_id: messageId,
+      template_name: emailType,
+      recipient_email: payload.data.email,
+      status: 'sent',
+    })
+
+    console.log('Auth email sent through temporary Resend fallback', {
+      emailType,
+      email: payload.data.email,
+      run_id,
+    })
+
+    return new Response(
+      JSON.stringify({ success: true, sent: true, fallback: 'resend' }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
+  // Enqueue email for async processing by the dispatcher (process-email-queue).
 
   const { error: enqueueError } = await supabase.rpc('enqueue_email', {
     queue_name: 'auth_emails',
