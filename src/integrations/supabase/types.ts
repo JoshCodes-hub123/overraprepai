@@ -3316,6 +3316,7 @@ export type Database = {
           daily_free_reset_at: string
           daily_free_used: number
           daily_reminder_enabled: boolean
+          daily_reminder_opt_out: boolean
           date_of_birth: string | null
           department: string | null
           email: string
@@ -3329,6 +3330,7 @@ export type Database = {
           is_official: boolean
           is_pending_verification: boolean
           last_reminder_sent_at: string | null
+          last_seen_at: string | null
           level: string | null
           linkedin_handle: string | null
           matric_no: string | null
@@ -3368,6 +3370,7 @@ export type Database = {
           daily_free_reset_at?: string
           daily_free_used?: number
           daily_reminder_enabled?: boolean
+          daily_reminder_opt_out?: boolean
           date_of_birth?: string | null
           department?: string | null
           email: string
@@ -3381,6 +3384,7 @@ export type Database = {
           is_official?: boolean
           is_pending_verification?: boolean
           last_reminder_sent_at?: string | null
+          last_seen_at?: string | null
           level?: string | null
           linkedin_handle?: string | null
           matric_no?: string | null
@@ -3420,6 +3424,7 @@ export type Database = {
           daily_free_reset_at?: string
           daily_free_used?: number
           daily_reminder_enabled?: boolean
+          daily_reminder_opt_out?: boolean
           date_of_birth?: string | null
           department?: string | null
           email?: string
@@ -3433,6 +3438,7 @@ export type Database = {
           is_official?: boolean
           is_pending_verification?: boolean
           last_reminder_sent_at?: string | null
+          last_seen_at?: string | null
           level?: string | null
           linkedin_handle?: string | null
           matric_no?: string | null
@@ -7722,6 +7728,7 @@ export type Database = {
           daily_free_reset_at: string
           daily_free_used: number
           daily_reminder_enabled: boolean
+          daily_reminder_opt_out: boolean
           date_of_birth: string | null
           department: string | null
           email: string
@@ -7735,6 +7742,7 @@ export type Database = {
           is_official: boolean
           is_pending_verification: boolean
           last_reminder_sent_at: string | null
+          last_seen_at: string | null
           level: string | null
           linkedin_handle: string | null
           matric_no: string | null
