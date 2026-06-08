@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { ChevronLeft, Download, Filter, History, Loader2, RefreshCw, Search, Sparkles, Trash2, X } from "lucide-react";
+import { PremiumPageHero } from "@/components/shell/PremiumPageHero";
 import DashboardNav from "@/components/layout/DashboardNav";
 import { DashboardBreadcrumb } from "@/components/layout/DashboardBreadcrumb";
 import { SEO } from "@/components/seo/SEO";
