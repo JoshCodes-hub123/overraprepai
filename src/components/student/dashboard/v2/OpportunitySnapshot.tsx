@@ -3,19 +3,19 @@ import { GraduationCap, Briefcase, Trophy, Code, Sparkles, ArrowRight } from "lu
 import { useOpportunities, type OpportunityCategory } from "@/hooks/useOpportunities";
 
 const CAT_META: Record<OpportunityCategory, { icon: any; tint: string }> = {
-  scholarship:  { icon: GraduationCap, tint: "bg-emerald-100 text-emerald-700" },
-  internship:   { icon: Briefcase,     tint: "bg-orange-100 text-orange-700" },
-  hackathon:    { icon: Code,          tint: "bg-violet-100 text-violet-700" },
-  competition:  { icon: Trophy,        tint: "bg-amber-100 text-amber-700" },
-  tech_program: { icon: Sparkles,      tint: "bg-sky-100 text-sky-700" },
-  career:       { icon: Briefcase,     tint: "bg-rose-100 text-rose-700" },
+  scholarship:  { icon: GraduationCap, tint: "bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-md shadow-emerald-500/30" },
+  internship:   { icon: Briefcase,     tint: "bg-gradient-to-br from-orange-400 to-amber-500 text-white shadow-md shadow-orange-500/30" },
+  hackathon:    { icon: Code,          tint: "bg-gradient-to-br from-violet-400 to-fuchsia-500 text-white shadow-md shadow-violet-500/30" },
+  competition:  { icon: Trophy,        tint: "bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md shadow-amber-500/30" },
+  tech_program: { icon: Sparkles,      tint: "bg-gradient-to-br from-sky-400 to-indigo-500 text-white shadow-md shadow-sky-500/30" },
+  career:       { icon: Briefcase,     tint: "bg-gradient-to-br from-rose-400 to-pink-500 text-white shadow-md shadow-rose-500/30" },
 };
 
 export function OpportunitySnapshot() {
   const { data = [], isLoading } = useOpportunities({ limit: 2 });
 
   return (
-    <section aria-labelledby="opp-label" className="rounded-2xl border border-amber-100 bg-white p-4">
+    <section aria-labelledby="opp-label" className="rounded-2xl border border-amber-100 bg-gradient-to-b from-white to-amber-50/20 p-4 shadow-[0_2px_10px_-6px_rgba(217,119,6,0.15)]">
       <div className="flex items-center justify-between mb-3">
         <h2 id="opp-label" className="font-display text-[14px] font-bold tracking-tight">
           Opportunity Snapshot
