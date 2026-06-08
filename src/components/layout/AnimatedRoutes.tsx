@@ -79,6 +79,8 @@ const StudyHub = lazy(() => import("@/pages/study-hub/StudyHub"));
 const StudyHubCourse = lazy(() => import("@/pages/study-hub/StudyHubCourse"));
 const PQIntelligence = lazy(() => import("@/pages/study-hub/PQIntelligence"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
+const Settings = lazy(() => import("@/pages/settings/Settings"));
+const HelpSupport = lazy(() => import("@/pages/HelpSupport"));
 
 // SEO landing shells (public, indexable)
 const SEOJambHub = lazy(() => import("@/pages/seo/JambHub"));
@@ -563,6 +565,9 @@ export const AnimatedRoutes = () => {
           <Route path="/admin/trust" element={<AdminRoute><PageTransition><AdminTrust /></PageTransition></AdminRoute>} />
           <Route path="/admin/broadcast" element={<AdminRoute><PageTransition><AdminBroadcast /></PageTransition></AdminRoute>} />
           <Route path="/search" element={<PageTransition><SmartSearch /></PageTransition>} />
+          <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
+          <Route path="/help" element={<PageTransition><HelpSupport /></PageTransition>} />
+          <Route path="/support" element={<Navigate to="/help" replace />} />
           <Route
             path="/live/:slotId"
             element={
