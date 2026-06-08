@@ -155,14 +155,15 @@ const WalletPage = () => {
       <div className="min-h-screen bg-background pb-24">
         <DashboardNav role="student" />
         <main className="container mx-auto px-4 py-6 max-w-3xl">
-          <header className="mb-5">
-            <h1 className="font-display text-2xl font-bold flex items-center gap-2">
-              <WalletIcon className="w-6 h-6 text-amber-600" /> Wallet
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              1 token = ₦50 = 1 AI action. Top up from ₦250 (5 tokens) and use them anytime.
-            </p>
-          </header>
+          <PremiumPageHero
+            eyebrow="WALLET"
+            title="Your study fuel"
+            subtitle="1 token = ₦50 = 1 AI action. Top up from ₦250 and use them anytime."
+            icon={WalletIcon}
+            back
+            size="sm"
+            className="mb-5"
+          />
 
           {/* Balance hero */}
           <Card className="p-5 bg-gradient-to-br from-amber-50 via-white to-amber-50 border-amber-200 mb-5">
