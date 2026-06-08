@@ -49,6 +49,7 @@ import { PullToRefresh } from "@/components/native/PullToRefresh";
 import { DashboardOfflineBanner } from "@/components/dashboard/DashboardOfflineBanner";
 import { LastUpdatedBadge } from "@/components/dashboard/LastUpdatedBadge";
 import { cn } from "@/lib/utils";
+import { RoleSidebarMenu } from "@/components/layout/RoleSidebarMenu";
 
 interface Course {
   id: string;
@@ -292,13 +293,17 @@ const TutorDashboard = () => {
         <header className="bg-card border-b border-border sticky top-0 z-50" role="banner">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center group">
-              <img 
-                src={logo} 
-                alt="OverraPrep AI FUTA" 
-                className="h-10 w-auto object-contain"
-              />
-            </Link>
+            <div className="flex items-center gap-2">
+              <RoleSidebarMenu role="tutor" />
+              <Link to="/" className="flex items-center group">
+                <img 
+                  src={logo} 
+                  alt="OverraPrep AI FUTA" 
+                  className="h-10 w-auto object-contain"
+                />
+              </Link>
+            </div>
+
 
             <div className="flex items-center gap-2 sm:gap-4">
               <Button variant="ghost" size="sm" onClick={() => navigate("/profile/edit")} className="hidden sm:flex">

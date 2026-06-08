@@ -47,6 +47,7 @@ import { PremiumStatCard } from "@/components/dashboard/PremiumStatCard";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { PullToRefresh } from "@/components/native/PullToRefresh";
 import AdminKpiStrip from "@/components/admin/AdminKpiStrip";
+import { RoleSidebarMenu } from "@/components/layout/RoleSidebarMenu";
 
 interface DashboardStats {
   totalStudents: number;

@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { SEO } from "@/components/seo/SEO";
 import { cn } from "@/lib/utils";
+import { RoleSidebarMenu } from "@/components/layout/RoleSidebarMenu";
 
 interface Announcement {
   id: string;
@@ -109,10 +110,14 @@ export default function ParentDashboard() {
           <div className="relative max-w-2xl mx-auto px-5 pt-5 pb-6">
             {/* Top row */}
             <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-white/70 backdrop-blur-xl border border-primary/20">
-                <Heart className="w-3.5 h-3.5 text-primary fill-primary/30" />
-                <span className="text-[11px] font-bold tracking-wide text-foreground">Parent Hub</span>
+              <div className="flex items-center gap-2">
+                <RoleSidebarMenu role="parent" />
+                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-white/70 backdrop-blur-xl border border-primary/20">
+                  <Heart className="w-3.5 h-3.5 text-primary fill-primary/30" />
+                  <span className="text-[11px] font-bold tracking-wide text-foreground">Parent Hub</span>
+                </div>
               </div>
+
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => navigate("/notifications")}
