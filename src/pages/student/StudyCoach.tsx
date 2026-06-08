@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useTodayCoachPlan, useGenerateCoachPlan, useTopicMastery } from '@/hooks/useStudyCoach';
 import { Sparkles, Brain, Clock } from 'lucide-react';
+import { PremiumPageHero } from '@/components/shell/PremiumPageHero';
 
 export default function StudyCoach() {
   const { data: planRow, isLoading } = useTodayCoachPlan();
@@ -13,13 +14,19 @@ export default function StudyCoach() {
 
   return (
     <div className="container mx-auto p-4 max-w-2xl space-y-4">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold flex items-center gap-2"><Brain className="w-6 h-6 text-primary"/>AI Study Coach</h1>
-        <Button onClick={() => generate.mutate()} disabled={generate.isPending} size="sm">
-          <Sparkles className="w-4 h-4 mr-1"/>
-          {generate.isPending ? 'Thinking…' : plan ? 'Refresh Plan' : 'Generate Plan'}
-        </Button>
-      </header>
+      <PremiumPageHero
+        eyebrow="STUDY COACH"
+        title="Your AI study coach"
+        subtitle="A personalised plan for today, built around your weak topics and time."
+        icon={Brain}
+        back
+        right={
+          <Button onClick={() => generate.mutate()} disabled={generate.isPending} size="sm" className="bg-amber-500 hover:bg-amber-600 text-white">
+            <Sparkles className="w-4 h-4 mr-1"/>
+            {generate.isPending ? 'Thinking…' : plan ? 'Refresh Plan' : 'Generate Plan'}
+          </Button>
+        }
+      />
 
       {isLoading ? <p>Loading…</p> : !plan ? (
         <Card><CardContent className="p-6 text-center text-muted-foreground">No plan yet. Click "Generate Plan" to get today's focus.</CardContent></Card>
