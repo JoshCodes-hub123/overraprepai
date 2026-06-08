@@ -9,6 +9,7 @@ import {
   Megaphone, GraduationCap, LogOut, School as SchoolIcon, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { RoleSidebarMenu } from "@/components/layout/RoleSidebarMenu";
 
 const SchoolDashboard = () => {
   const navigate = useNavigate();
@@ -61,11 +62,15 @@ const SchoolDashboard = () => {
       title={school?.name}
       subtitle={`${school?.state}${school?.lga ? " · " + school.lga : ""}`}
       right={
-        <button onClick={async () => { await signOut(); navigate("/"); }} aria-label="Sign out" className="p-2 rounded-full hover:bg-muted">
-          <LogOut className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          <RoleSidebarMenu role="school" />
+          <button onClick={async () => { await signOut(); navigate("/"); }} aria-label="Sign out" className="p-2 rounded-full hover:bg-muted">
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
       }
     >
+
       <div className="max-w-2xl mx-auto">
         {/* Hero card */}
         <div

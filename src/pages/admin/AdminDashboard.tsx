@@ -47,6 +47,7 @@ import { PremiumStatCard } from "@/components/dashboard/PremiumStatCard";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { PullToRefresh } from "@/components/native/PullToRefresh";
 import AdminKpiStrip from "@/components/admin/AdminKpiStrip";
+import { RoleSidebarMenu } from "@/components/layout/RoleSidebarMenu";
 
 interface DashboardStats {
   totalStudents: number;
@@ -207,13 +208,18 @@ const AdminDashboard = () => {
       <header className="bg-card border-b border-border sticky top-0 z-50">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center group">
-              <img 
-                src={logo} 
-                alt="OverraPrep AI FUTA" 
-                className="h-10 w-auto object-contain"
-              />
-            </Link>
+            <div className="flex items-center gap-2">
+              <RoleSidebarMenu role="admin" />
+              <Link to="/" className="flex items-center group">
+                <img 
+                  src={logo} 
+                  alt="OverraPrep AI FUTA" 
+                  className="h-10 w-auto object-contain"
+                />
+              </Link>
+            </div>
+
+
 
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm" onClick={() => signOut()}>
