@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { GraduationCap, Building2, ChevronRight, ArrowLeft, Sparkles } from "lucide-react";
+import { GraduationCap, ChevronRight, ArrowLeft, Sparkles } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { SEO } from "@/components/seo/SEO";
 
