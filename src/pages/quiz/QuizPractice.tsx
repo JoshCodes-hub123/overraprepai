@@ -87,6 +87,7 @@ const QuizPractice = () => {
   const [showTimerPicker, setShowTimerPicker] = useState(false);
   const [chosenMinutes, setChosenMinutes] = useState<number | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const [needsUnlock, setNeedsUnlock] = useState(false);
 
   // Show timer picker once the quiz is loaded (and not resuming)
   useEffect(() => {
