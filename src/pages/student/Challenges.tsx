@@ -15,7 +15,8 @@ import {
   type Enrollment,
 } from "@/hooks/useChallenges";
 import { celebrateGold } from "@/lib/celebrate";
-import { Sparkles, Coins, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Sparkles, Coins, ArrowLeft, CheckCircle2, Trophy } from "lucide-react";
+import { PremiumPageHero } from "@/components/shell/PremiumPageHero";
 
 export default function Challenges() {
   const { data: challenges = [], isLoading } = useChallenges();
