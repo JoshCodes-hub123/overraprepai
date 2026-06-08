@@ -30,7 +30,7 @@ export function useUpcomingSessions() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tutor_session_slots")
-        .select("*")
+        .select("id, tutor_id, curriculum_id, title, description, starts_at, duration_min, capacity, status, price_tokens, payout_share_bps")
         .eq("status", "open")
         .gte("starts_at", new Date().toISOString())
         .order("starts_at", { ascending: true })
@@ -79,7 +79,7 @@ export function useTutorSlots() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("tutor_session_slots")
-        .select("*")
+        .select("id, tutor_id, curriculum_id, title, description, starts_at, duration_min, capacity, status, price_tokens, payout_share_bps")
         .eq("tutor_id", user!.id)
         .order("starts_at", { ascending: false })
         .limit(50);

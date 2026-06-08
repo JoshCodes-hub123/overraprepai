@@ -65,7 +65,8 @@ export function usePremium() {
     const { data, error } = await (supabase as any).rpc("consume_ai_token", { _kind: kind });
     if (error) {
       console.error("consume_ai_token error", error);
-      return true; // fail-open
+      toast.error("Couldn't verify your AI balance. Please try again.");
+      return false; // fail-closed
     }
     refetch();
     if (!data?.allowed) {

@@ -53,9 +53,10 @@ export const aiGate = {
     try {
       const { data, error } = await (supabase as any).rpc("consume_ai_token", { _kind: kind });
       if (error) {
-        // Fail-open so a transient backend hiccup doesn't break the UX.
+        // Fail closed — never grant free AI on a backend error.
         console.error("[aiGate] consume_ai_token error", error);
-        return true;
+        toast.error("Couldn't verify your AI balance. Please try again.");
+        return false;
       }
       if (!data?.allowed) {
         state = {
