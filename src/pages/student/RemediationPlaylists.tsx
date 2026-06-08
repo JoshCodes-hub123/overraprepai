@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Bookmark, Loader2, Trash2, CheckCircle2 } from "lucide-react";
+import { PremiumPageHero } from "@/components/shell/PremiumPageHero";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
