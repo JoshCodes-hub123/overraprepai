@@ -125,32 +125,18 @@ export const ExportStudyPackDialog = ({ open, onOpenChange, courseCode, courseNa
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="font-display flex items-center gap-2">
-            <Download className="w-5 h-5 text-primary" /> Export Study Pack
+            <Eye className="w-5 h-5 text-primary" /> View Study Pack
           </DialogTitle>
           <DialogDescription>
-            Bundle AI summaries, flashcards & likely questions for <span className="font-medium">{courseCode}</span> into one file.
+            Open a branded OverraPrep PDF of <span className="font-medium">{courseCode}</span> in a new tab —
+            view-only, no download.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5 py-2">
-          <div>
-            <Label className="text-sm font-medium mb-2 block">Format</Label>
-            <RadioGroup value={format} onValueChange={(v) => setFormat(v as "pdf" | "md")} className="grid grid-cols-2 gap-2">
-              <Label
-                htmlFor="fmt-pdf"
-                className={`flex items-center gap-2 rounded-lg border p-3 cursor-pointer transition-colors ${format === "pdf" ? "border-primary bg-primary/5" : "border-border"}`}
-              >
-                <RadioGroupItem id="fmt-pdf" value="pdf" />
-                <FileType className="w-4 h-4" /> PDF
-              </Label>
-              <Label
-                htmlFor="fmt-md"
-                className={`flex items-center gap-2 rounded-lg border p-3 cursor-pointer transition-colors ${format === "md" ? "border-primary bg-primary/5" : "border-border"}`}
-              >
-                <RadioGroupItem id="fmt-md" value="md" />
-                <FileText className="w-4 h-4" /> Markdown
-              </Label>
-            </RadioGroup>
+          <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3 flex items-center gap-2 text-sm">
+            <FileType className="w-4 h-4 text-amber-700" />
+            <span><span className="font-semibold">PDF</span> · opens in your browser</span>
           </div>
 
           <div>
@@ -194,11 +180,12 @@ export const ExportStudyPackDialog = ({ open, onOpenChange, courseCode, courseNa
             Cancel
           </Button>
           <Button onClick={handleExport} disabled={busy}>
-            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            {busy ? "Exporting..." : "Download"}
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+            {busy ? "Preparing..." : "Open PDF"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
+
