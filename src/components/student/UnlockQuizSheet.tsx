@@ -36,8 +36,12 @@ export function UnlockQuizSheet({ open, onOpenChange, quizId, quizTitle, onUnloc
     if (res.ok) {
       onOpenChange(false);
       onUnlocked?.();
+    } else if (res.reason === "insufficient") {
+      onOpenChange(false);
+      navigate("/wallet");
     }
   };
+
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

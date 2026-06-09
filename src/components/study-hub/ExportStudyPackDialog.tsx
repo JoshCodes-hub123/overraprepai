@@ -3,15 +3,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Download, FileText, FileType } from "lucide-react";
+import { Loader2, Eye, FileType } from "lucide-react";
 import {
-  exportStudyPackMarkdown,
   exportStudyPackPdf,
   type StudyPackMaterial,
 } from "@/lib/exportStudyPack";
+
 
 interface Material {
   id: string;
@@ -30,7 +29,6 @@ interface Props {
 type Kind = "summary" | "key_points" | "flashcards" | "likely_questions";
 
 export const ExportStudyPackDialog = ({ open, onOpenChange, courseCode, courseName, materials }: Props) => {
-  const [format, setFormat] = useState<"pdf" | "md">("pdf");
   const [includeSummary, setIncludeSummary] = useState(true);
   const [includeKeyPoints, setIncludeKeyPoints] = useState(true);
   const [includeFlashcards, setIncludeFlashcards] = useState(true);
@@ -40,7 +38,6 @@ export const ExportStudyPackDialog = ({ open, onOpenChange, courseCode, courseNa
   const [progress, setProgress] = useState<string>("");
 
   const fetchKind = async (materialId: string, kind: Kind) => {
-    // Try cache first
     const { data: cached } = await supabase
       .from("study_material_artifacts")
       .select("content")
@@ -74,13 +71,12 @@ export const ExportStudyPackDialog = ({ open, onOpenChange, courseCode, courseNa
       return;
     }
 
-    // Token gate: 4 tokens for study pack generation, 2 for PDF export only
     const { aiGate } = await import("@/lib/aiGate");
-    const gateKind = generateMissing ? "study_pack_generate" : (format === "pdf" ? "pdf_export" : null);
-    if (gateKind) {
-      const ok = await aiGate.consume(gateKind, { action: gateKind === "study_pack_generate" ? "Generate Study Pack" : "Export to PDF" });
-      if (!ok) return;
-    }
+    const gateKind = generateMissing ? "study_pack_generate" : "pdf_export";
+    const ok = await aiGate.consume(gateKind, {
+      action: gateKind === "study_pack_generate" ? "Generate Study Pack" : "Open Study Pack PDF",
+    });
+    if (!ok) return;
 
     setBusy(true);
     try {
@@ -100,8 +96,8 @@ export const ExportStudyPackDialog = ({ open, onOpenChange, courseCode, courseNa
         built.push(pack);
       }
 
-      setProgress("Building file...");
-      const payload = {
+      setProgress("Opening PDF...");
+      await exportStudyPackPdf({
         courseCode,
         courseName,
         materials: built,
@@ -111,12 +107,9 @@ export const ExportStudyPackDialog = ({ open, onOpenChange, courseCode, courseNa
           flashcards: includeFlashcards,
           likelyQuestions: includeLikely,
         },
-      };
+      });
 
-      if (format === "pdf") await exportStudyPackPdf(payload);
-      else exportStudyPackMarkdown(payload);
-
-      toast.success("Study pack downloaded");
+      toast.success("Study pack opened in a new tab");
       onOpenChange(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Export failed");
@@ -126,37 +119,24 @@ export const ExportStudyPackDialog = ({ open, onOpenChange, courseCode, courseNa
     }
   };
 
+
   return (
     <Dialog open={open} onOpenChange={(v) => !busy && onOpenChange(v)}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="font-display flex items-center gap-2">
-            <Download className="w-5 h-5 text-primary" /> Export Study Pack
+            <Eye className="w-5 h-5 text-primary" /> View Study Pack
           </DialogTitle>
           <DialogDescription>
-            Bundle AI summaries, flashcards & likely questions for <span className="font-medium">{courseCode}</span> into one file.
+            Open a branded OverraPrep PDF of <span className="font-medium">{courseCode}</span> in a new tab —
+            view-only, no download.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5 py-2">
-          <div>
-            <Label className="text-sm font-medium mb-2 block">Format</Label>
-            <RadioGroup value={format} onValueChange={(v) => setFormat(v as "pdf" | "md")} className="grid grid-cols-2 gap-2">
-              <Label
-                htmlFor="fmt-pdf"
-                className={`flex items-center gap-2 rounded-lg border p-3 cursor-pointer transition-colors ${format === "pdf" ? "border-primary bg-primary/5" : "border-border"}`}
-              >
-                <RadioGroupItem id="fmt-pdf" value="pdf" />
-                <FileType className="w-4 h-4" /> PDF
-              </Label>
-              <Label
-                htmlFor="fmt-md"
-                className={`flex items-center gap-2 rounded-lg border p-3 cursor-pointer transition-colors ${format === "md" ? "border-primary bg-primary/5" : "border-border"}`}
-              >
-                <RadioGroupItem id="fmt-md" value="md" />
-                <FileText className="w-4 h-4" /> Markdown
-              </Label>
-            </RadioGroup>
+          <div className="rounded-lg border border-amber-200 bg-amber-50/60 p-3 flex items-center gap-2 text-sm">
+            <FileType className="w-4 h-4 text-amber-700" />
+            <span><span className="font-semibold">PDF</span> · opens in your browser</span>
           </div>
 
           <div>
@@ -200,11 +180,12 @@ export const ExportStudyPackDialog = ({ open, onOpenChange, courseCode, courseNa
             Cancel
           </Button>
           <Button onClick={handleExport} disabled={busy}>
-            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            {busy ? "Exporting..." : "Download"}
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+            {busy ? "Preparing..." : "Open PDF"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
+
