@@ -3,15 +3,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Download, FileText, FileType } from "lucide-react";
+import { Loader2, Eye, FileType } from "lucide-react";
 import {
-  exportStudyPackMarkdown,
   exportStudyPackPdf,
   type StudyPackMaterial,
 } from "@/lib/exportStudyPack";
+
 
 interface Material {
   id: string;

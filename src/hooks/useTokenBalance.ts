@@ -5,7 +5,10 @@ import { useAuth } from "@/hooks/useAuth";
 
 /**
  * Live token wallet balance for the current user.
- * Subscribes to UPDATEs on token_wallets so the header chip + paywalls
+ *
+ * Source of truth = `profiles.ai_token_balance` (this is what
+ * `credit_wallet`, `consume_ai_token` and `unlock_quiz` all read/write).
+ * We subscribe to UPDATEs on `profiles` so the header chip + paywalls
  * react instantly to credits/debits.
  */
 export function useTokenBalance() {
@@ -18,11 +21,11 @@ export function useTokenBalance() {
     staleTime: 30_000,
     queryFn: async () => {
       const { data } = await (supabase as any)
-        .from("token_wallets")
-        .select("id, balance, total_earned, total_spent")
-        .eq("user_id", user!.id)
+        .from("profiles")
+        .select("id, ai_token_balance, daily_free_used")
+        .eq("id", user!.id)
         .maybeSingle();
-      return data as { id: string; balance: number; total_earned: number; total_spent: number } | null;
+      return data as { id: string; ai_token_balance: number; daily_free_used: number } | null;
     },
   });
 
@@ -32,16 +35,25 @@ export function useTokenBalance() {
       .channel(`wallet-${user.id}`)
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "token_wallets", filter: `user_id=eq.${user.id}` },
+        { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
         () => qc.invalidateQueries({ queryKey: ["token-balance", user.id] }),
       )
       .subscribe();
     return () => { try { (supabase as any).removeChannel(ch); } catch { /* noop */ } };
   }, [user?.id, qc]);
 
+  const balance = query.data?.ai_token_balance ?? 0;
+
   return {
-    balance: query.data?.balance ?? 0,
-    wallet: query.data,
+    balance,
+    wallet: query.data
+      ? {
+          id: query.data.id,
+          balance,
+          total_earned: 0,
+          total_spent: 0,
+        }
+      : null,
     isLoading: query.isLoading,
   };
 }

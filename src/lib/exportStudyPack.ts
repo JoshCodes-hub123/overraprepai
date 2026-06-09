@@ -217,5 +217,13 @@ export async function exportStudyPackPdf(input: StudyPackInput) {
     doc.text(`Page ${p} / ${total}`, pageW - margin, pageH - 20, { align: "right" });
   }
 
-  doc.save(`${courseCode}-study-pack-${dateStamp()}.pdf`);
+  // View-only: open in a new browser tab using the native PDF viewer
+  // (no auto-download — discourages re-sharing the file).
+  const blobUrl = doc.output("bloburl");
+  const win = window.open(blobUrl, "_blank", "noopener,noreferrer");
+  if (!win) {
+    // Popup blocked — fall back to a same-tab navigation so the user still sees it.
+    window.location.href = String(blobUrl);
+  }
 }
+

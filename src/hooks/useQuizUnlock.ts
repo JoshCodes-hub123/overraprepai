@@ -35,14 +35,22 @@ export function useQuizUnlock(quizId?: string) {
       return { ok: false, reason: error.message };
     }
     if (!data?.allowed) {
+      if (data?.reason === "insufficient") {
+        toast.error("Not enough tokens", {
+          description: `Needs ${data.cost} · you have ${data.balance}. Top up to unlock.`,
+        });
+      }
       return { ok: false, cost: data?.cost, balance: data?.balance, reason: data?.reason };
     }
     qc.invalidateQueries({ queryKey: ["quiz-unlock", user?.id, quizId] });
     qc.invalidateQueries({ queryKey: ["wallet-profile"] });
     qc.invalidateQueries({ queryKey: ["token-balance"] });
-    toast.success(`Unlocked! −${data.cost} tokens · ${data.balance} left`);
+    qc.invalidateQueries({ queryKey: ["ai_token_balance"] });
+    if (data.cost > 0) toast.success(`Unlocked! −${data.cost} tokens · ${data.balance} left`);
+    else toast.success("Already unlocked — enjoy!");
     return { ok: true, cost: data.cost, balance: data.balance };
   }, [quizId, qc, user?.id]);
+
 
   return {
     isUnlocked: !!query.data,
