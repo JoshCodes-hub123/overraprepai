@@ -29,7 +29,6 @@ interface Props {
 type Kind = "summary" | "key_points" | "flashcards" | "likely_questions";
 
 export const ExportStudyPackDialog = ({ open, onOpenChange, courseCode, courseName, materials }: Props) => {
-  const [format, setFormat] = useState<"pdf" | "md">("pdf");
   const [includeSummary, setIncludeSummary] = useState(true);
   const [includeKeyPoints, setIncludeKeyPoints] = useState(true);
   const [includeFlashcards, setIncludeFlashcards] = useState(true);
@@ -39,7 +38,6 @@ export const ExportStudyPackDialog = ({ open, onOpenChange, courseCode, courseNa
   const [progress, setProgress] = useState<string>("");
 
   const fetchKind = async (materialId: string, kind: Kind) => {
-    // Try cache first
     const { data: cached } = await supabase
       .from("study_material_artifacts")
       .select("content")
@@ -73,13 +71,12 @@ export const ExportStudyPackDialog = ({ open, onOpenChange, courseCode, courseNa
       return;
     }
 
-    // Token gate: 4 tokens for study pack generation, 2 for PDF export only
     const { aiGate } = await import("@/lib/aiGate");
-    const gateKind = generateMissing ? "study_pack_generate" : (format === "pdf" ? "pdf_export" : null);
-    if (gateKind) {
-      const ok = await aiGate.consume(gateKind, { action: gateKind === "study_pack_generate" ? "Generate Study Pack" : "Export to PDF" });
-      if (!ok) return;
-    }
+    const gateKind = generateMissing ? "study_pack_generate" : "pdf_export";
+    const ok = await aiGate.consume(gateKind, {
+      action: gateKind === "study_pack_generate" ? "Generate Study Pack" : "Open Study Pack PDF",
+    });
+    if (!ok) return;
 
     setBusy(true);
     try {
@@ -99,8 +96,8 @@ export const ExportStudyPackDialog = ({ open, onOpenChange, courseCode, courseNa
         built.push(pack);
       }
 
-      setProgress("Building file...");
-      const payload = {
+      setProgress("Opening PDF...");
+      await exportStudyPackPdf({
         courseCode,
         courseName,
         materials: built,
@@ -110,12 +107,9 @@ export const ExportStudyPackDialog = ({ open, onOpenChange, courseCode, courseNa
           flashcards: includeFlashcards,
           likelyQuestions: includeLikely,
         },
-      };
+      });
 
-      if (format === "pdf") await exportStudyPackPdf(payload);
-      else exportStudyPackMarkdown(payload);
-
-      toast.success("Study pack downloaded");
+      toast.success("Study pack opened in a new tab");
       onOpenChange(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Export failed");
@@ -124,6 +118,7 @@ export const ExportStudyPackDialog = ({ open, onOpenChange, courseCode, courseNa
       setProgress("");
     }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={(v) => !busy && onOpenChange(v)}>
