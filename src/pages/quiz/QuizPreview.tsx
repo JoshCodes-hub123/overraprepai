@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SEO } from "@/components/seo/SEO";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { PurchaseQuizDialog } from "@/components/student/PurchaseQuizDialog";
+import { UnlockQuizSheet } from "@/components/student/UnlockQuizSheet";
 import { toast } from "sonner";
 import {
   Clock,
@@ -67,7 +67,6 @@ const QuizPreview = () => {
   const [tutor, setTutor] = useState<TutorProfile | null>(null);
   const [rating, setRating] = useState<Rating | null>(null);
   const [hasPurchased, setHasPurchased] = useState(false);
-  const [wallet, setWallet] = useState<{ balance: number } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -119,27 +118,16 @@ const QuizPreview = () => {
           setRating({ average: avg, count: ratingsData.length });
         }
 
-        // Check if user has purchased (if logged in)
+        // Check if user has unlocked this quiz (if logged in)
         if (user) {
-          const { data: purchaseData } = await supabase
-            .from("student_quiz_purchases")
+          const { data: unlockData } = await (supabase as any)
+            .from("quiz_unlocks")
             .select("id")
             .eq("quiz_id", quizId)
-            .eq("student_id", user.id)
+            .eq("user_id", user.id)
             .maybeSingle();
 
-          setHasPurchased(!!purchaseData);
-
-          // Fetch wallet
-          const { data: walletData } = await supabase
-            .from("token_wallets")
-            .select("balance")
-            .eq("user_id", user.id)
-            .single();
-
-          if (walletData) {
-            setWallet(walletData);
-          }
+          setHasPurchased(!!unlockData);
         }
       } catch (error) {
         console.error("Error fetching quiz:", error);
@@ -215,17 +203,6 @@ const QuizPreview = () => {
       duration: 3200,
       description: "Starting now…",
     });
-    // Refresh wallet
-    if (user) {
-      supabase
-        .from("token_wallets")
-        .select("balance")
-        .eq("user_id", user.id)
-        .single()
-        .then(({ data }) => {
-          if (data) setWallet(data);
-        });
-    }
     // Auto-launch the quiz
     setTimeout(() => {
       if (!quiz) return;
@@ -439,20 +416,14 @@ const QuizPreview = () => {
         </main>
       </div>
 
-      {/* Purchase Dialog */}
-      {quiz && showPurchaseDialog && wallet && (
-        <PurchaseQuizDialog
+      {/* Unlock Dialog */}
+      {quiz && showPurchaseDialog && (
+        <UnlockQuizSheet
           open={showPurchaseDialog}
           onOpenChange={setShowPurchaseDialog}
-          quiz={{
-            id: quiz.id,
-            title: quiz.title,
-            description: quiz.description,
-            token_cost: quiz.token_cost,
-            tutor_id: quiz.tutor_id,
-          }}
-          walletBalance={wallet.balance}
-          onSuccess={handlePurchaseSuccess}
+          quizId={quiz.id}
+          quizTitle={quiz.title}
+          onUnlocked={handlePurchaseSuccess}
         />
       )}
     </>
