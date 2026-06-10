@@ -34,8 +34,8 @@ export function UnlockQuizSheet({ open, onOpenChange, quizId, quizTitle, onUnloc
     const res = await unlock();
     setBusy(false);
     if (res.ok) {
-      onOpenChange(false);
       onUnlocked?.();
+      onOpenChange(false);
     } else if (res.reason === "insufficient") {
       onOpenChange(false);
       navigate("/wallet");
