@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useBookmarkedQuestions } from "@/hooks/useBookmarkedQuestions";
@@ -89,6 +89,7 @@ const QuizPractice = () => {
   const [chosenMinutes, setChosenMinutes] = useState<number | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [needsUnlock, setNeedsUnlock] = useState(false);
+  const unlockSucceededRef = useRef(false);
 
   // Show timer picker once the quiz is loaded (and not resuming)
   useEffect(() => {
@@ -448,10 +449,10 @@ const QuizPractice = () => {
         </div>
         <UnlockQuizSheet
           open={true}
-          onOpenChange={(v) => { if (!v) navigate(-1); }}
+          onOpenChange={(v) => { if (!v && !unlockSucceededRef.current) navigate(-1); }}
           quizId={quiz.id}
           quizTitle={quiz.title}
-          onUnlocked={() => { setNeedsUnlock(false); setIsLoading(true); fetchQuizData(); }}
+          onUnlocked={() => { unlockSucceededRef.current = true; setNeedsUnlock(false); setIsLoading(true); fetchQuizData(); }}
         />
       </>
     );
