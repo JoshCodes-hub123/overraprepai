@@ -46,8 +46,9 @@ export function useQuizUnlock(quizId?: string) {
     qc.invalidateQueries({ queryKey: ["wallet-profile"] });
     qc.invalidateQueries({ queryKey: ["token-balance"] });
     qc.invalidateQueries({ queryKey: ["ai_token_balance"] });
-    if (data.cost > 0) toast.success(`Unlocked! −${data.cost} tokens · ${data.balance} left`);
-    else toast.success("Already unlocked — enjoy!");
+    if (data.already_unlocked) toast.success("Already unlocked — enjoy!");
+    else if (data.source === "free") toast.success(`Unlocked with a free action · ${data.free_left ?? 0}/3 left today`);
+    else toast.success(`Unlocked! −${data.cost} tokens · ${data.balance} left`);
     return { ok: true, cost: data.cost, balance: data.balance };
   }, [quizId, qc, user?.id]);
 

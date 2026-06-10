@@ -6,10 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 /**
  * Live token wallet balance for the current user.
  *
- * Source of truth = `profiles.ai_token_balance` (this is what
- * `credit_wallet`, `consume_ai_token` and `unlock_quiz` all read/write).
- * We subscribe to UPDATEs on `profiles` so the header chip + paywalls
- * react instantly to credits/debits.
+ * Source of truth = secure `get_my_wallet()` RPC. Wallet/free-quota columns
+ * are protected on `profiles`, so direct table reads can show 0 in the app.
  */
 export function useTokenBalance() {
   const { user } = useAuth();
@@ -20,12 +18,14 @@ export function useTokenBalance() {
     enabled: !!user?.id,
     staleTime: 30_000,
     queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from("profiles")
-        .select("id, ai_token_balance, daily_free_used")
-        .eq("id", user!.id)
-        .maybeSingle();
-      return data as { id: string; ai_token_balance: number; daily_free_used: number } | null;
+      const { data, error } = await (supabase as any).rpc("get_my_wallet");
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      return (row ?? null) as {
+        ai_token_balance: number | null;
+        daily_free_used: number | null;
+        daily_free_reset_at: string | null;
+      } | null;
     },
   });
 
@@ -43,17 +43,20 @@ export function useTokenBalance() {
   }, [user?.id, qc]);
 
   const balance = query.data?.ai_token_balance ?? 0;
+  const dailyFreeUsed = query.data?.daily_free_used ?? 0;
 
   return {
     balance,
     wallet: query.data
       ? {
-          id: query.data.id,
+          id: user?.id ?? "",
           balance,
           total_earned: 0,
           total_spent: 0,
         }
       : null,
+    dailyFreeUsed,
+    dailyFreeLeft: Math.max(0, 3 - dailyFreeUsed),
     isLoading: query.isLoading,
   };
 }
