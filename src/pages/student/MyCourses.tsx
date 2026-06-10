@@ -1,44 +1,39 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyCourses } from "@/hooks/useMyCourses";
 import { useStudentScope } from "@/hooks/useStudentScope";
 import Navbar from "@/components/layout/Navbar";
 import DashboardNav from "@/components/layout/DashboardNav";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { SEO } from "@/components/seo/SEO";
 import { toast } from "sonner";
-import { BookOpen, Plus, Search, Lock, GraduationCap, Sparkles, ArrowRight } from "lucide-react";
-import { MyCoursesGrid } from "@/components/courses/MyCoursesGrid";
-import { PageHeader, LevelChip } from "@/components/shell/PageHeader";
-import { FilterRail, type FilterChip } from "@/components/shell/FilterRail";
-import { SectionBlock } from "@/components/shell/SectionBlock";
-import { EmptyState } from "@/components/shell/EmptyState";
+import { BookOpen, Plus, Search, GraduationCap, Sparkles, ArrowRight } from "lucide-react";
+import { CourseCardV2 } from "@/components/courses/CourseCardV2";
+import { LevelSection } from "@/components/courses/LevelSection";
+import { ChangeLevelSheet } from "@/components/courses/ChangeLevelSheet";
 
 interface Course {
-  id: string;
-  code: string;
-  name: string;
-  department: string | null;
-  level: string | null;
-  description: string | null;
+  id: string; code: string; name: string;
+  department: string | null; level: string | null;
 }
+
+const LEVEL_ORDER = ["100", "200", "300", "400", "500", "JAMB", "Secondary", "Other"];
+const MAX_COURSES = 12;
 
 const MyCourses = () => {
   const { user, isLoading: authLoading } = useAuth();
-  const { level: studentLevel, department, hasScope, label: scopeLabel } = useStudentScope();
+  const { level: studentLevel, label: scopeLabel } = useStudentScope();
   const navigate = useNavigate();
   const { courseIds, refresh } = useMyCourses();
   const [allCourses, setAllCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
-  const [view, setView] = useState<"enrolled" | "recommended" | "all">("enrolled");
+  const [levelSheetOpen, setLevelSheetOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -48,7 +43,7 @@ const MyCourses = () => {
     (async () => {
       const { data } = await supabase
         .from("courses")
-        .select("id, code, name, department, level, description")
+        .select("id, code, name, department, level")
         .eq("is_active", true)
         .order("code");
       setAllCourses((data as any) ?? []);
@@ -58,48 +53,55 @@ const MyCourses = () => {
 
   const enrolled = useMemo(
     () => allCourses.filter((c) => courseIds.includes(c.id)),
-    [allCourses, courseIds]
+    [allCourses, courseIds],
   );
-
-  const matchesScope = (c: Course) => {
-    if (!hasScope) return true;
-    if (c.level && c.level !== studentLevel) return false;
-    if (department && c.department && c.department !== department) return false;
-    return true;
-  };
 
   const recommended = useMemo(
-    () => allCourses.filter((c) => !courseIds.includes(c.id) && matchesScope(c)),
-    [allCourses, courseIds, studentLevel, department, hasScope],
+    () =>
+      allCourses.filter(
+        (c) =>
+          !courseIds.includes(c.id) &&
+          (!studentLevel || !c.level || c.level === studentLevel),
+      ),
+    [allCourses, courseIds, studentLevel],
   );
-
-  const browseable = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const pool = view === "recommended" ? recommended : allCourses.filter((c) => !courseIds.includes(c.id));
-    if (!q) return pool;
-    return pool.filter(
-      (c) =>
-        c.code.toLowerCase().includes(q) ||
-        c.name.toLowerCase().includes(q) ||
-        (c.department || "").toLowerCase().includes(q),
-    );
-  }, [allCourses, courseIds, recommended, search, view]);
-
-  const isLocked = (c: Course) =>
-    !!studentLevel && !!c.level && c.level !== studentLevel;
 
   const enroll = async (id: string) => {
     if (!user) return;
-    setBusy(id);
-    const { error } = await (supabase as any).from("student_courses").insert({ student_id: user.id, course_id: id });
-    setBusy(null);
-    if (error) {
-      toast.error("Could not enroll");
+    if (courseIds.length >= MAX_COURSES) {
+      toast.error(`You've reached the ${MAX_COURSES}-course limit`);
       return;
     }
-    toast.success("Course added to your list");
+    setBusy(id);
+    const { error } = await (supabase as any)
+      .from("student_courses")
+      .insert({ student_id: user.id, course_id: id });
+    setBusy(null);
+    if (error) return toast.error("Could not enroll");
+    toast.success("Course added");
     refresh();
   };
+
+  // Filter enrolled by search
+  const filteredEnrolled = useMemo(() => {
+    const s = search.trim().toLowerCase();
+    if (!s) return enrolled;
+    return enrolled.filter((c) =>
+      [c.code, c.name, c.department].filter(Boolean).join(" ").toLowerCase().includes(s),
+    );
+  }, [enrolled, search]);
+
+  // Group enrolled by level
+  const grouped = useMemo(() => {
+    const map: Record<string, Course[]> = {};
+    filteredEnrolled.forEach((c) => {
+      const key = c.level || "Other";
+      (map[key] ||= []).push(c);
+    });
+    return LEVEL_ORDER
+      .filter((l) => map[l]?.length)
+      .map((l) => ({ level: l, items: map[l] }));
+  }, [filteredEnrolled]);
 
   if (authLoading || loading) {
     return (
@@ -110,231 +112,136 @@ const MyCourses = () => {
     );
   }
 
-  const chips: FilterChip[] = [
-    { id: "enrolled", label: "Enrolled", count: enrolled.length },
-    {
-      id: "recommended",
-      label: (
-        <span className="inline-flex items-center gap-1">
-          <Sparkles className="w-3 h-3" /> For {studentLevel || "you"}
-        </span>
-      ),
-      count: recommended.length,
-    },
-    { id: "all", label: "All courses" },
-  ];
-
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="My Courses | OverraPrep AI" description="Manage your enrolled courses." />
+      <SEO title="My Courses | OverraPrep AI" description="Your enrolled courses, organised by level." />
       <Navbar />
       <div className="pt-16 md:pt-[72px]"><DashboardNav role="student" /></div>
       <main className="container mx-auto px-4 pt-6 pb-24 max-w-5xl">
-        <PageHeader
-          eyebrow={
-            scopeLabel ? (
-              <LevelChip label={scopeLabel} />
-            ) : (
-              <Link to="/profile/edit" className="inline-flex items-center gap-1 text-xs text-amber-700 underline">
-                <GraduationCap className="w-3.5 h-3.5" /> Set your level to personalize
-              </Link>
-            )
-          }
-          title="My Courses"
-          subtitle={
-            hasScope
-              ? `Curated for ${studentLevel} students. Your enrolled courses and what's recommended next.`
-              : "Browse every active course. Set your level in your profile to see only what's relevant to you."
-          }
-          actions={
-            <div className="relative w-full md:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search code or name (e.g. CSC 201)"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 bg-white/80 backdrop-blur"
-              />
-            </div>
-          }
-        />
-
-        <FilterRail chips={chips} active={view} onChange={(v) => setView(v as typeof view)} />
-
-        {view === "enrolled" ? (
-          <SectionBlock
-            title="Your enrolled courses"
-            subtitle="Tap a course to open materials, quizzes, audio and discussions."
-          >
-            {enrolled.length === 0 ? (
-              <EmptyState
-                icon={<BookOpen className="w-6 h-6" />}
-                title="You haven't added any courses yet"
-                description={
-                  hasScope
-                    ? `We've lined up ${recommended.length} ${studentLevel} courses for you.`
-                    : "Browse all active courses or set your level for tailored picks."
-                }
-                action={
-                  <Button onClick={() => setView("recommended")} className="gap-1.5">
-                    <Sparkles className="w-4 h-4" /> See recommended
-                  </Button>
-                }
-              />
-            ) : (
-              <MyCoursesGrid emptyMessage="" />
-            )}
-
-            {recommended.length > 0 && (
-              <SectionBlock
-                title={`Recommended for ${studentLevel || "you"}`}
-                subtitle="One-tap add — only shown when they match your level and department."
-                action={
-                  <Button variant="ghost" size="sm" onClick={() => setView("recommended")} className="gap-1">
-                    See all <ArrowRight className="w-3.5 h-3.5" />
-                  </Button>
-                }
-                className="mt-10"
+        {/* Hero */}
+        <section className="mb-5">
+          <div className="flex items-end justify-between gap-3 flex-wrap">
+            <div>
+              <button
+                onClick={() => setLevelSheetOpen(true)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100 transition mb-2"
               >
-                <RecommendedRow
-                  courses={recommended.slice(0, 6)}
-                  busy={busy}
-                  onEnroll={enroll}
-                />
-              </SectionBlock>
-            )}
-          </SectionBlock>
+                <GraduationCap className="w-3.5 h-3.5" />
+                <span className="text-[12px] font-bold">
+                  {scopeLabel || "Set your level"}
+                </span>
+                <span className="text-[11px] text-amber-700/80">· change</span>
+              </button>
+              <h1 className="font-display text-2xl md:text-3xl">My Courses</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                {enrolled.length} of {MAX_COURSES} courses · grouped by level
+              </p>
+            </div>
+            <Button
+              onClick={() => navigate("/courses")}
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+            >
+              <Plus className="w-4 h-4 mr-1.5" /> Add courses
+            </Button>
+          </div>
+
+          {/* Capacity meter */}
+          <div className="mt-4 h-1.5 w-full rounded-full bg-amber-50 overflow-hidden">
+            <div
+              className="h-full bg-amber-500 transition-all"
+              style={{ width: `${Math.min(100, (enrolled.length / MAX_COURSES) * 100)}%` }}
+            />
+          </div>
+        </section>
+
+        {/* Search */}
+        {enrolled.length > 0 && (
+          <div className="relative mb-5 max-w-md">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search your courses…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        )}
+
+        {/* Enrolled grouped by level */}
+        {enrolled.length === 0 ? (
+          <div className="rounded-2xl border border-amber-100 bg-white p-10 text-center">
+            <BookOpen className="w-8 h-8 text-amber-500 mx-auto mb-3" />
+            <p className="font-display font-bold text-[16px]">No courses yet</p>
+            <p className="text-[12.5px] text-neutral-500 mt-1 max-w-sm mx-auto">
+              Pick from courses curated for {studentLevel ? `${studentLevel} Level` : "your level"} —
+              your study materials, quizzes and AI tutor all unlock from here.
+            </p>
+            <Button
+              className="mt-4 bg-amber-500 hover:bg-amber-600 text-white"
+              onClick={() => navigate("/courses")}
+            >
+              <Sparkles className="w-4 h-4 mr-1.5" /> Browse courses
+            </Button>
+          </div>
         ) : (
-          <SectionBlock
-            title={
-              view === "recommended"
-                ? `${recommended.length} courses for ${studentLevel || "you"}`
-                : "All active courses"
-            }
-            subtitle={
-              view === "recommended"
-                ? "Filtered to your academic level. Update your profile to change this."
-                : "Browsing everything — courses outside your level appear locked."
-            }
-          >
-            {browseable.length === 0 ? (
-              <EmptyState
-                icon={<BookOpen className="w-6 h-6" />}
-                title="No matching courses"
-                description={
-                  view === "recommended"
-                    ? `Nothing new for ${studentLevel || "your level"} right now — check back soon.`
-                    : "Try a different search term."
-                }
-              />
-            ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {browseable.map((c) => (
-                  <BrowseCard
+          grouped.map((g) => (
+            <LevelSection
+              key={g.level}
+              level={g.level}
+              count={g.items.length}
+              active={g.level === studentLevel}
+              defaultOpen
+            >
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {g.items.map((c) => (
+                  <CourseCardV2
                     key={c.id}
                     course={c}
-                    locked={isLocked(c)}
-                    busy={busy === c.id}
-                    onEnroll={() => enroll(c.id)}
+                    state="enrolled"
+                    studentLevel={studentLevel}
                   />
                 ))}
               </div>
-            )}
-          </SectionBlock>
+            </LevelSection>
+          ))
+        )}
+
+        {/* Recommended rail */}
+        {recommended.length > 0 && enrolled.length < MAX_COURSES && (
+          <section className="mt-8">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-display font-bold text-[15px] inline-flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                Recommended for {studentLevel || "you"}
+              </h2>
+              <button
+                onClick={() => navigate("/courses")}
+                className="text-[12px] font-bold text-amber-700 hover:text-amber-800 inline-flex items-center gap-0.5"
+              >
+                See all <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="flex gap-3 overflow-x-auto -mx-4 px-4 pb-2 snap-x">
+              {recommended.slice(0, 6).map((c) => (
+                <div key={c.id} className="snap-start shrink-0 w-[260px]">
+                  <CourseCardV2
+                    course={c}
+                    state="available"
+                    recommended
+                    busy={busy === c.id}
+                    studentLevel={studentLevel}
+                    onAdd={() => enroll(c.id)}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
         )}
       </main>
+
+      <ChangeLevelSheet open={levelSheetOpen} onOpenChange={setLevelSheetOpen} />
     </div>
   );
 };
-
-function RecommendedRow({
-  courses,
-  busy,
-  onEnroll,
-}: {
-  courses: Course[];
-  busy: string | null;
-  onEnroll: (id: string) => void;
-}) {
-  return (
-    <div className="flex gap-3 overflow-x-auto -mx-4 px-4 pb-2 snap-x">
-      {courses.map((c) => (
-        <div
-          key={c.id}
-          className="snap-start shrink-0 w-[260px] rounded-2xl border border-border bg-white p-4 hover:shadow-elegant hover:border-amber-300 transition-all"
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <Badge variant="outline" className="text-[10px] font-bold">{c.code}</Badge>
-            {c.level && <span className="text-[10px] text-muted-foreground">{c.level}</span>}
-          </div>
-          <h3 className="font-display text-sm font-bold line-clamp-2 leading-snug min-h-[2.5rem]">
-            {c.name}
-          </h3>
-          {c.department && (
-            <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">{c.department}</p>
-          )}
-          <Button
-            size="sm"
-            className="w-full mt-3 h-8"
-            disabled={busy === c.id}
-            onClick={() => onEnroll(c.id)}
-          >
-            <Plus className="w-3.5 h-3.5 mr-1" /> Add to my courses
-          </Button>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function BrowseCard({
-  course: c,
-  locked,
-  busy,
-  onEnroll,
-}: {
-  course: Course;
-  locked: boolean;
-  busy: boolean;
-  onEnroll: () => void;
-}) {
-  return (
-    <Card
-      className={`relative overflow-hidden transition-all border-border ${
-        locked ? "opacity-70" : "hover:shadow-elegant hover:border-amber-300"
-      }`}
-    >
-      {locked && (
-        <div className="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
-          <Lock className="w-3 h-3" /> {c.level} only
-        </div>
-      )}
-      <CardHeader className="pb-3">
-        <Badge variant="outline" className="mb-2 w-fit font-bold">{c.code}</Badge>
-        <CardTitle className="text-base font-display leading-snug">{c.name}</CardTitle>
-        {(c.level || c.department) && (
-          <CardDescription className="text-xs">
-            {c.level ? `${c.level}` : ""}
-            {c.level && c.department ? " · " : ""}
-            {c.department || ""}
-          </CardDescription>
-        )}
-      </CardHeader>
-      <CardContent>
-        {locked ? (
-          <Button size="sm" variant="outline" className="w-full" asChild>
-            <Link to="/profile/edit">
-              <Lock className="w-4 h-4 mr-1" /> Update level to enroll
-            </Link>
-          </Button>
-        ) : (
-          <Button size="sm" className="w-full" disabled={busy} onClick={onEnroll}>
-            <Plus className="w-4 h-4 mr-1" /> Add to my courses
-          </Button>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
 
 export default MyCourses;
