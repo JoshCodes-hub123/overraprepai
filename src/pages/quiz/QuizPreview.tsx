@@ -62,7 +62,7 @@ const QuizPreview = () => {
   const { quizId } = useParams();
   const navigate = useNavigate();
   const { user, profile, isLoading: authLoading } = useAuth();
-  const studentLevel = ((profile as any)?.level as string | null | undefined) ?? null;
+  const studentLevel = (profile as { level?: string | null } | null | undefined)?.level ?? null;
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [tutor, setTutor] = useState<TutorProfile | null>(null);
   const [rating, setRating] = useState<Rating | null>(null);
@@ -120,7 +120,7 @@ const QuizPreview = () => {
 
         // Check if user has unlocked this quiz (if logged in)
         if (user) {
-          const { data: unlockData } = await (supabase as any)
+          const { data: unlockData } = await supabase
             .from("quiz_unlocks")
             .select("id")
             .eq("quiz_id", quizId)
