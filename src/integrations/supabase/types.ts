@@ -7630,17 +7630,7 @@ export type Database = {
         Returns: undefined
       }
       complete_session: { Args: { _booking_id: string }; Returns: undefined }
-      consume_ai_token:
-        | { Args: { _kind: string }; Returns: Json }
-        | {
-            Args: { _daily_limit?: number; _kind?: string }
-            Returns: {
-              allowed: boolean
-              is_pro: boolean
-              remaining: number
-              used: number
-            }[]
-          }
+      consume_ai_token: { Args: { _kind: string }; Returns: Json }
       course_in_my_university: {
         Args: { _course_id: string }
         Returns: boolean
