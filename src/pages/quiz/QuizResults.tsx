@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { RateQuizDialog } from "@/components/student/RateQuizDialog";
 import { ShareResultsButton } from "@/components/quiz/ShareResultsButton";
 import { QuizCelebration } from "@/components/quiz/QuizCelebration";
+import { QuizResultShareCard } from "@/components/quiz/QuizResultShareCard";
 import logo from "@/assets/logo.png";
 import {
   Trophy,
@@ -172,115 +173,89 @@ const QuizResults = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-12 max-w-2xl">
-        <div className="bg-card rounded-3xl border border-border shadow-xl overflow-hidden">
-          {/* Score Header */}
-          <div className={`p-8 text-center ${
-            isExcellent 
-              ? "bg-gradient-primary" 
-              : isPassing 
-              ? "bg-gradient-accent" 
-              : "bg-destructive"
-          } text-white`}>
-            <div className="w-20 h-20 mx-auto mb-4 bg-white/20 rounded-full flex items-center justify-center">
-              {isExcellent ? (
-                <Trophy className="w-10 h-10" />
-              ) : isPassing ? (
-                <Target className="w-10 h-10" />
-              ) : (
-                <XCircle className="w-10 h-10" />
-              )}
+      <main className="container mx-auto px-4 py-10 max-w-2xl">
+        <div className="relative bg-card rounded-3xl border border-amber-500/20 shadow-2xl overflow-hidden">
+          <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-amber-300 via-yellow-500 to-amber-600" />
+
+          <div className="relative px-6 pt-10 pb-8 text-center bg-gradient-to-b from-amber-50 to-transparent dark:from-amber-950/20">
+            <div className="absolute top-4 right-4 text-[10px] font-bold tracking-widest text-amber-700/70">OVERRAPREP AI</div>
+            <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-amber-300 to-yellow-600 flex items-center justify-center shadow-lg shadow-amber-500/30">
+              {isExcellent ? <Trophy className="w-12 h-12 text-white" /> : isPassing ? <Target className="w-12 h-12 text-white" /> : <XCircle className="w-12 h-12 text-white" />}
             </div>
-            
-            <h1 className="font-display text-5xl font-bold mb-2">{percentage}%</h1>
-            <p className="text-lg opacity-90">{getMessage()}</p>
+            <h1 className="font-display text-6xl font-extrabold bg-gradient-to-br from-amber-600 to-yellow-700 bg-clip-text text-transparent mb-1 tracking-tight">
+              {percentage}%
+            </h1>
+            <p className="text-sm font-semibold tracking-wide uppercase text-amber-700/80 mb-1">
+              {percentage >= 90 ? "Outstanding" : percentage >= 80 ? "Excellent" : percentage >= 70 ? "Great Job" : isPassing ? "Passed" : "Keep Practicing"}
+            </p>
+            <p className="text-muted-foreground text-sm max-w-md mx-auto">{getMessage()}</p>
           </div>
 
-          {/* Details */}
-          <div className="p-8">
-            <div className="text-center mb-8">
-              <h2 className="font-display text-xl font-bold text-foreground mb-1">
-                {attempt.quiz.title}
-              </h2>
-              <p className="text-muted-foreground">
-                {attempt.quiz.course.code} - {attempt.quiz.course.name}
-              </p>
-              <span className="inline-block mt-2 text-xs font-medium bg-muted px-2 py-1 rounded">
+          <div className="px-6 pb-8">
+            <div className="text-center mb-6">
+              <h2 className="font-display text-lg font-bold text-foreground mb-0.5">{attempt.quiz.title}</h2>
+              <p className="text-xs text-muted-foreground">{attempt.quiz.course.code} · {attempt.quiz.course.name}</p>
+              <span className="inline-block mt-2 text-[10px] font-semibold uppercase tracking-wider bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 px-2.5 py-1 rounded-full">
                 {attempt.mode === "practice" ? "Practice Mode" : "CBT Simulation"}
               </span>
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-3 gap-4 mb-8">
-              <div className="text-center p-4 bg-muted/50 rounded-xl">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <CheckCircle2 className="w-5 h-5 text-success" />
-                </div>
-                <p className="font-display text-2xl font-bold text-foreground">
-                  {attempt.correct_answers}
-                </p>
-                <p className="text-xs text-muted-foreground">Correct</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+              <div className="text-center p-3 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/10 border border-emerald-200/50">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto mb-1" />
+                <p className="font-display text-xl font-bold text-foreground">{attempt.correct_answers}</p>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Correct</p>
               </div>
-              
-              <div className="text-center p-4 bg-muted/50 rounded-xl">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <XCircle className="w-5 h-5 text-destructive" />
-                </div>
-                <p className="font-display text-2xl font-bold text-foreground">
-                  {attempt.total_questions - attempt.correct_answers}
-                </p>
-                <p className="text-xs text-muted-foreground">Incorrect</p>
+              <div className="text-center p-3 rounded-2xl bg-gradient-to-br from-rose-50 to-rose-100/50 dark:from-rose-950/30 dark:to-rose-900/10 border border-rose-200/50">
+                <XCircle className="w-4 h-4 text-rose-600 mx-auto mb-1" />
+                <p className="font-display text-xl font-bold text-foreground">{attempt.total_questions - attempt.correct_answers}</p>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Wrong</p>
               </div>
-              
-              <div className="text-center p-4 bg-muted/50 rounded-xl">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <Clock className="w-5 h-5 text-primary" />
-                </div>
-                <p className="font-display text-2xl font-bold text-foreground">
-                  {timeMinutes}:{timeSeconds.toString().padStart(2, "0")}
+              <div className="text-center p-3 rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/10 border border-amber-200/50">
+                <Clock className="w-4 h-4 text-amber-600 mx-auto mb-1" />
+                <p className="font-display text-xl font-bold text-foreground">{timeMinutes}:{timeSeconds.toString().padStart(2, "0")}</p>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Time</p>
+              </div>
+              <div className="text-center p-3 rounded-2xl bg-gradient-to-br from-violet-50 to-violet-100/50 dark:from-violet-950/30 dark:to-violet-900/10 border border-violet-200/50">
+                <Target className="w-4 h-4 text-violet-600 mx-auto mb-1" />
+                <p className="font-display text-xl font-bold text-foreground">
+                  {attempt.total_questions > 0 ? Math.round((attempt.time_spent_seconds ?? 0) / attempt.total_questions) : 0}s
                 </p>
-                <p className="text-xs text-muted-foreground">Time</p>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Avg / Q</p>
               </div>
             </div>
 
-            {/* Rate Quiz Button */}
-            <div className="mb-6">
-              <Button
-                variant={hasRated ? "outline" : "secondary"}
-                className="w-full"
-                onClick={() => setShowRating(true)}
-              >
+            <div className="mb-4 p-4 rounded-2xl bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100/60 dark:from-amber-950/20 dark:to-yellow-950/10 border border-amber-300/40">
+              <p className="text-xs font-semibold text-amber-800 dark:text-amber-300 mb-2 text-center">
+                📸 Save your branded result card
+              </p>
+              <QuizResultShareCard
+                quizTitle={attempt.quiz.title}
+                courseCode={attempt.quiz.course.code}
+                score={attempt.correct_answers}
+                total={attempt.total_questions}
+                timeSeconds={attempt.time_spent_seconds ?? 0}
+                mode={attempt.mode}
+              />
+            </div>
+
+            <div className="mb-4">
+              <Button variant={hasRated ? "outline" : "secondary"} className="w-full" onClick={() => setShowRating(true)}>
                 <Star className={`w-4 h-4 mr-2 ${hasRated ? "fill-accent text-accent" : ""}`} />
                 {hasRated ? "Update Your Rating" : "Rate This Quiz"}
               </Button>
             </div>
 
-            {/* Share Results */}
-            <div className="mb-6">
-              <ShareResultsButton
-                quizTitle={attempt.quiz.title}
-                score={percentage}
-                quizId={attempt.quiz.id}
-              />
+            <div className="mb-4">
+              <ShareResultsButton quizTitle={attempt.quiz.title} score={percentage} quizId={attempt.quiz.id} />
             </div>
 
-            {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button
-                variant="default"
-                className="flex-1"
-                onClick={() => navigate(`/quiz/${quizId}/practice`)}
-              >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Try Again
+              <Button variant="default" className="flex-1" onClick={() => navigate(`/quiz/${quizId}/practice`)}>
+                <RotateCcw className="w-4 h-4 mr-2" /> Try Again
               </Button>
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => navigate("/dashboard")}
-              >
-                <Home className="w-4 h-4 mr-2" />
-                Dashboard
+              <Button variant="outline" className="flex-1" onClick={() => navigate("/dashboard")}>
+                <Home className="w-4 h-4 mr-2" /> Dashboard
               </Button>
             </div>
           </div>
