@@ -469,7 +469,12 @@ const AITutor = () => {
           )}
         </div>
 
-        {threads.length === 0 && (
+        {threadsLoading && threads.length === 0 && (
+          <div className="px-3 py-4">
+            <LoadingState variant="list" onRetry={() => refreshThreads()} />
+          </div>
+        )}
+        {!threadsLoading && threads.length === 0 && (
           <div className="text-center text-xs text-muted-foreground py-10 px-4">
             No saved chats yet. Start one — it'll appear here and stay synced across devices.
           </div>
