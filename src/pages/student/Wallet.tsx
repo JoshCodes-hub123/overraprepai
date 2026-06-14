@@ -16,6 +16,8 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { PremiumPageHero } from "@/components/shell/PremiumPageHero";
 import VerifyPaymentDialog from "@/components/student/VerifyPaymentDialog";
+import BankTransferTopUpDialog from "@/components/student/BankTransferTopUpDialog";
+import { Banknote, CreditCard } from "lucide-react";
 
 const NAIRA_PER_TOKEN = 50
 const MIN_NAIRA = 250
@@ -58,6 +60,7 @@ const WalletPage = () => {
   const [busy, setBusy] = useState<number | "custom" | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [verifyOpen, setVerifyOpen] = useState(false);
+  const [bankOpen, setBankOpen] = useState(false);
 
   // Reconcile redirect from Flutterwave: if URL has tx_ref/transaction_id,
   // call flutterwave-verify so a missed webhook still credits the wallet.
