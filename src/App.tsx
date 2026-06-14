@@ -148,6 +148,7 @@ const App = () => {
           <OfflineBanner />
           <NetworkStatus />
           <LiteModeApplier />
+          <OfflineAttemptSyncBanner />
             <UpdatePrompt />
           <BrowserRouter>
             <ScrollToTop />
