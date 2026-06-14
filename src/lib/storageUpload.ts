@@ -1,10 +1,13 @@
 import { supabase } from "@/integrations/supabase/client";
+import { compressImageToWebP } from "@/lib/imageCompress";
 
 export interface UploadResult {
   publicUrl: string;
   bucket: string;
   path: string;
   durationMs: number;
+  /** Bytes saved by client-side WebP compression (0 if not applied). */
+  bytesSaved?: number;
 }
 
 /**
