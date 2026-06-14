@@ -8,6 +8,7 @@ import { SEO } from "@/components/seo/SEO";
 import { useUserResources } from "@/hooks/useUserResources";
 import OutlineActionsMenu from "@/components/student/library/OutlineActionsMenu";
 import { LoadingState } from "@/components/ui/loading-state";
+import SaveOfflineButton from "@/components/offline/SaveOfflineButton";
 import { format } from "date-fns";
 
 const StudyPacks = () => {
@@ -81,6 +82,9 @@ const StudyPacks = () => {
                     <span className="text-[10px] text-muted-foreground ml-auto">
                       {format(new Date(r.created_at), "MMM d")}
                     </span>
+                  </div>
+                  <div className="mt-2 flex justify-end">
+                    <SaveOfflineButton mode="resource" resource={r} />
                   </div>
                 </Card>
               ))}

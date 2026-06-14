@@ -25,6 +25,7 @@ import {
   Check,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
+import SaveOfflineButton from "@/components/offline/SaveOfflineButton";
 
 interface Quiz {
   id: string;
@@ -385,6 +386,18 @@ const QuizPreview = () => {
                     <Play className="w-5 h-5 mr-2" />
                     {quiz.is_simulation ? "Start CBT Simulation" : "Start Practice"}
                   </Button>
+                )}
+
+                {user && quiz && (
+                  <div className="mt-3 flex justify-center">
+                    <SaveOfflineButton
+                      mode="quiz"
+                      quizId={quiz.id}
+                      title={quiz.title}
+                      courseName={quiz.course?.name}
+                      compact={false}
+                    />
+                  </div>
                 )}
 
                 {!user && (
