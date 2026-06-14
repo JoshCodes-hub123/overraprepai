@@ -28,6 +28,7 @@ import { useAITutorThreads, type TutorPersona } from "@/hooks/useAITutorThreads"
 import { useAITutorMessages } from "@/hooks/useAITutorMessages";
 import { exportThreadAsJSON, exportThreadAsPDF } from "@/lib/exportAITutorThread";
 import { cn } from "@/lib/utils";
+import { LoadingState } from "@/components/ui/loading-state";
 import { formatDistanceToNow } from "date-fns";
 
 interface LocalMsg {
@@ -90,7 +91,8 @@ const AITutor = () => {
     "admin" | "tutor" | "student";
 
   const {
-    threads, createThread, deleteThread, renameThread, touchThread,
+    threads, loading: threadsLoading, refresh: refreshThreads,
+    createThread, deleteThread, renameThread, touchThread,
     togglePin, markRead,
   } = useAITutorThreads();
   const { messages: dbMessages, insertMessage, updateMessage, setLocalMessages } =
@@ -468,7 +470,12 @@ const AITutor = () => {
           )}
         </div>
 
-        {threads.length === 0 && (
+        {threadsLoading && threads.length === 0 && (
+          <div className="px-3 py-4">
+            <LoadingState variant="list" onRetry={() => refreshThreads()} />
+          </div>
+        )}
+        {!threadsLoading && threads.length === 0 && (
           <div className="text-center text-xs text-muted-foreground py-10 px-4">
             No saved chats yet. Start one — it'll appear here and stay synced across devices.
           </div>

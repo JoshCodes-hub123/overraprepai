@@ -7,11 +7,12 @@ import { useNavigate } from "react-router-dom";
 import { SEO } from "@/components/seo/SEO";
 import { useUserResources } from "@/hooks/useUserResources";
 import OutlineActionsMenu from "@/components/student/library/OutlineActionsMenu";
+import { LoadingState } from "@/components/ui/loading-state";
 import { format } from "date-fns";
 
 const StudyPacks = () => {
   const navigate = useNavigate();
-  const { data: resources = [], isLoading } = useUserResources();
+  const { data: resources = [], isLoading, isError, refetch } = useUserResources();
   // Anything we can extract text from for one-click AI
   const docs = resources.filter((r) =>
     r.kind === "pdf" || r.kind === "note" || r.kind === "study_pack" ||
@@ -45,8 +46,8 @@ const StudyPacks = () => {
             <span className="ml-auto">Tap the gold <strong className="text-amber-700">AI</strong> button on any item.</span>
           </div>
 
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground text-center py-10">Loading your documents…</p>
+          {isLoading || isError ? (
+            <LoadingState variant="card" error={isError} onRetry={() => refetch()} />
           ) : docs.length === 0 ? (
             <div className="text-center py-10">
               <div className="mx-auto h-20 w-20 rounded-3xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center mb-5 shadow-[0_8px_24px_-12px_rgba(180,140,40,0.4)]">
