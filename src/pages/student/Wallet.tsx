@@ -191,9 +191,41 @@ const WalletPage = () => {
             </div>
           </Card>
 
+          {/* Payment method picker */}
+          <section className="mb-3">
+            <h2 className="font-display text-base font-bold mb-2">Choose how to pay</h2>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setBankOpen(true)}
+                className="rounded-2xl border-2 border-emerald-200 bg-emerald-50/60 hover:bg-emerald-50 hover:border-emerald-400 p-3 text-left transition-colors"
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <Banknote className="h-5 w-5 text-emerald-700" />
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider bg-emerald-600 text-white px-1.5 py-0.5 rounded">
+                    No fees
+                  </span>
+                </div>
+                <p className="font-display text-sm font-extrabold text-emerald-900">Bank transfer</p>
+                <p className="text-[11px] text-emerald-800 mt-0.5">Works on any network · 24h credit</p>
+              </button>
+
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/40 p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <CreditCard className="h-5 w-5 text-amber-700" />
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider bg-amber-500 text-white px-1.5 py-0.5 rounded">
+                    Instant
+                  </span>
+                </div>
+                <p className="font-display text-sm font-extrabold text-amber-900">Card / USSD</p>
+                <p className="text-[11px] text-amber-800 mt-0.5">Via Flutterwave — pick an amount below</p>
+              </div>
+            </div>
+          </section>
+
           {/* Top-up grid */}
           <section className="mb-6">
-            <h2 className="font-display text-base font-bold mb-2">Top up</h2>
+            <h2 className="font-display text-base font-bold mb-2">Card / USSD top-up</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {TOP_UPS.map((t) => (
                 <button
