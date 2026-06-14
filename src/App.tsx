@@ -148,13 +148,13 @@ const App = () => {
           <OfflineBanner />
           <NetworkStatus />
           <LiteModeApplier />
-          <OfflineAttemptSyncBanner />
             <UpdatePrompt />
           <BrowserRouter>
             <ScrollToTop />
             <PageViewTracker />
             <AuthProvider>
               <PushBootstrap />
+              <OfflineAttemptSyncBanner />
               <DeviceTracker />
               <DashboardWarmup />
               <LastRouteTracker />
