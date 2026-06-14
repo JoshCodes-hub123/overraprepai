@@ -90,7 +90,8 @@ const AITutor = () => {
     "admin" | "tutor" | "student";
 
   const {
-    threads, createThread, deleteThread, renameThread, touchThread,
+    threads, loading: threadsLoading, refresh: refreshThreads,
+    createThread, deleteThread, renameThread, touchThread,
     togglePin, markRead,
   } = useAITutorThreads();
   const { messages: dbMessages, insertMessage, updateMessage, setLocalMessages } =
