@@ -340,6 +340,13 @@ const WalletPage = () => {
           qc.invalidateQueries({ queryKey: ["wallet-transactions"] });
         }}
       />
+      <BankTransferTopUpDialog
+        open={bankOpen}
+        onOpenChange={setBankOpen}
+        onSubmitted={() => {
+          qc.invalidateQueries({ queryKey: ["wallet-transactions"] });
+        }}
+      />
     </>
   );
 };
