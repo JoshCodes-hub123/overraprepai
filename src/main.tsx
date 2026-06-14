@@ -6,6 +6,10 @@ import { SplashScreen } from "@capacitor/splash-screen";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import App from "./App.tsx";
 import "./index.css";
+import { installEdgeRetry } from "@/lib/installEdgeRetry";
+
+// Global auto-retry for every edge-function call — saves students on 2G/3G.
+installEdgeRetry();
 
 // Native mobile setup (only runs inside the Capacitor shell, not the web preview)
 if (Capacitor.isNativePlatform()) {
