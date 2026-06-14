@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { PremiumPageHero } from "@/components/shell/PremiumPageHero";
 import VerifyPaymentDialog from "@/components/student/VerifyPaymentDialog";
 import BankTransferTopUpDialog from "@/components/student/BankTransferTopUpDialog";
+import { LoadingState } from "@/components/ui/loading-state";
 import { Banknote, CreditCard } from "lucide-react";
 
 const NAIRA_PER_TOKEN = 50
