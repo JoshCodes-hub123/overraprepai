@@ -7,11 +7,12 @@ import { useNavigate } from "react-router-dom";
 import { SEO } from "@/components/seo/SEO";
 import { useUserResources } from "@/hooks/useUserResources";
 import OutlineActionsMenu from "@/components/student/library/OutlineActionsMenu";
+import { LoadingState } from "@/components/ui/loading-state";
 import { format } from "date-fns";
 
 const StudyPacks = () => {
   const navigate = useNavigate();
-  const { data: resources = [], isLoading } = useUserResources();
+  const { data: resources = [], isLoading, isError, refetch } = useUserResources();
   // Anything we can extract text from for one-click AI
   const docs = resources.filter((r) =>
     r.kind === "pdf" || r.kind === "note" || r.kind === "study_pack" ||
