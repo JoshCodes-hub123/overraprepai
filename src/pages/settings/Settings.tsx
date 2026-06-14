@@ -2,13 +2,15 @@ import { useNavigate } from "react-router-dom";
 import {
   User, Bell, Shield, Smartphone, CreditCard, Wallet, Gift,
   Palette, Globe, Download, LogOut, ChevronRight, HelpCircle,
-  FileText, Lock, Sparkles, Trash2,
+  FileText, Lock, Sparkles, Trash2, Zap,
 } from "lucide-react";
 import AppScreen from "@/components/app-shell/AppScreen";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { SEO } from "@/components/seo/SEO";
+import { Switch } from "@/components/ui/switch";
+import { useLiteMode } from "@/lib/liteMode";
 
 type Row = { icon: any; label: string; hint?: string; to?: string; onClick?: () => void; danger?: boolean };
 type Group = { title: string; rows: Row[] };
@@ -16,6 +18,7 @@ type Group = { title: string; rows: Row[] };
 const Settings = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const [lite, setLite] = useLiteMode();
 
   const handleSignOut = async () => {
     await signOut?.();
@@ -68,6 +71,33 @@ const Settings = () => {
     <AppScreen title="Settings" subtitle={user?.email ?? ""} back>
       <SEO title="Settings — OverraPrep AI" description="Manage your account, preferences and privacy." />
       <div className="max-w-2xl mx-auto pb-28 space-y-6">
+        {/* Data saver / Lite mode — placed up top for low-network students */}
+        <section>
+          <h2 className="px-1 text-[11px] font-bold tracking-[0.18em] uppercase text-amber-700/70 mb-2">
+            Network
+          </h2>
+          <div className="rounded-2xl border border-amber-100 bg-white overflow-hidden">
+            <div className="w-full flex items-center gap-3 px-4 py-3.5">
+              <span className="h-9 w-9 rounded-xl inline-flex items-center justify-center shrink-0 bg-amber-50 text-amber-700">
+                <Zap className="w-[18px] h-[18px]" strokeWidth={1.8} />
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-[14.5px] font-semibold leading-tight">Data saver (Lite mode)</span>
+                <span className="block text-[12px] text-neutral-500 mt-0.5">
+                  Skip splash video & heavy effects. Best on 2G/3G.
+                </span>
+              </span>
+              <Switch
+                checked={lite}
+                onCheckedChange={(v) => {
+                  setLite(v);
+                  toast.success(v ? "Lite mode on — saving your data" : "Lite mode off");
+                }}
+              />
+            </div>
+          </div>
+        </section>
+
         {groups.map((g) => (
           <section key={g.title}>
             <h2 className="px-1 text-[11px] font-bold tracking-[0.18em] uppercase text-amber-700/70 mb-2">
