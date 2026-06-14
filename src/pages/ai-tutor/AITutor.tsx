@@ -28,6 +28,7 @@ import { useAITutorThreads, type TutorPersona } from "@/hooks/useAITutorThreads"
 import { useAITutorMessages } from "@/hooks/useAITutorMessages";
 import { exportThreadAsJSON, exportThreadAsPDF } from "@/lib/exportAITutorThread";
 import { cn } from "@/lib/utils";
+import { LoadingState } from "@/components/ui/loading-state";
 import { formatDistanceToNow } from "date-fns";
 
 interface LocalMsg {
