@@ -284,7 +284,11 @@ const WalletPage = () => {
           {/* Transactions */}
           <section className="mb-6">
             <h2 className="font-display text-base font-bold mb-2">Activity</h2>
-            {txns.length === 0 ? (
+            {txLoading || txError ? (
+              <Card className="p-4">
+                <LoadingState variant="list" error={txError} onRetry={() => refetchTxns()} />
+              </Card>
+            ) : txns.length === 0 ? (
               <Card className="p-6 text-center text-sm text-muted-foreground">
                 No transactions yet — top up to get started.
               </Card>
