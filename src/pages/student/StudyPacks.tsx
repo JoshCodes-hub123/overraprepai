@@ -83,6 +83,9 @@ const StudyPacks = () => {
                       {format(new Date(r.created_at), "MMM d")}
                     </span>
                   </div>
+                  <div className="mt-2 flex justify-end">
+                    <SaveOfflineButton mode="resource" resource={r} />
+                  </div>
                 </Card>
               ))}
             </div>
