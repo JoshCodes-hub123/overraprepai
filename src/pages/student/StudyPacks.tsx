@@ -46,8 +46,8 @@ const StudyPacks = () => {
             <span className="ml-auto">Tap the gold <strong className="text-amber-700">AI</strong> button on any item.</span>
           </div>
 
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground text-center py-10">Loading your documents…</p>
+          {isLoading || isError ? (
+            <LoadingState variant="card" error={isError} onRetry={() => refetch()} />
           ) : docs.length === 0 ? (
             <div className="text-center py-10">
               <div className="mx-auto h-20 w-20 rounded-3xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center mb-5 shadow-[0_8px_24px_-12px_rgba(180,140,40,0.4)]">
