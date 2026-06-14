@@ -1,16 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AppScreen } from "@/components/app-shell/AppScreen";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { getOfflineSet, OfflineQuestion, OfflineSet } from "@/lib/offlineQuizStore";
+import { getOfflineSet, OfflineQuestion, OfflineSet, queuePendingAttempt } from "@/lib/offlineQuizStore";
+import { useAuth } from "@/hooks/useAuth";
 import { CheckCircle2, X, Trophy, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default function OfflineRunner() {
   const { setId = "" } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [set, setSet] = useState<OfflineSet | null>(null);
   const [questions, setQuestions] = useState<OfflineQuestion[]>([]);
   const [idx, setIdx] = useState(0);
@@ -18,12 +22,16 @@ export default function OfflineRunner() {
   const [revealed, setRevealed] = useState(false);
   const [correct, setCorrect] = useState(0);
   const [done, setDone] = useState(false);
+  const startedAtRef = useRef<string>(new Date().toISOString());
+  const queuedRef = useRef(false);
 
   useEffect(() => {
     (async () => {
       const { set, questions } = await getOfflineSet(setId);
       setSet(set);
       setQuestions(questions);
+      startedAtRef.current = new Date().toISOString();
+      queuedRef.current = false;
     })();
   }, [setId]);
 
@@ -42,7 +50,34 @@ export default function OfflineRunner() {
     setRevealed(false);
   };
 
+  // When the run finishes, queue an attempt for upload IF this set came from a
+  // real quiz (set id = "quiz:<uuid>"). Synthetic sets like "recommended" or
+  // "weak-area" don't map to a row in `quizzes`, so we skip them.
+  useEffect(() => {
+    if (!done || !user || !set || queuedRef.current) return;
+    const rawId = set.id.startsWith("quiz:") ? set.id.slice(5) : set.id;
+    if (!UUID_RE.test(rawId)) return;
+    queuedRef.current = true;
+    const total = questions.length;
+    const pct = Math.round((correct / Math.max(1, total)) * 100);
+    const startedAt = startedAtRef.current;
+    const completedAt = new Date().toISOString();
+    const seconds = Math.max(1, Math.round((Date.parse(completedAt) - Date.parse(startedAt)) / 1000));
+    void queuePendingAttempt({
+      user_id: user.id,
+      quiz_id: rawId,
+      mode: "practice",
+      total_questions: total,
+      correct_answers: correct,
+      score: pct,
+      time_spent_seconds: seconds,
+      started_at: startedAt,
+      completed_at: completedAt,
+    }).catch(() => { queuedRef.current = false; });
+  }, [done, user, set, correct, questions.length]);
+
   if (!set) return <AppScreen back title="Loading…"><div /></AppScreen>;
+
 
   if (done) {
     const pct = Math.round((correct / Math.max(1, questions.length)) * 100);

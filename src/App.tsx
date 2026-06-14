@@ -23,6 +23,7 @@ import RoleBadge from "@/components/auth/RoleBadge";
 
 import { NetworkStatus } from "@/components/system/NetworkStatus";
 import LiteModeApplier from "@/components/system/LiteModeApplier";
+import OfflineAttemptSyncBanner from "@/components/offline/OfflineAttemptSyncBanner";
 import ScrollToTop from "@/components/system/ScrollToTop";
 import PageViewTracker from "@/components/system/PageViewTracker";
 import UpdatePrompt from "@/components/system/UpdatePrompt";
