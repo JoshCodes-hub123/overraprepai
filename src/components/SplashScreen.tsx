@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import logo from "@/assets/logo.png";
+import { isLiteMode } from "@/lib/liteMode";
 
 // Lovable CDN URL of the cinematic splash background (immutable asset).
 // Vertical 9:16 real-footage clip — source pointer: public/auth-bg.mp4.asset.json
@@ -31,18 +32,22 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
   const [exiting, setExiting] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const lite = isLiteMode();
+  // In lite mode, get out of the way faster (no video to wait for).
+  const duration = lite ? 2200 : SPLASH_DURATION_MS;
 
   useEffect(() => {
-    const exitTimer = setTimeout(() => setExiting(true), SPLASH_DURATION_MS);
-    const doneTimer = setTimeout(() => onComplete(), SPLASH_DURATION_MS + EXIT_DURATION_MS);
+    const exitTimer = setTimeout(() => setExiting(true), duration);
+    const doneTimer = setTimeout(() => onComplete(), duration + EXIT_DURATION_MS);
     return () => {
       clearTimeout(exitTimer);
       clearTimeout(doneTimer);
     };
-  }, [onComplete]);
+  }, [onComplete, duration]);
 
   // Best-effort autoplay; muted+playsInline is required on iOS Safari.
   useEffect(() => {
+    if (lite) return; // no video in lite mode
     const v = videoRef.current;
     if (!v) return;
     v.muted = true;
@@ -69,21 +74,23 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
           exit={{ opacity: 0 }}
           transition={{ duration: EXIT_DURATION_MS / 1000, ease: "easeInOut" }}
         >
-          {/* Cinematic background video — full-bleed cover */}
-          <video
-            ref={videoRef}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
-              videoReady ? "opacity-60" : "opacity-0"
-            }`}
-            src={SPLASH_VIDEO_URL}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            onCanPlay={() => setVideoReady(true)}
-            aria-hidden="true"
-          />
+          {/* Cinematic background video — full-bleed cover. Skipped in lite mode. */}
+          {!lite && (
+            <video
+              ref={videoRef}
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
+                videoReady ? "opacity-60" : "opacity-0"
+              }`}
+              src={SPLASH_VIDEO_URL}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              onCanPlay={() => setVideoReady(true)}
+              aria-hidden="true"
+            />
+          )}
 
           {/* Warm cream wash + vignette so the mark never fights the footage */}
           <div
