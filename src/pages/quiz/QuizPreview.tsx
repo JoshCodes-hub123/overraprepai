@@ -388,6 +388,18 @@ const QuizPreview = () => {
                   </Button>
                 )}
 
+                {user && quiz && (
+                  <div className="mt-3 flex justify-center">
+                    <SaveOfflineButton
+                      mode="quiz"
+                      quizId={quiz.id}
+                      title={quiz.title}
+                      courseName={quiz.course?.name}
+                      compact={false}
+                    />
+                  </div>
+                )}
+
                 {!user && (
                   <p className="text-sm text-muted-foreground text-center mt-3">
                     You'll need to sign in to take this quiz
