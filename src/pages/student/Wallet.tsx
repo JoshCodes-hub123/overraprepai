@@ -10,11 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
-  Wallet as WalletIcon, Zap, Plus, Minus, Loader2, ArrowDownLeft, Sparkles, Info,
+  Wallet as WalletIcon, Zap, Plus, Minus, Loader2, ArrowDownLeft, Sparkles, Info, ShieldCheck,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { PremiumPageHero } from "@/components/shell/PremiumPageHero";
+import VerifyPaymentDialog from "@/components/student/VerifyPaymentDialog";
 
 const NAIRA_PER_TOKEN = 50
 const MIN_NAIRA = 250
@@ -56,6 +57,7 @@ const WalletPage = () => {
   const [custom, setCustom] = useState("");
   const [busy, setBusy] = useState<number | "custom" | null>(null);
   const [verifying, setVerifying] = useState(false);
+  const [verifyOpen, setVerifyOpen] = useState(false);
 
   // Reconcile redirect from Flutterwave: if URL has tx_ref/transaction_id,
   // call flutterwave-verify so a missed webhook still credits the wallet.
@@ -232,6 +234,15 @@ const WalletPage = () => {
                 {busy === "custom" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Top up"}
               </Button>
             </div>
+            {/* Self-serve recovery for missed webhooks / interrupted redirects */}
+            <button
+              type="button"
+              onClick={() => setVerifyOpen(true)}
+              className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-semibold text-amber-700 hover:text-amber-900 hover:underline"
+            >
+              <ShieldCheck className="h-3.5 w-3.5" />
+              I paid but didn't get my tokens
+            </button>
           </section>
 
           {/* Transactions */}
@@ -286,6 +297,14 @@ const WalletPage = () => {
           </Card>
         </main>
       </div>
+      <VerifyPaymentDialog
+        open={verifyOpen}
+        onOpenChange={setVerifyOpen}
+        onVerified={() => {
+          refetch();
+          qc.invalidateQueries({ queryKey: ["wallet-transactions"] });
+        }}
+      />
     </>
   );
 };
