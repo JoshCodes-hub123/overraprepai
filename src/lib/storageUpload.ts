@@ -20,18 +20,41 @@ export async function uploadToBucketWithVerification(opts: {
   path: string; // e.g. `${userId}/avatar.jpg`
   file: Blob | File;
   contentType?: string;
+  /** Skip the automatic WebP image compression (default: enabled for images). */
+  noCompress?: boolean;
 }): Promise<UploadResult> {
-  const { bucket, path, file, contentType } = opts;
+  const { bucket, path: inputPath, file: inputFile, contentType, noCompress } = opts;
   const start = performance.now();
 
+  // Auto-compress image File uploads to WebP (huge savings on 2G/3G).
+  let file: Blob | File = inputFile;
+  let path = inputPath;
+  let resolvedContentType = contentType || (inputFile as File).type || "image/jpeg";
+  let bytesSaved = 0;
+
+  if (!noCompress && inputFile instanceof File && /^image\//.test(inputFile.type)) {
+    try {
+      const c = await compressImageToWebP(inputFile);
+      if (c.compressed) {
+        file = c.blob;
+        resolvedContentType = c.type;
+        bytesSaved = c.originalBytes - c.finalBytes;
+        // Swap extension to .webp so the stored object matches its content
+        path = inputPath.replace(/\.(jpe?g|png|gif|heic|heif|bmp|tiff?)$/i, ".webp");
+      }
+    } catch {
+      // Fall through with original
+    }
+  }
+
   console.groupCollapsed(`[upload] → ${bucket}/${path}`);
-  console.log("size:", file.size, "bytes", "type:", (file as File).type || contentType);
+  console.log("size:", file.size, "bytes", "type:", resolvedContentType, "saved:", bytesSaved);
 
   const { error: uploadError } = await supabase.storage
     .from(bucket)
     .upload(path, file, {
       upsert: true,
-      contentType: contentType || (file as File).type || "image/jpeg",
+      contentType: resolvedContentType,
       cacheControl: "3600",
     });
 
@@ -42,7 +65,6 @@ export async function uploadToBucketWithVerification(opts: {
   }
 
   const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(path);
-  // Cache-bust so freshly uploaded files don't show a stale CDN copy
   const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
   console.log("[upload] public URL:", publicUrl);
 
@@ -69,5 +91,5 @@ export async function uploadToBucketWithVerification(opts: {
   console.log("[upload] done in", durationMs, "ms");
   console.groupEnd();
 
-  return { publicUrl, bucket, path, durationMs };
+  return { publicUrl, bucket, path, durationMs, bytesSaved };
 }
