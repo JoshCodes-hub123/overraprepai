@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+import { isLiteMode } from "@/lib/liteMode";
+import { imageVariant } from "@/lib/imageVariant";
 
 interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
@@ -57,7 +59,7 @@ export const OptimizedImage = ({
     >
       {isInView && (
         <img
-          src={hasError ? fallback : src}
+          src={hasError ? fallback : (isLiteMode() ? imageVariant(src, { width: 480, quality: 60 }) : src)}
           alt={alt}
           loading="lazy"
           decoding="async"

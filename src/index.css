@@ -441,3 +441,39 @@
 /* hide scrollbar on horizontal chip rails */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* =====================================================================
+   Lite Mode — global motion + effects gating for bad networks / low-end
+   devices. Toggled by LiteModeApplier writing <html data-lite="true">.
+   ===================================================================== */
+html[data-lite="true"] *,
+html[data-lite="true"] *::before,
+html[data-lite="true"] *::after {
+  /* Kill infinite/long animations — keep tiny transitions for tap feedback */
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  animation-delay: 0ms !important;
+  transition-duration: 120ms !important;
+  transition-delay: 0ms !important;
+  scroll-behavior: auto !important;
+}
+/* Drop expensive blurs/shadows that tank scroll FPS on cheap Androids */
+html[data-lite="true"] .backdrop-blur,
+html[data-lite="true"] .backdrop-blur-sm,
+html[data-lite="true"] .backdrop-blur-md,
+html[data-lite="true"] .backdrop-blur-lg,
+html[data-lite="true"] .backdrop-blur-xl,
+html[data-lite="true"] .backdrop-blur-2xl,
+html[data-lite="true"] .backdrop-blur-3xl {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+html[data-lite="true"] .blur,
+html[data-lite="true"] .blur-sm,
+html[data-lite="true"] .blur-md,
+html[data-lite="true"] .blur-lg,
+html[data-lite="true"] .blur-xl,
+html[data-lite="true"] .blur-2xl,
+html[data-lite="true"] .blur-3xl {
+  filter: none !important;
+}
