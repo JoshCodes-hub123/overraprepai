@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+import { VitePWA } from "vite-plugin-pwa";
 
 // Inject a build-time version stamp and emit /version.json so the running
 // app can detect when a new deployment is live and prompt users to refresh.
@@ -35,6 +36,68 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     versionPlugin(),
+    // App-shell service worker. The plugin only generates /sw.js at build
+    // time; runtime registration lives in src/lib/swRegister.ts with all
+    // Lovable preview / iframe / dev guards. devOptions.enabled=false +
+    // injectRegister=null guarantees no SW behavior in dev or preview.
+    VitePWA({
+      strategies: "generateSW",
+      registerType: "autoUpdate",
+      injectRegister: null,
+      devOptions: { enabled: false },
+      filename: "sw.js",
+      manifest: false, // we already ship public/manifest.webmanifest
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,svg,png,webp,ico,woff2}"],
+        // Don't precache giant media — they're fetched on demand and cached
+        // via runtimeCaching only when visited.
+        globIgnores: ["**/*.{mp4,mp3,wav,pdf}", "auth-bg.*", "splash-bg.*"],
+        navigateFallback: "/index.html",
+        // Never intercept OAuth callbacks or Supabase API calls.
+        navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//, /^\/storage\//, /^\/auth\//],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
+        runtimeCaching: [
+          {
+            // HTML navigations — always try network first so a new deploy
+            // is picked up immediately; fall back to cache only when offline.
+            urlPattern: ({ request }) => request.mode === "navigate",
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "html-pages",
+              networkTimeoutSeconds: 4,
+              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 7 },
+            },
+          },
+          {
+            // Same-origin hashed assets — safe to cache aggressively.
+            urlPattern: ({ url, sameOrigin }) =>
+              sameOrigin && /\/assets\/.+\.[0-9a-f]{8,}\.(js|css|woff2|svg|png|webp|jpg|jpeg)$/i.test(url.pathname),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "hashed-assets",
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
+          {
+            // Google Fonts CSS — network first so weights update
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: "StaleWhileRevalidate",
+            options: { cacheName: "google-fonts-css" },
+          },
+          {
+            // Google Fonts files — cache far-future
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-fonts-files",
+              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
+            },
+          },
+        ],
+      },
+    }),
   ].filter(Boolean),
   resolve: {
     alias: {
