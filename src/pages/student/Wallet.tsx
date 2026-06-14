@@ -116,7 +116,7 @@ const WalletPage = () => {
   }, [user?.id]);
 
 
-  const { data: txns = [] } = useQuery({
+  const { data: txns = [], isLoading: txLoading, isError: txError, refetch: refetchTxns } = useQuery({
     queryKey: ["wallet-transactions", user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
