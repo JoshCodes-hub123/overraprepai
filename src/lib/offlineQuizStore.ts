@@ -1,10 +1,12 @@
-// Lightweight IndexedDB store for offline CBT sets.
-// One DB, two stores: "sets" (metadata) and "questions" (per set).
+// Lightweight IndexedDB store for offline CBT sets + pending attempt sync.
+// One DB, three stores: "sets" (metadata), "questions" (per set), and
+// "pending_attempts" (completed offline runs waiting to upload).
 
 const DB_NAME = "overaprep-offline";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const SET_STORE = "sets";
 const Q_STORE = "questions";
+const PENDING_STORE = "pending_attempts";
 
 export interface OfflineQuestion {
   id: string;
@@ -29,6 +31,23 @@ export interface OfflineSet {
   user_id: string;
 }
 
+/** A finished offline quiz attempt queued for upload when back online. */
+export interface PendingAttempt {
+  id: string;                // local uuid
+  user_id: string;
+  quiz_id: string;           // real quizzes.id (only set when set was a real quiz)
+  mode: "practice" | "simulation";
+  total_questions: number;
+  correct_answers: number;
+  score: number;             // percentage 0-100
+  time_spent_seconds: number;
+  started_at: string;        // ISO
+  completed_at: string;      // ISO
+  queued_at: number;
+  attempts: number;          // upload retry count
+  last_error?: string | null;
+}
+
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
@@ -42,11 +61,78 @@ function openDb(): Promise<IDBDatabase> {
         const q = db.createObjectStore(Q_STORE, { keyPath: ["set_id", "id"] });
         q.createIndex("set_id", "set_id", { unique: false });
       }
+      if (!db.objectStoreNames.contains(PENDING_STORE)) {
+        const p = db.createObjectStore(PENDING_STORE, { keyPath: "id" });
+        p.createIndex("user_id", "user_id", { unique: false });
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
 }
+
+// ---------- Pending attempts ----------
+
+export async function queuePendingAttempt(att: Omit<PendingAttempt, "id" | "queued_at" | "attempts">): Promise<PendingAttempt> {
+  const db = await openDb();
+  const full: PendingAttempt = {
+    ...att,
+    id: (crypto as any).randomUUID?.() ?? `pa_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+    queued_at: Date.now(),
+    attempts: 0,
+  };
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PENDING_STORE, "readwrite");
+    tx.objectStore(PENDING_STORE).put(full);
+    tx.oncomplete = () => resolve(full);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+export async function listPendingAttempts(userId: string): Promise<PendingAttempt[]> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PENDING_STORE, "readonly");
+    const req = tx.objectStore(PENDING_STORE).index("user_id").getAll(userId);
+    req.onsuccess = () => resolve((req.result as PendingAttempt[]).sort((a, b) => a.queued_at - b.queued_at));
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export async function countPendingAttempts(userId: string): Promise<number> {
+  const list = await listPendingAttempts(userId);
+  return list.length;
+}
+
+export async function removePendingAttempt(id: string): Promise<void> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PENDING_STORE, "readwrite");
+    tx.objectStore(PENDING_STORE).delete(id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+export async function markPendingAttemptFailure(id: string, message: string): Promise<void> {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PENDING_STORE, "readwrite");
+    const store = tx.objectStore(PENDING_STORE);
+    const getReq = store.get(id);
+    getReq.onsuccess = () => {
+      const cur = getReq.result as PendingAttempt | undefined;
+      if (cur) {
+        cur.attempts = (cur.attempts ?? 0) + 1;
+        cur.last_error = message.slice(0, 240);
+        store.put(cur);
+      }
+    };
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
 
 export async function saveOfflineSet(set: OfflineSet, questions: OfflineQuestion[]) {
   const db = await openDb();

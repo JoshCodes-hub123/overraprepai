@@ -77,16 +77,10 @@ window.addEventListener("unhandledrejection", (e) => {
   }
 });
 
-// PWA is intentionally manifest-only — do NOT register a service worker.
-// SW registration breaks the Lovable preview iframe and is not needed for
-// install-to-home-screen. Proactively unregister any stale SW from previous
-// deploys so returning users get the latest app shell.
-if ("serviceWorker" in navigator && !Capacitor.isNativePlatform()) {
-  navigator.serviceWorker
-    .getRegistrations()
-    .then((regs) => regs.forEach((r) => r.unregister().catch(() => {})))
-    .catch(() => {});
-}
+// App-shell service worker registration — guarded for Lovable preview/iframe/dev.
+// The wrapper itself unregisters any stale app SW in refused contexts.
+import { registerAppServiceWorker } from "@/lib/swRegister";
+registerAppServiceWorker();
 
 
 createRoot(document.getElementById("root")!).render(
