@@ -8,6 +8,7 @@ import { SEO } from "@/components/seo/SEO";
 import { useUserResources } from "@/hooks/useUserResources";
 import OutlineActionsMenu from "@/components/student/library/OutlineActionsMenu";
 import { LoadingState } from "@/components/ui/loading-state";
+import SaveOfflineButton from "@/components/offline/SaveOfflineButton";
 import { format } from "date-fns";
 
 const StudyPacks = () => {
