@@ -25,6 +25,7 @@ import {
   Check,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
+import SaveOfflineButton from "@/components/offline/SaveOfflineButton";
 
 interface Quiz {
   id: string;
