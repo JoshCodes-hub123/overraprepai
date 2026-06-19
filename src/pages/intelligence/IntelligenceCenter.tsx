@@ -162,6 +162,27 @@ export default function IntelligenceCenter() {
                 )}
               </div>
             </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <GrowthShareCard
+                variant="success"
+                eyebrow={meta.label}
+                title={`My OverraPrep Success Score`}
+                bigStat={ring}
+                subtitle={score ? `${score.active_days_last_14}/14 active days` : undefined}
+                handle={firstName}
+              />
+              {mission && mission.streak > 0 && (
+                <GrowthShareCard
+                  variant="streak"
+                  eyebrow="On fire"
+                  title={`${mission.streak}-day study streak`}
+                  bigStat={mission.streak}
+                  subtitle="days in a row on OverraPrep"
+                  handle={firstName}
+                  label="Share streak"
+                />
+              )}
+            </div>
 
             {score && (
               <div className="mt-5 grid grid-cols-3 gap-3 text-center text-[11px]">
