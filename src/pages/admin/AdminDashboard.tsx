@@ -336,6 +336,13 @@ const AdminDashboard = () => {
               to: "/admin/courses",
               tone: "sapphire",
             },
+            {
+              icon: Target,
+              label: "Challenge Arena",
+              description: "Create competitions & settle prizes",
+              to: "/admin/arena",
+              tone: "violet",
+            },
           ]}
         />
 

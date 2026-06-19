@@ -186,6 +186,11 @@ const AdminSpotlights = lazy(() => import("@/pages/admin/AdminSpotlights"));
 const ActivityFeed = lazy(() => import("@/pages/student/ActivityFeed"));
 const Challenges = lazy(() => import("@/pages/student/Challenges"));
 const AdminChallenges = lazy(() => import("@/pages/admin/AdminChallenges"));
+const AdminArena = lazy(() => import("@/pages/admin/AdminArena"));
+const ArenaHome = lazy(() => import("@/pages/arena/ArenaHome"));
+const ArenaDetail = lazy(() => import("@/pages/arena/ArenaDetail"));
+const ArenaPlay = lazy(() => import("@/pages/arena/ArenaPlay"));
+const ArenaLeaderboard = lazy(() => import("@/pages/arena/ArenaLeaderboard"));
 const StudyMode = lazy(() => import("@/pages/student/StudyMode"));
 const StudyHubPage = lazy(() => import("@/pages/hubs/StudyHubPage"));
 const PracticeHubPage = lazy(() => import("@/pages/hubs/PracticeHubPage"));
@@ -471,8 +476,13 @@ export const AnimatedRoutes = () => {
           <Route path="/admin/posts" element={<AdminRoute><PageTransition><AdminPosts /></PageTransition></AdminRoute>} />
           <Route path="/admin/spotlights" element={<AdminRoute><PageTransition><AdminSpotlights /></PageTransition></AdminRoute>} />
           <Route path="/admin/challenges" element={<AdminRoute><PageTransition><AdminChallenges /></PageTransition></AdminRoute>} />
+          <Route path="/admin/arena" element={<AdminRoute><PageTransition><AdminArena /></PageTransition></AdminRoute>} />
           <Route path="/challenges" element={<PageTransition><Challenges /></PageTransition>} />
           <Route path="/student/challenges" element={<PageTransition><Challenges /></PageTransition>} />
+          <Route path="/arena" element={<PageTransition><ArenaHome /></PageTransition>} />
+          <Route path="/arena/:id" element={<PageTransition><ArenaDetail /></PageTransition>} />
+          <Route path="/arena/:id/play" element={<PageTransition><ArenaPlay /></PageTransition>} />
+          <Route path="/arena/:id/leaderboard" element={<PageTransition><ArenaLeaderboard /></PageTransition>} />
           <Route path="/student/weak-area-drill" element={<PageTransition><MasteryBreakdown /></PageTransition>} />
           <Route path="/study-mode/:courseId" element={<PageTransition><StudyMode /></PageTransition>} />
           <Route path="/courses" element={<PageTransition><CourseDirectory /></PageTransition>} />

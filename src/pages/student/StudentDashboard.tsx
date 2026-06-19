@@ -16,6 +16,7 @@ import { CourseRail } from "@/components/student/dashboard/v2/CourseRail";
 import { QuickActions4 } from "@/components/student/dashboard/v2/QuickActions4";
 import { OpportunitySnapshot } from "@/components/student/dashboard/v2/OpportunitySnapshot";
 import { CommunityMomentCard } from "@/components/student/dashboard/v2/CommunityMomentCard";
+import ArenaSpotlightCard from "@/components/arena/ArenaSpotlightCard";
 
 if (typeof window !== "undefined") prefetchDashboardNeighbors();
 
@@ -57,6 +58,7 @@ const StudentDashboard = () => {
 
             <HeroGreeting key={`hg-${refreshKey}`} />
             <TodayFocusCard key={`tf-${refreshKey}`} />
+            <ArenaSpotlightCard key={`arena-${refreshKey}`} />
             <CourseRail key={`cr-${refreshKey}`} />
             <QuickActions4 />
             <OpportunitySnapshot key={`os-${refreshKey}`} />

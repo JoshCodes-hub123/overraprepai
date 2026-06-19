@@ -1,64 +1,119 @@
+# OverraPrep Challenge Arena™
 
-## Goal
-Give every student a calm, well-organized course area where courses are grouped by Level, locked when off-level, and visually premium. Also tighten Today's Focus so it always feels alive and on-brand.
+A premium academic-competition system that extends the existing `challenges` infrastructure into a full **Arena** with token-gated entry, real quiz play, server-validated scoring, multi-scope leaderboards, and automatic prize payouts.
 
-## What students will see
+> Note: a `challenges` / `challenge_enrollments` / `user_badges` system already exists for goal-tracking (study X cards, etc.). The Arena is a **separate, competition-focused track** that lives alongside it without breaking current behavior.
 
-### 1. Level-gated Course Directory (`/courses`) — full redesign
-- **Level switcher pill** at the top: shows current level (e.g. "300 Level") with a one-tap "Change level" sheet that updates the profile. Off-level browsing is allowed but locked.
-- **Sticky tabs**: `My Courses` · `Recommended for {level}` · `Browse all`.
-- **Grouped by Level sections** (100 / 200 / 300 / 400 / 500 / JAMB / Secondary). Each level section has a small header chip + count. The student's level is auto-expanded and highlighted; other levels collapse with a "Show 100 Level courses" reveal.
-- **Department filter** + search (code, name, dept). Sort by code.
-- **Empty / no-scope state**: friendly CTA "Set your level to unlock your courses" → opens the level sheet.
+---
 
-### 2. Beautiful Course Card
-A single redesigned card used everywhere (directory, My Courses, dashboard rail):
-- White card, soft gold border, subtle gradient header strip color-keyed per department (Engineering / Sciences / Arts / etc.).
-- Top row: **course code badge** (gold) + **level chip** + **lock icon** if off-level.
-- Title (display font, 2-line clamp), department subtitle.
-- Mini-stats row: materials count · quizzes count · enrolled? check.
-- Hover/press: gentle lift + gold ring.
-- Primary action morphs by state: `Add` (eligible) → `Open` (enrolled) → `Locked — switch to {level}` (off-level, opens level sheet).
+## 1. Database (new tables, RLS + GRANTs)
 
-### 3. My Courses page
-- Hero shows level + department label and progress summary ("4 of 8 active this week").
-- Enrolled courses grouped by **Level** (in case profile changed) then sorted by recent activity.
-- "Recommended for {level}" rail under the enrolled section, one-tap add.
-- Cap remains 12 courses with a clear meter.
+### `arena_challenges`
+Admin-created competitions.
+- `kind` enum: `daily` | `weekly`
+- `title`, `description`, `course_id` (FK courses, nullable = cross-course)
+- `entry_token_cost` int (≥0), `prize_pool_tokens` int (≥0)
+- `num_questions` int, `time_limit_seconds` int
+- `starts_at`, `ends_at` timestamptz
+- `status` enum: `draft` | `scheduled` | `live` | `ended` | `settled`
+- `featured` boolean (weekly = dashboard hero)
+- `payout_split` jsonb (default `{"1":0.5,"2":0.3,"3":0.2}`)
+- `created_by` uuid → `auth.users`
 
-### 4. Dashboard rail (`CourseRail`)
-- Replace the rotating ring percentage with a real "last opened / next up" line so it stops feeling random.
-- Header "My Courses · {level}" with a "Manage" link.
-- Empty state CTA goes to the new directory.
+### `arena_challenge_questions`
+Snapshot of questions per challenge (frozen at publish time so all entrants get the same set, in the same order).
+- `challenge_id`, `question_id`, `position`
 
-### 5. Today's Focus
-- Switch the dark `bg-neutral-900` block to the locked **white + gold** style to match the rest of the dashboard.
-- Always render 3 slots with smart fallbacks so it never collapses:
-  1. **Continue** — most recently opened course (from `recently_opened_courses`, fall back to first enrolled).
-  2. **Review** — SRS due count, or "Start a 5-card warm-up" when 0.
-  3. **Practice** — newest active quiz in any enrolled course, or "Generate a quiz from a material" CTA.
-- Each row shows course code + name + meta + arrow; primary CTA = first slot.
-- If the student has no courses yet, the card becomes a single "Pick your courses" panel that deep-links to the new directory.
+### `arena_entries`
+One row per (challenge, user) — enforces "one submission per challenge".
+- `UNIQUE (challenge_id, user_id)`
+- `entered_at`, `submitted_at`, `score` (correct count), `accuracy` (numeric), `time_taken_seconds`, `tokens_spent`
+- `status`: `in_progress` | `submitted` | `disqualified`
 
-## Nice extras (small, high-impact)
-- **Department color tokens** (gold base + per-dept accent) added to `index.css` so cards and chips share one palette.
-- **"For your level" Sparkles badge** on recommended cards.
-- **Course progress hint** (materials viewed / quizzes attempted) shown on enrolled cards using existing `useCourseSnapshots` data.
-- **Persistent level chip** in the page header so the student always knows what's being filtered.
+### `arena_entry_answers`
+Server-side answer log for anti-cheat / audit.
+- `entry_id`, `question_id`, `selected_option`, `is_correct`, `answered_at`, `elapsed_ms`
 
-## Technical notes (for engineers)
-- Data: all level filtering uses `profiles.level` via `useStudentScope`. No schema changes.
-- Lock logic: `course.level && course.level !== student.level` → locked card, action opens a level-switch sheet calling `useStudentLevel.setLevel`.
-- New component: `src/components/courses/CourseCardV2.tsx` (replaces `CourseCard` usage in directory, My Courses, dashboard rail).
-- New component: `src/components/courses/LevelSection.tsx` (collapsible level group with header + count).
-- New component: `src/components/courses/ChangeLevelSheet.tsx` (bottom sheet using `LEVEL_OPTIONS` from `useStudentLevel`).
-- Edit `src/pages/courses/CourseDirectory.tsx` and `src/pages/student/MyCourses.tsx` to use grouped sections and the new card.
-- Edit `src/components/student/dashboard/v2/CourseRail.tsx` to drop the fake percentage and surface "last opened".
-- Edit `src/components/student/dashboard/v2/TodayFocusCard.tsx`: rewrite styles to white/gold, integrate `useRecentlyOpenedCourses`, add fallbacks so all 3 slots render.
-- Add department-accent CSS vars in `src/index.css`.
-- No DB migration required.
+### `arena_rewards`
+Settlement ledger.
+- `challenge_id`, `user_id`, `rank`, `tokens_awarded`, `badge_slug` nullable, `awarded_at`
 
-## Out of scope (ask if you want them next)
-- Adding cover images per course (would need a `cover_url` column).
-- Auto-syncing enrollment from a university timetable.
-- Hiding off-level courses entirely (current plan keeps them visible-but-locked, which I recommend for discovery; say the word and I'll switch to hard hide).
+### Functions (SECURITY DEFINER)
+- `arena_enter_challenge(_challenge_id)` → validates: live status, not already entered, balance ≥ cost; debits wallet via `wallet_transactions`; inserts `arena_entries` with `status='in_progress'`.
+- `arena_submit_entry(_entry_id, _answers jsonb)` → server-grades against `arena_challenge_questions`, writes `arena_entry_answers`, sets score/accuracy/time, locks status to `submitted`.
+- `arena_settle_challenge(_challenge_id)` → admin-only; ranks by `(score desc, time_taken asc)`, pays `prize_pool * split[rank]` to top finishers, awards `arena-champion`/`arena-podium` badges, marks `status='settled'`. Idempotent.
+- `arena_leaderboard(_challenge_id)` → ranked rows w/ profile join.
+- `arena_global_leaderboard(_scope, _course_id, _university)` → aggregates `arena_entries` across challenges; scopes: `daily` (today), `weekly` (last 7d), `course`, `university`.
+
+All public tables get `GRANT SELECT, INSERT, UPDATE, DELETE … TO authenticated`, `GRANT ALL … TO service_role`, RLS on, scoped policies (entrants read own entry; everyone reads `arena_challenges` where `status in ('scheduled','live','ended','settled')`; admin-only writes via `has_role(auth.uid(),'admin')`).
+
+Badges added to `badge_definitions`: `arena-champion`, `arena-podium`, `arena-debut`.
+
+---
+
+## 2. Edge function
+
+`arena-settle` — cron-triggered (`pg_cron` daily 00:05 Africa/Lagos) that calls `arena_settle_challenge` for every challenge where `ends_at < now() AND status = 'ended'`. Also callable on-demand by admins.
+
+---
+
+## 3. Student-facing UI
+
+Route prefix: `/arena`
+
+- **`/arena`** — Arena home. Tabs: *Live* · *Upcoming* · *Past*. Featured weekly card on top (gold-bordered hero), grid of `ArenaChallengeCard`s. Empty state with calm copy.
+- **`/arena/:id`** — Challenge detail. Shows prize pool, entry cost, course, question count, time limit, live entrant count, countdown to start/end. Primary CTA: **Enter for X tokens** → confirmation sheet → `arena_enter_challenge` RPC.
+- **`/arena/:id/play`** — Quiz runner (reuses look of `QuizPractice`, but no autosave, no skipping back, hard timer). Submits all answers at end via `arena_submit_entry`. Shows result + current rank.
+- **`/arena/:id/leaderboard`** — Live ranked list with avatars, score, time, "you" highlight, prize allocation per rank.
+- **`/leaderboards`** — adds Arena tab w/ scope filters (Daily · Weekly · Course · University).
+
+**Dashboard integration**: new `ArenaSpotlightCard` mounted in `StudentDashboard` between `TodayFocusCard` and `CourseRail`. Shows the featured weekly challenge + a "Your last result / winnings" strip. Skeleton-loaded; hides cleanly when no challenges exist.
+
+---
+
+## 4. Admin panel
+
+Route: `/admin/arena`
+- List view: status pills, entrant count, prize pool, ends-in countdown, settle button.
+- Create/edit drawer: all the fields from section 1 + course picker + question-source picker (auto-pull N random questions from selected course, with preview/regenerate).
+- Detail view: tabs *Participants* · *Leaderboard* · *Rewards* · *Audit log* (reads `arena_entry_answers` for spot-checks).
+- Actions: **Publish** (draft→scheduled), **Force-end**, **Settle now** (calls `arena_settle_challenge`), **Disqualify entrant** (sets `status='disqualified'`, refunds tokens).
+
+Linked from `AdminDashboard` quick-actions.
+
+---
+
+## 5. Anti-cheat
+
+- One row per (challenge, user) enforced by UNIQUE constraint.
+- Client never computes score; only sends answers. Grading is in `arena_submit_entry` using the frozen question snapshot.
+- Every answer logged in `arena_entry_answers` with elapsed ms — flags >X impossibly fast or duplicate-pattern submissions for admin review.
+- Server clamps `time_taken_seconds` to `challenge.time_limit_seconds`.
+- Window enforcement: RPC rejects entry if `now() < starts_at` or `now() > ends_at`.
+
+---
+
+## 6. Design language
+
+White + gold + Inter, consistent with the locked visual system. Trophy / laurel iconography, never coin-stacks or casino motifs. Copy framed as "compete with classmates", "earn your spot", "weekly champions" — never "bet" / "wager" / "win big". Subtle gold accents, soft shadows, generous whitespace. Mobile-first cards 1-up on phones, 2-up on tablet, 3-up on desktop.
+
+---
+
+## 7. Out of scope (for this build)
+
+- Real-money entry (tokens only).
+- Team/clan arena (single-player only for v1).
+- Live multiplayer sync — leaderboard is poll-based (React Query, 10s `refetchInterval` while a challenge is live).
+
+---
+
+## Technical notes
+
+- All RPCs `SECURITY DEFINER` with `SET search_path = public`.
+- Wallet debit/credit reuses the existing `consume_ai_token` / `wallet_transactions` ledger pattern (new `kind`: `arena_entry`, `arena_prize`).
+- `staleTime` 60s globally; live challenge detail uses `refetchInterval: 10_000` only when `status='live'`.
+- New components live under `src/components/arena/*`, pages under `src/pages/arena/*` and `src/pages/admin/arena/*`.
+
+---
+
+**Build order:** DB migration → settle edge fn + cron → hooks (`useArena*`) → student pages → dashboard card → admin panel → seed 1 sample weekly challenge for QA.
