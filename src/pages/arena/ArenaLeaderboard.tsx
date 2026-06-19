@@ -12,6 +12,7 @@ import {
 } from "@/hooks/useArena";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
+import { GrowthShareCard } from "@/components/growth/GrowthShareCard";
 
 export default function ArenaLeaderboard() {
   const { id } = useParams();
