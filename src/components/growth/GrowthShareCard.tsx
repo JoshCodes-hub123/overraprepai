@@ -4,6 +4,18 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Share2, Download, MessageCircle, Instagram, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { logShareEvent } from "@/hooks/useGrowth";
+import { useAuth } from "@/hooks/useAuth";
+import { resolveAvatarUrl, initialsFor } from "@/lib/avatar";
+
+async function loadImage(url: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
 
 export type ShareCardVariant = "success" | "win" | "streak" | "leaderboard" | "milestone";
 
@@ -25,6 +37,8 @@ export interface GrowthShareCardProps {
   size?: "sm" | "default";
   /** Custom trigger label */
   label?: string;
+  /** Optional profile photo URL rendered on the card (defaults to signed-in user's avatar) */
+  avatarUrl?: string;
 }
 
 const VARIANT_META: Record<ShareCardVariant, { emoji: string; suffix: string; accent: string }> = {
@@ -107,16 +121,60 @@ async function makeCard(p: GrowthShareCardProps): Promise<Blob> {
   ctx.fillStyle = "#5A5A5A";
   ctx.fillText(meta.suffix.toUpperCase(), 540, 1020);
 
-  // Footer
+  // Footer — personalised author chip (avatar + name)
   ctx.textAlign = "left";
-  if (p.handle) {
-    ctx.font = "700 32px Inter, sans-serif";
-    ctx.fillStyle = "#0B0B0B";
-    ctx.fillText(`— ${p.handle}`, 80, 1200);
+  const footerY = 1190;
+  const avatarSize = 84;
+  const avatarX = 80;
+  const avatarCY = footerY + avatarSize / 2;
+
+  // Avatar circle (image if available, otherwise gold initials disc)
+  let img: HTMLImageElement | null = null;
+  if (p.avatarUrl) img = await loadImage(p.avatarUrl);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(avatarX + avatarSize / 2, avatarCY, avatarSize / 2, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.clip();
+  if (img) {
+    ctx.drawImage(img, avatarX, footerY, avatarSize, avatarSize);
+  } else {
+    const g = ctx.createLinearGradient(avatarX, footerY, avatarX + avatarSize, footerY + avatarSize);
+    g.addColorStop(0, "#F5C04A");
+    g.addColorStop(1, meta.accent);
+    ctx.fillStyle = g;
+    ctx.fillRect(avatarX, footerY, avatarSize, avatarSize);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = "800 36px Inter, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(initialsFor(p.handle, "U"), avatarX + avatarSize / 2, avatarCY + 2);
+    ctx.textBaseline = "alphabetic";
+    ctx.textAlign = "left";
   }
-  ctx.font = "600 26px Inter, sans-serif";
+  ctx.restore();
+  // Ring around avatar
+  ctx.beginPath();
+  ctx.arc(avatarX + avatarSize / 2, avatarCY, avatarSize / 2 + 2, 0, Math.PI * 2);
+  ctx.strokeStyle = meta.accent;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Name + handle text
+  const textX = avatarX + avatarSize + 22;
+  if (p.handle) {
+    ctx.font = "800 34px Inter, sans-serif";
+    ctx.fillStyle = "#0B0B0B";
+    ctx.fillText(p.handle, textX, avatarCY - 4);
+  }
+  ctx.font = "600 22px Inter, sans-serif";
+  ctx.fillStyle = "#7A5A00";
+  ctx.fillText("on OverraPrep AI", textX, avatarCY + 26);
+
+  ctx.font = "600 24px Inter, sans-serif";
   ctx.fillStyle = "#5A5A5A";
-  ctx.fillText("overraprepai.com  ·  join me 🚀", 80, 1260);
+  ctx.fillText("overraprepai.com  ·  join me 🚀", 80, 1310);
 
   // Bottom gold rule
   ctx.fillStyle = meta.accent;
@@ -143,11 +201,18 @@ function downloadBlob(blob: Blob, name: string) {
   URL.revokeObjectURL(url);
 }
 
-export function GrowthShareCard(props: GrowthShareCardProps) {
+export function GrowthShareCard(propsIn: GrowthShareCardProps) {
+  const { profile, user } = useAuth();
+  const props: GrowthShareCardProps = {
+    ...propsIn,
+    handle: propsIn.handle || profile?.full_name || (user?.email ? user.email.split("@")[0] : undefined),
+    avatarUrl: propsIn.avatarUrl || resolveAvatarUrl(profile),
+  };
   const [open, setOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const blobRef = useRef<Blob | null>(null);
   const shareUrl = props.shareUrl || "https://overraprepai.com";
+
 
   useEffect(() => {
     let revoke: string | null = null;
@@ -161,7 +226,7 @@ export function GrowthShareCard(props: GrowthShareCardProps) {
     }
     return () => { if (revoke) URL.revokeObjectURL(revoke); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, props.variant, props.bigStat, props.title, props.subtitle, props.eyebrow, props.handle]);
+  }, [open, props.variant, props.bigStat, props.title, props.subtitle, props.eyebrow, props.handle, props.avatarUrl]);
 
   const ensureBlob = async () => blobRef.current ?? (blobRef.current = await makeCard(props));
 

@@ -52,8 +52,14 @@ const StudentDashboard = () => {
       />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
       <PullToRefresh onRefresh={onRefresh}>
-        <div className="min-h-screen bg-background pb-24 md:pb-12">
-          <main className="container mx-auto px-4 pt-2 max-w-2xl space-y-5">
+        <div className="relative min-h-screen pb-24 md:pb-12 bg-gradient-to-b from-amber-50/60 via-white to-white overflow-hidden">
+          {/* Ambient gold glow — anchors the page and makes it feel like home */}
+          <div aria-hidden className="pointer-events-none absolute inset-0 -z-0">
+            <div className="absolute -top-32 -right-24 w-[420px] h-[420px] rounded-full bg-amber-200/40 blur-3xl" />
+            <div className="absolute top-1/3 -left-32 w-[360px] h-[360px] rounded-full bg-orange-100/50 blur-3xl" />
+          </div>
+
+          <main className="relative container mx-auto px-4 pt-3 max-w-2xl space-y-5">
             <TopAppBar />
             <DashboardOfflineBanner onReattempt={onRefresh} />
 
@@ -67,6 +73,7 @@ const StudentDashboard = () => {
             <CommunityMomentCard key={`cm-${refreshKey}`} />
           </main>
         </div>
+
 
         <OnboardingDialog
           isOpen={showOnboarding}
