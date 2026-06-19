@@ -343,6 +343,13 @@ const AdminDashboard = () => {
               to: "/admin/arena",
               tone: "violet",
             },
+            {
+              icon: Target,
+              label: "Growth Engine",
+              description: "Battles, ambassadors & analytics",
+              to: "/admin/growth",
+              tone: "amber",
+            },
           ]}
         />
 
