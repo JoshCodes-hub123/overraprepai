@@ -5,10 +5,12 @@ import { SEO } from "@/components/seo/SEO";
 import DashboardNav from "@/components/layout/DashboardNav";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Gift, Copy, Check, Share2 } from "lucide-react";
+import { Gift, Copy, Check, Share2, Award, Crown, Trophy } from "lucide-react";
 import { PremiumPageHero } from "@/components/shell/PremiumPageHero";
 import { toast } from "sonner";
 import { useState } from "react";
+import { useMyReferralSummary, useClaimMilestone, logShareEvent } from "@/hooks/useGrowth";
+import { Link } from "react-router-dom";
 
 const Referrals = () => {
   const { user, profile } = useAuth();
