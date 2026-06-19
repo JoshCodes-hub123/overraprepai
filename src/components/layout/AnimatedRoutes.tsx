@@ -197,6 +197,12 @@ const PracticeHubPage = lazy(() => import("@/pages/hubs/PracticeHubPage"));
 const PeopleHubPage = lazy(() => import("@/pages/hubs/PeopleHubPage"));
 const MeHubPage = lazy(() => import("@/pages/hubs/MeHubPage"));
 const IntelligenceCenter = lazy(() => import("@/pages/intelligence/IntelligenceCenter"));
+const GrowthHome = lazy(() => import("@/pages/growth/GrowthHome"));
+const CampusBattles = lazy(() => import("@/pages/growth/CampusBattles"));
+const CampusBattleDetail = lazy(() => import("@/pages/growth/CampusBattleDetail"));
+const Ambassadors = lazy(() => import("@/pages/growth/Ambassadors"));
+const CampusImpact = lazy(() => import("@/pages/growth/CampusImpact"));
+const AdminGrowth = lazy(() => import("@/pages/admin/AdminGrowth"));
 import { DashboardSkeleton } from "@/components/student/dashboard/DashboardSkeleton";
 
 export const AnimatedRoutes = () => {
