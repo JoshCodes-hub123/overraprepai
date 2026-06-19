@@ -104,6 +104,45 @@ const Referrals = () => {
             </Card>
           </div>
 
+          {summary && (
+            <Card className="p-5 mb-6 border-amber-100 bg-gradient-to-br from-amber-50/60 to-background">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs uppercase tracking-wider font-semibold text-amber-700">Milestone progress</p>
+                <Link to="/growth/ambassadors" className="text-[11px] text-amber-700 font-medium">See ambassadors →</Link>
+              </div>
+              <p className="text-sm">
+                <span className="font-display text-2xl font-bold">{summary.active}</span>
+                <span className="text-muted-foreground"> / {summary.next?.at} toward {summary.next?.name}</span>
+              </p>
+              <div className="h-2 bg-muted rounded-full overflow-hidden mt-2">
+                <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600" style={{ width: `${Math.min(100, (summary.next?.progress / summary.next?.at) * 100)}%` }} />
+              </div>
+              <div className="grid grid-cols-3 gap-2 mt-4">
+                {[
+                  { key: "hero_badge", label: "Hero Badge", at: 5, icon: Award },
+                  { key: "premium_reward", label: "Premium Reward", at: 10, icon: Trophy },
+                  { key: "campus_ambassador", label: "Ambassador", at: 25, icon: Crown },
+                ].map((m) => {
+                  const has = claimed(m.key);
+                  const eligible = (summary.active || 0) >= m.at;
+                  return (
+                    <button
+                      key={m.key}
+                      disabled={!eligible || has || claim.isPending}
+                      onClick={() => claim.mutate(m.key as any)}
+                      className={`p-3 rounded-xl border text-center transition-all ${has ? "bg-amber-100 border-amber-300" : eligible ? "border-amber-300 hover:bg-amber-50" : "border-muted opacity-60"}`}
+                    >
+                      <m.icon className="w-5 h-5 mx-auto mb-1 text-amber-700" />
+                      <p className="text-[11px] font-semibold">{m.label}</p>
+                      <p className="text-[10px] text-muted-foreground">{has ? "Claimed" : eligible ? "Claim" : `${m.at} refs`}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </Card>
+          )}
+
+
           <h2 className="font-display text-lg font-bold mb-3">History</h2>
           {rewards.length === 0 ? (
             <p className="text-sm text-muted-foreground">No referrals yet. Share your code to get started.</p>
