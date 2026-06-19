@@ -67,8 +67,36 @@ export default function ArenaLeaderboard() {
                   </div>
                 ) : null}
               </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <GrowthShareCard
+                  variant="win"
+                  eyebrow={ch?.title ?? "Arena"}
+                  title={`I scored ${myEntry.score} on ${ch?.title ?? "the Arena"}`}
+                  bigStat={`${myEntry.accuracy}%`}
+                  subtitle={`${myEntry.score} correct · ${Math.round(myEntry.time_taken_seconds / 60)}m ${myEntry.time_taken_seconds % 60}s`}
+                  handle={user?.user_metadata?.full_name as string | undefined}
+                  shareUrl={`https://overraprepai.com/arena/${id}`}
+                  label="Share my result"
+                />
+                {(() => {
+                  const me = board.find((r) => r.user_id === user?.id);
+                  return me && me.rank <= 10 ? (
+                    <GrowthShareCard
+                      variant="leaderboard"
+                      eyebrow={ch?.title ?? "Arena"}
+                      title={`I'm ranked #${me.rank} on the leaderboard`}
+                      bigStat={`#${me.rank}`}
+                      subtitle={`${me.score} correct · ${me.accuracy}% accuracy`}
+                      handle={user?.user_metadata?.full_name as string | undefined}
+                      shareUrl={`https://overraprepai.com/arena/${id}/leaderboard`}
+                      label="Share rank"
+                    />
+                  ) : null;
+                })()}
+              </div>
             </Card>
           )}
+
 
           <div className="mt-5 space-y-2">
             {isLoading && <Card className="p-6 animate-pulse text-sm text-neutral-500">Loading…</Card>}
