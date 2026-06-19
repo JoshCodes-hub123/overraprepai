@@ -64,6 +64,41 @@ export default function ArenaPlay() {
     questionShownAt.current = Date.now();
   }, [idx]);
 
+  // Anti-cheat: report tab blur / visibility change / paste / right-click to server
+  useEffect(() => {
+    if (!myEntry?.id) return;
+    const entryId = myEntry.id;
+    const report = async (kind: string, meta: Record<string, unknown> = {}) => {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        await supabase.rpc("arena_log_anti_cheat_event", {
+          _entry_id: entryId,
+          _kind: kind,
+          _meta: meta as never,
+        });
+      } catch {
+        /* best effort */
+      }
+    };
+    const onVis = () => document.hidden && report("visibility_hidden");
+    const onBlur = () => report("window_blur");
+    const onPaste = () => report("paste");
+    const onCtx = (e: MouseEvent) => {
+      e.preventDefault();
+      report("context_menu");
+    };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("blur", onBlur);
+    window.addEventListener("paste", onPaste);
+    window.addEventListener("contextmenu", onCtx);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("paste", onPaste);
+      window.removeEventListener("contextmenu", onCtx);
+    };
+  }, [myEntry?.id]);
+
   const current = questions[idx];
 
   const finalize = async (auto = false) => {
