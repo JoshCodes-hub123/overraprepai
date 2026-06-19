@@ -36,14 +36,20 @@ const Referrals = () => {
     .filter((r: any) => r.status === "completed")
     .reduce((acc: number, r: any) => acc + (r.referrer_tokens || 0), 0);
 
+  const { data: summary } = useMyReferralSummary();
+  const claim = useClaimMilestone();
+  const claimed = (m: string) => summary?.milestones?.includes(m);
+
   const copy = async () => {
     await navigator.clipboard.writeText(link);
     setCopied(true);
     toast.success("Referral link copied");
+    logShareEvent("referral_link", "copy", code);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const share = async () => {
+    logShareEvent("referral_link", "native", code);
     if (navigator.share) {
       try {
         await navigator.share({
