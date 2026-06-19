@@ -197,6 +197,12 @@ const PracticeHubPage = lazy(() => import("@/pages/hubs/PracticeHubPage"));
 const PeopleHubPage = lazy(() => import("@/pages/hubs/PeopleHubPage"));
 const MeHubPage = lazy(() => import("@/pages/hubs/MeHubPage"));
 const IntelligenceCenter = lazy(() => import("@/pages/intelligence/IntelligenceCenter"));
+const GrowthHome = lazy(() => import("@/pages/growth/GrowthHome"));
+const CampusBattles = lazy(() => import("@/pages/growth/CampusBattles"));
+const CampusBattleDetail = lazy(() => import("@/pages/growth/CampusBattleDetail"));
+const Ambassadors = lazy(() => import("@/pages/growth/Ambassadors"));
+const CampusImpact = lazy(() => import("@/pages/growth/CampusImpact"));
+const AdminGrowth = lazy(() => import("@/pages/admin/AdminGrowth"));
 import { DashboardSkeleton } from "@/components/student/dashboard/DashboardSkeleton";
 
 export const AnimatedRoutes = () => {
@@ -484,6 +490,12 @@ export const AnimatedRoutes = () => {
           <Route path="/arena/:id" element={<PageTransition><ArenaDetail /></PageTransition>} />
           <Route path="/arena/:id/play" element={<PageTransition><ArenaPlay /></PageTransition>} />
           <Route path="/arena/:id/leaderboard" element={<PageTransition><ArenaLeaderboard /></PageTransition>} />
+          <Route path="/growth" element={<PageTransition><GrowthHome /></PageTransition>} />
+          <Route path="/growth/battles" element={<PageTransition><CampusBattles /></PageTransition>} />
+          <Route path="/growth/battles/:id" element={<PageTransition><CampusBattleDetail /></PageTransition>} />
+          <Route path="/growth/ambassadors" element={<PageTransition><Ambassadors /></PageTransition>} />
+          <Route path="/growth/impact" element={<PageTransition><CampusImpact /></PageTransition>} />
+          <Route path="/admin/growth" element={<AdminRoute><PageTransition><AdminGrowth /></PageTransition></AdminRoute>} />
           <Route path="/student/weak-area-drill" element={<PageTransition><MasteryBreakdown /></PageTransition>} />
           <Route path="/intelligence" element={<PageTransition><IntelligenceCenter /></PageTransition>} />
           <Route path="/student/success" element={<PageTransition><IntelligenceCenter /></PageTransition>} />

@@ -909,6 +909,191 @@ export type Database = {
         }
         Relationships: []
       }
+      campus_ambassadors: {
+        Row: {
+          active: boolean
+          approved_at: string
+          approved_by: string | null
+          arena_participation: number
+          bio: string | null
+          community_growth: number
+          created_at: string
+          social_handle: string | null
+          tier: string
+          total_onboarded: number
+          total_referrals: number
+          university: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          approved_at?: string
+          approved_by?: string | null
+          arena_participation?: number
+          bio?: string | null
+          community_growth?: number
+          created_at?: string
+          social_handle?: string | null
+          tier?: string
+          total_onboarded?: number
+          total_referrals?: number
+          university?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          approved_at?: string
+          approved_by?: string | null
+          arena_participation?: number
+          bio?: string | null
+          community_growth?: number
+          created_at?: string
+          social_handle?: string | null
+          tier?: string
+          total_onboarded?: number
+          total_referrals?: number
+          university?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      campus_battle_scores: {
+        Row: {
+          arena_points: number
+          battle_id: string
+          id: string
+          participant_count: number
+          quiz_points: number
+          side: string
+          streak_points: number
+          success_points: number
+          total_points: number
+          updated_at: string
+        }
+        Insert: {
+          arena_points?: number
+          battle_id: string
+          id?: string
+          participant_count?: number
+          quiz_points?: number
+          side: string
+          streak_points?: number
+          success_points?: number
+          total_points?: number
+          updated_at?: string
+        }
+        Update: {
+          arena_points?: number
+          battle_id?: string
+          id?: string
+          participant_count?: number
+          quiz_points?: number
+          side?: string
+          streak_points?: number
+          success_points?: number
+          total_points?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campus_battle_scores_battle_id_fkey"
+            columns: ["battle_id"]
+            isOneToOne: false
+            referencedRelation: "campus_battles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campus_battles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          ends_at: string
+          id: string
+          prize_summary: string | null
+          scope: string
+          side_a: string
+          side_b: string
+          starts_at: string
+          status: string
+          title: string
+          university_filter: string | null
+          updated_at: string
+          winner_side: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at: string
+          id?: string
+          prize_summary?: string | null
+          scope: string
+          side_a: string
+          side_b: string
+          starts_at?: string
+          status?: string
+          title: string
+          university_filter?: string | null
+          updated_at?: string
+          winner_side?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at?: string
+          id?: string
+          prize_summary?: string | null
+          scope?: string
+          side_a?: string
+          side_b?: string
+          starts_at?: string
+          status?: string
+          title?: string
+          university_filter?: string | null
+          updated_at?: string
+          winner_side?: string | null
+        }
+        Relationships: []
+      }
+      campus_impact_snapshots: {
+        Row: {
+          active_students: number
+          avg_success_score: number
+          challenge_participation: number
+          community_activity: number
+          computed_at: string
+          id: string
+          impact_score: number
+          university: string
+        }
+        Insert: {
+          active_students?: number
+          avg_success_score?: number
+          challenge_participation?: number
+          community_activity?: number
+          computed_at?: string
+          id?: string
+          impact_score?: number
+          university: string
+        }
+        Update: {
+          active_students?: number
+          avg_success_score?: number
+          challenge_participation?: number
+          community_activity?: number
+          computed_at?: string
+          id?: string
+          impact_score?: number
+          university?: string
+        }
+        Relationships: []
+      }
       challenge_enrollments: {
         Row: {
           challenge_id: string
@@ -2542,6 +2727,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      growth_share_events: {
+        Row: {
+          channel: string | null
+          created_at: string
+          id: string
+          kind: string
+          target_id: string | null
+          user_id: string
+        }
+        Insert: {
+          channel?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          target_id?: string | null
+          user_id: string
+        }
+        Update: {
+          channel?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          target_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       learning_goals: {
         Row: {
@@ -4457,6 +4669,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      referral_milestones: {
+        Row: {
+          awarded_at: string
+          id: string
+          milestone: string
+          user_id: string
+        }
+        Insert: {
+          awarded_at?: string
+          id?: string
+          milestone: string
+          user_id: string
+        }
+        Update: {
+          awarded_at?: string
+          id?: string
+          milestone?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       referral_rewards: {
         Row: {
@@ -8256,6 +8489,60 @@ export type Database = {
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      growth_ambassador_leaderboard: {
+        Args: { _period?: string }
+        Returns: {
+          full_name: string
+          score: number
+          tier: string
+          total_onboarded: number
+          total_referrals: number
+          university: string
+          user_id: string
+        }[]
+      }
+      growth_campus_impact: {
+        Args: never
+        Returns: {
+          active_students: number
+          avg_success: number
+          challenge_participation: number
+          community_activity: number
+          impact_score: number
+          university: string
+        }[]
+      }
+      growth_claim_milestone: { Args: { _milestone: string }; Returns: boolean }
+      growth_department_rankings: {
+        Args: { _university?: string }
+        Returns: {
+          active_students: number
+          avg_quiz: number
+          department: string
+          score: number
+          university: string
+        }[]
+      }
+      growth_my_referral_summary: { Args: never; Returns: Json }
+      growth_promote_ambassador: {
+        Args: { _tier?: string; _user_id: string }
+        Returns: string
+      }
+      growth_recompute_battle: {
+        Args: { _battle_id: string }
+        Returns: undefined
+      }
+      growth_settle_battle: { Args: { _battle_id: string }; Returns: string }
+      growth_university_rankings: {
+        Args: never
+        Returns: {
+          active_students: number
+          arena_count: number
+          avg_quiz: number
+          score: number
+          university: string
+        }[]
       }
       has_role: {
         Args: {
