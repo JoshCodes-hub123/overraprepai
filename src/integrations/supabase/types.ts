@@ -316,6 +316,243 @@ export type Database = {
         }
         Relationships: []
       }
+      arena_challenge_questions: {
+        Row: {
+          challenge_id: string
+          id: string
+          ord: number
+          question_id: string
+        }
+        Insert: {
+          challenge_id: string
+          id?: string
+          ord: number
+          question_id: string
+        }
+        Update: {
+          challenge_id?: string
+          id?: string
+          ord?: number
+          question_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_challenge_questions_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "arena_challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arena_challenge_questions_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      arena_challenges: {
+        Row: {
+          course_id: string | null
+          cover_image_url: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          ends_at: string
+          entry_token_cost: number
+          featured: boolean
+          id: string
+          kind: Database["public"]["Enums"]["arena_kind"]
+          num_questions: number
+          payout_split: Json
+          prize_pool_tokens: number
+          starts_at: string
+          status: Database["public"]["Enums"]["arena_status"]
+          time_limit_seconds: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          course_id?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at: string
+          entry_token_cost?: number
+          featured?: boolean
+          id?: string
+          kind?: Database["public"]["Enums"]["arena_kind"]
+          num_questions?: number
+          payout_split?: Json
+          prize_pool_tokens?: number
+          starts_at: string
+          status?: Database["public"]["Enums"]["arena_status"]
+          time_limit_seconds?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at?: string
+          entry_token_cost?: number
+          featured?: boolean
+          id?: string
+          kind?: Database["public"]["Enums"]["arena_kind"]
+          num_questions?: number
+          payout_split?: Json
+          prize_pool_tokens?: number
+          starts_at?: string
+          status?: Database["public"]["Enums"]["arena_status"]
+          time_limit_seconds?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_challenges_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      arena_entries: {
+        Row: {
+          accuracy: number
+          challenge_id: string
+          entered_at: string
+          id: string
+          score: number
+          status: Database["public"]["Enums"]["arena_entry_status"]
+          submitted_at: string | null
+          time_taken_seconds: number
+          tokens_spent: number
+          user_id: string
+        }
+        Insert: {
+          accuracy?: number
+          challenge_id: string
+          entered_at?: string
+          id?: string
+          score?: number
+          status?: Database["public"]["Enums"]["arena_entry_status"]
+          submitted_at?: string | null
+          time_taken_seconds?: number
+          tokens_spent?: number
+          user_id: string
+        }
+        Update: {
+          accuracy?: number
+          challenge_id?: string
+          entered_at?: string
+          id?: string
+          score?: number
+          status?: Database["public"]["Enums"]["arena_entry_status"]
+          submitted_at?: string | null
+          time_taken_seconds?: number
+          tokens_spent?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_entries_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "arena_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      arena_entry_answers: {
+        Row: {
+          answered_at: string
+          elapsed_ms: number
+          entry_id: string
+          id: string
+          is_correct: boolean
+          question_id: string
+          selected_option: string | null
+        }
+        Insert: {
+          answered_at?: string
+          elapsed_ms?: number
+          entry_id: string
+          id?: string
+          is_correct?: boolean
+          question_id: string
+          selected_option?: string | null
+        }
+        Update: {
+          answered_at?: string
+          elapsed_ms?: number
+          entry_id?: string
+          id?: string
+          is_correct?: boolean
+          question_id?: string
+          selected_option?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_entry_answers_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "arena_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arena_entry_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      arena_rewards: {
+        Row: {
+          awarded_at: string
+          badge_slug: string | null
+          challenge_id: string
+          id: string
+          rank: number
+          tokens_awarded: number
+          user_id: string
+        }
+        Insert: {
+          awarded_at?: string
+          badge_slug?: string | null
+          challenge_id: string
+          id?: string
+          rank: number
+          tokens_awarded?: number
+          user_id: string
+        }
+        Update: {
+          awarded_at?: string
+          badge_slug?: string | null
+          challenge_id?: string
+          id?: string
+          rank?: number
+          tokens_awarded?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_rewards_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "arena_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance: {
         Row: {
           class_id: string
@@ -7607,6 +7844,65 @@ export type Database = {
         Args: { _id: string; _note?: string }
         Returns: undefined
       }
+      arena_disqualify_entry: {
+        Args: { _entry_id: string; _reason?: string }
+        Returns: Json
+      }
+      arena_enter_challenge: { Args: { _challenge_id: string }; Returns: Json }
+      arena_get_play_questions: {
+        Args: { _challenge_id: string }
+        Returns: {
+          image_url: string
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          ord: number
+          question_id: string
+          question_text: string
+        }[]
+      }
+      arena_global_leaderboard: {
+        Args: {
+          _course_id?: string
+          _limit?: number
+          _scope?: string
+          _university?: string
+        }
+        Returns: {
+          avatar_url: string
+          entries_count: number
+          full_name: string
+          rank: number
+          total_score: number
+          total_winnings: number
+          university: string
+          user_id: string
+        }[]
+      }
+      arena_leaderboard: {
+        Args: { _challenge_id: string; _limit?: number }
+        Returns: {
+          accuracy: number
+          avatar_url: string
+          full_name: string
+          rank: number
+          score: number
+          submitted_at: string
+          time_taken_seconds: number
+          university: string
+          user_id: string
+        }[]
+      }
+      arena_publish_challenge: {
+        Args: { _challenge_id: string }
+        Returns: Json
+      }
+      arena_settle_challenge: { Args: { _challenge_id: string }; Returns: Json }
+      arena_submit_entry: {
+        Args: { _answers: Json; _entry_id: string; _time_taken_seconds: number }
+        Returns: Json
+      }
       book_session: { Args: { _slot_id: string }; Returns: string }
       bump_challenge_progress: {
         Args: {
@@ -8114,6 +8410,9 @@ export type Database = {
         | "teacher"
         | "parent"
       application_status: "pending" | "approved" | "rejected"
+      arena_entry_status: "in_progress" | "submitted" | "disqualified"
+      arena_kind: "daily" | "weekly"
+      arena_status: "draft" | "scheduled" | "live" | "ended" | "settled"
       chat_context_kind: "study_pack" | "tutor_curriculum"
       chat_thread_kind: "dm" | "group" | "brainstorm"
       opportunity_category:
@@ -8141,6 +8440,8 @@ export type Database = {
         | "admin_debit"
         | "refund"
         | "free"
+        | "arena_entry"
+        | "arena_prize"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -8279,6 +8580,9 @@ export const Constants = {
         "parent",
       ],
       application_status: ["pending", "approved", "rejected"],
+      arena_entry_status: ["in_progress", "submitted", "disqualified"],
+      arena_kind: ["daily", "weekly"],
+      arena_status: ["draft", "scheduled", "live", "ended", "settled"],
       chat_context_kind: ["study_pack", "tutor_curriculum"],
       chat_thread_kind: ["dm", "group", "brainstorm"],
       opportunity_category: [
@@ -8308,6 +8612,8 @@ export const Constants = {
         "admin_debit",
         "refund",
         "free",
+        "arena_entry",
+        "arena_prize",
       ],
     },
   },
