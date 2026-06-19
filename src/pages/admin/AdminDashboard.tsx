@@ -341,7 +341,7 @@ const AdminDashboard = () => {
               label: "Challenge Arena",
               description: "Create competitions & settle prizes",
               to: "/admin/arena",
-              tone: "amber",
+              tone: "violet",
             },
           ]}
         />
