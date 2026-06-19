@@ -58,6 +58,7 @@ const StudentDashboard = () => {
             <DashboardOfflineBanner onReattempt={onRefresh} />
 
             <HeroGreeting key={`hg-${refreshKey}`} />
+            <IntelligenceWidget key={`iw-${refreshKey}`} />
             <TodayFocusCard key={`tf-${refreshKey}`} />
             <ArenaSpotlightCard key={`arena-${refreshKey}`} />
             <CourseRail key={`cr-${refreshKey}`} />
