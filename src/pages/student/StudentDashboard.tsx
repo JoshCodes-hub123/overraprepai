@@ -17,6 +17,7 @@ import { QuickActions4 } from "@/components/student/dashboard/v2/QuickActions4";
 import { OpportunitySnapshot } from "@/components/student/dashboard/v2/OpportunitySnapshot";
 import { CommunityMomentCard } from "@/components/student/dashboard/v2/CommunityMomentCard";
 import ArenaSpotlightCard from "@/components/arena/ArenaSpotlightCard";
+import IntelligenceWidget from "@/components/intelligence/IntelligenceWidget";
 
 if (typeof window !== "undefined") prefetchDashboardNeighbors();
 
@@ -57,6 +58,7 @@ const StudentDashboard = () => {
             <DashboardOfflineBanner onReattempt={onRefresh} />
 
             <HeroGreeting key={`hg-${refreshKey}`} />
+            <IntelligenceWidget key={`iw-${refreshKey}`} />
             <TodayFocusCard key={`tf-${refreshKey}`} />
             <ArenaSpotlightCard key={`arena-${refreshKey}`} />
             <CourseRail key={`cr-${refreshKey}`} />

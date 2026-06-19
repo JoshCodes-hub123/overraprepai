@@ -196,6 +196,7 @@ const StudyHubPage = lazy(() => import("@/pages/hubs/StudyHubPage"));
 const PracticeHubPage = lazy(() => import("@/pages/hubs/PracticeHubPage"));
 const PeopleHubPage = lazy(() => import("@/pages/hubs/PeopleHubPage"));
 const MeHubPage = lazy(() => import("@/pages/hubs/MeHubPage"));
+const IntelligenceCenter = lazy(() => import("@/pages/intelligence/IntelligenceCenter"));
 import { DashboardSkeleton } from "@/components/student/dashboard/DashboardSkeleton";
 
 export const AnimatedRoutes = () => {
@@ -484,6 +485,8 @@ export const AnimatedRoutes = () => {
           <Route path="/arena/:id/play" element={<PageTransition><ArenaPlay /></PageTransition>} />
           <Route path="/arena/:id/leaderboard" element={<PageTransition><ArenaLeaderboard /></PageTransition>} />
           <Route path="/student/weak-area-drill" element={<PageTransition><MasteryBreakdown /></PageTransition>} />
+          <Route path="/intelligence" element={<PageTransition><IntelligenceCenter /></PageTransition>} />
+          <Route path="/student/success" element={<PageTransition><IntelligenceCenter /></PageTransition>} />
           <Route path="/study-mode/:courseId" element={<PageTransition><StudyMode /></PageTransition>} />
           <Route path="/courses" element={<PageTransition><CourseDirectory /></PageTransition>} />
           <Route path="/courses/:courseId" element={<PageTransition><CourseHub /></PageTransition>} />
