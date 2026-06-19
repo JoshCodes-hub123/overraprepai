@@ -8284,6 +8284,31 @@ export type Database = {
         Args: { p_opportunity_id: string }
         Returns: undefined
       }
+      intelligence_exam_readiness: {
+        Args: { _course: string; _user: string }
+        Returns: Json
+      }
+      intelligence_exam_readiness_all: {
+        Args: { _user?: string }
+        Returns: Json
+      }
+      intelligence_opportunity_matches: {
+        Args: { _limit?: number; _user?: string }
+        Returns: {
+          category: string
+          cover_image_url: string
+          deadline: string
+          id: string
+          match_score: number
+          organization: string
+          reasons: Json
+          title: string
+          university: string
+        }[]
+      }
+      intelligence_success_score: { Args: { _user?: string }; Returns: Json }
+      intelligence_today_mission: { Args: { _user?: string }; Returns: Json }
+      intelligence_weekly_report: { Args: { _user?: string }; Returns: Json }
       is_chat_member: {
         Args: { _thread_id: string; _user_id: string }
         Returns: boolean
