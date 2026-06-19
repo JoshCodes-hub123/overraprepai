@@ -21,6 +21,7 @@ import {
   useOpportunityMatches,
   useStudyCoach,
 } from "@/hooks/useIntelligence";
+import { GrowthShareCard } from "@/components/growth/GrowthShareCard";
 
 const tierMeta: Record<string, { label: string; min: number; gradient: string }> = {
   Legend: { label: "Legend", min: 90, gradient: "from-amber-300 to-amber-500" },
