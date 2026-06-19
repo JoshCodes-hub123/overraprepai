@@ -316,6 +316,41 @@ export type Database = {
         }
         Relationships: []
       }
+      arena_anti_cheat_events: {
+        Row: {
+          created_at: string
+          entry_id: string
+          id: string
+          kind: string
+          meta: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entry_id: string
+          id?: string
+          kind: string
+          meta?: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entry_id?: string
+          id?: string
+          kind?: string
+          meta?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arena_anti_cheat_events_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "arena_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       arena_challenge_questions: {
         Row: {
           challenge_id: string
@@ -426,36 +461,48 @@ export type Database = {
       arena_entries: {
         Row: {
           accuracy: number
+          anti_cheat_flags: Json
           challenge_id: string
           entered_at: string
           id: string
           score: number
+          server_started_at: string
           status: Database["public"]["Enums"]["arena_entry_status"]
+          submission_hash: string | null
           submitted_at: string | null
+          suspicious_score: number
           time_taken_seconds: number
           tokens_spent: number
           user_id: string
         }
         Insert: {
           accuracy?: number
+          anti_cheat_flags?: Json
           challenge_id: string
           entered_at?: string
           id?: string
           score?: number
+          server_started_at?: string
           status?: Database["public"]["Enums"]["arena_entry_status"]
+          submission_hash?: string | null
           submitted_at?: string | null
+          suspicious_score?: number
           time_taken_seconds?: number
           tokens_spent?: number
           user_id: string
         }
         Update: {
           accuracy?: number
+          anti_cheat_flags?: Json
           challenge_id?: string
           entered_at?: string
           id?: string
           score?: number
+          server_started_at?: string
           status?: Database["public"]["Enums"]["arena_entry_status"]
+          submission_hash?: string | null
           submitted_at?: string | null
+          suspicious_score?: number
           time_taken_seconds?: number
           tokens_spent?: number
           user_id?: string
@@ -7844,6 +7891,10 @@ export type Database = {
         Args: { _id: string; _note?: string }
         Returns: undefined
       }
+      arena_broadcast_to_entrants: {
+        Args: { _challenge_id: string; _message: string; _title: string }
+        Returns: Json
+      }
       arena_disqualify_entry: {
         Args: { _entry_id: string; _reason?: string }
         Returns: Json
@@ -7893,6 +7944,10 @@ export type Database = {
           university: string
           user_id: string
         }[]
+      }
+      arena_log_anti_cheat_event: {
+        Args: { _entry_id: string; _kind: string; _meta?: Json }
+        Returns: Json
       }
       arena_publish_challenge: {
         Args: { _challenge_id: string }
