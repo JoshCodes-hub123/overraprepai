@@ -196,6 +196,7 @@ const StudyHubPage = lazy(() => import("@/pages/hubs/StudyHubPage"));
 const PracticeHubPage = lazy(() => import("@/pages/hubs/PracticeHubPage"));
 const PeopleHubPage = lazy(() => import("@/pages/hubs/PeopleHubPage"));
 const MeHubPage = lazy(() => import("@/pages/hubs/MeHubPage"));
+const IntelligenceCenter = lazy(() => import("@/pages/intelligence/IntelligenceCenter"));
 import { DashboardSkeleton } from "@/components/student/dashboard/DashboardSkeleton";
 
 export const AnimatedRoutes = () => {
