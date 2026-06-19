@@ -348,7 +348,7 @@ const AdminDashboard = () => {
               label: "Growth Engine",
               description: "Battles, ambassadors & analytics",
               to: "/admin/growth",
-              tone: "amber",
+              tone: "violet",
             },
           ]}
         />
