@@ -2,37 +2,54 @@ import { useState, useEffect } from "react";
 
 const ONBOARDING_KEY = "overraprep_onboarding_completed";
 
+const safeGet = (): string[] => {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(ONBOARDING_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((v) => typeof v === "string") : [];
+  } catch {
+    return [];
+  }
+};
+
+const safeSet = (ids: string[]) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(ONBOARDING_KEY, JSON.stringify(ids));
+  } catch {
+    /* private mode / quota — onboarding will just re-show, no crash */
+  }
+};
+
 export const useOnboarding = (userId: string | undefined) => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
 
   useEffect(() => {
     if (!userId) {
+      setShowOnboarding(false);
       setIsChecked(true);
       return;
     }
-
-    const completedUsers = JSON.parse(localStorage.getItem(ONBOARDING_KEY) || "[]");
-    const hasCompleted = completedUsers.includes(userId);
-    
-    setShowOnboarding(!hasCompleted);
+    const completed = safeGet();
+    setShowOnboarding(!completed.includes(userId));
     setIsChecked(true);
   }, [userId]);
 
   const completeOnboarding = () => {
-    if (!userId) return;
-    
-    const completedUsers = JSON.parse(localStorage.getItem(ONBOARDING_KEY) || "[]");
-    if (!completedUsers.includes(userId)) {
-      completedUsers.push(userId);
-      localStorage.setItem(ONBOARDING_KEY, JSON.stringify(completedUsers));
+    if (!userId) {
+      setShowOnboarding(false);
+      return;
+    }
+    const completed = safeGet();
+    if (!completed.includes(userId)) {
+      completed.push(userId);
+      safeSet(completed);
     }
     setShowOnboarding(false);
   };
 
-  return {
-    showOnboarding,
-    isChecked,
-    completeOnboarding,
-  };
+  return { showOnboarding, isChecked, completeOnboarding };
 };
