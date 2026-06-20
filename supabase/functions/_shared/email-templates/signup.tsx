@@ -70,22 +70,27 @@ export const SignupEmail = ({
               and finally beat exam stress — powered by AI tutors built around <em>you</em>.
             </Text>
 
-            <Text style={label}>Verify {recipient} — one tap:</Text>
+            <Text style={label}>Your 6-digit verification code</Text>
 
-            <Section style={{ textAlign: 'center', margin: '0 0 18px' }}>
-              <Button href={verifyUrl} style={ctaButton}>
-                ✨ Verify my email
-              </Button>
+            <Section style={codeBox}>
+              <Text style={codeText}>{code}</Text>
             </Section>
 
             <Text style={muted}>
-              Button not working?{' '}
-              <Link href={verifyUrl} style={linkStyle}>Tap here to verify</Link>.
+              Enter this code in the OverraPrep AI signup screen to verify{' '}
+              <strong>{recipient}</strong>. It expires in <strong>1 hour</strong>.
+              Don't share it with anyone — not even an OverraPrep team member.
             </Text>
 
+            <Text style={fallbackLabel}>Prefer a tap? Use this link instead</Text>
+            <Section style={{ textAlign: 'center', margin: '0 0 8px' }}>
+              <Button href={verifyUrl} style={ctaButton}>
+                Verify my email
+              </Button>
+            </Section>
             <Text style={muted}>
-              This link expires in <strong>1 hour</strong>. Don't share it with anyone —
-              not even an OverraPrep team member.
+              Button not working?{' '}
+              <Link href={verifyUrl} style={linkStyle}>Open verification link</Link>.
             </Text>
 
             <Hr style={hr} />
