@@ -41,7 +41,7 @@ const SENDER_DOMAIN = "notify.overraprepai.com"
 const ROOT_DOMAIN = "overraprepai.com"
 const FROM_DOMAIN = "notify.overraprepai.com" // Domain shown in From address (may be root or sender subdomain)
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
-const TEMP_RESEND_FALLBACK_FROM = `${SITE_NAME} <onboarding@resend.dev>`
+const RESEND_FROM_EMAIL = Deno.env.get('RESEND_FROM_EMAIL') || `${SITE_NAME} <noreply@overraprepai.com>`
 
 // Sample data for preview mode ONLY (not used in actual email sending).
 // URLs are baked in at scaffold time from the project's real data.
@@ -246,9 +246,9 @@ async function handleWebhook(req: Request): Promise<Response> {
     plainText: true,
   })
 
-  // Temporary bridge while the branded sender domain DNS is still pending:
-  // send auth emails directly through the existing Resend key so new students
-  // can verify accounts immediately. Remove this branch after DNS verifies.
+  // Direct Resend bridge while the managed sender domain DNS is still pending.
+  // This must use a verified Resend sender domain; onboarding@resend.dev only
+  // delivers to the account owner's test address and blocks real student signups.
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -272,18 +272,19 @@ async function handleWebhook(req: Request): Promise<Response> {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: TEMP_RESEND_FALLBACK_FROM,
+        from: RESEND_FROM_EMAIL,
         to: [payload.data.email],
         subject: EMAIL_SUBJECTS[emailType] || 'Notification',
         html,
         text,
+        reply_to: 'support@overraprepai.com',
       }),
     })
 
     const resendBody = await resendResponse.text()
 
     if (!resendResponse.ok) {
-      console.error('Temporary Resend auth email failed', {
+      console.error('Direct Resend auth email failed', {
         run_id,
         emailType,
         status: resendResponse.status,
@@ -294,7 +295,7 @@ async function handleWebhook(req: Request): Promise<Response> {
         template_name: emailType,
         recipient_email: payload.data.email,
         status: 'failed',
-        error_message: `Resend fallback failed: ${resendResponse.status} ${resendBody}`,
+        error_message: `Direct Resend failed: ${resendResponse.status} ${resendBody}`,
       })
       return new Response(JSON.stringify({ error: 'Failed to send email' }), {
         status: 500,
@@ -309,7 +310,7 @@ async function handleWebhook(req: Request): Promise<Response> {
       status: 'sent',
     })
 
-    console.log('Auth email sent through temporary Resend fallback', {
+    console.log('Auth email sent through direct Resend bridge', {
       emailType,
       email: payload.data.email,
       run_id,
