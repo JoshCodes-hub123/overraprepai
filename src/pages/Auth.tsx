@@ -289,7 +289,7 @@ const Auth = () => {
     } else {
       toast({
         title: "Email sent",
-        description: `New verification link sent to ${pendingEmail}.`,
+        description: `New 6-digit verification code sent to ${pendingEmail}.`,
       });
     }
   };
@@ -361,7 +361,7 @@ const Auth = () => {
       setVerifyMode(true);
       toast({
         title: "Check your inbox 📬",
-        description: `We sent a verification link to ${data.email}. Tap it to finish signing up.`,
+        description: `We sent a 6-digit verification code to ${data.email}. Enter it here to finish signing up.`,
       });
       setIsSubmitting(false);
       return;
