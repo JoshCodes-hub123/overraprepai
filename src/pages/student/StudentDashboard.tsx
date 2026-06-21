@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { prefetchDashboardNeighbors } from "@/lib/routePrefetch";
 import { OnboardingDialog } from "@/components/onboarding/OnboardingDialog";
+import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 import { SEO } from "@/components/seo/SEO";
 import { PullToRefresh } from "@/components/native/PullToRefresh";
 import { DashboardOfflineBanner } from "@/components/dashboard/DashboardOfflineBanner";
@@ -149,6 +150,7 @@ const StudentDashboard = () => {
           userRole="student"
           userName={profile?.full_name || undefined}
         />
+        <OnboardingTour />
       </PullToRefresh>
     </>
   );
