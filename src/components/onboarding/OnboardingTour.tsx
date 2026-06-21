@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -68,24 +69,43 @@ const tourSteps: TourStep[] = [
   },
 ];
 
-const TOUR_STORAGE_KEY = "overraprep_tour_completed";
+const TOUR_STORAGE_PREFIX = "overraprep_tour_completed";
+const LEGACY_TOUR_KEY = "overraprep_tour_completed";
+
+const tourKeyFor = (userId?: string | null) =>
+  userId ? `${TOUR_STORAGE_PREFIX}:${userId}` : TOUR_STORAGE_PREFIX;
 
 export const OnboardingTour = () => {
+  const { user, isLoading } = useAuth();
   const [isVisible, setIsVisible] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if tour was already completed
-    const tourCompleted = localStorage.getItem(TOUR_STORAGE_KEY);
-    if (!tourCompleted) {
-      // Delay showing tour to allow page to load
-      const timer = setTimeout(() => {
-        setIsVisible(true);
-      }, 1500);
-      return () => clearTimeout(timer);
+    // Wait for auth to resolve so we only ever show the tour to a known user
+    // exactly once — never to anon visitors, never twice for the same account.
+    if (isLoading) return;
+    if (!user?.id) return;
+
+    try {
+      const key = tourKeyFor(user.id);
+      const completed = localStorage.getItem(key);
+      // Migrate the old global flag → per-user flag so existing users who
+      // already saw the tour aren't shown it again.
+      const legacy = localStorage.getItem(LEGACY_TOUR_KEY);
+      if (!completed && legacy) {
+        localStorage.setItem(key, legacy);
+        return;
+      }
+      if (completed) return;
+    } catch {
+      // localStorage unavailable — fail closed (don't pester the user).
+      return;
     }
-  }, []);
+
+    const timer = setTimeout(() => setIsVisible(true), 1500);
+    return () => clearTimeout(timer);
+  }, [user?.id, isLoading]);
 
   const handleNext = () => {
     if (currentStep < tourSteps.length - 1) {
@@ -106,10 +126,12 @@ export const OnboardingTour = () => {
   };
 
   const handleComplete = () => {
-    localStorage.setItem(TOUR_STORAGE_KEY, "true");
+    try {
+      localStorage.setItem(tourKeyFor(user?.id), new Date().toISOString());
+    } catch {
+      /* ignore quota / private mode */
+    }
     setIsVisible(false);
-    // After the tour, send the student to the course picker so the
-    // "Get Started" CTA actually starts something instead of dismissing.
     try {
       const onPublicPage =
         window.location.pathname === "/" ||
