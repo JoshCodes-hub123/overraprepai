@@ -150,6 +150,7 @@ const StudentDashboard = () => {
           userRole="student"
           userName={profile?.full_name || undefined}
         />
+        <OnboardingTour />
       </PullToRefresh>
     </>
   );
