@@ -326,7 +326,7 @@ const Auth = () => {
     }
 
     // Rare auto-confirm path: session exists immediately.
-    await persistExtraSignupDetails(data, avatarFile);
+    await persistExtraSignupDetails(data);
     const welcomeMsg = data.referralCode
       ? "Welcome to OverraPrep AI! Complete your first quiz to earn bonus tokens."
       : "Welcome to OverraPrep AI. You can now start practicing.";
