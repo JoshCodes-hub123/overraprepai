@@ -706,7 +706,7 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess }: BulkQuizImport
             .select("id")
             .eq("course_id", courseId)
             .limit(1)
-            .single();
+            .maybeSingle();
 
           if (existingTopic) {
             topicId = existingTopic.id;
@@ -745,8 +745,8 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess }: BulkQuizImport
 
           if (quizError) throw quizError;
 
-          // Create questions for the quiz
-          const questionInserts = quiz.questions.map((q, idx) => ({
+          // Create questions for the quiz (batched to avoid payload/row limits)
+          const questionInserts = quiz.questions.map((q) => ({
             question_text: q.question_text,
             option_a: q.option_a,
             option_b: q.option_b,
@@ -761,32 +761,55 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess }: BulkQuizImport
             is_approved: true,
           }));
 
-          const { data: createdQuestions, error: questionsError } = await supabase
-            .from("questions")
-            .insert(questionInserts)
-            .select("id");
+          const CHUNK = 50;
+          const allCreatedQuestionIds: string[] = [];
+          for (let start = 0; start < questionInserts.length; start += CHUNK) {
+            const slice = questionInserts.slice(start, start + CHUNK);
+            const { data: createdQuestions, error: questionsError } = await supabase
+              .from("questions")
+              .insert(slice)
+              .select("id");
+            if (questionsError) {
+              throw new Error(
+                `Failed at questions ${start + 1}-${start + slice.length}: ${questionsError.message}`
+              );
+            }
+            (createdQuestions || []).forEach((q: any) => allCreatedQuestionIds.push(q.id));
 
-          if (questionsError) throw questionsError;
+            setProcessingStatus({
+              stage: "creating",
+              progress: ((i + (start + slice.length) / questionInserts.length) / validQuizzes.length) * 100,
+              message: `Quiz ${i + 1}/${validQuizzes.length} — uploading questions ${start + slice.length}/${questionInserts.length}...`,
+              totalRows: validQuizzes.length,
+              processedRows: i + 1,
+            });
+          }
 
-          // Link questions to quiz
-          if (createdQuestions && createdQuestions.length > 0) {
-            const quizQuestionLinks = createdQuestions.map((q, idx) => ({
+          // Link questions to quiz (batched)
+          if (allCreatedQuestionIds.length > 0) {
+            const quizQuestionLinks = allCreatedQuestionIds.map((qid, idx) => ({
               quiz_id: newQuiz.id,
-              question_id: q.id,
+              question_id: qid,
               order_index: idx,
             }));
-
-            const { error: linkError } = await supabase
-              .from("quiz_questions")
-              .insert(quizQuestionLinks);
-
-            if (linkError) throw linkError;
+            for (let start = 0; start < quizQuestionLinks.length; start += CHUNK) {
+              const slice = quizQuestionLinks.slice(start, start + CHUNK);
+              const { error: linkError } = await supabase
+                .from("quiz_questions")
+                .insert(slice);
+              if (linkError) {
+                throw new Error(
+                  `Failed linking questions ${start + 1}-${start + slice.length}: ${linkError.message}`
+                );
+              }
+            }
           }
 
           createdCount++;
         } catch (error: any) {
           console.error(`Error creating quiz "${quiz.title}":`, error);
-          createErrors.push(`"${quiz.title}": ${error.message}`);
+          const detail = error?.message || error?.error_description || error?.hint || JSON.stringify(error);
+          createErrors.push(`"${quiz.title}": ${detail}`);
         }
       }
 
@@ -797,15 +820,18 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess }: BulkQuizImport
       });
 
       if (createdCount > 0) {
-        toast.success(`Successfully created ${createdCount} quizzes!`);
+        toast.success(`Successfully created ${createdCount} quiz${createdCount !== 1 ? "zes" : ""}!`);
         if (createErrors.length > 0) {
-          toast.warning(`${createErrors.length} quizzes failed to create`);
+          toast.warning(`${createErrors.length} quiz${createErrors.length !== 1 ? "zes" : ""} failed — see details below`);
+          setErrors(createErrors);
         }
         onSuccess();
-        onOpenChange(false);
-        resetState();
+        if (createErrors.length === 0) {
+          onOpenChange(false);
+          resetState();
+        }
       } else {
-        toast.error("Failed to create any quizzes");
+        toast.error(createErrors[0] || "Failed to create any quizzes");
         setErrors(createErrors);
       }
     } catch (error: any) {
