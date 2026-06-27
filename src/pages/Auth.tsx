@@ -35,21 +35,10 @@ const signInSchema = z.object({
 });
 
 const signUpSchema = z.object({
-  fullName: z.string().trim().min(2, "Full name must be at least 2 characters").max(100, "Full name is too long"),
   email: z.string().trim().email("Please enter a valid email address").max(255),
   password: z.string().min(6, "Password must be at least 6 characters").max(72),
-  confirmPassword: z.string(),
-  academicPath: z.enum(["secondary", "jamb", "university"]).optional().or(z.literal("")),
-  level: z.string().trim().max(40).optional().or(z.literal("")),
-  department: z.string().trim().max(120).optional().or(z.literal("")),
-  school: z.string().trim().max(120).optional().or(z.literal("")),
-  phone: z.string().trim().max(20).optional().or(z.literal("")),
-  matricNo: z.string().trim().max(40).optional().or(z.literal("")),
-  state: z.string().trim().max(60).optional().or(z.literal("")),
+  university: z.enum(["FUTA", "OAU"], { required_error: "Pick your university" }),
   referralCode: z.string().optional(),
-}).refine((d) => d.password === d.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
 });
 
 type SignInFormData = z.infer<typeof signInSchema>;
@@ -203,17 +192,9 @@ const Auth = () => {
     mode: "onTouched",
     reValidateMode: "onChange",
     defaultValues: {
-      fullName: "",
       email: "",
       password: "",
-      confirmPassword: "",
-      academicPath: "university" as const,
-      level: "",
-      department: "",
-      school: "Federal University of Technology, Akure",
-      phone: "",
-      matricNo: "",
-      state: "",
+      university: "FUTA",
       referralCode: referralCodeFromUrl,
     },
   });
@@ -237,7 +218,7 @@ const Auth = () => {
     return () => cancel(id);
   }, [prefersReducedMotion, simulateLowEnd]);
 
-  const academicPath = signUpForm.watch("academicPath");
+  const universityValue = signUpForm.watch("university");
 
   // Warm the dashboard JS chunk while the user is typing credentials,
   // so navigation after sign-in feels instant.
@@ -294,52 +275,29 @@ const Auth = () => {
     }
   };
 
-  // Persist optional profile + avatar once a session exists (after OTP verify
-  // or, in the rare auto-confirm case, right after signUp).
-  const persistExtraSignupDetails = async (data: SignUpFormData, avatar: File | null) => {
+  // Persist the chosen university (and a derived display name) on the profile.
+  const persistExtraSignupDetails = async (data: SignUpFormData) => {
     try {
       const { data: { user: newUser } } = await supabase.auth.getUser();
       if (!newUser?.id) return;
-      const meta = { school: data.school };
-      let uploadedAvatarUrl: string | null = null;
-      if (avatar) {
-        try {
-          const ext = (avatar.name.split(".").pop() || "jpg").toLowerCase();
-          const path = `${newUser.id}/avatar.${ext}`;
-          const { error: upErr } = await supabase.storage
-            .from("avatars")
-            .upload(path, avatar, { upsert: true, contentType: avatar.type });
-          if (!upErr) {
-            const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-            uploadedAvatarUrl = `${pub.publicUrl}?v=${Date.now()}`;
-          }
-        } catch (upErr) {
-          console.warn("Avatar upload failed:", upErr);
-        }
-      }
+      const display = (data.email.split("@")[0] || "Student").replace(/[._-]+/g, " ");
       await supabase
         .from("profiles")
         .update({
-          academic_path: (data.academicPath || null) as any,
-          level: data.level || null,
-          department: data.department || null,
-          phone: data.phone || null,
-          matric_no: data.matricNo || null,
-          state_of_origin: data.state || null,
-          academic_metadata: meta,
-          ...(uploadedAvatarUrl
-            ? { avatar_url: uploadedAvatarUrl, profile_image_url: uploadedAvatarUrl }
-            : {}),
-        })
+          university: data.university,
+          academic_path: "university" as any,
+          full_name: display,
+        } as any)
         .eq("id", newUser.id);
     } catch (e) {
-      console.warn("Could not persist extra signup details:", e);
+      console.warn("Could not persist signup details:", e);
     }
   };
 
   const handleSignUp = async (data: SignUpFormData) => {
     setIsSubmitting(true);
-    const { error } = await signUp(data.email, data.password, data.fullName, data.referralCode);
+    const derivedName = (data.email.split("@")[0] || "Student").replace(/[._-]+/g, " ");
+    const { error } = await signUp(data.email, data.password, derivedName, data.referralCode);
 
     if (error) {
       let message = error.message;
@@ -368,7 +326,7 @@ const Auth = () => {
     }
 
     // Rare auto-confirm path: session exists immediately.
-    await persistExtraSignupDetails(data, avatarFile);
+    await persistExtraSignupDetails(data);
     const welcomeMsg = data.referralCode
       ? "Welcome to OverraPrep AI! Complete your first quiz to earn bonus tokens."
       : "Welcome to OverraPrep AI. You can now start practicing.";
@@ -395,7 +353,7 @@ const Auth = () => {
       return;
     }
     if (pendingSignUp) {
-      await persistExtraSignupDetails(pendingSignUp, pendingAvatar);
+      await persistExtraSignupDetails(pendingSignUp);
     }
     toast({
       title: "You're in! 🎉",
@@ -687,90 +645,7 @@ const Auth = () => {
               </div>
             </form>
           ) : (
-            /* Sign Up Form */
             <form onSubmit={signUpForm.handleSubmit(handleSignUp)} className="space-y-4 sm:space-y-5">
-              {/* Step indicator */}
-              {(() => {
-                const STEPS = ["Account", "Academic", "Contact", "Bonus"];
-                return (
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    {STEPS.map((label, i) => {
-                      const active = i === signUpStep;
-                      const done = i < signUpStep;
-                      return (
-                        <div key={label} className="flex-1 flex flex-col items-center gap-1">
-                          <div
-                            className={`h-1.5 w-full rounded-full transition-colors ${
-                              done || active ? "bg-gradient-to-r from-primary to-amber-400" : "bg-muted"
-                            }`}
-                          />
-                          <span className={`text-[10px] font-semibold uppercase tracking-wider ${active ? "text-primary" : "text-muted-foreground"}`}>
-                            {label}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
-
-              <div className="relative overflow-hidden">
-                <AnimatePresence initial={false} mode="wait">
-                  <motion.div
-                    key={signUpStep}
-                    initial={{ opacity: 0, x: stepDir * 40 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: stepDir * -40 }}
-                    transition={{ duration: 0.28, ease: "easeOut" }}
-                    className="space-y-5"
-                  >
-                    {signUpStep === 0 && (
-                      <>
-              {/* Avatar picker */}
-              <div className="flex flex-col items-center gap-2">
-                <label
-                  htmlFor="signup-avatar"
-                  className="relative h-16 w-16 sm:h-20 sm:w-20 rounded-full border-2 border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 hover:border-primary transition-all flex items-center justify-center cursor-pointer overflow-hidden group"
-                  aria-label="Upload profile picture"
-                >
-                  {avatarPreview ? (
-                    <img src={avatarPreview} alt="Profile preview" className="h-full w-full object-cover" />
-                  ) : (
-                    <User className="w-8 h-8 text-primary/60 group-hover:text-primary transition-colors" />
-                  )}
-                  <span className="absolute bottom-0 inset-x-0 bg-primary/85 text-[10px] font-semibold text-primary-foreground py-0.5 text-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    {avatarPreview ? "Change" : "Upload"}
-                  </span>
-                  <input
-                    id="signup-avatar"
-                    type="file"
-                    accept="image/*"
-                    className="sr-only"
-                    onChange={handleAvatarPick}
-                  />
-                </label>
-                <p className="text-[11px] text-muted-foreground">Add a profile photo (optional)</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="signup-name" className="text-foreground text-xs sm:text-sm font-medium">
-                  Full Name
-                </Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    placeholder="John Doe"
-                    className="pl-10 h-10 sm:h-12 text-sm sm:text-base"
-                    {...signUpForm.register("fullName")}
-                  />
-                </div>
-                {signUpForm.formState.errors.fullName && (
-                  <p className="text-sm text-destructive">{signUpForm.formState.errors.fullName.message}</p>
-                )}
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="signup-email" className="text-foreground text-xs sm:text-sm font-medium">
                   Email
@@ -780,7 +655,7 @@ const Auth = () => {
                   <Input
                     id="signup-email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="you@gmail.com"
                     className="pl-10 h-10 sm:h-12 text-sm sm:text-base"
                     {...signUpForm.register("email")}
                   />
@@ -818,251 +693,43 @@ const Auth = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="signup-confirm" className="text-foreground text-xs sm:text-sm font-medium">
-                  Confirm Password
-                </Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
-                  <Input
-                    id="signup-confirm"
-                    type="password"
-                    placeholder="••••••••"
-                    className="pl-10 h-10 sm:h-12 text-sm sm:text-base"
-                    {...signUpForm.register("confirmPassword")}
-                  />
-                </div>
-                {signUpForm.formState.errors.confirmPassword && (
-                  <p className="text-sm text-destructive">{signUpForm.formState.errors.confirmPassword.message}</p>
+                <Label className="text-foreground text-xs sm:text-sm font-medium">University</Label>
+                <Select
+                  value={universityValue}
+                  onValueChange={(v) => signUpForm.setValue("university", v as "FUTA" | "OAU", { shouldValidate: true })}
+                >
+                  <SelectTrigger className="h-10 sm:h-12 text-sm sm:text-base">
+                    <div className="flex items-center gap-2">
+                      <GraduationCap className="w-4 h-4 text-muted-foreground" />
+                      <SelectValue placeholder="Pick your university" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="FUTA">Federal University of Technology, Akure (FUTA)</SelectItem>
+                    <SelectItem value="OAU">Obafemi Awolowo University (OAU)</SelectItem>
+                  </SelectContent>
+                </Select>
+                {signUpForm.formState.errors.university && (
+                  <p className="text-sm text-destructive">{signUpForm.formState.errors.university.message}</p>
                 )}
               </div>
-                      </>
-                    )}
 
-                    {signUpStep === 1 && (
-                      <>
-              {/* Academic details */}
-              <div className="rounded-xl border border-border/60 bg-muted/30 p-3 sm:p-4 space-y-3 sm:space-y-4">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  <GraduationCap className="w-3.5 h-3.5 text-primary" />
-                  Academic details
-                </div>
+              {referralCodeFromUrl && (
+                <input type="hidden" {...signUpForm.register("referralCode")} />
+              )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-foreground text-xs sm:text-sm font-medium">Academic path</Label>
-                    <Select
-                      value={academicPath}
-                      onValueChange={(v) => signUpForm.setValue("academicPath", v as any, { shouldValidate: true })}
-                    >
-                      <SelectTrigger className="h-10 sm:h-11 text-sm"><SelectValue placeholder="Select path" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="university">University</SelectItem>
-                        <SelectItem value="jamb">JAMB / UTME</SelectItem>
-                        <SelectItem value="secondary">Secondary School</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {signUpForm.formState.errors.academicPath && (
-                      <p className="text-xs text-destructive">{signUpForm.formState.errors.academicPath.message}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="signup-level" className="text-foreground text-xs sm:text-sm font-medium">
-                      {academicPath === "university" ? "Level (e.g., 100, 200)" : academicPath === "secondary" ? "Class (e.g., SS2)" : "Attempt year"}
-                    </Label>
-                    <Input
-                      id="signup-level"
-                      placeholder={academicPath === "university" ? "100" : academicPath === "secondary" ? "SS2" : "2025"}
-                      className="h-10 sm:h-11 text-sm"
-                      {...signUpForm.register("level")}
-                    />
-                    {signUpForm.formState.errors.level && (
-                      <p className="text-xs text-destructive">{signUpForm.formState.errors.level.message}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="signup-school" className="text-foreground text-xs sm:text-sm font-medium">School / Institution</Label>
-                  <div className="relative">
-                    <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="signup-school"
-                      placeholder="Federal University of Technology, Akure"
-                      className="pl-9 h-10 sm:h-11 text-sm"
-                      {...signUpForm.register("school")}
-                    />
-                  </div>
-                  {signUpForm.formState.errors.school && (
-                    <p className="text-xs text-destructive">{signUpForm.formState.errors.school.message}</p>
+              <div className="sticky bottom-0 -mx-4 sm:mx-0 px-4 sm:px-0 pt-3 sm:pt-0 pb-[max(env(safe-area-inset-bottom),0.5rem)] sm:pb-0 bg-gradient-to-t from-[#FCFBF8] via-[#FCFBF8]/95 to-transparent sm:bg-none z-20">
+                <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      Create Account <ArrowRight className="w-5 h-5" />
+                    </>
                   )}
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="signup-department" className="text-foreground text-xs sm:text-sm font-medium">Department / Course</Label>
-                  <Input
-                    id="signup-department"
-                    placeholder="Computer Science"
-                    className="h-10 sm:h-11 text-sm"
-                    {...signUpForm.register("department")}
-                  />
-                  {signUpForm.formState.errors.department && (
-                    <p className="text-xs text-destructive">{signUpForm.formState.errors.department.message}</p>
-                  )}
-                </div>
-              </div>
-                      </>
-                    )}
-
-                    {signUpStep === 2 && (
-                      <>
-              {/* Contact details */}
-              <div className="rounded-xl border border-border/60 bg-muted/30 p-3 sm:p-4 space-y-3 sm:space-y-4">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  <IdCard className="w-3.5 h-3.5 text-primary" />
-                  Contact & ID
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="signup-phone" className="text-foreground text-xs sm:text-sm font-medium">Phone</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input id="signup-phone" placeholder="080..." className="pl-9 h-10 sm:h-11 text-sm" {...signUpForm.register("phone")} />
-                    </div>
-                    {signUpForm.formState.errors.phone && (
-                      <p className="text-xs text-destructive">{signUpForm.formState.errors.phone.message}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="signup-matric" className="text-foreground text-xs sm:text-sm font-medium">
-                      Matric / Reg no. <span className="text-muted-foreground font-normal">(optional)</span>
-                    </Label>
-                    <Input id="signup-matric" placeholder="CSC/20/1234" className="h-10 sm:h-11 text-sm" {...signUpForm.register("matricNo")} />
-                    {signUpForm.formState.errors.matricNo && (
-                      <p className="text-xs text-destructive">{signUpForm.formState.errors.matricNo.message}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-foreground text-xs sm:text-sm font-medium">State of origin</Label>
-                  <Select
-                    value={signUpForm.watch("state")}
-                    onValueChange={(v) => signUpForm.setValue("state", v, { shouldValidate: true })}
-                  >
-                    <SelectTrigger className="h-10 sm:h-11 text-sm">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-muted-foreground" />
-                        <SelectValue placeholder="Select your state" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-64">
-                      {NIGERIAN_STATES.map((s) => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {signUpForm.formState.errors.state && (
-                    <p className="text-xs text-destructive">{signUpForm.formState.errors.state.message}</p>
-                  )}
-                </div>
-              </div>
-                      </>
-                    )}
-
-                    {signUpStep === 3 && (
-                      <>
-              {/* Referral Code Section - Highlighted */}
-              <div className="relative p-3 sm:p-4 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5 rounded-xl border border-primary/20">
-                <div className="absolute -top-3 left-4 bg-card px-2">
-                  <span className="text-xs font-semibold text-primary flex items-center gap-1">
-                    <Gift className="w-3 h-3" />
-                    BONUS TOKENS
-                  </span>
-                </div>
-                <div className="space-y-2 mt-1">
-                  <Label htmlFor="signup-referral" className="text-foreground text-xs sm:text-sm font-medium">
-                    Got a referral code from a friend?
-                  </Label>
-                  <Input
-                    id="signup-referral"
-                    type="text"
-                    placeholder="Paste code here (e.g., REF-ABC123)"
-                    className="h-10 sm:h-12 text-sm sm:text-base font-mono uppercase bg-card border-primary/30 focus:border-primary"
-                    {...signUpForm.register("referralCode")}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {referralCodeFromUrl ? (
-                      <span className="text-primary font-medium">🎁 Referral code applied! Complete your first quiz to earn bonus tokens.</span>
-                    ) : (
-                      "Enter a friend's referral code to earn bonus tokens after your first quiz!"
-                    )}
-                  </p>
-                </div>
-              </div>
-                      </>
-                    )}
-                  </motion.div>
-                </AnimatePresence>
+                </Button>
               </div>
 
-              {/* Step navigation */}
-              {(() => {
-                const STEP_FIELDS: Array<Array<keyof SignUpFormData>> = [
-                  ["fullName", "email", "password", "confirmPassword"],
-                  ["academicPath", "level", "school", "department"],
-                  ["phone", "matricNo", "state"],
-                  ["referralCode"],
-                ];
-                const isLast = signUpStep === 3;
-                const goNext = async () => {
-                  const valid = await signUpForm.trigger(STEP_FIELDS[signUpStep]);
-                  if (!valid) return;
-                  setStepDir(1);
-                  setSignUpStep((s) => Math.min(3, s + 1));
-                };
-                const goBack = () => {
-                  setStepDir(-1);
-                  setSignUpStep((s) => Math.max(0, s - 1));
-                };
-                return (
-                  <div className="sticky bottom-0 -mx-4 sm:mx-0 px-4 sm:px-0 pt-3 sm:pt-0 pb-[max(env(safe-area-inset-bottom),0.5rem)] sm:pb-0 bg-gradient-to-t from-[#FCFBF8] via-[#FCFBF8]/95 to-transparent sm:bg-none z-20">
-                    <div className="flex items-center gap-3">
-                      {signUpStep > 0 && (
-                        <Button type="button" variant="outline" size="lg" onClick={goBack} className="flex-1">
-                          <ArrowLeft className="w-4 h-4" /> Back
-                        </Button>
-                      )}
-                      {!isLast ? (
-                        <Button type="button" variant="hero" size="lg" onClick={goNext} className="flex-1">
-                          Continue <ArrowRight className="w-5 h-5" />
-                        </Button>
-                      ) : (
-                        <Button type="submit" variant="hero" size="lg" className="flex-1" disabled={isSubmitting}>
-                          {isSubmitting ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                          ) : (
-                            <>
-                              Create Account <ArrowRight className="w-5 h-5" />
-                            </>
-                          )}
-                        </Button>
-                      )}
-                    </div>
-                    {!isLast && (
-                      <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="mt-2 block w-full text-center text-xs font-semibold text-primary hover:underline disabled:opacity-60"
-                      >
-                        {isSubmitting ? "Creating account…" : "Skip — create my account now"}
-                      </button>
-                    )}
-                  </div>
-                );
-              })()}
 
               <p className="text-xs text-center text-muted-foreground">
                 By signing up, you agree to our Terms of Service and Privacy Policy
