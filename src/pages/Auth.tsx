@@ -275,46 +275,22 @@ const Auth = () => {
     }
   };
 
-  // Persist optional profile + avatar once a session exists (after OTP verify
-  // or, in the rare auto-confirm case, right after signUp).
-  const persistExtraSignupDetails = async (data: SignUpFormData, avatar: File | null) => {
+  // Persist the chosen university (and a derived display name) on the profile.
+  const persistExtraSignupDetails = async (data: SignUpFormData) => {
     try {
       const { data: { user: newUser } } = await supabase.auth.getUser();
       if (!newUser?.id) return;
-      const meta = { school: data.school };
-      let uploadedAvatarUrl: string | null = null;
-      if (avatar) {
-        try {
-          const ext = (avatar.name.split(".").pop() || "jpg").toLowerCase();
-          const path = `${newUser.id}/avatar.${ext}`;
-          const { error: upErr } = await supabase.storage
-            .from("avatars")
-            .upload(path, avatar, { upsert: true, contentType: avatar.type });
-          if (!upErr) {
-            const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-            uploadedAvatarUrl = `${pub.publicUrl}?v=${Date.now()}`;
-          }
-        } catch (upErr) {
-          console.warn("Avatar upload failed:", upErr);
-        }
-      }
+      const display = (data.email.split("@")[0] || "Student").replace(/[._-]+/g, " ");
       await supabase
         .from("profiles")
         .update({
-          academic_path: (data.academicPath || null) as any,
-          level: data.level || null,
-          department: data.department || null,
-          phone: data.phone || null,
-          matric_no: data.matricNo || null,
-          state_of_origin: data.state || null,
-          academic_metadata: meta,
-          ...(uploadedAvatarUrl
-            ? { avatar_url: uploadedAvatarUrl, profile_image_url: uploadedAvatarUrl }
-            : {}),
-        })
+          university: data.university,
+          academic_path: "university" as any,
+          full_name: display,
+        } as any)
         .eq("id", newUser.id);
     } catch (e) {
-      console.warn("Could not persist extra signup details:", e);
+      console.warn("Could not persist signup details:", e);
     }
   };
 
