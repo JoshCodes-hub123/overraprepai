@@ -296,7 +296,8 @@ const Auth = () => {
 
   const handleSignUp = async (data: SignUpFormData) => {
     setIsSubmitting(true);
-    const { error } = await signUp(data.email, data.password, data.fullName, data.referralCode);
+    const derivedName = (data.email.split("@")[0] || "Student").replace(/[._-]+/g, " ");
+    const { error } = await signUp(data.email, data.password, derivedName, data.referralCode);
 
     if (error) {
       let message = error.message;
