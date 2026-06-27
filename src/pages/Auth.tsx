@@ -218,7 +218,7 @@ const Auth = () => {
     return () => cancel(id);
   }, [prefersReducedMotion, simulateLowEnd]);
 
-  const academicPath = signUpForm.watch("academicPath");
+  const universityValue = signUpForm.watch("university");
 
   // Warm the dashboard JS chunk while the user is typing credentials,
   // so navigation after sign-in feels instant.
