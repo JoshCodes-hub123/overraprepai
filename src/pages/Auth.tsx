@@ -192,17 +192,9 @@ const Auth = () => {
     mode: "onTouched",
     reValidateMode: "onChange",
     defaultValues: {
-      fullName: "",
       email: "",
       password: "",
-      confirmPassword: "",
-      academicPath: "university" as const,
-      level: "",
-      department: "",
-      school: "Federal University of Technology, Akure",
-      phone: "",
-      matricNo: "",
-      state: "",
+      university: "FUTA",
       referralCode: referralCodeFromUrl,
     },
   });
