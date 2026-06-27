@@ -820,15 +820,18 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess }: BulkQuizImport
       });
 
       if (createdCount > 0) {
-        toast.success(`Successfully created ${createdCount} quizzes!`);
+        toast.success(`Successfully created ${createdCount} quiz${createdCount !== 1 ? "zes" : ""}!`);
         if (createErrors.length > 0) {
-          toast.warning(`${createErrors.length} quizzes failed to create`);
+          toast.warning(`${createErrors.length} quiz${createErrors.length !== 1 ? "zes" : ""} failed — see details below`);
+          setErrors(createErrors);
         }
         onSuccess();
-        onOpenChange(false);
-        resetState();
+        if (createErrors.length === 0) {
+          onOpenChange(false);
+          resetState();
+        }
       } else {
-        toast.error("Failed to create any quizzes");
+        toast.error(createErrors[0] || "Failed to create any quizzes");
         setErrors(createErrors);
       }
     } catch (error: any) {
