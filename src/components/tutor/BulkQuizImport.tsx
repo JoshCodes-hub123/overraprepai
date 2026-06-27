@@ -706,7 +706,7 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess }: BulkQuizImport
             .select("id")
             .eq("course_id", courseId)
             .limit(1)
-            .single();
+            .maybeSingle();
 
           if (existingTopic) {
             topicId = existingTopic.id;
