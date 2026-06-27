@@ -35,21 +35,10 @@ const signInSchema = z.object({
 });
 
 const signUpSchema = z.object({
-  fullName: z.string().trim().min(2, "Full name must be at least 2 characters").max(100, "Full name is too long"),
   email: z.string().trim().email("Please enter a valid email address").max(255),
   password: z.string().min(6, "Password must be at least 6 characters").max(72),
-  confirmPassword: z.string(),
-  academicPath: z.enum(["secondary", "jamb", "university"]).optional().or(z.literal("")),
-  level: z.string().trim().max(40).optional().or(z.literal("")),
-  department: z.string().trim().max(120).optional().or(z.literal("")),
-  school: z.string().trim().max(120).optional().or(z.literal("")),
-  phone: z.string().trim().max(20).optional().or(z.literal("")),
-  matricNo: z.string().trim().max(40).optional().or(z.literal("")),
-  state: z.string().trim().max(60).optional().or(z.literal("")),
+  university: z.enum(["FUTA", "OAU"], { required_error: "Pick your university" }),
   referralCode: z.string().optional(),
-}).refine((d) => d.password === d.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
 });
 
 type SignInFormData = z.infer<typeof signInSchema>;
