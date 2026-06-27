@@ -353,7 +353,7 @@ const Auth = () => {
       return;
     }
     if (pendingSignUp) {
-      await persistExtraSignupDetails(pendingSignUp, pendingAvatar);
+      await persistExtraSignupDetails(pendingSignUp);
     }
     toast({
       title: "You're in! 🎉",
