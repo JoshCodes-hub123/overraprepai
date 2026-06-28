@@ -13,11 +13,7 @@ import authBg from "@/assets/auth-bg.jpg";
 import bgsFutaAvatar from "@/assets/bgs-futa-ambassador.jpg.asset.json";
 
 const AMBASSADORS: { name: string; seed: string; dept: string; cgpa: string; photo?: string }[] = [
-  { name: "BGS FUTA",  seed: "BGS",     dept: "Lead Ambassador · FUTA", cgpa: "4.95", photo: bgsFutaAvatar.url },
-  { name: "Ada O.",    seed: "Ada",     dept: "Computer Sci · 400L",  cgpa: "4.78" },
-  { name: "Tunde A.",  seed: "Tunde",   dept: "Mech Eng · 300L",      cgpa: "4.61" },
-  { name: "Zainab K.", seed: "Zainab",  dept: "Biochem · 200L",       cgpa: "4.92" },
-  { name: "Femi B.",   seed: "Femi",    dept: "Civil Eng · 500L",     cgpa: "4.44" },
+  { name: "BGS FUTA", seed: "BGS", dept: "Lead Ambassador · FUTA", cgpa: "4.95", photo: bgsFutaAvatar.url },
 ];
 
 const avatarFor = (seed: string) =>
