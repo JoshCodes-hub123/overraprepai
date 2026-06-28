@@ -1,10 +1,11 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Coins, Lock, Sparkles } from "lucide-react";
+import { Coins, Lock, Sparkles, Gift } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAIPricing } from "@/hooks/useAIPricing";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
 import { useQuizUnlock } from "@/hooks/useQuizUnlock";
+import { usePremium } from "@/hooks/usePremium";
 import { useState } from "react";
 
 interface Props {
@@ -23,11 +24,13 @@ export function UnlockQuizSheet({ open, onOpenChange, quizId, quizTitle, onUnloc
   const navigate = useNavigate();
   const { priceFor } = useAIPricing();
   const { balance } = useTokenBalance();
+  const { freeLeft, dailyLimit } = usePremium();
   const { unlock } = useQuizUnlock(quizId);
   const [busy, setBusy] = useState(false);
 
   const cost = priceFor("unlock_quiz");
-  const enough = balance >= cost;
+  const hasFree = freeLeft > 0;
+  const enough = hasFree || balance >= cost;
 
   const handleUnlock = async () => {
     setBusy(true);
