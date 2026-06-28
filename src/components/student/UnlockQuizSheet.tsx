@@ -1,12 +1,36 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Coins, Lock, Sparkles, Gift } from "lucide-react";
+import { Coins, Lock, Sparkles, Gift, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAIPricing } from "@/hooks/useAIPricing";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
 import { useQuizUnlock } from "@/hooks/useQuizUnlock";
 import { usePremium } from "@/hooks/usePremium";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+/** Time until next 00:00 Africa/Lagos (UTC+1, no DST). */
+function useTimeUntilLagosMidnight() {
+  const [label, setLabel] = useState("");
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      // Convert "now" to Lagos wall-clock by shifting UTC by +1h.
+      const lagos = new Date(now.getTime() + 60 * 60 * 1000);
+      const h = lagos.getUTCHours();
+      const m = lagos.getUTCMinutes();
+      const s = lagos.getUTCSeconds();
+      const secsLeft = (23 - h) * 3600 + (59 - m) * 60 + (60 - s);
+      const hh = Math.floor(secsLeft / 3600);
+      const mm = Math.floor((secsLeft % 3600) / 60);
+      const ss = secsLeft % 60;
+      setLabel(`${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return label;
+}
 
 interface Props {
   open: boolean;
