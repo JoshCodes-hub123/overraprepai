@@ -12,20 +12,21 @@ const TomorrowExamCard = () => {
   const { data } = useQuery({
     queryKey: ["tomorrow-exam-mts102"],
     queryFn: async () => {
-      const { data: course } = await supabase
+      const sb = supabase as any;
+      const { data: course } = await sb
         .from("courses")
         .select("id, code, name")
         .ilike("code", "MTS%102%")
         .maybeSingle();
       if (!course) return null;
-      const { data: quizzes } = await supabase
+      const { data: quizzes } = await sb
         .from("quizzes")
         .select("id, title")
         .eq("course_id", course.id)
         .eq("is_published", true)
         .order("created_at", { ascending: false })
         .limit(3);
-      return { course, quizzes: quizzes || [] };
+      return { course, quizzes: (quizzes || []) as { id: string; title: string }[] };
     },
     staleTime: 5 * 60_000,
   });
