@@ -8,6 +8,7 @@ import { DashboardOfflineBanner } from "@/components/dashboard/DashboardOfflineB
 import TomorrowExamCard from "@/components/student/dashboard/v2/TomorrowExamCard";
 import QuickJumpMenu from "@/components/student/dashboard/v2/QuickJumpMenu";
 import { CommandPalette, useCommandPaletteHotkey } from "@/components/student/CommandPalette";
+import PickUpWhereYouLeftOff from "@/components/student/PickUpWhereYouLeftOff";
 
 import { TopAppBar } from "@/components/student/dashboard/v2/TopAppBar";
 import { HeroGreeting } from "@/components/student/dashboard/v2/HeroGreeting";
@@ -72,6 +73,7 @@ const StudentDashboard = () => {
             <div className="space-y-4 sm:space-y-5 mt-3">
               <HeroGreeting key={`hg-${refreshKey}`} />
               <TomorrowExamCard />
+              <PickUpWhereYouLeftOff key={`pu-${refreshKey}`} />
               <QuickJumpMenu />
               <NextBestAction key={`nba-${refreshKey}`} />
             </div>
