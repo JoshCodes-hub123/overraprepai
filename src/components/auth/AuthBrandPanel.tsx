@@ -10,12 +10,14 @@ import authBg from "@/assets/auth-bg.jpg";
  * gets full width.
  */
 
-const AMBASSADORS = [
+import bgsFutaAvatar from "@/assets/bgs-futa-ambassador.jpg.asset.json";
+
+const AMBASSADORS: { name: string; seed: string; dept: string; cgpa: string; photo?: string }[] = [
+  { name: "BGS FUTA",  seed: "BGS",     dept: "Lead Ambassador · FUTA", cgpa: "4.95", photo: bgsFutaAvatar.url },
   { name: "Ada O.",    seed: "Ada",     dept: "Computer Sci · 400L",  cgpa: "4.78" },
   { name: "Tunde A.",  seed: "Tunde",   dept: "Mech Eng · 300L",      cgpa: "4.61" },
   { name: "Zainab K.", seed: "Zainab",  dept: "Biochem · 200L",       cgpa: "4.92" },
   { name: "Femi B.",   seed: "Femi",    dept: "Civil Eng · 500L",     cgpa: "4.44" },
-  { name: "Ngozi U.",  seed: "Ngozi",   dept: "Economics · 300L",     cgpa: "4.70" },
 ];
 
 const avatarFor = (seed: string) =>
@@ -125,7 +127,7 @@ const AuthBrandPanel = () => {
               {AMBASSADORS.map((a, i) => (
                 <motion.img
                   key={a.seed}
-                  src={avatarFor(a.seed)}
+                  src={a.photo || avatarFor(a.seed)}
                   alt={a.name}
                   loading="lazy"
                   initial={{ opacity: 0, x: -10 }}

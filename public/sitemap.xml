@@ -298,6 +298,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://overraprepai.com/courses/f5ce2530-02e8-4773-a227-1608869faaaa</loc>
+    <lastmod>2026-06-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://overraprepai.com/topics/physics-102</loc>
     <lastmod>2026-06-27</lastmod>
     <changefreq>monthly</changefreq>
@@ -306,6 +312,12 @@
   <url>
     <loc>https://overraprepai.com/topics/the-ultimate-calculus-master-set</loc>
     <lastmod>2026-06-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.55</priority>
+  </url>
+  <url>
+    <loc>https://overraprepai.com/topics/master-question-pack-for-che-102-organic-chemistry</loc>
+    <lastmod>2026-06-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.55</priority>
   </url>

@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useOnboarding } from "@/hooks/useOnboarding";
 import { prefetchDashboardNeighbors } from "@/lib/routePrefetch";
-import { OnboardingDialog } from "@/components/onboarding/OnboardingDialog";
-import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 import { SEO } from "@/components/seo/SEO";
 import { PullToRefresh } from "@/components/native/PullToRefresh";
 import { DashboardOfflineBanner } from "@/components/dashboard/DashboardOfflineBanner";
+import TomorrowExamCard from "@/components/student/dashboard/v2/TomorrowExamCard";
 import { CommandPalette, useCommandPaletteHotkey } from "@/components/student/CommandPalette";
 
 import { TopAppBar } from "@/components/student/dashboard/v2/TopAppBar";
@@ -32,8 +30,7 @@ if (typeof window !== "undefined") prefetchDashboardNeighbors();
  */
 const StudentDashboard = () => {
   const navigate = useNavigate();
-  const { user, profile, isLoading: authLoading } = useAuth();
-  const { showOnboarding, completeOnboarding } = useOnboarding(user?.id);
+  const { user, isLoading: authLoading } = useAuth();
   const [paletteOpen, setPaletteOpen] = useState(false);
   useCommandPaletteHotkey(setPaletteOpen);
 
@@ -70,9 +67,10 @@ const StudentDashboard = () => {
               <DashboardOfflineBanner onReattempt={onRefresh} />
             </div>
 
-            {/* Greeting + Next best action — always full width */}
+            {/* Greeting + tomorrow's exam + next best action */}
             <div className="space-y-4 sm:space-y-5 mt-3">
               <HeroGreeting key={`hg-${refreshKey}`} />
+              <TomorrowExamCard />
               <NextBestAction key={`nba-${refreshKey}`} />
             </div>
 
@@ -143,14 +141,6 @@ const StudentDashboard = () => {
             </div>
           </main>
         </div>
-
-        <OnboardingDialog
-          isOpen={showOnboarding}
-          onComplete={completeOnboarding}
-          userRole="student"
-          userName={profile?.full_name || undefined}
-        />
-        <OnboardingTour />
       </PullToRefresh>
     </>
   );

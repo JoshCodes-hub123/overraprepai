@@ -11,7 +11,7 @@ import FAQSection from "@/components/landing/FAQSection";
 import TutorSection from "@/components/landing/TutorSection";
 import CTASection from "@/components/landing/CTASection";
 import Footer from "@/components/layout/Footer";
-import OnboardingTour from "@/components/onboarding/OnboardingTour";
+
 
 const SITE_URL = "https://prep-mentor-hub-50.lovable.app";
 
@@ -59,7 +59,7 @@ const Index = () => {
         structuredData={homepageStructuredData}
         noindex={false}
       />
-      <OnboardingTour />
+      
       <div className="min-h-screen">
         <Navbar />
         <div>
