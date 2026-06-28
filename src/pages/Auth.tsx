@@ -638,6 +638,26 @@ const Auth = () => {
           ) : (
             <form onSubmit={signUpForm.handleSubmit(handleSignUp)} className="space-y-4 sm:space-y-5">
               <div className="space-y-2">
+                <Label htmlFor="signup-name" className="text-foreground text-xs sm:text-sm font-medium">
+                  Full name
+                </Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+                  <Input
+                    id="signup-name"
+                    type="text"
+                    autoComplete="name"
+                    placeholder="e.g. Ada Okeke"
+                    className="pl-10 h-10 sm:h-12 text-sm sm:text-base"
+                    {...signUpForm.register("fullName")}
+                  />
+                </div>
+                {signUpForm.formState.errors.fullName && (
+                  <p className="text-sm text-destructive">{signUpForm.formState.errors.fullName.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="signup-email" className="text-foreground text-xs sm:text-sm font-medium">
                   Email
                 </Label>
