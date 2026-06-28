@@ -6,6 +6,7 @@ import { SEO } from "@/components/seo/SEO";
 import { PullToRefresh } from "@/components/native/PullToRefresh";
 import { DashboardOfflineBanner } from "@/components/dashboard/DashboardOfflineBanner";
 import TomorrowExamCard from "@/components/student/dashboard/v2/TomorrowExamCard";
+import QuickJumpMenu from "@/components/student/dashboard/v2/QuickJumpMenu";
 import { CommandPalette, useCommandPaletteHotkey } from "@/components/student/CommandPalette";
 
 import { TopAppBar } from "@/components/student/dashboard/v2/TopAppBar";
@@ -71,6 +72,7 @@ const StudentDashboard = () => {
             <div className="space-y-4 sm:space-y-5 mt-3">
               <HeroGreeting key={`hg-${refreshKey}`} />
               <TomorrowExamCard />
+              <QuickJumpMenu />
               <NextBestAction key={`nba-${refreshKey}`} />
             </div>
 
