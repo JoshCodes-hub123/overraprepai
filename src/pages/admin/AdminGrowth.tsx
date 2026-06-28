@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import { Trophy, Plus, CheckCircle2 } from "lucide-react";
+import AdminReferralsPanel from "@/components/admin/AdminReferralsPanel";
 import { useCampusBattles, useCreateBattle, useSettleBattle, usePromoteAmbassador, useAmbassadorLeaderboard, useUniversityRankings } from "@/hooks/useGrowth";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -123,6 +124,8 @@ export default function AdminGrowth() {
               <div><p className="text-xs text-muted-foreground">Arena entries</p><p className="text-2xl font-bold text-amber-700">{unis.reduce((a, u) => a + u.arena_count, 0)}</p></div>
             </div>
           </Card>
+
+          <AdminReferralsPanel />
         </main>
       </div>
     </>
