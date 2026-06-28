@@ -1,38 +1,34 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, LogIn, Sparkles, Star, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowRight, LogIn, Sparkles, Star, ChevronRight, GraduationCap } from "lucide-react";
 import { SEO } from "@/components/seo/SEO";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
 import bgsAsset from "@/assets/bgs-futa-ambassador.jpg.asset.json";
 
-const AMBASSADORS = [
-  { src: bgsAsset.url, name: "BGS FUTA", school: "Lead Ambassador · FUTA", quote: "Driving OverraPrep across every faculty at FUTA." },
-];
-
-const ROTATE_MS = 3500;
+const AMBASSADOR = {
+  src: bgsAsset.url,
+  name: "BGS FUTA",
+  school: "Lead Ambassador · Federal University of Technology, Akure",
+  quote: "Driving OverraPrep across every faculty at FUTA — study smarter, together.",
+  alt: "BGS FUTA, OverraPrep Lead Campus Ambassador at the Federal University of Technology, Akure",
+};
 
 const Ambassadors = () => {
   const navigate = useNavigate();
-  const [idx, setIdx] = useState(0);
-
-  useEffect(() => {
-    const t = setInterval(() => setIdx((i) => (i + 1) % AMBASSADORS.length), ROTATE_MS);
-    return () => clearInterval(t);
-  }, []);
-
-  useEffect(() => {
-    const next = (idx + 1) % AMBASSADORS.length;
-    const img = new Image();
-    img.src = AMBASSADORS[next].src;
-  }, [idx]);
-
-  const current = AMBASSADORS[idx];
+  const [imgFailed, setImgFailed] = useState(false);
+  const current = AMBASSADOR;
 
   return (
     <>
-      <SEO title="Meet Our Ambassadors" description="Real students, real results. Join the OverraPrep community." url="/" />
+      <SEO
+        title="Meet BGS FUTA — OverraPrep Lead Campus Ambassador"
+        description="BGS FUTA leads the OverraPrep student ambassador program at the Federal University of Technology, Akure. Real students. Real results."
+        url="/"
+        image={bgsAsset.url}
+      />
+
       <div
         className="relative h-[100dvh] w-full bg-background overflow-hidden flex flex-col"
         style={{
