@@ -156,84 +156,80 @@ const Ambassadors = () => {
             <div className="absolute inset-[1.5px] rounded-[27px] overflow-hidden">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(45_88%_75%/0.4),transparent_60%)]" />
 
-              <AnimatePresence mode="wait">
+              {imgFailed ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-amber-100 via-amber-50 to-white text-center px-6">
+                  <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary to-amber-600 flex items-center justify-center shadow-lg shadow-primary/30">
+                    <GraduationCap className="w-10 h-10 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-foreground text-lg">{current.name}</p>
+                    <p className="text-[12px] text-muted-foreground">{current.school}</p>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground/80 italic max-w-[18rem]">
+                    Ambassador photo unavailable right now.
+                  </p>
+                </div>
+              ) : (
                 <motion.img
-                  key={idx}
                   src={current.src}
-                  alt={`${current.name}, OverraPrep ambassador`}
+                  alt={current.alt}
                   width={768}
                   height={1024}
+                  loading="eager"
+                  decoding="async"
+                  onError={() => setImgFailed(true)}
                   className="absolute inset-0 w-full h-full object-cover object-center"
-                  initial={{ opacity: 0, scale: 1.08, x: 40 }}
-                  animate={{ opacity: 1, scale: 1, x: 0 }}
-                  exit={{ opacity: 0, scale: 0.96, x: -40 }}
+                  initial={{ opacity: 0, scale: 1.08 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                 />
-              </AnimatePresence>
+              )}
 
               {/* Top shine */}
               <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/30 to-transparent pointer-events-none" />
 
-              {/* Floating "Verified" badge */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.5, type: "spring" }}
-                className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-white/90 backdrop-blur-md shadow-lg border border-primary/20"
-              >
-                <Star className="w-3 h-3 fill-primary text-primary" />
-                <span className="text-[9px] font-bold text-foreground tracking-wide">VERIFIED</span>
-              </motion.div>
+              {!imgFailed && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.5, type: "spring" }}
+                  className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-white/90 backdrop-blur-md shadow-lg border border-primary/20"
+                >
+                  <Star className="w-3 h-3 fill-primary text-primary" />
+                  <span className="text-[9px] font-bold text-foreground tracking-wide">VERIFIED</span>
+                </motion.div>
+              )}
 
-              {/* Bottom info gradient */}
-              <div className="absolute inset-x-0 bottom-0 p-3.5 pt-14 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
-                <AnimatePresence mode="wait">
+              {!imgFailed && (
+                <div className="absolute inset-x-0 bottom-0 p-4 pt-14 bg-gradient-to-t from-black/85 via-black/45 to-transparent">
                   <motion.div
-                    key={idx}
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.5 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
                     className="text-white"
                   >
-                    <div className="flex items-center gap-1.5 mb-0.5">
+                    <div className="flex items-center gap-1.5 mb-1">
                       <div className="flex">
                         {[...Array(5)].map((_, i) => (
                           <Star key={i} className="w-2.5 h-2.5 fill-amber-300 text-amber-300" />
                         ))}
                       </div>
                       <span className="text-[9px] font-semibold uppercase tracking-wider text-amber-200 ml-0.5">
-                        Ambassador
+                        Lead Ambassador
                       </span>
                     </div>
-                    <p className="font-bold text-[16px] leading-tight">{current.name}</p>
+                    <p className="font-bold text-[17px] leading-tight">{current.name}</p>
                     <p className="text-[11px] text-white/80">{current.school}</p>
-                    <p className="mt-1 text-[12px] italic text-white/95 line-clamp-1">
+                    <p className="mt-1.5 text-[12px] italic text-white/95 line-clamp-2">
                       "{current.quote}"
                     </p>
                   </motion.div>
-                </AnimatePresence>
-              </div>
+                </div>
+              )}
             </div>
           </motion.div>
-
-          {/* Dots */}
-          <div className="mt-2.5 flex items-center justify-center gap-1.5 shrink-0">
-            {AMBASSADORS.map((_, i) => (
-              <motion.button
-                key={i}
-                onClick={() => setIdx(i)}
-                whileTap={{ scale: 0.85 }}
-                aria-label={`Show ambassador ${i + 1}`}
-                className={`h-1.5 rounded-full transition-all duration-500 ${
-                  i === idx
-                    ? "w-7 bg-gradient-to-r from-primary to-amber-600 shadow-sm shadow-primary/50"
-                    : "w-1.5 bg-primary/25 hover:bg-primary/50"
-                }`}
-              />
-            ))}
-          </div>
         </section>
+
 
         {/* CTAs */}
         <motion.section
