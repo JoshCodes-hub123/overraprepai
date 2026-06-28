@@ -51,6 +51,7 @@ export function UnlockQuizSheet({ open, onOpenChange, quizId, quizTitle, onUnloc
   const { freeLeft, dailyLimit } = usePremium();
   const { unlock } = useQuizUnlock(quizId);
   const [busy, setBusy] = useState(false);
+  const resetIn = useTimeUntilLagosMidnight();
 
   const cost = priceFor("unlock_quiz");
   const hasFree = freeLeft > 0;
