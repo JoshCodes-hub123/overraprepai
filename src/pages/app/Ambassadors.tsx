@@ -5,16 +5,10 @@ import { ArrowRight, LogIn, Sparkles, Star, ChevronRight } from "lucide-react";
 import { SEO } from "@/components/seo/SEO";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
-import amb1 from "@/assets/ambassadors/ambassador-1.jpg";
-import amb2 from "@/assets/ambassadors/ambassador-2.jpg";
-import amb3 from "@/assets/ambassadors/ambassador-3.jpg";
-import amb4 from "@/assets/ambassadors/ambassador-4.jpg";
+import bgsAsset from "@/assets/bgs-futa-ambassador.jpg.asset.json";
 
 const AMBASSADORS = [
-  { src: amb1, name: "Adaeze O.", school: "FUTA · Computer Science", quote: "I went from 45% to 82% in two months." },
-  { src: amb2, name: "Tunde A.", school: "FUTA · Mechanical Eng.", quote: "OverraPrep made revising actually fun." },
-  { src: amb3, name: "Chiamaka E.", school: "FUTA · Biochemistry", quote: "The AI tutor explains like a real teacher." },
-  { src: amb4, name: "Ibrahim Y.", school: "FUTA · Civil Eng.", quote: "I study smarter — not longer." },
+  { src: bgsAsset.url, name: "BGS FUTA", school: "Lead Ambassador · FUTA", quote: "Driving OverraPrep across every faculty at FUTA." },
 ];
 
 const ROTATE_MS = 3500;
