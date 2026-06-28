@@ -21,6 +21,7 @@ import ArenaSpotlightCard from "@/components/arena/ArenaSpotlightCard";
 import IntelligenceWidget from "@/components/intelligence/IntelligenceWidget";
 import NextBestAction from "@/components/student/dashboard/v2/NextBestAction";
 import SectionLabel from "@/components/student/dashboard/v2/SectionLabel";
+import QuizzesPreviewRail from "@/components/student/dashboard/v2/QuizzesPreviewRail";
 
 if (typeof window !== "undefined") prefetchDashboardNeighbors();
 
@@ -101,6 +102,10 @@ const StudentDashboard = () => {
                   />
                   <CourseRail key={`cr-${refreshKey}`} />
                 </section>
+
+                <QuizzesPreviewRail key={`qpr-${refreshKey}`} />
+
+
 
                 <section aria-labelledby="sec-tools" className="space-y-3">
                   <SectionLabel

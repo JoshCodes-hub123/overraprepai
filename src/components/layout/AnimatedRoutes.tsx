@@ -65,6 +65,7 @@ const QuizPreview = lazy(() => import("@/pages/quiz/QuizPreview"));
 const QuizPractice = lazy(() => import("@/pages/quiz/QuizPractice"));
 const CBTSimulation = lazy(() => import("@/pages/quiz/CBTSimulation"));
 const QuizResults = lazy(() => import("@/pages/quiz/QuizResults"));
+const AllQuizzes = lazy(() => import("@/pages/student/AllQuizzes"));
 const EditProfile = lazy(() => import("@/pages/profile/EditProfile"));
 const PreparationSettings = lazy(() => import("@/pages/profile/PreparationSettings"));
 const PublicProfile = lazy(() => import("@/pages/profile/PublicProfile"));
@@ -348,6 +349,14 @@ export const AnimatedRoutes = () => {
             }
           />
           <Route
+            path="/quizzes"
+            element={
+              <PageTransition>
+                <AllQuizzes />
+              </PageTransition>
+            }
+          />
+          <Route
             path="/quiz/:quizId"
             element={
               <PageTransition>
@@ -355,6 +364,7 @@ export const AnimatedRoutes = () => {
               </PageTransition>
             }
           />
+
           <Route
             path="/quiz/:quizId/practice"
             element={
