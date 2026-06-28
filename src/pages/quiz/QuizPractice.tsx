@@ -481,37 +481,37 @@ const QuizPractice = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-card border-b border-border sticky top-0 z-50">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
+        <div className="container mx-auto px-3 sm:px-4">
+          <div className="flex items-center justify-between gap-2 h-14 sm:h-16">
             <button
               onClick={() => navigate("/dashboard")}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors shrink-0"
             >
               <ArrowLeft className="w-5 h-5" />
-              Exit Practice
+              <span className="hidden sm:inline text-sm">Exit Practice</span>
             </button>
 
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-1 rounded">
+            <div className="flex items-center gap-1.5 min-w-0 flex-1 justify-center">
+              <span className="text-[10px] sm:text-xs font-medium bg-primary/10 text-primary px-1.5 sm:px-2 py-0.5 sm:py-1 rounded shrink-0">
                 {quiz.course.code}
               </span>
-              <span className="font-display font-semibold text-foreground text-sm sm:text-base truncate max-w-[120px] sm:max-w-none">
+              <span className="font-display font-semibold text-foreground text-xs sm:text-base truncate">
                 {quiz.title}
               </span>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 shrink-0">
               {secondsLeft !== null && (
-                <div className={`flex items-center gap-1.5 text-sm font-mono px-2 py-1 rounded-md ${
+                <div className={`flex items-center gap-1 text-[11px] sm:text-sm font-mono px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md ${
                   secondsLeft < 60 ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
                 }`}>
-                  <Clock className="w-4 h-4" />
+                  <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   {String(Math.floor(secondsLeft / 60)).padStart(2, "0")}:
                   {String(secondsLeft % 60).padStart(2, "0")}
                 </div>
               )}
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle2 className="w-4 h-4 text-success" />
+              <div className="flex items-center gap-1 text-[11px] sm:text-sm">
+                <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success" />
                 <span className="text-foreground font-medium">{score.correct}</span>
                 <span className="text-muted-foreground">/ {score.total}</span>
               </div>
@@ -531,7 +531,7 @@ const QuizPractice = () => {
         }}
       />
 
-      <main className="container mx-auto px-4 py-8 max-w-3xl">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-3xl">
         {/* Progress */}
         <div className="mb-6">
           <div className="flex items-center justify-between text-sm mb-2">
@@ -553,8 +553,8 @@ const QuizPractice = () => {
         </div>
 
         {/* Question Card */}
-        <div className="bg-card rounded-2xl border border-border p-6 mb-6">
-          <h2 className="font-display text-xl font-semibold text-foreground mb-4 leading-relaxed">
+        <div className="bg-card rounded-2xl border border-border p-4 sm:p-6 mb-4 sm:mb-6">
+          <h2 className="font-display text-base sm:text-xl font-semibold text-foreground mb-3 sm:mb-4 leading-relaxed break-words">
             {currentQuestion?.question_text}
           </h2>
 
@@ -587,10 +587,10 @@ const QuizPractice = () => {
                   key={option.key}
                   onClick={() => handleSelectAnswer(option.key)}
                   disabled={isAnswered}
-                  className={`w-full p-4 rounded-xl border-2 text-left transition-all duration-200 ${optionStyle}`}
+                  className={`w-full p-3 sm:p-4 rounded-xl border-2 text-left transition-all duration-200 ${optionStyle}`}
                 >
-                  <div className="flex items-start gap-3">
-                    <span className={`w-8 h-8 rounded-lg flex items-center justify-center font-semibold text-sm ${
+                  <div className="flex items-start gap-2.5 sm:gap-3">
+                    <span className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center font-semibold text-xs sm:text-sm shrink-0 ${
                       isAnswered && isCorrectAnswer
                         ? "bg-success text-success-foreground"
                         : isAnswered && isSelected && !isCorrectAnswer
@@ -601,7 +601,7 @@ const QuizPractice = () => {
                     }`}>
                       {option.key}
                     </span>
-                    <span className="text-foreground flex-1 pt-1">{option.text}</span>
+                    <span className="text-foreground flex-1 pt-0.5 sm:pt-1 text-sm sm:text-base break-words min-w-0">{option.text}</span>
                     {isAnswered && isCorrectAnswer && (
                       <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0 mt-1" />
                     )}
