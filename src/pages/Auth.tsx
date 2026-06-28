@@ -35,6 +35,7 @@ const signInSchema = z.object({
 });
 
 const signUpSchema = z.object({
+  fullName: z.string().trim().min(2, "Please enter your full name").max(80),
   email: z.string().trim().email("Please enter a valid email address").max(255),
   password: z.string().min(6, "Password must be at least 6 characters").max(72),
   university: z.enum(["FUTA", "OAU"], { required_error: "Pick your university" }),
@@ -192,6 +193,7 @@ const Auth = () => {
     mode: "onTouched",
     reValidateMode: "onChange",
     defaultValues: {
+      fullName: "",
       email: "",
       password: "",
       university: "FUTA",
@@ -275,18 +277,17 @@ const Auth = () => {
     }
   };
 
-  // Persist the chosen university (and a derived display name) on the profile.
+  // Persist the chosen university + name on the profile.
   const persistExtraSignupDetails = async (data: SignUpFormData) => {
     try {
       const { data: { user: newUser } } = await supabase.auth.getUser();
       if (!newUser?.id) return;
-      const display = (data.email.split("@")[0] || "Student").replace(/[._-]+/g, " ");
       await supabase
         .from("profiles")
         .update({
           university: data.university,
           academic_path: "university" as any,
-          full_name: display,
+          full_name: data.fullName,
         } as any)
         .eq("id", newUser.id);
     } catch (e) {
@@ -296,8 +297,7 @@ const Auth = () => {
 
   const handleSignUp = async (data: SignUpFormData) => {
     setIsSubmitting(true);
-    const derivedName = (data.email.split("@")[0] || "Student").replace(/[._-]+/g, " ");
-    const { error } = await signUp(data.email, data.password, derivedName, data.referralCode);
+    const { error } = await signUp(data.email, data.password, data.fullName, data.referralCode);
 
     if (error) {
       let message = error.message;
@@ -309,28 +309,19 @@ const Auth = () => {
       return;
     }
 
-    const { data: sessionData } = await supabase.auth.getSession();
+    // Auto-confirm is enabled: try to make sure a session exists, then go.
+    let { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData.session) {
-      // Email confirmation required → switch to branded 6-digit OTP screen.
-      setPendingSignUp(data);
-      setPendingAvatar(avatarFile);
-      setPendingEmail(data.email);
-      setOtpCode("");
-      setVerifyMode(true);
-      toast({
-        title: "Check your inbox 📬",
-        description: `We sent a 6-digit verification code to ${data.email}. Enter it here to finish signing up.`,
-      });
-      setIsSubmitting(false);
-      return;
+      // Fallback: explicitly sign in so the user lands in the app immediately.
+      await supabase.auth.signInWithPassword({ email: data.email, password: data.password });
+      sessionData = (await supabase.auth.getSession()).data;
     }
 
-    // Rare auto-confirm path: session exists immediately.
     await persistExtraSignupDetails(data);
-    const welcomeMsg = data.referralCode
-      ? "Welcome to OverraPrep AI! Complete your first quiz to earn bonus tokens."
-      : "Welcome to OverraPrep AI. You can now start practicing.";
-    toast({ title: "Account created!", description: welcomeMsg });
+    toast({
+      title: `Welcome, ${data.fullName.split(" ")[0]}! 🎉`,
+      description: "Your account is ready. Let's start studying.",
+    });
     navigate(postAuthDestination(true));
     setIsSubmitting(false);
   };
