@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Search, Flame, Sparkles, BookOpen, ArrowLeft } from "lucide-react";
 import { SEO } from "@/components/seo/SEO";
-import AppScreen from "@/components/native/AppScreen";
+import AppScreen from "@/components/app-shell/AppScreen";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { QuizCard, QuizCardSkeleton } from "@/components/quizzes/QuizCard";
