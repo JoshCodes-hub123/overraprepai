@@ -1,10 +1,11 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Coins, Lock, Sparkles } from "lucide-react";
+import { Coins, Lock, Sparkles, Gift } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAIPricing } from "@/hooks/useAIPricing";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
 import { useQuizUnlock } from "@/hooks/useQuizUnlock";
+import { usePremium } from "@/hooks/usePremium";
 import { useState } from "react";
 
 interface Props {
@@ -23,11 +24,13 @@ export function UnlockQuizSheet({ open, onOpenChange, quizId, quizTitle, onUnloc
   const navigate = useNavigate();
   const { priceFor } = useAIPricing();
   const { balance } = useTokenBalance();
+  const { freeLeft, dailyLimit } = usePremium();
   const { unlock } = useQuizUnlock(quizId);
   const [busy, setBusy] = useState(false);
 
   const cost = priceFor("unlock_quiz");
-  const enough = balance >= cost;
+  const hasFree = freeLeft > 0;
+  const enough = hasFree || balance >= cost;
 
   const handleUnlock = async () => {
     setBusy(true);
@@ -57,21 +60,33 @@ export function UnlockQuizSheet({ open, onOpenChange, quizId, quizTitle, onUnloc
         </SheetHeader>
 
         <div className="mt-5 mx-auto max-w-sm">
-          <div className="rounded-2xl border-2 border-amber-200 bg-amber-50 p-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Coins className="h-5 w-5 text-amber-600" />
-              <span className="text-sm font-semibold">Cost</span>
+          {hasFree ? (
+            <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Gift className="h-5 w-5 text-emerald-600" />
+                <span className="text-sm font-semibold">Free unlock today</span>
+              </div>
+              <span className="font-extrabold text-sm text-emerald-700">{freeLeft}/{dailyLimit} left</span>
             </div>
-            <span className="font-extrabold text-lg text-amber-700">{cost} tokens</span>
-          </div>
+          ) : (
+            <div className="rounded-2xl border-2 border-amber-200 bg-amber-50 p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Coins className="h-5 w-5 text-amber-600" />
+                <span className="text-sm font-semibold">Cost</span>
+              </div>
+              <span className="font-extrabold text-lg text-amber-700">{cost} tokens</span>
+            </div>
+          )}
           <div className="mt-2 text-center text-xs text-zinc-500">
-            Your balance: <span className="font-bold">{balance} tokens</span>
+            {hasFree
+              ? <>Uses 1 of your 3 daily free actions · wallet: <span className="font-bold">{balance} tokens</span></>
+              : <>Free actions used up today · wallet: <span className="font-bold">{balance} tokens</span></>}
           </div>
 
           {enough ? (
             <Button onClick={handleUnlock} disabled={busy} className="mt-5 w-full h-12 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-bold">
               <Sparkles className="h-4 w-4 mr-2" />
-              {busy ? "Unlocking…" : `Unlock for ${cost} tokens`}
+              {busy ? "Unlocking…" : hasFree ? "Unlock free" : `Unlock for ${cost} tokens`}
             </Button>
           ) : (
             <Button onClick={() => { onOpenChange(false); navigate("/wallet"); }} className="mt-5 w-full h-12 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-bold">
