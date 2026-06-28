@@ -84,12 +84,18 @@ export function UnlockQuizSheet({ open, onOpenChange, quizId, quizTitle, onUnloc
           </SheetDescription>
         </SheetHeader>
 
-        {/* Live free-actions counter — updates instantly after each unlock */}
-        <div className="mt-3 mx-auto flex items-center gap-2 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-700 w-fit">
-          <Gift className={`h-3.5 w-3.5 ${hasFree ? "text-emerald-600" : "text-zinc-400"}`} />
-          <span>
-            Free actions today: <span className={hasFree ? "text-emerald-700" : "text-zinc-500"}>{freeLeft}/{dailyLimit}</span>
-          </span>
+        {/* Live free-actions counter + reset timer — updates instantly */}
+        <div className="mt-3 mx-auto flex flex-wrap items-center justify-center gap-2 w-fit">
+          <div className="flex items-center gap-2 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-700">
+            <Gift className={`h-3.5 w-3.5 ${hasFree ? "text-emerald-600" : "text-zinc-400"}`} />
+            <span>
+              Free actions: <span className={hasFree ? "text-emerald-700" : "text-zinc-500"}>{freeLeft}/{dailyLimit}</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs font-semibold text-amber-700" title="Free actions reset at midnight Lagos time">
+            <Clock className="h-3.5 w-3.5" />
+            <span>Resets in {resetIn}</span>
+          </div>
         </div>
 
         <div className="mt-4 mx-auto max-w-sm">
