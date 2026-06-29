@@ -7,6 +7,7 @@ import { RateQuizDialog } from "@/components/student/RateQuizDialog";
 import { ShareResultsButton } from "@/components/quiz/ShareResultsButton";
 import { QuizCelebration } from "@/components/quiz/QuizCelebration";
 import { QuizResultShareCard } from "@/components/quiz/QuizResultShareCard";
+import { QuizReviewList } from "@/components/quiz/QuizReviewList";
 import logo from "@/assets/logo.png";
 import {
   Trophy,
@@ -260,6 +261,11 @@ const QuizResults = () => {
             </div>
           </div>
         </div>
+
+        {/* Per-question review with AI explanations */}
+        {attemptId && quizId && (
+          <QuizReviewList attemptId={attemptId} quizId={quizId} />
+        )}
       </main>
 
       {/* Rating Dialog */}

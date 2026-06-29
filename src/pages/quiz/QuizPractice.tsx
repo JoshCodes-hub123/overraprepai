@@ -87,29 +87,51 @@ const QuizPractice = () => {
   // Pre-quiz timer
   const [showTimerPicker, setShowTimerPicker] = useState(false);
   const [chosenMinutes, setChosenMinutes] = useState<number | null>(null);
+  const [endsAt, setEndsAt] = useState<number | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const warnedRef = useRef<Set<number>>(new Set());
   const [needsUnlock, setNeedsUnlock] = useState(false);
   const unlockSucceededRef = useRef(false);
 
-  // Show timer picker once the quiz is loaded (and not resuming)
+  // Show timer picker once the quiz is loaded (and not resuming with timer)
   useEffect(() => {
     if (!quiz) return;
     if (showResumePrompt) return;
-    if (chosenMinutes !== null) return;
+    if (chosenMinutes !== null || endsAt !== null) return;
     setShowTimerPicker(true);
-  }, [quiz, showResumePrompt, chosenMinutes]);
+  }, [quiz, showResumePrompt, chosenMinutes, endsAt]);
 
-  // Countdown
+  // Countdown driven by absolute endsAt so refresh/resume stays consistent
   useEffect(() => {
-    if (secondsLeft === null) return;
-    if (secondsLeft <= 0) {
-      void handleFinishQuiz();
+    if (endsAt === null) {
+      setSecondsLeft(null);
       return;
     }
-    const t = setInterval(() => setSecondsLeft((s) => (s === null ? null : s - 1)), 1000);
+    const tick = () => {
+      const s = Math.max(0, Math.round((endsAt - Date.now()) / 1000));
+      setSecondsLeft(s);
+      // Warning thresholds: 5min, 1min, 30s
+      for (const threshold of [300, 60, 30]) {
+        if (s === threshold && !warnedRef.current.has(threshold)) {
+          warnedRef.current.add(threshold);
+          void haptic("warning");
+          toast({
+            title: threshold >= 60 ? `${threshold / 60} minute${threshold === 60 ? "" : "s"} left` : `${threshold} seconds left`,
+            description: threshold <= 30 ? "Wrap up — quiz will auto-submit." : "Pace yourself.",
+            variant: threshold <= 60 ? "destructive" : "default",
+          });
+        }
+      }
+      if (s <= 0) {
+        void handleFinishQuiz();
+      }
+    };
+    tick();
+    const t = setInterval(tick, 1000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [secondsLeft]);
+  }, [endsAt]);
+
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -248,15 +270,17 @@ const QuizPractice = () => {
   // Auto-save progress whenever state changes
   useEffect(() => {
     if (!attemptId || !quizId) return;
-    
+
     saveState({
       answers: answersMap,
       flagged: [],
       currentIndex,
-      timeLeft: 0,
+      timeLeft: secondsLeft ?? 0,
+      endsAt,
       attemptId,
     });
-  }, [answersMap, currentIndex, attemptId, quizId, saveState]);
+  }, [answersMap, currentIndex, attemptId, quizId, saveState, secondsLeft, endsAt]);
+
 
   const currentQuestion = questions[currentIndex];
 
@@ -377,12 +401,21 @@ const QuizPractice = () => {
   const handleResume = () => {
     setShowResumePrompt(false);
     setIsLoading(true);
+    // Restore the timer from the saved absolute endsAt so it stays consistent
+    if (savedData?.endsAt && savedData.endsAt > Date.now()) {
+      setEndsAt(savedData.endsAt);
+      setChosenMinutes(Math.ceil((savedData.endsAt - Date.now()) / 60000));
+    } else if (savedData?.endsAt && savedData.endsAt <= Date.now()) {
+      // Timer already expired while away — start with 0 to trigger auto-submit
+      setEndsAt(Date.now());
+    }
     fetchQuizData({
       answers: savedData?.answers || {},
       currentIndex: savedData?.currentIndex || 0,
       attemptId: savedData?.attemptId || null,
     });
   };
+
 
   const handleStartFresh = () => {
     clearState();
@@ -502,9 +535,18 @@ const QuizPractice = () => {
 
             <div className="flex items-center gap-2 shrink-0">
               {secondsLeft !== null && (
-                <div className={`flex items-center gap-1 text-[11px] sm:text-sm font-mono px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md ${
-                  secondsLeft < 60 ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
-                }`}>
+                <div
+                  aria-live="polite"
+                  className={`flex items-center gap-1 text-[11px] sm:text-sm font-mono font-bold px-2 sm:px-2.5 py-1 rounded-md tabular-nums border ${
+                    secondsLeft <= 30
+                      ? "bg-destructive text-destructive-foreground border-destructive animate-pulse"
+                      : secondsLeft < 60
+                      ? "bg-destructive/10 text-destructive border-destructive/30 animate-pulse"
+                      : secondsLeft <= 300
+                      ? "bg-amber-100 text-amber-800 border-amber-300"
+                      : "bg-primary/10 text-primary border-primary/20"
+                  }`}
+                >
                   <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   {String(Math.floor(secondsLeft / 60)).padStart(2, "0")}:
                   {String(secondsLeft % 60).padStart(2, "0")}
@@ -526,7 +568,8 @@ const QuizPractice = () => {
         tutorMinutes={quiz?.duration_minutes ?? 0}
         onConfirm={(mins) => {
           setChosenMinutes(mins);
-          setSecondsLeft(mins > 0 ? mins * 60 : null);
+          warnedRef.current = new Set();
+          setEndsAt(mins > 0 ? Date.now() + mins * 60_000 : null);
           setShowTimerPicker(false);
         }}
       />
