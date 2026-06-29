@@ -109,6 +109,9 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
   const [processingStatus, setProcessingStatus] = useState<ProcessingStatus | null>(null);
   const [existingCourses, setExistingCourses] = useState<Course[]>([]);
   const [defaultLevel, setDefaultLevel] = useState("ALL");
+  const [importedFileName, setImportedFileName] = useState<string>("");
+  const [importedFileSize, setImportedFileSize] = useState<number>(0);
+  const [detectedColumns, setDetectedColumns] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch existing courses on mount
