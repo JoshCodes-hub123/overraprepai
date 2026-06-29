@@ -34,6 +34,7 @@ import { QuestionModeration } from "@/components/admin/QuestionModeration";
 import { PlatformSettings } from "@/components/admin/PlatformSettings";
 import { PlatformAnalytics } from "@/components/admin/PlatformAnalytics";
 import { TokenPurchaseManagement } from "@/components/admin/TokenPurchaseManagement";
+import { UserDirectory } from "@/components/admin/UserDirectory";
 import { WithdrawalManagement } from "@/components/admin/WithdrawalManagement";
 import { AuditLogs } from "@/components/admin/AuditLogs";
 import { HealthDashboard } from "@/components/admin/HealthDashboard";
