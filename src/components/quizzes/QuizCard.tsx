@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Clock, ListChecks, Flame, Sparkles, ArrowRight } from "lucide-react";
+import { Clock, ListChecks, Flame, Sparkles, ArrowRight, CheckCircle2, PlayCircle, Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import type { QuizProgress } from "@/hooks/useQuizProgress";
 
 export type QuizCardData = {
   id: string;
@@ -17,46 +18,70 @@ export type QuizCardData = {
   badge?: "trending" | "new" | null;
 };
 
-export function QuizCard({ quiz }: { quiz: QuizCardData }) {
+export function QuizCard({ quiz, progress }: { quiz: QuizCardData; progress?: QuizProgress }) {
+  const isResume = progress?.status === "in_progress";
+  const isDone = progress?.status === "completed";
+
+  const ctaLabel = isResume ? "Resume" : isDone ? "Retake" : "Start";
+  const ctaIcon = isResume ? PlayCircle : isDone ? Trophy : ArrowRight;
+  const CtaIcon = ctaIcon;
+
   return (
     <motion.div
       whileHover={{ y: -3 }}
       transition={{ type: "spring", stiffness: 300, damping: 22 }}
-      className="group relative overflow-hidden rounded-2xl border-2 border-amber-300/70 bg-card shadow-[0_8px_24px_-12px_hsl(38_80%_45%/.35)] hover:shadow-[0_18px_36px_-16px_hsl(38_80%_45%/.45)] transition-shadow"
+      className="group relative overflow-hidden rounded-2xl border-2 border-amber-300/70 bg-card shadow-[0_8px_24px_-12px_hsl(38_80%_45%/.35)] hover:shadow-[0_18px_36px_-16px_hsl(38_80%_45%/.45)] transition-shadow flex flex-col"
     >
       {/* Gold corner glow */}
-      <div aria-hidden className="pointer-events-none absolute -top-16 -right-16 w-40 h-40 rounded-full bg-amber-300/40 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute -top-16 -right-16 w-40 h-40 rounded-full bg-amber-300/30 blur-3xl" />
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-300" />
 
-      <div className="relative p-4 sm:p-5 flex flex-col gap-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            {quiz.course?.code && (
-              <span className="text-[11px] font-bold tracking-wider text-amber-700 uppercase">
-                {quiz.course.code}
-              </span>
-            )}
-            <h3 className="mt-1 text-base sm:text-lg font-bold leading-snug text-foreground line-clamp-2">
-              {quiz.title}
-            </h3>
-          </div>
+      <Link
+        to={`/quiz/${quiz.id}`}
+        className="relative p-4 sm:p-5 flex flex-col gap-3 flex-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded-2xl"
+      >
+        {/* Top row: course code + badges (chip-style, wraps so it never overlaps title) */}
+        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+          {quiz.course?.code && (
+            <span className="inline-flex items-center rounded-md bg-amber-100 px-2 py-0.5 text-[11px] font-bold tracking-wider text-amber-800 uppercase max-w-full truncate">
+              {quiz.course.code}
+            </span>
+          )}
           {quiz.badge === "trending" && (
-            <Badge className="shrink-0 bg-amber-500 hover:bg-amber-500 text-white border-0 gap-1">
+            <Badge className="bg-amber-500 hover:bg-amber-500 text-white border-0 gap-1 px-1.5 py-0 h-5 text-[10px]">
               <Flame className="h-3 w-3" /> Hot
             </Badge>
           )}
           {quiz.badge === "new" && (
-            <Badge className="shrink-0 bg-emerald-600 hover:bg-emerald-600 text-white border-0 gap-1">
+            <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white border-0 gap-1 px-1.5 py-0 h-5 text-[10px]">
               <Sparkles className="h-3 w-3" /> New
+            </Badge>
+          )}
+          {isResume && (
+            <Badge className="bg-blue-600 hover:bg-blue-600 text-white border-0 gap-1 px-1.5 py-0 h-5 text-[10px]">
+              <PlayCircle className="h-3 w-3" /> In progress
+            </Badge>
+          )}
+          {isDone && (
+            <Badge className="bg-emerald-700 hover:bg-emerald-700 text-white border-0 gap-1 px-1.5 py-0 h-5 text-[10px]">
+              <CheckCircle2 className="h-3 w-3" />
+              {progress?.bestScore != null ? `${progress.bestScore}%` : "Done"}
             </Badge>
           )}
         </div>
 
+        {/* Title — full width, no right-side competition */}
+        <h3 className="text-[15px] sm:text-lg font-bold leading-snug text-foreground line-clamp-2 break-words">
+          {quiz.title}
+        </h3>
+
         {quiz.description && (
-          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{quiz.description}</p>
+          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 break-words">
+            {quiz.description}
+          </p>
         )}
 
-        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mt-auto">
           <span className="inline-flex items-center gap-1">
             <ListChecks className="h-3.5 w-3.5 text-amber-600" />
             {quiz.question_count} Qs
@@ -66,19 +91,27 @@ export function QuizCard({ quiz }: { quiz: QuizCardData }) {
             {quiz.duration_minutes} min
           </span>
           {quiz.is_simulation && (
-            <Badge variant="outline" className="border-amber-400 text-amber-700">CBT</Badge>
+            <Badge variant="outline" className="border-amber-400 text-amber-700 px-1.5 py-0 h-5 text-[10px]">CBT</Badge>
           )}
           {quiz.level && (
-            <Badge variant="outline" className="border-muted">{quiz.level}</Badge>
+            <Badge variant="outline" className="border-muted px-1.5 py-0 h-5 text-[10px]">{quiz.level}</Badge>
           )}
         </div>
+      </Link>
 
+      {/* CTA — separate so the full card link + button don't fight */}
+      <div className="relative px-4 sm:px-5 pb-4 sm:pb-5">
         <Link
           to={`/quiz/${quiz.id}`}
-          className="mt-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold px-4 py-2.5 text-sm shadow hover:shadow-lg active:scale-[0.98] transition"
+          className={`w-full inline-flex items-center justify-center gap-2 rounded-xl font-semibold px-4 py-2.5 text-sm shadow active:scale-[0.98] transition ${
+            isResume
+              ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:shadow-lg"
+              : "bg-gradient-to-r from-amber-500 to-amber-600 text-white hover:shadow-lg"
+          }`}
+          aria-label={`${ctaLabel} ${quiz.title}`}
         >
-          Start Quiz
-          <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+          <CtaIcon className="h-4 w-4" />
+          {ctaLabel} Quiz
         </Link>
       </div>
     </motion.div>

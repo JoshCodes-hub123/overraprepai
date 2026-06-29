@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Flame, Sparkles } from "lucide-react";
 import { useQuizzes } from "@/hooks/useQuizzes";
+import { useQuizProgress } from "@/hooks/useQuizProgress";
 import { QuizCard, QuizCardSkeleton } from "@/components/quizzes/QuizCard";
+
 
 /**
  * Dashboard preview of quizzes — shows up to 6 (trending + newest) and links
@@ -9,12 +11,16 @@ import { QuizCard, QuizCardSkeleton } from "@/components/quizzes/QuizCard";
  */
 export default function QuizzesPreviewRail() {
   const { data, isLoading } = useQuizzes({ limit: 60 });
+  const { data: progress } = useQuizProgress();
+
 
   const items = (() => {
     if (!data) return [];
     const seen = new Set<string>();
     const out: typeof data.trending = [];
-    for (const list of [data.trending, data.newest]) {
+    // Prioritise in-progress so students can resume from the dashboard
+    const inProgress = data.trending.concat(data.newest).filter((q) => progress?.[q.id]?.status === "in_progress");
+    for (const list of [inProgress, data.trending, data.newest]) {
       for (const q of list) {
         if (seen.has(q.id)) continue;
         seen.add(q.id);
@@ -24,6 +30,7 @@ export default function QuizzesPreviewRail() {
     }
     return out;
   })();
+
 
   return (
     <section aria-labelledby="sec-quizzes" className="space-y-3">
@@ -55,8 +62,8 @@ export default function QuizzesPreviewRail() {
           {/* Mobile: horizontal snap rail */}
           <div className="sm:hidden -mx-3 px-3 overflow-x-auto snap-x snap-mandatory flex gap-3 pb-2 scrollbar-none">
             {items.map((q) => (
-              <div key={q.id} className="snap-start shrink-0 w-[78%]">
-                <QuizCard quiz={q} />
+              <div key={q.id} className="snap-start shrink-0 w-[82%] max-w-[320px]">
+                <QuizCard quiz={q} progress={progress?.[q.id]} />
               </div>
             ))}
             <Link
@@ -69,8 +76,9 @@ export default function QuizzesPreviewRail() {
           </div>
           {/* Desktop: grid */}
           <div className="hidden sm:grid grid-cols-2 lg:grid-cols-3 gap-3">
-            {items.map((q) => <QuizCard key={q.id} quiz={q} />)}
+            {items.map((q) => <QuizCard key={q.id} quiz={q} progress={progress?.[q.id]} />)}
           </div>
+
         </>
       )}
 
