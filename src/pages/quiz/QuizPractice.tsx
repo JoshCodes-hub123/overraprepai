@@ -270,15 +270,17 @@ const QuizPractice = () => {
   // Auto-save progress whenever state changes
   useEffect(() => {
     if (!attemptId || !quizId) return;
-    
+
     saveState({
       answers: answersMap,
       flagged: [],
       currentIndex,
-      timeLeft: 0,
+      timeLeft: secondsLeft ?? 0,
+      endsAt,
       attemptId,
     });
-  }, [answersMap, currentIndex, attemptId, quizId, saveState]);
+  }, [answersMap, currentIndex, attemptId, quizId, saveState, secondsLeft, endsAt]);
+
 
   const currentQuestion = questions[currentIndex];
 
