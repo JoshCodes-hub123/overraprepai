@@ -345,6 +345,13 @@ const AdminDashboard = () => {
               tone: "violet",
             },
             {
+              icon: Upload,
+              label: "Bulk Upload Questions",
+              description: "Import Excel / CSV / Word question banks",
+              to: "/admin/bulk-upload",
+              tone: "gold",
+            },
+            {
               icon: Target,
               label: "Growth Engine",
               description: "Battles, ambassadors & analytics",
