@@ -48,6 +48,7 @@ export const useQuizAutoSave = (quizId: string) => {
         flagged: data.flagged,
         currentIndex: data.currentIndex,
         timeLeft: data.timeLeft,
+        endsAt: data.endsAt ?? null,
         attemptId: data.attemptId,
       };
     } catch {
