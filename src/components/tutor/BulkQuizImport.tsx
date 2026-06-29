@@ -849,6 +849,31 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
         message: `Created ${createdCount} quizzes!`
       });
 
+      // Admin-only: write an import history log entry
+      if (adminScope && user) {
+        try {
+          const courseCodes = Array.from(new Set(validQuizzes.map((q) => q.course_code)));
+          const totalQuestions = validQuizzes.reduce((acc, q) => acc + q.questions.length, 0);
+          await (supabase as any).from("admin_import_logs").insert({
+            admin_id: user.id,
+            file_name: importedFileName || "unknown",
+            file_size_bytes: importedFileSize || null,
+            file_type: (importedFileName.split(".").pop() || "").toLowerCase() || null,
+            course_codes: courseCodes,
+            total_rows: (importedQuizzes.reduce((a, q) => a + q.questions.length, 0)) + rejectedRows.length,
+            imported_quizzes: createdCount,
+            imported_questions: totalQuestions,
+            rejected_rows: rejectedRows.length,
+            status: createErrors.length > 0 ? "partial" : "success",
+            rejected_payload: rejectedRows.length > 0 ? rejectedRows : null,
+            notes: createErrors.length > 0 ? createErrors.slice(0, 5).join(" | ") : null,
+          });
+        } catch (logErr) {
+          console.warn("Failed to write admin_import_logs entry:", logErr);
+        }
+      }
+
+
       if (createdCount > 0) {
         toast.success(`Successfully created ${createdCount} quiz${createdCount !== 1 ? "zes" : ""}!`);
         if (createErrors.length > 0) {
