@@ -10,6 +10,7 @@ import { CommandPalette, useCommandPaletteHotkey } from "@/components/student/Co
 
 import { TopAppBar } from "@/components/student/dashboard/v2/TopAppBar";
 import SectionLabel from "@/components/student/dashboard/v2/SectionLabel";
+import { SectionErrorBoundary } from "@/components/student/dashboard/v2/SectionErrorBoundary";
 
 // Lazy-load below-the-fold sections to keep initial dashboard paint fast.
 const CourseRail = lazy(() => import("@/components/student/dashboard/v2/CourseRail"));
