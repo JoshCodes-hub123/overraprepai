@@ -110,7 +110,19 @@ export default function UpdatePrompt() {
             </span>
           </div>
           <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
-            A new version of OverraPrep is ready. Refresh to get the latest features.
+            A new version is ready.{" "}
+            <a
+              href={`/release-notes/${latestVersion}`}
+              className="font-semibold text-amber-700 underline-offset-2 hover:underline"
+              onClick={(e) => {
+                // Let SPA router handle it without a hard reload
+                e.preventDefault();
+                window.history.pushState({}, "", `/release-notes/${latestVersion}`);
+                window.dispatchEvent(new PopStateEvent("popstate"));
+              }}
+            >
+              Learn more
+            </a>
           </p>
         </div>
         <Button
