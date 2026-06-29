@@ -10,6 +10,7 @@ import { CommandPalette, useCommandPaletteHotkey } from "@/components/student/Co
 
 import { TopAppBar } from "@/components/student/dashboard/v2/TopAppBar";
 import SectionLabel from "@/components/student/dashboard/v2/SectionLabel";
+import { SectionErrorBoundary } from "@/components/student/dashboard/v2/SectionErrorBoundary";
 
 // Lazy-load below-the-fold sections to keep initial dashboard paint fast.
 const CourseRail = lazy(() => import("@/components/student/dashboard/v2/CourseRail"));
@@ -73,7 +74,9 @@ const StudentDashboard = () => {
 
             {/* One smart "what's next" hero */}
             <div className="mt-3">
-              <WhatsNextCard key={`wn-${refreshKey}`} />
+              <SectionErrorBoundary name="What's next">
+                <WhatsNextCard key={`wn-${refreshKey}`} />
+              </SectionErrorBoundary>
             </div>
 
             {/* Two-column grid on lg+ */}
@@ -89,14 +92,18 @@ const StudentDashboard = () => {
                     hint="Pick up where you left off."
                     to="/study-hub"
                   />
-                  <Suspense fallback={<RailFallback h={180} />}>
-                    <CourseRail key={`cr-${refreshKey}`} />
-                  </Suspense>
+                  <SectionErrorBoundary name="Courses">
+                    <Suspense fallback={<RailFallback h={180} />}>
+                      <CourseRail key={`cr-${refreshKey}`} />
+                    </Suspense>
+                  </SectionErrorBoundary>
                 </section>
 
-                <Suspense fallback={<RailFallback h={220} />}>
-                  <QuizzesPreviewRail key={`qpr-${refreshKey}`} />
-                </Suspense>
+                <SectionErrorBoundary name="Quizzes">
+                  <Suspense fallback={<RailFallback h={220} />}>
+                    <QuizzesPreviewRail key={`qpr-${refreshKey}`} />
+                  </Suspense>
+                </SectionErrorBoundary>
 
 
 
@@ -106,9 +113,11 @@ const StudentDashboard = () => {
                     title="Quick actions"
                     hint="Practice, summarize, ask the AI tutor."
                   />
-                  <Suspense fallback={<RailFallback h={120} />}>
-                    <QuickActions4 />
-                  </Suspense>
+                  <SectionErrorBoundary name="Quick actions">
+                    <Suspense fallback={<RailFallback h={120} />}>
+                      <QuickActions4 />
+                    </Suspense>
+                  </SectionErrorBoundary>
                 </section>
               </div>
 
@@ -120,12 +129,15 @@ const StudentDashboard = () => {
                     title="Compete · Grow · Community"
                     hint="One tap into Arena, Opportunities or the feed."
                   />
-                  <Suspense fallback={<RailFallback h={240} />}>
-                    <ExploreTabs refreshKey={refreshKey} />
-                  </Suspense>
+                  <SectionErrorBoundary name="Explore">
+                    <Suspense fallback={<RailFallback h={240} />}>
+                      <ExploreTabs refreshKey={refreshKey} />
+                    </Suspense>
+                  </SectionErrorBoundary>
                 </section>
               </aside>
             </div>
+
           </main>
         </div>
       </PullToRefresh>
