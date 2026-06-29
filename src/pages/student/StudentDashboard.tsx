@@ -5,20 +5,15 @@ import { prefetchDashboardNeighbors } from "@/lib/routePrefetch";
 import { SEO } from "@/components/seo/SEO";
 import { PullToRefresh } from "@/components/native/PullToRefresh";
 import { DashboardOfflineBanner } from "@/components/dashboard/DashboardOfflineBanner";
-import QuickJumpMenu from "@/components/student/dashboard/v2/QuickJumpMenu";
+import WhatsNextCard from "@/components/student/dashboard/v2/WhatsNextCard";
 import { CommandPalette, useCommandPaletteHotkey } from "@/components/student/CommandPalette";
-import PickUpWhereYouLeftOff from "@/components/student/PickUpWhereYouLeftOff";
 
 import { TopAppBar } from "@/components/student/dashboard/v2/TopAppBar";
-import { HeroGreeting } from "@/components/student/dashboard/v2/HeroGreeting";
-import { TodayFocusCard } from "@/components/student/dashboard/v2/TodayFocusCard";
 import { CourseRail } from "@/components/student/dashboard/v2/CourseRail";
 import { QuickActions4 } from "@/components/student/dashboard/v2/QuickActions4";
 import { OpportunitySnapshot } from "@/components/student/dashboard/v2/OpportunitySnapshot";
 import { CommunityMomentCard } from "@/components/student/dashboard/v2/CommunityMomentCard";
 import ArenaSpotlightCard from "@/components/arena/ArenaSpotlightCard";
-import IntelligenceWidget from "@/components/intelligence/IntelligenceWidget";
-import NextBestAction from "@/components/student/dashboard/v2/NextBestAction";
 import SectionLabel from "@/components/student/dashboard/v2/SectionLabel";
 import QuizzesPreviewRail from "@/components/student/dashboard/v2/QuizzesPreviewRail";
 

@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Bell } from "lucide-react";
+import { Bell, Compass } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveAvatarUrl } from "@/lib/avatar";
 import { SidebarMenu } from "./SidebarMenu";
+import QuickJumpMenu from "./QuickJumpMenu";
 import logo from "@/assets/logo.png";
 
 export function TopAppBar() {
@@ -53,6 +55,20 @@ export function TopAppBar() {
       </Link>
 
       <div className="flex items-center gap-1.5">
+        <Sheet>
+          <SheetTrigger asChild>
+            <button
+              type="button"
+              aria-label="Quick jump to courses"
+              className="h-11 w-11 inline-flex items-center justify-center rounded-2xl hover:bg-amber-50 transition"
+            >
+              <Compass className="w-5 h-5 text-neutral-700" strokeWidth={1.7} />
+            </button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[88vw] sm:w-[420px] overflow-y-auto p-4">
+            <QuickJumpMenu />
+          </SheetContent>
+        </Sheet>
         <button
           type="button"
           onClick={() => navigate("/notifications")}
