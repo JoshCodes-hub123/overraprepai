@@ -97,9 +97,18 @@ export default function UpdatePrompt() {
           <Sparkles className="h-4.5 w-4.5" />
         </span>
         <div className="min-w-0 flex-1 leading-tight">
-          <p className="text-sm font-semibold text-foreground truncate">
-            Update available
-          </p>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className="text-sm font-semibold text-foreground">Update available</p>
+            <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold">
+              <span className="px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground line-through decoration-1">
+                v{currentVersion.current || "?"}
+              </span>
+              <span className="text-amber-600">→</span>
+              <span className="px-1.5 py-0.5 rounded-md bg-amber-500 text-white shadow-sm">
+                v{latestVersion}
+              </span>
+            </span>
+          </div>
           <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
             A new version of OverraPrep is ready. Refresh to get the latest features.
           </p>
