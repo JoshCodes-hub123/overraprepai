@@ -197,24 +197,23 @@ export default function WhatsNextCard() {
         </div>
       </div>
 
-      {/* Primary next action */}
+      {/* Primary next action — compact pill */}
       <Link
         to={action.to}
-        className="relative mt-4 flex items-center gap-3 rounded-2xl border border-amber-200 bg-white p-3 sm:p-3.5 hover:border-amber-300 hover:shadow-sm transition group"
+        className="relative mt-3 flex items-center gap-2 rounded-xl border border-amber-200 bg-white px-2.5 py-2 hover:border-amber-300 hover:shadow-sm transition group"
       >
-        <div className="shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow flex items-center justify-center">
-          <Icon className="h-5 w-5" strokeWidth={2.2} />
+        <div className="shrink-0 h-7 w-7 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-sm flex items-center justify-center">
+          <Icon className="h-3.5 w-3.5" strokeWidth={2.4} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] uppercase tracking-[0.14em] font-bold text-amber-700">{action.label}</p>
-          <p className="font-display text-[14px] sm:text-[15px] font-bold leading-tight text-neutral-900 line-clamp-2">
+          <p className="text-[8.5px] uppercase tracking-[0.14em] font-bold text-amber-700 leading-none">{action.label}</p>
+          <p className="font-display text-[12px] font-bold leading-tight text-neutral-900 truncate mt-0.5">
             {action.title}
           </p>
-          <p className="text-[11.5px] text-neutral-500 mt-0.5 line-clamp-1">{action.subtitle}</p>
         </div>
-        <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-foreground text-background px-3 py-1.5 text-[11.5px] font-semibold">
+        <span className="shrink-0 inline-flex items-center gap-0.5 rounded-full bg-foreground text-background px-2 py-0.5 text-[10px] font-semibold">
           {action.cta}
-          <ArrowRight className="h-3.5 w-3.5" />
+          <ArrowRight className="h-3 w-3" />
         </span>
       </Link>
 
