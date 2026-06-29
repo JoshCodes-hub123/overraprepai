@@ -1111,6 +1111,11 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
                 </ScrollArea>
               </div>
 
+              {/* Column-mapping summary */}
+              {detectedColumns.length > 0 && (
+                <ColumnMappingSummary detected={detectedColumns} />
+              )}
+
               {/* Quiz Navigator */}
               <div className="flex items-center justify-between bg-muted/30 rounded-lg p-2">
                 <Button
