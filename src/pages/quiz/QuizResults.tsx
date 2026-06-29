@@ -261,6 +261,11 @@ const QuizResults = () => {
             </div>
           </div>
         </div>
+
+        {/* Per-question review with AI explanations */}
+        {attemptId && quizId && (
+          <QuizReviewList attemptId={attemptId} quizId={quizId} />
+        )}
       </main>
 
       {/* Rating Dialog */}
