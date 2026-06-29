@@ -11,9 +11,7 @@ import { CommandPalette, useCommandPaletteHotkey } from "@/components/student/Co
 import { TopAppBar } from "@/components/student/dashboard/v2/TopAppBar";
 import { CourseRail } from "@/components/student/dashboard/v2/CourseRail";
 import { QuickActions4 } from "@/components/student/dashboard/v2/QuickActions4";
-import { OpportunitySnapshot } from "@/components/student/dashboard/v2/OpportunitySnapshot";
-import { CommunityMomentCard } from "@/components/student/dashboard/v2/CommunityMomentCard";
-import ArenaSpotlightCard from "@/components/arena/ArenaSpotlightCard";
+import ExploreTabs from "@/components/student/dashboard/v2/ExploreTabs";
 import SectionLabel from "@/components/student/dashboard/v2/SectionLabel";
 import QuizzesPreviewRail from "@/components/student/dashboard/v2/QuizzesPreviewRail";
 
@@ -101,32 +99,13 @@ const StudentDashboard = () => {
 
               {/* Side column */}
               <aside className="space-y-6 sm:space-y-7 min-w-0">
-                <section aria-labelledby="sec-arena" className="space-y-3">
+                <section aria-labelledby="sec-explore" className="space-y-3">
                   <SectionLabel
-                    eyebrow="Compete"
-                    title="Arena spotlight"
-                    to="/arena"
+                    eyebrow="Explore"
+                    title="Compete · Grow · Community"
+                    hint="One tap into Arena, Opportunities or the feed."
                   />
-                  <ArenaSpotlightCard key={`arena-${refreshKey}`} />
-                </section>
-
-                <section aria-labelledby="sec-opps" className="space-y-3">
-                  <SectionLabel
-                    eyebrow="Grow"
-                    title="Opportunities for you"
-                    hint="Matched to your profile."
-                    to="/opportunities"
-                  />
-                  <OpportunitySnapshot key={`os-${refreshKey}`} />
-                </section>
-
-                <section aria-labelledby="sec-community" className="space-y-3">
-                  <SectionLabel
-                    eyebrow="Community"
-                    title="What's happening"
-                    to="/community"
-                  />
-                  <CommunityMomentCard key={`cm-${refreshKey}`} />
+                  <ExploreTabs refreshKey={refreshKey} />
                 </section>
               </aside>
             </div>
