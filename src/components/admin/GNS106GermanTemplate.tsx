@@ -74,6 +74,28 @@ const ROWS: Array<Record<string, string | number>> = [
   row("Comparative of 'gut' is:","guter","guten","besser","gutester","C","gut → besser.","hard","Vocabulary"),
   row("Superlative of 'viel' is:","vieler","mehr","am meisten","viele","C","viel → mehr → am meisten.","hard","Vocabulary"),
   row("Passive: 'Das Buch ___ von dem Studenten gelesen.'","ist","hat","wird","war gehabt","C","Present passive uses werden.","hard","Passive Voice"),
+
+  // ===== OBJECTIVES (Use of English / Communication) — 20 =====
+  row("The main purpose of communication is to:","entertain people","exchange information and ideas","fill silence","show off vocabulary","B","Communication = exchange of info, ideas, feelings.","easy","Objectives — Communication"),
+  row("Which is NOT a barrier to communication?","Noise","Language difference","Active listening","Cultural bias","C","Active listening removes barriers, not creates them.","easy","Objectives — Communication"),
+  row("Non-verbal communication includes all EXCEPT:","gestures","facial expression","tone of writing","posture","C","Tone of writing is verbal/written, not non-verbal.","easy","Objectives — Communication"),
+  row("The sender of a message is also called the:","decoder","encoder","receiver","medium","B","Sender encodes the message.","easy","Objectives — Communication"),
+  row("Feedback in communication means:","repeating the message","the receiver's response","the channel used","background noise","B","Feedback = receiver's response to sender.","easy","Objectives — Communication"),
+  row("Choose the correct sentence:","He don't like reading","He doesn't likes reading","He doesn't like reading","He not like reading","C","Third person singular: doesn't + base verb.","easy","Objectives — Grammar"),
+  row("Identify the noun: 'The children played happily in the park.'","played","happily","children","in","C","'Children' is a (plural) noun.","easy","Objectives — Grammar"),
+  row("Antonym of 'generous' is:","kind","stingy","helpful","wealthy","B","Generous ↔ stingy.","easy","Objectives — Vocabulary"),
+  row("Synonym of 'commence' is:","end","begin","pause","cancel","B","Commence = begin.","easy","Objectives — Vocabulary"),
+  row("A formal letter usually begins with:","Hi","Dear Sir/Madam","Hey there","Yo","B","Formal salutation.","easy","Objectives — Writing"),
+  row("Which is a primary source of information?","Textbook summary","Newspaper review","Original research paper","Wikipedia article","C","Primary = original/first-hand.","medium","Objectives — Study Skills"),
+  row("The skill of reading quickly to get the general idea is:","scanning","skimming","intensive reading","SQ3R","B","Skimming = general overview.","medium","Objectives — Study Skills"),
+  row("Scanning is used to:","get main idea","locate specific information","memorize text","summarize","B","Scanning = locating specific facts.","medium","Objectives — Study Skills"),
+  row("Choose the correctly punctuated sentence:","\"Where are you going,\" she asked.","Where are you going she asked.","\"Where are you going\" she asked","Where are you going? she asked","A","Direct speech ends with question mark inside quotes; comma before 'she asked' acceptable in some styles — here the closed quote version is best.","medium","Objectives — Grammar"),
+  row("The figure of speech in 'Time is money' is:","simile","metaphor","personification","hyperbole","B","Direct comparison without 'like/as' = metaphor.","medium","Objectives — Literature"),
+  row("'She runs like the wind' is an example of:","metaphor","simile","irony","alliteration","B","Uses 'like' = simile.","medium","Objectives — Literature"),
+  row("A bibliography is:","a short biography","a list of sources used","a chapter summary","an index","B","Bibliography = list of references/sources.","medium","Objectives — Study Skills"),
+  row("Plagiarism means:","quoting with credit","using others' work as your own","writing in groups","citing sources","B","Plagiarism = passing others' work as yours.","medium","Objectives — Ethics"),
+  row("Which is an example of effective listening?","Interrupting the speaker","Thinking of your reply","Asking clarifying questions","Checking your phone","C","Clarifying questions = active listening.","easy","Objectives — Communication"),
+  row("The official language of communication in Nigerian universities is:","French","German","English","Pidgin","C","English is the medium of instruction.","easy","Objectives — Communication"),
 ];
 
 function row(q: string, a: string, b: string, c: string, d: string, correct: string, exp: string, diff: string, topic: string) {
