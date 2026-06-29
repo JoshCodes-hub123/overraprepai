@@ -535,9 +535,18 @@ const QuizPractice = () => {
 
             <div className="flex items-center gap-2 shrink-0">
               {secondsLeft !== null && (
-                <div className={`flex items-center gap-1 text-[11px] sm:text-sm font-mono px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md ${
-                  secondsLeft < 60 ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
-                }`}>
+                <div
+                  aria-live="polite"
+                  className={`flex items-center gap-1 text-[11px] sm:text-sm font-mono font-bold px-2 sm:px-2.5 py-1 rounded-md tabular-nums border ${
+                    secondsLeft <= 30
+                      ? "bg-destructive text-destructive-foreground border-destructive animate-pulse"
+                      : secondsLeft < 60
+                      ? "bg-destructive/10 text-destructive border-destructive/30 animate-pulse"
+                      : secondsLeft <= 300
+                      ? "bg-amber-100 text-amber-800 border-amber-300"
+                      : "bg-primary/10 text-primary border-primary/20"
+                  }`}
+                >
                   <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   {String(Math.floor(secondsLeft / 60)).padStart(2, "0")}:
                   {String(secondsLeft % 60).padStart(2, "0")}
