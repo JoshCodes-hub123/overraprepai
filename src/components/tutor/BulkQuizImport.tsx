@@ -202,6 +202,9 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
     setErrors([]);
     setRejectedRows([]);
     setImportedQuizzes([]);
+    setDetectedColumns([]);
+    setImportedFileName(file.name);
+    setImportedFileSize(file.size);
     setProcessingStatus({ stage: "reading", progress: 0, message: "Reading file..." });
 
     try {
@@ -232,6 +235,10 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
       if (jsonData.length === 0) {
         throw new Error("The file appears to be empty");
       }
+
+      // Capture detected headers from first row for mapping summary
+      if (jsonData[0]) setDetectedColumns(Object.keys(jsonData[0]));
+
 
       setProcessingStatus({ 
         stage: "validating", 
