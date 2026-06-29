@@ -23,6 +23,7 @@ import {
   Building2,
   Activity,
   Megaphone,
+  Upload,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import DashboardNav from "@/components/layout/DashboardNav";
@@ -342,6 +343,13 @@ const AdminDashboard = () => {
               description: "Create competitions & settle prizes",
               to: "/admin/arena",
               tone: "violet",
+            },
+            {
+              icon: Upload,
+              label: "Bulk Upload Questions",
+              description: "Import Excel / CSV / Word question banks",
+              to: "/admin/bulk-upload",
+              tone: "gold",
             },
             {
               icon: Target,
