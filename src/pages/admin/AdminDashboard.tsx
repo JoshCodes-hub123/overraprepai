@@ -23,6 +23,7 @@ import {
   Building2,
   Activity,
   Megaphone,
+  Upload,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import DashboardNav from "@/components/layout/DashboardNav";
