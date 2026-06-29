@@ -468,18 +468,17 @@ const EditProfile = () => {
 
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
-              <Select value={department} onValueChange={setDepartment}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your department" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DEPARTMENTS.map((dept) => (
-                    <SelectItem key={dept} value={dept}>
-                      {dept}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                id="department"
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                placeholder="e.g. Computer Science"
+                maxLength={120}
+                autoComplete="organization-title"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Type your department exactly as it appears on your school records.
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
