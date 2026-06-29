@@ -56,7 +56,7 @@ export function useTokenBalance() {
         }
       : null,
     dailyFreeUsed,
-    dailyFreeLeft: Math.max(0, 3 - dailyFreeUsed),
+    dailyFreeLeft: Math.max(0, 2 - dailyFreeUsed),
     isLoading: query.isLoading,
   };
 }

@@ -6,6 +6,7 @@ import { SEO } from "@/components/seo/SEO";
 import { PullToRefresh } from "@/components/native/PullToRefresh";
 import { DashboardOfflineBanner } from "@/components/dashboard/DashboardOfflineBanner";
 import WhatsNextCard from "@/components/student/dashboard/v2/WhatsNextCard";
+import TomorrowGNS106Pill from "@/components/student/dashboard/v2/TomorrowGNS106Pill";
 import { CommandPalette, useCommandPaletteHotkey } from "@/components/student/CommandPalette";
 
 import { TopAppBar } from "@/components/student/dashboard/v2/TopAppBar";
@@ -68,6 +69,7 @@ const StudentDashboard = () => {
 
           <main className="relative container mx-auto px-3 sm:px-4 lg:px-6 pt-3 max-w-2xl lg:max-w-6xl">
             <TopAppBar />
+            <TomorrowGNS106Pill />
             <div className="mt-3">
               <DashboardOfflineBanner onReattempt={onRefresh} />
             </div>

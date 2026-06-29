@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
-const DAILY_FREE_LIMIT = 3;
+const DAILY_FREE_LIMIT = 2;
 
 /**
  * Prepaid wallet gate with 3 free AI actions per day.
@@ -71,7 +71,7 @@ export function usePremium() {
     refetch();
     if (!data?.allowed) {
       setUpgradeReason(
-        `You've used today's 3 free AI actions and your wallet is empty. Top up to keep going, or come back tomorrow when free actions reset.`,
+        `You've used today's ${DAILY_FREE_LIMIT} free AI actions and your wallet is empty 💛 Top up in seconds to keep learning — or come back tomorrow when your free actions reset.`,
       );
       setUpgradeOpen(true);
       return false;
@@ -80,7 +80,7 @@ export function usePremium() {
       toast.success(`−1 token · ${data.balance} left in wallet`);
     } else if (data.source === "free") {
       const left = data.free_left ?? 0;
-      toast.success(left > 0 ? `Free use · ${left}/${DAILY_FREE_LIMIT} left today` : `Last free use today · top up to keep going`);
+      toast.success(left > 0 ? `Free use · ${left}/${DAILY_FREE_LIMIT} left today` : `Last free use today · top up to keep going 🚀`);
     }
     return true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
