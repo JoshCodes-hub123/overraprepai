@@ -86,6 +86,57 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_import_logs: {
+        Row: {
+          admin_id: string
+          course_codes: string[]
+          created_at: string
+          file_name: string
+          file_size_bytes: number | null
+          file_type: string | null
+          id: string
+          imported_questions: number
+          imported_quizzes: number
+          notes: string | null
+          rejected_payload: Json | null
+          rejected_rows: number
+          status: string
+          total_rows: number
+        }
+        Insert: {
+          admin_id: string
+          course_codes?: string[]
+          created_at?: string
+          file_name: string
+          file_size_bytes?: number | null
+          file_type?: string | null
+          id?: string
+          imported_questions?: number
+          imported_quizzes?: number
+          notes?: string | null
+          rejected_payload?: Json | null
+          rejected_rows?: number
+          status?: string
+          total_rows?: number
+        }
+        Update: {
+          admin_id?: string
+          course_codes?: string[]
+          created_at?: string
+          file_name?: string
+          file_size_bytes?: number | null
+          file_type?: string | null
+          id?: string
+          imported_questions?: number
+          imported_quizzes?: number
+          notes?: string | null
+          rejected_payload?: Json | null
+          rejected_rows?: number
+          status?: string
+          total_rows?: number
+        }
+        Relationships: []
+      }
       affiliate_links: {
         Row: {
           clicks: number

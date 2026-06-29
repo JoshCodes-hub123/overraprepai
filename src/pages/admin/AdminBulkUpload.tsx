@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { SEO } from "@/components/seo/SEO";
 import { BulkQuizImport } from "@/components/tutor/BulkQuizImport";
 import { QuizUploadTemplates } from "@/components/tutor/quiz-upload/QuizUploadTemplates";
+import { GNS106GermanTemplate } from "@/components/admin/GNS106GermanTemplate";
+import { AdminImportHistory } from "@/components/admin/AdminImportHistory";
 
 /**
  * Admin-only page for bulk-uploading quiz banks (Excel / CSV / Word).
@@ -16,6 +18,7 @@ import { QuizUploadTemplates } from "@/components/tutor/quiz-upload/QuizUploadTe
 const AdminBulkUpload = () => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [historyKey, setHistoryKey] = useState(0);
 
   return (
     <>
@@ -96,20 +99,34 @@ const AdminBulkUpload = () => {
             </Button>
           </Card>
 
+          <div className="mb-3">
+            <GNS106GermanTemplate />
+          </div>
+
           <div className="mb-2 flex items-center gap-2">
             <FileDown className="w-4 h-4 text-muted-foreground" />
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Templates &amp; column guide
+              Universal templates &amp; column guide
             </h2>
           </div>
           <QuizUploadTemplates />
+
+          <div className="mt-6">
+            <AdminImportHistory
+              refreshKey={historyKey}
+              onRetry={() => setOpen(true)}
+            />
+          </div>
         </div>
       </div>
 
       <BulkQuizImport
         open={open}
         onOpenChange={setOpen}
-        onSuccess={() => setOpen(false)}
+        onSuccess={() => {
+          setOpen(false);
+          setHistoryKey((k) => k + 1);
+        }}
         adminScope
       />
     </>

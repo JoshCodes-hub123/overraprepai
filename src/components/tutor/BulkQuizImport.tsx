@@ -27,6 +27,7 @@ import * as XLSX from "xlsx";
 import mammoth from "mammoth";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { classifyTopic } from "@/lib/germanTopicClassifier";
 import {
   Dialog,
   DialogContent,
@@ -51,6 +52,7 @@ interface ImportedQuestion {
   correct_option: string;
   explanation: string;
   difficulty: string;
+  topic: string;
 }
 
 interface ImportedQuiz {
@@ -94,6 +96,75 @@ interface Course {
   name: string;
 }
 
+// ----- Column mapping summary (auto-detected) -----
+const CANONICAL_FIELDS: { field: string; required: boolean; aliases: string[] }[] = [
+  { field: "quiz_title",       required: true,  aliases: ["quiz_title", "title", "quiz title"] },
+  { field: "course_code",      required: true,  aliases: ["course_code", "course code"] },
+  { field: "course_name",      required: false, aliases: ["course_name", "course name"] },
+  { field: "question_text",    required: true,  aliases: ["question_text", "question", "question text"] },
+  { field: "option_a",         required: true,  aliases: ["option_a", "option a"] },
+  { field: "option_b",         required: true,  aliases: ["option_b", "option b"] },
+  { field: "option_c",         required: true,  aliases: ["option_c", "option c"] },
+  { field: "option_d",         required: true,  aliases: ["option_d", "option d"] },
+  { field: "correct_option",   required: true,  aliases: ["correct_option", "correct", "answer", "correct option"] },
+  { field: "explanation",      required: false, aliases: ["explanation"] },
+  { field: "difficulty",       required: false, aliases: ["difficulty"] },
+  { field: "topic",            required: false, aliases: ["topic", "tag"] },
+  { field: "duration_minutes", required: false, aliases: ["duration_minutes", "duration", "duration (mins)"] },
+  { field: "is_premium",       required: false, aliases: ["is_premium", "premium", "is premium"] },
+  { field: "token_cost",       required: false, aliases: ["token_cost", "cost", "token cost"] },
+  { field: "is_simulation",    required: false, aliases: ["is_simulation", "simulation", "is simulation"] },
+];
+
+function ColumnMappingSummary({ detected }: { detected: string[] }) {
+  const lowerDetected = detected.map((d) => d.trim().toLowerCase());
+  const mappings = CANONICAL_FIELDS.map((f) => {
+    const hit = f.aliases.find((a) => lowerDetected.includes(a.toLowerCase()));
+    const sourceCol = hit ? detected[lowerDetected.indexOf(hit.toLowerCase())] : null;
+    return { ...f, sourceCol };
+  });
+  const missingRequired = mappings.filter((m) => m.required && !m.sourceCol);
+  return (
+    <div className="p-3 rounded-lg border bg-muted/30 space-y-2">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium">Detected column mapping</p>
+        <Badge variant={missingRequired.length ? "destructive" : "outline"} className="text-[10px]">
+          {missingRequired.length ? `${missingRequired.length} required missing` : "All required mapped"}
+        </Badge>
+      </div>
+      {missingRequired.length > 0 && (
+        <p className="text-[11px] text-destructive">
+          Missing: {missingRequired.map((m) => m.field).join(", ")} — rename your column headers and re-upload.
+        </p>
+      )}
+      <ScrollArea className="max-h-32">
+        <ul className="text-[11px] space-y-1">
+          {mappings.map((m) => (
+            <li key={m.field} className="flex items-center justify-between gap-2">
+              <span className="font-mono text-foreground">
+                {m.field}
+                {m.required && <span className="text-destructive ml-0.5">*</span>}
+              </span>
+              {m.sourceCol ? (
+                <span className="text-muted-foreground">
+                  ← <span className="font-mono">{m.sourceCol}</span>
+                </span>
+              ) : (
+                <span className="text-muted-foreground italic">not found</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </ScrollArea>
+      <p className="text-[10px] text-muted-foreground">
+        Auto-mapped from your file's headers. Required columns are marked *. Add a <span className="font-mono">topic</span> column to control auto-grouping, or it will be inferred from question text.
+      </p>
+    </div>
+  );
+}
+
+
+
 export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = false }: BulkQuizImportProps) {
   const { user } = useAuth();
   const [importedQuizzes, setImportedQuizzes] = useState<ImportedQuiz[]>([]);
@@ -107,6 +178,9 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
   const [processingStatus, setProcessingStatus] = useState<ProcessingStatus | null>(null);
   const [existingCourses, setExistingCourses] = useState<Course[]>([]);
   const [defaultLevel, setDefaultLevel] = useState("ALL");
+  const [importedFileName, setImportedFileName] = useState<string>("");
+  const [importedFileSize, setImportedFileSize] = useState<number>(0);
+  const [detectedColumns, setDetectedColumns] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch existing courses on mount
@@ -197,6 +271,9 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
     setErrors([]);
     setRejectedRows([]);
     setImportedQuizzes([]);
+    setDetectedColumns([]);
+    setImportedFileName(file.name);
+    setImportedFileSize(file.size);
     setProcessingStatus({ stage: "reading", progress: 0, message: "Reading file..." });
 
     try {
@@ -227,6 +304,10 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
       if (jsonData.length === 0) {
         throw new Error("The file appears to be empty");
       }
+
+      // Capture detected headers from first row for mapping summary
+      if (jsonData[0]) setDetectedColumns(Object.keys(jsonData[0]));
+
 
       setProcessingStatus({ 
         stage: "validating", 
@@ -279,6 +360,7 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
         const correctOption = String(row.correct_option || row.Correct || row["Correct Option"] || row.Answer || "").trim().toUpperCase();
         const explanation = String(row.explanation || row.Explanation || "").trim();
         const difficulty = String(row.difficulty || row.Difficulty || "medium").trim().toLowerCase();
+        const rawTopic = String(row.topic || row.Topic || row["Topic"] || row.tag || row.Tag || "").trim();
 
         // Validate required fields
         if (!title) {
@@ -341,6 +423,15 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
           correct_option: correctOption,
           explanation,
           difficulty,
+          topic: classifyTopic({
+            topic: rawTopic,
+            question_text: questionText,
+            option_a: optionA,
+            option_b: optionB,
+            option_c: optionC,
+            option_d: optionD,
+            explanation,
+          }),
         });
       }
 
@@ -699,30 +790,38 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
             }]);
           }
 
-          // Create or find a default topic for the course
-          let topicId: string;
-          const { data: existingTopic } = await supabase
-            .from("topics")
-            .select("id")
-            .eq("course_id", courseId)
-            .limit(1)
-            .maybeSingle();
-
-          if (existingTopic) {
-            topicId = existingTopic.id;
-          } else {
-            const { data: newTopic, error: topicError } = await supabase
+          // Resolve a topic_id per question (auto-tag). Cache per course to
+          // avoid round-trips and create missing topics on demand.
+          const topicCache = new Map<string, string>();
+          const resolveTopicId = async (topicName: string): Promise<string> => {
+            const key = `${courseId}::${topicName.toLowerCase()}`;
+            const cached = topicCache.get(key);
+            if (cached) return cached;
+            const { data: existing } = await supabase
               .from("topics")
-              .insert({
-                name: "General",
-                course_id: courseId,
-              })
+              .select("id")
+              .eq("course_id", courseId)
+              .ilike("name", topicName)
+              .maybeSingle();
+            if (existing?.id) {
+              topicCache.set(key, existing.id);
+              return existing.id;
+            }
+            const { data: created, error: topicError } = await supabase
+              .from("topics")
+              .insert({ name: topicName, course_id: courseId })
               .select("id")
               .single();
-
             if (topicError) throw topicError;
-            topicId = newTopic.id;
-          }
+            topicCache.set(key, created.id);
+            return created.id;
+          };
+
+          // Pre-resolve unique topics for this quiz in one pass
+          const uniqueTopics = Array.from(
+            new Set(quiz.questions.map((q) => q.topic || "General"))
+          );
+          for (const t of uniqueTopics) await resolveTopicId(t);
 
           // Create the quiz
           const { data: newQuiz, error: quizError } = await supabase
@@ -756,7 +855,7 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
             explanation: q.explanation || null,
             difficulty: q.difficulty || "medium",
             course_id: courseId,
-            topic_id: topicId,
+            topic_id: topicCache.get(`${courseId}::${(q.topic || "General").toLowerCase()}`)!,
             tutor_id: user.id,
             is_approved: true,
           }));
@@ -818,6 +917,31 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
         progress: 100, 
         message: `Created ${createdCount} quizzes!`
       });
+
+      // Admin-only: write an import history log entry
+      if (adminScope && user) {
+        try {
+          const courseCodes = Array.from(new Set(validQuizzes.map((q) => q.course_code)));
+          const totalQuestions = validQuizzes.reduce((acc, q) => acc + q.questions.length, 0);
+          await (supabase as any).from("admin_import_logs").insert({
+            admin_id: user.id,
+            file_name: importedFileName || "unknown",
+            file_size_bytes: importedFileSize || null,
+            file_type: (importedFileName.split(".").pop() || "").toLowerCase() || null,
+            course_codes: courseCodes,
+            total_rows: (importedQuizzes.reduce((a, q) => a + q.questions.length, 0)) + rejectedRows.length,
+            imported_quizzes: createdCount,
+            imported_questions: totalQuestions,
+            rejected_rows: rejectedRows.length,
+            status: createErrors.length > 0 ? "partial" : "success",
+            rejected_payload: rejectedRows.length > 0 ? rejectedRows : null,
+            notes: createErrors.length > 0 ? createErrors.slice(0, 5).join(" | ") : null,
+          });
+        } catch (logErr) {
+          console.warn("Failed to write admin_import_logs entry:", logErr);
+        }
+      }
+
 
       if (createdCount > 0) {
         toast.success(`Successfully created ${createdCount} quiz${createdCount !== 1 ? "zes" : ""}!`);
@@ -1055,6 +1179,11 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
                   </ul>
                 </ScrollArea>
               </div>
+
+              {/* Column-mapping summary */}
+              {detectedColumns.length > 0 && (
+                <ColumnMappingSummary detected={detectedColumns} />
+              )}
 
               {/* Quiz Navigator */}
               <div className="flex items-center justify-between bg-muted/30 rounded-lg p-2">
