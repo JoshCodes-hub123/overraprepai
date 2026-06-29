@@ -1,109 +1,130 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Sparkles } from "lucide-react";
+import { Sparkles, RefreshCw, X, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // Build-time version injected by Vite (see vite.config.ts).
 declare const __APP_VERSION__: string;
 
 const POLL_INTERVAL_MS = 2 * 60 * 1000; // 2 minutes
+const DISMISS_KEY = "overra_update_banner_dismissed_for";
 
 /**
- * Polls /version.json and prompts the user to refresh when a new build is live.
- * Keeps the running app, all caches, and Capacitor webview in sync after deploys.
+ * Slim, non-blocking "Update available" banner pinned to the top of the app.
+ * Polls /version.json and appears whenever a new build is live. Users can tap
+ * Refresh to upgrade instantly, or dismiss — but it returns on the next app
+ * open until they actually update.
  */
 export default function UpdatePrompt() {
-  const [open, setOpen] = useState(false);
+  const [latestVersion, setLatestVersion] = useState<string | null>(null);
+  const [dismissed, setDismissed] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const currentVersion = useRef<string>(
     typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : ""
   );
-  const notifiedRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
 
     const check = async () => {
-      if (notifiedRef.current) return;
       try {
-        const res = await fetch(`/version.json?t=${Date.now()}`, {
-          cache: "no-store",
-        });
+        const res = await fetch(`/version.json?t=${Date.now()}`, { cache: "no-store" });
         if (!res.ok) return;
         const data = (await res.json()) as { version?: string };
         if (cancelled || !data?.version) return;
         if (currentVersion.current && data.version !== currentVersion.current) {
-          notifiedRef.current = true;
-          setOpen(true);
+          setLatestVersion(data.version);
+          // Re-show the banner unless the user dismissed *this exact* version
+          try {
+            const d = localStorage.getItem(DISMISS_KEY);
+            setDismissed(d === data.version);
+          } catch { setDismissed(false); }
         }
-      } catch {
-        // network blip — try again next interval
-      }
+      } catch { /* network blip */ }
     };
 
-    // Run shortly after mount, then on interval + when tab becomes visible.
-    const initial = window.setTimeout(check, 15_000);
+    const initial = window.setTimeout(check, 4_000);
     const interval = window.setInterval(check, POLL_INTERVAL_MS);
-    const onVisible = () => {
-      if (document.visibilityState === "visible") check();
-    };
+    const onVisible = () => { if (document.visibilityState === "visible") check(); };
     document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", check);
 
     return () => {
       cancelled = true;
       window.clearTimeout(initial);
       window.clearInterval(interval);
       document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", check);
     };
   }, []);
 
   const handleUpgrade = async () => {
+    if (refreshing) return;
+    setRefreshing(true);
     try {
       if ("caches" in window) {
         const keys = await caches.keys();
         await Promise.all(keys.map((k) => caches.delete(k)));
       }
-    } catch {
-      // ignore
-    }
-    // Force a fresh load past any HTTP cache.
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.update().catch(() => {})));
+      }
+    } catch { /* ignore */ }
+    try { localStorage.removeItem(DISMISS_KEY); } catch {}
     const url = new URL(window.location.href);
     url.searchParams.set("v", String(Date.now()));
     window.location.replace(url.toString());
   };
 
+  const handleDismiss = () => {
+    if (latestVersion) {
+      try { localStorage.setItem(DISMISS_KEY, latestVersion); } catch {}
+    }
+    setDismissed(true);
+  };
+
+  if (!latestVersion || dismissed) return null;
+
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogContent className="border-amber-300/60 bg-white">
-        <AlertDialogHeader>
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-lg shadow-amber-500/30">
-            <Sparkles className="h-7 w-7" />
-          </div>
-          <AlertDialogTitle className="text-center font-display text-xl">
-            A fresh OverraPrep is ready
-          </AlertDialogTitle>
-          <AlertDialogDescription className="text-center text-sm leading-relaxed">
-            We've shipped new features and fixes. Refresh to load the latest version —
-            your work is saved and you'll land right back where you left off.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter className="sm:justify-center gap-2">
-          <AlertDialogCancel className="rounded-xl">Later</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleUpgrade}
-            className="rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold"
-          >
-            Update now
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed left-0 right-0 z-[60] flex justify-center px-3 pointer-events-none"
+      style={{ top: "calc(env(safe-area-inset-top) + 8px)" }}
+    >
+      <div className="pointer-events-auto w-full max-w-2xl flex items-center gap-2 sm:gap-3 rounded-2xl border border-amber-300/70 bg-gradient-to-r from-amber-50 to-white shadow-xl shadow-amber-500/20 px-3 py-2.5 animate-fade-in">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-md shadow-amber-500/30">
+          <Sparkles className="h-4.5 w-4.5" />
+        </span>
+        <div className="min-w-0 flex-1 leading-tight">
+          <p className="text-sm font-semibold text-foreground truncate">
+            Update available
+          </p>
+          <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
+            A new version of OverraPrep is ready. Refresh to get the latest features.
+          </p>
+        </div>
+        <Button
+          size="sm"
+          onClick={handleUpgrade}
+          disabled={refreshing}
+          className="shrink-0 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold h-9 px-3"
+        >
+          {refreshing ? (
+            <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Updating…</>
+          ) : (
+            <><RefreshCw className="h-3.5 w-3.5" /> Refresh</>
+          )}
+        </Button>
+        <button
+          type="button"
+          aria-label="Dismiss update banner"
+          onClick={handleDismiss}
+          className="shrink-0 rounded-lg p-1.5 text-muted-foreground hover:bg-amber-100/70 hover:text-foreground transition-colors"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
   );
 }
