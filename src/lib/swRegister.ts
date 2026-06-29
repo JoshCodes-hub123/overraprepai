@@ -62,6 +62,53 @@ async function unregisterAppSWs() {
   } catch { /* noop */ }
 }
 
+/**
+ * Wire update-detection on a registration so existing users get the
+ * latest build as soon as they reopen the app:
+ *   - poll for updates on focus + every 30 min
+ *   - when a new worker reaches "installed" with an existing controller
+ *     (i.e. true update, not first install) → tell it to skipWaiting
+ *     and reload the page once it takes control
+ *   - one-time guard so the auto-reload never loops
+ */
+function wireAutoUpdate(reg: ServiceWorkerRegistration) {
+  let reloaded = false;
+  const triggerUpdate = (worker: ServiceWorker | null) => {
+    if (!worker) return;
+    worker.postMessage({ type: "SKIP_WAITING" });
+  };
+
+  const onStateChange = (worker: ServiceWorker) => {
+    worker.addEventListener("statechange", () => {
+      if (worker.state === "installed" && navigator.serviceWorker.controller) {
+        // A new SW is waiting AND the page is currently controlled by an
+        // older one — that's an update. Apply it.
+        triggerUpdate(worker);
+      }
+    });
+  };
+
+  if (reg.waiting && navigator.serviceWorker.controller) triggerUpdate(reg.waiting);
+  if (reg.installing) onStateChange(reg.installing);
+  reg.addEventListener("updatefound", () => {
+    if (reg.installing) onStateChange(reg.installing);
+  });
+
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (reloaded) return;
+    reloaded = true;
+    // Defer slightly so any in-flight navigation finishes first.
+    setTimeout(() => window.location.reload(), 50);
+  });
+
+  const checkForUpdate = () => { reg.update().catch(() => { /* noop */ }); };
+  window.addEventListener("focus", checkForUpdate);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") checkForUpdate();
+  });
+  setInterval(checkForUpdate, 30 * 60 * 1000); // every 30 min
+}
+
 export function registerAppServiceWorker() {
   if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
   const { refused, reason } = isRefusedContext();
@@ -74,9 +121,12 @@ export function registerAppServiceWorker() {
   }
   // Defer until window load so we never compete with first-paint work.
   const run = () => {
-    navigator.serviceWorker.register(APP_SW_URL, { scope: "/" }).catch((err) => {
-      console.warn("[sw] register failed:", err);
-    });
+    navigator.serviceWorker
+      .register(APP_SW_URL, { scope: "/" })
+      .then((reg) => wireAutoUpdate(reg))
+      .catch((err) => {
+        console.warn("[sw] register failed:", err);
+      });
   };
   if (document.readyState === "complete") run();
   else window.addEventListener("load", run, { once: true });
