@@ -118,7 +118,7 @@ export function UnlockQuizSheet({ open, onOpenChange, quizId, quizTitle, onUnloc
           )}
           <div className="mt-2 text-center text-xs text-zinc-500">
             {hasFree
-              ? <>Uses 1 of your 3 daily free actions · wallet: <span className="font-bold">{balance} tokens</span></>
+              ? <>Uses 1 of your {dailyLimit} daily free actions · wallet: <span className="font-bold">{balance} tokens</span></>
               : <>Free actions used up today · wallet: <span className="font-bold">{balance} tokens</span></>}
           </div>
 

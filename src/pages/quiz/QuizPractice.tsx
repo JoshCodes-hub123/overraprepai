@@ -164,9 +164,9 @@ const QuizPractice = () => {
 
       if (quizError) throw quizError;
 
-      // Token gate: tutor-made quizzes must be unlocked first.
-      // Free: your own quizzes (tutor_id == you) and AI/system quizzes (tutor_id is null).
-      const needsGate = !!quizData.tutor_id && quizData.tutor_id !== user.id;
+      // Token gate: EVERY quiz needs to be unlocked (uses a free daily action first,
+      // then a wallet token). Only the tutor's own quizzes skip the gate.
+      const needsGate = quizData.tutor_id !== user.id;
       if (needsGate) {
         const { data: unlockRow } = await (supabase as any)
           .from("quiz_unlocks")

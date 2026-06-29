@@ -63,7 +63,7 @@ export const aiGate = {
           open: true,
           action: opts?.action,
           reason:
-            "You've used today's 3 free AI actions and your wallet is empty. Top up to keep going, or come back tomorrow when free actions reset.",
+            "You've used today's 2 free AI actions and your wallet is empty 💛 Top up in seconds to keep learning — or come back tomorrow when your free actions reset.",
         };
         emit();
         return false;
@@ -74,7 +74,7 @@ export const aiGate = {
         } else if (data.source === "free") {
           const left = data.free_left ?? 0;
           toast.success(
-            left > 0 ? `Free use · ${left}/3 left today` : `Last free AI use today`,
+            left > 0 ? `Free use · ${left}/2 left today` : `Last free AI use today · top up to keep going 🚀`,
             { duration: 1800 },
           );
         }

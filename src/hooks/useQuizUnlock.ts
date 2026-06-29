@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { aiGate } from "@/lib/aiGate";
 
 /**
  * Returns whether the current user has unlocked a given quiz,
@@ -36,9 +37,10 @@ export function useQuizUnlock(quizId?: string) {
     }
     if (!data?.allowed) {
       if (data?.reason === "insufficient") {
-        toast.error("Not enough tokens", {
-          description: `Needs ${data.cost} · you have ${data.balance}. Top up to unlock.`,
-        });
+        aiGate.open(
+          "Unlock this quiz",
+          `Your 2 free daily unlocks are used and your wallet is empty 💛 Top up just ₦250 to unlock this quiz now — or come back tomorrow when your free actions reset.`,
+        );
       }
       return { ok: false, cost: data?.cost, balance: data?.balance, reason: data?.reason };
     }
@@ -47,7 +49,7 @@ export function useQuizUnlock(quizId?: string) {
     qc.invalidateQueries({ queryKey: ["token-balance"] });
     qc.invalidateQueries({ queryKey: ["ai_token_balance"] });
     if (data.already_unlocked) toast.success("Already unlocked — enjoy!");
-    else if (data.source === "free") toast.success(`Unlocked with a free action · ${data.free_left ?? 0}/3 left today`);
+    else if (data.source === "free") toast.success(`Unlocked with a free action · ${data.free_left ?? 0}/2 left today`);
     else toast.success(`Unlocked! −${data.cost} tokens · ${data.balance} left`);
     return { ok: true, cost: data.cost, balance: data.balance };
   }, [quizId, qc, user?.id]);
