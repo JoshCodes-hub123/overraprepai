@@ -59,10 +59,25 @@ export default function WhatsNextCard() {
   const { data: due = [] } = useDueCards();
   const { data: score } = useSuccessScore();
 
-  const [streak, setStreak] = useState(0);
-  const [readinessPct, setReadinessPct] = useState<number | null>(null);
-  const [audio, setAudio] = useState<AudioSessionRow | null>(null);
-  const [quiz, setQuiz] = useState<OpenQuiz | null>(null);
+  const cacheKey = user ? `wn:hero:${user.id}` : null;
+
+  // Hydrate from localStorage for instant first paint on revisit.
+  const initial = (() => {
+    if (typeof window === "undefined" || !cacheKey) return null;
+    try {
+      const raw = window.localStorage.getItem(cacheKey);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      // Drop cache older than 24h to avoid stale streaks.
+      if (Date.now() - (parsed.t ?? 0) > 86_400_000) return null;
+      return parsed as { streak: number; readinessPct: number | null; audio: AudioSessionRow | null; quiz: OpenQuiz | null; t: number };
+    } catch { return null; }
+  })();
+
+  const [streak, setStreak] = useState(initial?.streak ?? 0);
+  const [readinessPct, setReadinessPct] = useState<number | null>(initial?.readinessPct ?? null);
+  const [audio, setAudio] = useState<AudioSessionRow | null>(initial?.audio ?? null);
+  const [quiz, setQuiz] = useState<OpenQuiz | null>(initial?.quiz ?? null);
 
   useEffect(() => {
     if (!user) return;
@@ -79,21 +94,31 @@ export default function WhatsNextCard() {
           .order("started_at", { ascending: false }).limit(1),
       ]);
       if (cancelled) return;
-      setStreak((s as any)?.current_streak ?? 0);
+      const nextStreak = (s as any)?.current_streak ?? 0;
       const pct = Array.isArray(r) && (r as any)[0]?.score_pct != null
         ? Math.round(Number((r as any)[0].score_pct)) : null;
-      setReadinessPct(pct);
       const a = audioSessions[0] ?? null;
       const showAudio = a && a.position_seconds > 10 &&
         (!a.duration_seconds || a.position_seconds < a.duration_seconds * 0.95);
-      setAudio(showAudio ? a : null);
+      const nextAudio = showAudio ? a : null;
       const q = (quizRes.data?.[0] ?? null) as any;
-      setQuiz(q && q.quizzes
+      const nextQuiz = q && q.quizzes
         ? { attemptId: q.id, quizId: q.quiz_id, quizTitle: q.quizzes.title, startedAt: q.started_at }
-        : null);
+        : null;
+      setStreak(nextStreak);
+      setReadinessPct(pct);
+      setAudio(nextAudio);
+      setQuiz(nextQuiz);
+      if (cacheKey) {
+        try {
+          window.localStorage.setItem(cacheKey, JSON.stringify({
+            streak: nextStreak, readinessPct: pct, audio: nextAudio, quiz: nextQuiz, t: Date.now(),
+          }));
+        } catch { /* quota — ignore */ }
+      }
     })();
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user, cacheKey]);
 
   const first = profile?.full_name?.split(" ")[0] || "Student";
 
