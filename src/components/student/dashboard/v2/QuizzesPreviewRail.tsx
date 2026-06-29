@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Flame, Sparkles } from "lucide-react";
 import { useQuizzes } from "@/hooks/useQuizzes";
+import { useQuizProgress } from "@/hooks/useQuizProgress";
 import { QuizCard, QuizCardSkeleton } from "@/components/quizzes/QuizCard";
+
 
 /**
  * Dashboard preview of quizzes — shows up to 6 (trending + newest) and links
