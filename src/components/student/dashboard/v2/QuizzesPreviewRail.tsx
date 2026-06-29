@@ -62,8 +62,8 @@ export default function QuizzesPreviewRail() {
           {/* Mobile: horizontal snap rail */}
           <div className="sm:hidden -mx-3 px-3 overflow-x-auto snap-x snap-mandatory flex gap-3 pb-2 scrollbar-none">
             {items.map((q) => (
-              <div key={q.id} className="snap-start shrink-0 w-[78%]">
-                <QuizCard quiz={q} />
+              <div key={q.id} className="snap-start shrink-0 w-[82%] max-w-[320px]">
+                <QuizCard quiz={q} progress={progress?.[q.id]} />
               </div>
             ))}
             <Link
@@ -76,8 +76,9 @@ export default function QuizzesPreviewRail() {
           </div>
           {/* Desktop: grid */}
           <div className="hidden sm:grid grid-cols-2 lg:grid-cols-3 gap-3">
-            {items.map((q) => <QuizCard key={q.id} quiz={q} />)}
+            {items.map((q) => <QuizCard key={q.id} quiz={q} progress={progress?.[q.id]} />)}
           </div>
+
         </>
       )}
 
