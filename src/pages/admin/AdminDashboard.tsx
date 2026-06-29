@@ -479,6 +479,10 @@ const AdminDashboard = () => {
             <AdminInsights />
           </TabsContent>
 
+          <TabsContent value="users">
+            <UserDirectory />
+          </TabsContent>
+
           <TabsContent value="tutors">
             <TutorManagement />
           </TabsContent>
