@@ -76,6 +76,8 @@ interface BulkQuizImportProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  /** When true, fetch ALL courses (admin scope) instead of only those created by the current user. */
+  adminScope?: boolean;
 }
 
 interface ProcessingStatus {
