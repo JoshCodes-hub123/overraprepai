@@ -5,8 +5,6 @@ import { prefetchDashboardNeighbors } from "@/lib/routePrefetch";
 import { SEO } from "@/components/seo/SEO";
 import { PullToRefresh } from "@/components/native/PullToRefresh";
 import { DashboardOfflineBanner } from "@/components/dashboard/DashboardOfflineBanner";
-import TomorrowExamCard from "@/components/student/dashboard/v2/TomorrowExamCard";
-import GNS106GermanCard from "@/components/student/dashboard/v2/GNS106GermanCard";
 import QuickJumpMenu from "@/components/student/dashboard/v2/QuickJumpMenu";
 import { CommandPalette, useCommandPaletteHotkey } from "@/components/student/CommandPalette";
 import PickUpWhereYouLeftOff from "@/components/student/PickUpWhereYouLeftOff";
@@ -74,8 +72,6 @@ const StudentDashboard = () => {
             {/* Greeting + tomorrow's exam + next best action */}
             <div className="space-y-4 sm:space-y-5 mt-3">
               <HeroGreeting key={`hg-${refreshKey}`} />
-              <TomorrowExamCard />
-              <GNS106GermanCard />
               <PickUpWhereYouLeftOff key={`pu-${refreshKey}`} />
               <QuickJumpMenu />
               <NextBestAction key={`nba-${refreshKey}`} />
