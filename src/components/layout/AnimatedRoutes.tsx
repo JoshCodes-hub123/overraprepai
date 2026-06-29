@@ -15,6 +15,7 @@ import { Navigate } from "react-router-dom";
 import Welcome from "@/pages/app/Welcome";
 const Index = lazy(() => import("@/pages/Index"));
 const MobileWelcome = lazy(() => import("@/pages/app/MobileWelcome"));
+const ReleaseNotes = lazy(() => import("@/pages/ReleaseNotes"));
 
 // School module
 const SchoolRegister = lazy(() => import("@/pages/school/Register"));
