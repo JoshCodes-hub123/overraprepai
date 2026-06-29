@@ -24,7 +24,6 @@ import {
   Activity,
   Megaphone,
   Upload,
-  Users,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import DashboardNav from "@/components/layout/DashboardNav";
