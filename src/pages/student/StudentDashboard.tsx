@@ -89,10 +89,14 @@ const StudentDashboard = () => {
                     hint="Pick up where you left off."
                     to="/study-hub"
                   />
-                  <CourseRail key={`cr-${refreshKey}`} />
+                  <Suspense fallback={<RailFallback h={180} />}>
+                    <CourseRail key={`cr-${refreshKey}`} />
+                  </Suspense>
                 </section>
 
-                <QuizzesPreviewRail key={`qpr-${refreshKey}`} />
+                <Suspense fallback={<RailFallback h={220} />}>
+                  <QuizzesPreviewRail key={`qpr-${refreshKey}`} />
+                </Suspense>
 
 
 
@@ -102,7 +106,9 @@ const StudentDashboard = () => {
                     title="Quick actions"
                     hint="Practice, summarize, ask the AI tutor."
                   />
-                  <QuickActions4 />
+                  <Suspense fallback={<RailFallback h={120} />}>
+                    <QuickActions4 />
+                  </Suspense>
                 </section>
               </div>
 
@@ -114,7 +120,9 @@ const StudentDashboard = () => {
                     title="Compete · Grow · Community"
                     hint="One tap into Arena, Opportunities or the feed."
                   />
-                  <ExploreTabs refreshKey={refreshKey} />
+                  <Suspense fallback={<RailFallback h={240} />}>
+                    <ExploreTabs refreshKey={refreshKey} />
+                  </Suspense>
                 </section>
               </aside>
             </div>
