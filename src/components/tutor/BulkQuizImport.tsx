@@ -721,30 +721,38 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
             }]);
           }
 
-          // Create or find a default topic for the course
-          let topicId: string;
-          const { data: existingTopic } = await supabase
-            .from("topics")
-            .select("id")
-            .eq("course_id", courseId)
-            .limit(1)
-            .maybeSingle();
-
-          if (existingTopic) {
-            topicId = existingTopic.id;
-          } else {
-            const { data: newTopic, error: topicError } = await supabase
+          // Resolve a topic_id per question (auto-tag). Cache per course to
+          // avoid round-trips and create missing topics on demand.
+          const topicCache = new Map<string, string>();
+          const resolveTopicId = async (topicName: string): Promise<string> => {
+            const key = `${courseId}::${topicName.toLowerCase()}`;
+            const cached = topicCache.get(key);
+            if (cached) return cached;
+            const { data: existing } = await supabase
               .from("topics")
-              .insert({
-                name: "General",
-                course_id: courseId,
-              })
+              .select("id")
+              .eq("course_id", courseId)
+              .ilike("name", topicName)
+              .maybeSingle();
+            if (existing?.id) {
+              topicCache.set(key, existing.id);
+              return existing.id;
+            }
+            const { data: created, error: topicError } = await supabase
+              .from("topics")
+              .insert({ name: topicName, course_id: courseId })
               .select("id")
               .single();
-
             if (topicError) throw topicError;
-            topicId = newTopic.id;
-          }
+            topicCache.set(key, created.id);
+            return created.id;
+          };
+
+          // Pre-resolve unique topics for this quiz in one pass
+          const uniqueTopics = Array.from(
+            new Set(quiz.questions.map((q) => q.topic || "General"))
+          );
+          for (const t of uniqueTopics) await resolveTopicId(t);
 
           // Create the quiz
           const { data: newQuiz, error: quizError } = await supabase
@@ -778,7 +786,7 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
             explanation: q.explanation || null,
             difficulty: q.difficulty || "medium",
             course_id: courseId,
-            topic_id: topicId,
+            topic_id: topicCache.get(`${courseId}::${(q.topic || "General").toLowerCase()}`)!,
             tutor_id: user.id,
             is_approved: true,
           }));
