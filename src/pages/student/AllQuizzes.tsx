@@ -259,5 +259,3 @@ function Empty({ text, onClear }: { text: string; onClear: () => void }) {
   );
 }
 
-import { BookOpen as _BookOpen } from "lucide-react";
-void _BookOpen;
