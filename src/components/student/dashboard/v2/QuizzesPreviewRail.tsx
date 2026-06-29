@@ -11,12 +11,16 @@ import { QuizCard, QuizCardSkeleton } from "@/components/quizzes/QuizCard";
  */
 export default function QuizzesPreviewRail() {
   const { data, isLoading } = useQuizzes({ limit: 60 });
+  const { data: progress } = useQuizProgress();
+
 
   const items = (() => {
     if (!data) return [];
     const seen = new Set<string>();
     const out: typeof data.trending = [];
-    for (const list of [data.trending, data.newest]) {
+    // Prioritise in-progress so students can resume from the dashboard
+    const inProgress = data.trending.concat(data.newest).filter((q) => progress?.[q.id]?.status === "in_progress");
+    for (const list of [inProgress, data.trending, data.newest]) {
       for (const q of list) {
         if (seen.has(q.id)) continue;
         seen.add(q.id);
@@ -26,6 +30,7 @@ export default function QuizzesPreviewRail() {
     }
     return out;
   })();
+
 
   return (
     <section aria-labelledby="sec-quizzes" className="space-y-3">
