@@ -27,6 +27,7 @@ import * as XLSX from "xlsx";
 import mammoth from "mammoth";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { classifyTopic } from "@/lib/germanTopicClassifier";
 import {
   Dialog,
   DialogContent,
