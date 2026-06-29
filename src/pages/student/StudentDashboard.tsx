@@ -64,27 +64,16 @@ const StudentDashboard = () => {
               <DashboardOfflineBanner onReattempt={onRefresh} />
             </div>
 
-            {/* Greeting + tomorrow's exam + next best action */}
-            <div className="space-y-4 sm:space-y-5 mt-3">
-              <HeroGreeting key={`hg-${refreshKey}`} />
-              <PickUpWhereYouLeftOff key={`pu-${refreshKey}`} />
-              <QuickJumpMenu />
-              <NextBestAction key={`nba-${refreshKey}`} />
+            {/* One smart "what's next" hero */}
+            <div className="mt-3">
+              <WhatsNextCard key={`wn-${refreshKey}`} />
             </div>
 
             {/* Two-column grid on lg+ */}
             <div className="mt-6 sm:mt-8 grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
               {/* Primary column */}
               <div className="lg:col-span-2 space-y-6 sm:space-y-7 min-w-0">
-                <section aria-labelledby="sec-today" className="space-y-3">
-                  <SectionLabel
-                    eyebrow="Today"
-                    title="Your focus right now"
-                    hint="A short, intentional plan beats a long, scattered one."
-                  />
-                  <IntelligenceWidget key={`iw-${refreshKey}`} />
-                  <TodayFocusCard key={`tf-${refreshKey}`} />
-                </section>
+
 
                 <section aria-labelledby="sec-learn" className="space-y-3">
                   <SectionLabel
