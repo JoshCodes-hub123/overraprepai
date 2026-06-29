@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { prefetchDashboardNeighbors } from "@/lib/routePrefetch";
@@ -9,11 +9,20 @@ import WhatsNextCard from "@/components/student/dashboard/v2/WhatsNextCard";
 import { CommandPalette, useCommandPaletteHotkey } from "@/components/student/CommandPalette";
 
 import { TopAppBar } from "@/components/student/dashboard/v2/TopAppBar";
-import { CourseRail } from "@/components/student/dashboard/v2/CourseRail";
-import { QuickActions4 } from "@/components/student/dashboard/v2/QuickActions4";
-import ExploreTabs from "@/components/student/dashboard/v2/ExploreTabs";
 import SectionLabel from "@/components/student/dashboard/v2/SectionLabel";
-import QuizzesPreviewRail from "@/components/student/dashboard/v2/QuizzesPreviewRail";
+
+// Lazy-load below-the-fold sections to keep initial dashboard paint fast.
+const CourseRail = lazy(() => import("@/components/student/dashboard/v2/CourseRail"));
+const QuizzesPreviewRail = lazy(() => import("@/components/student/dashboard/v2/QuizzesPreviewRail"));
+const QuickActions4 = lazy(() =>
+  import("@/components/student/dashboard/v2/QuickActions4").then((m) => ({ default: m.QuickActions4 })),
+);
+const ExploreTabs = lazy(() => import("@/components/student/dashboard/v2/ExploreTabs"));
+
+const RailFallback = ({ h = 140 }: { h?: number }) => (
+  <div className="rounded-2xl bg-amber-50/40 animate-pulse" style={{ height: h }} />
+);
+
 
 if (typeof window !== "undefined") prefetchDashboardNeighbors();
 
@@ -80,10 +89,14 @@ const StudentDashboard = () => {
                     hint="Pick up where you left off."
                     to="/study-hub"
                   />
-                  <CourseRail key={`cr-${refreshKey}`} />
+                  <Suspense fallback={<RailFallback h={180} />}>
+                    <CourseRail key={`cr-${refreshKey}`} />
+                  </Suspense>
                 </section>
 
-                <QuizzesPreviewRail key={`qpr-${refreshKey}`} />
+                <Suspense fallback={<RailFallback h={220} />}>
+                  <QuizzesPreviewRail key={`qpr-${refreshKey}`} />
+                </Suspense>
 
 
 
@@ -93,7 +106,9 @@ const StudentDashboard = () => {
                     title="Quick actions"
                     hint="Practice, summarize, ask the AI tutor."
                   />
-                  <QuickActions4 />
+                  <Suspense fallback={<RailFallback h={120} />}>
+                    <QuickActions4 />
+                  </Suspense>
                 </section>
               </div>
 
@@ -105,7 +120,9 @@ const StudentDashboard = () => {
                     title="Compete · Grow · Community"
                     hint="One tap into Arena, Opportunities or the feed."
                   />
-                  <ExploreTabs refreshKey={refreshKey} />
+                  <Suspense fallback={<RailFallback h={240} />}>
+                    <ExploreTabs refreshKey={refreshKey} />
+                  </Suspense>
                 </section>
               </aside>
             </div>
