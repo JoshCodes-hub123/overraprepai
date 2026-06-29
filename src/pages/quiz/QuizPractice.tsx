@@ -87,29 +87,51 @@ const QuizPractice = () => {
   // Pre-quiz timer
   const [showTimerPicker, setShowTimerPicker] = useState(false);
   const [chosenMinutes, setChosenMinutes] = useState<number | null>(null);
+  const [endsAt, setEndsAt] = useState<number | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const warnedRef = useRef<Set<number>>(new Set());
   const [needsUnlock, setNeedsUnlock] = useState(false);
   const unlockSucceededRef = useRef(false);
 
-  // Show timer picker once the quiz is loaded (and not resuming)
+  // Show timer picker once the quiz is loaded (and not resuming with timer)
   useEffect(() => {
     if (!quiz) return;
     if (showResumePrompt) return;
-    if (chosenMinutes !== null) return;
+    if (chosenMinutes !== null || endsAt !== null) return;
     setShowTimerPicker(true);
-  }, [quiz, showResumePrompt, chosenMinutes]);
+  }, [quiz, showResumePrompt, chosenMinutes, endsAt]);
 
-  // Countdown
+  // Countdown driven by absolute endsAt so refresh/resume stays consistent
   useEffect(() => {
-    if (secondsLeft === null) return;
-    if (secondsLeft <= 0) {
-      void handleFinishQuiz();
+    if (endsAt === null) {
+      setSecondsLeft(null);
       return;
     }
-    const t = setInterval(() => setSecondsLeft((s) => (s === null ? null : s - 1)), 1000);
+    const tick = () => {
+      const s = Math.max(0, Math.round((endsAt - Date.now()) / 1000));
+      setSecondsLeft(s);
+      // Warning thresholds: 5min, 1min, 30s
+      for (const threshold of [300, 60, 30]) {
+        if (s === threshold && !warnedRef.current.has(threshold)) {
+          warnedRef.current.add(threshold);
+          void haptic("warning");
+          toast({
+            title: threshold >= 60 ? `${threshold / 60} minute${threshold === 60 ? "" : "s"} left` : `${threshold} seconds left`,
+            description: threshold <= 30 ? "Wrap up — quiz will auto-submit." : "Pace yourself.",
+            variant: threshold <= 60 ? "destructive" : "default",
+          });
+        }
+      }
+      if (s <= 0) {
+        void handleFinishQuiz();
+      }
+    };
+    tick();
+    const t = setInterval(tick, 1000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [secondsLeft]);
+  }, [endsAt]);
+
 
   useEffect(() => {
     if (!authLoading && !user) {
