@@ -8166,6 +8166,25 @@ export type Database = {
           id: string
         }[]
       }
+      admin_list_users: {
+        Args: { _limit?: number; _offset?: number; _search?: string }
+        Returns: {
+          academic_path: string
+          ai_token_balance: number
+          created_at: string
+          department: string
+          email: string
+          full_name: string
+          id: string
+          last_seen_at: string
+          phone: string
+          purchase_count: number
+          total_amount_spent_ngn: number
+          total_tokens_bought: number
+          total_users: number
+          university: string
+        }[]
+      }
       admin_revoke_all_sessions: { Args: { _user_id: string }; Returns: number }
       admin_set_tutor_status: {
         Args: { _reason?: string; _status: string; _user_id: string }
