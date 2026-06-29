@@ -9,7 +9,7 @@ import * as XLSX from "xlsx";
  * Identical schema to the universal tutor template — same 60 seed Qs.
  */
 
-const QT = "GNS 106 — German (Practice)";
+const QT = "GNS 106 — German & Objectives (Practice)";
 const ROWS: Array<Record<string, string | number>> = [
   // EASY — 24
   row("What does 'Guten Morgen' mean?","Good night","Good morning","Good evening","Goodbye","B","Guten Morgen = Good morning.","easy","Greetings"),
