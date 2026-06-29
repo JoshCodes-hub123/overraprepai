@@ -291,6 +291,7 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
         const correctOption = String(row.correct_option || row.Correct || row["Correct Option"] || row.Answer || "").trim().toUpperCase();
         const explanation = String(row.explanation || row.Explanation || "").trim();
         const difficulty = String(row.difficulty || row.Difficulty || "medium").trim().toLowerCase();
+        const rawTopic = String(row.topic || row.Topic || row["Topic"] || row.tag || row.Tag || "").trim();
 
         // Validate required fields
         if (!title) {
