@@ -7,7 +7,7 @@ interface AutoSaveData {
   currentIndex: number;
   timeLeft: number;
   /** Absolute end timestamp (ms since epoch) for the running timer. */
-  endsAt: number | null;
+  endsAt?: number | null;
   attemptId: string | null;
 }
 
