@@ -145,12 +145,12 @@ function downloadCsv() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "GNS106_German_Starter.csv";
+  a.download = "GNS106_German_and_Objectives_Starter.csv";
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  toast.success("GNS 106 starter CSV downloaded (60 questions)");
+  toast.success("GNS 106 starter CSV downloaded (German + Objectives, 80 questions)");
 }
 
 export function GNS106GermanTemplate() {
@@ -164,9 +164,9 @@ export function GNS106GermanTemplate() {
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-rose-700">
             Tomorrow's paper
           </p>
-          <h3 className="font-semibold text-base">GNS 106 — German starter bank</h3>
+          <h3 className="font-semibold text-base">GNS 106 — German + Objectives starter bank</h3>
           <p className="text-xs text-muted-foreground">
-            60 seed questions across greetings, articles, verbs, numbers, Perfekt &amp; passive — auto-tagged by topic. Edit, replace with real past questions, then upload.
+            80 seed questions in one quiz: 60 German (greetings, articles, verbs, Perfekt, passive) + 20 Objectives (Use of English, communication, study skills) — auto-tagged by topic. Edit, replace with your past questions, then upload.
           </p>
         </div>
       </div>
