@@ -99,20 +99,34 @@ const AdminBulkUpload = () => {
             </Button>
           </Card>
 
+          <div className="mb-3">
+            <GNS106GermanTemplate />
+          </div>
+
           <div className="mb-2 flex items-center gap-2">
             <FileDown className="w-4 h-4 text-muted-foreground" />
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Templates &amp; column guide
+              Universal templates &amp; column guide
             </h2>
           </div>
           <QuizUploadTemplates />
+
+          <div className="mt-6">
+            <AdminImportHistory
+              refreshKey={historyKey}
+              onRetry={() => setOpen(true)}
+            />
+          </div>
         </div>
       </div>
 
       <BulkQuizImport
         open={open}
         onOpenChange={setOpen}
-        onSuccess={() => setOpen(false)}
+        onSuccess={() => {
+          setOpen(false);
+          setHistoryKey((k) => k + 1);
+        }}
         adminScope
       />
     </>
