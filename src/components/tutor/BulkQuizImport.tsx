@@ -96,6 +96,75 @@ interface Course {
   name: string;
 }
 
+// ----- Column mapping summary (auto-detected) -----
+const CANONICAL_FIELDS: { field: string; required: boolean; aliases: string[] }[] = [
+  { field: "quiz_title",       required: true,  aliases: ["quiz_title", "title", "quiz title"] },
+  { field: "course_code",      required: true,  aliases: ["course_code", "course code"] },
+  { field: "course_name",      required: false, aliases: ["course_name", "course name"] },
+  { field: "question_text",    required: true,  aliases: ["question_text", "question", "question text"] },
+  { field: "option_a",         required: true,  aliases: ["option_a", "option a"] },
+  { field: "option_b",         required: true,  aliases: ["option_b", "option b"] },
+  { field: "option_c",         required: true,  aliases: ["option_c", "option c"] },
+  { field: "option_d",         required: true,  aliases: ["option_d", "option d"] },
+  { field: "correct_option",   required: true,  aliases: ["correct_option", "correct", "answer", "correct option"] },
+  { field: "explanation",      required: false, aliases: ["explanation"] },
+  { field: "difficulty",       required: false, aliases: ["difficulty"] },
+  { field: "topic",            required: false, aliases: ["topic", "tag"] },
+  { field: "duration_minutes", required: false, aliases: ["duration_minutes", "duration", "duration (mins)"] },
+  { field: "is_premium",       required: false, aliases: ["is_premium", "premium", "is premium"] },
+  { field: "token_cost",       required: false, aliases: ["token_cost", "cost", "token cost"] },
+  { field: "is_simulation",    required: false, aliases: ["is_simulation", "simulation", "is simulation"] },
+];
+
+function ColumnMappingSummary({ detected }: { detected: string[] }) {
+  const lowerDetected = detected.map((d) => d.trim().toLowerCase());
+  const mappings = CANONICAL_FIELDS.map((f) => {
+    const hit = f.aliases.find((a) => lowerDetected.includes(a.toLowerCase()));
+    const sourceCol = hit ? detected[lowerDetected.indexOf(hit.toLowerCase())] : null;
+    return { ...f, sourceCol };
+  });
+  const missingRequired = mappings.filter((m) => m.required && !m.sourceCol);
+  return (
+    <div className="p-3 rounded-lg border bg-muted/30 space-y-2">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium">Detected column mapping</p>
+        <Badge variant={missingRequired.length ? "destructive" : "outline"} className="text-[10px]">
+          {missingRequired.length ? `${missingRequired.length} required missing` : "All required mapped"}
+        </Badge>
+      </div>
+      {missingRequired.length > 0 && (
+        <p className="text-[11px] text-destructive">
+          Missing: {missingRequired.map((m) => m.field).join(", ")} — rename your column headers and re-upload.
+        </p>
+      )}
+      <ScrollArea className="max-h-32">
+        <ul className="text-[11px] space-y-1">
+          {mappings.map((m) => (
+            <li key={m.field} className="flex items-center justify-between gap-2">
+              <span className="font-mono text-foreground">
+                {m.field}
+                {m.required && <span className="text-destructive ml-0.5">*</span>}
+              </span>
+              {m.sourceCol ? (
+                <span className="text-muted-foreground">
+                  ← <span className="font-mono">{m.sourceCol}</span>
+                </span>
+              ) : (
+                <span className="text-muted-foreground italic">not found</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </ScrollArea>
+      <p className="text-[10px] text-muted-foreground">
+        Auto-mapped from your file's headers. Required columns are marked *. Add a <span className="font-mono">topic</span> column to control auto-grouping, or it will be inferred from question text.
+      </p>
+    </div>
+  );
+}
+
+
+
 export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = false }: BulkQuizImportProps) {
   const { user } = useAuth();
   const [importedQuizzes, setImportedQuizzes] = useState<ImportedQuiz[]>([]);
