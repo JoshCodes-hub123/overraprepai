@@ -401,12 +401,21 @@ const QuizPractice = () => {
   const handleResume = () => {
     setShowResumePrompt(false);
     setIsLoading(true);
+    // Restore the timer from the saved absolute endsAt so it stays consistent
+    if (savedData?.endsAt && savedData.endsAt > Date.now()) {
+      setEndsAt(savedData.endsAt);
+      setChosenMinutes(Math.ceil((savedData.endsAt - Date.now()) / 60000));
+    } else if (savedData?.endsAt && savedData.endsAt <= Date.now()) {
+      // Timer already expired while away — start with 0 to trigger auto-submit
+      setEndsAt(Date.now());
+    }
     fetchQuizData({
       answers: savedData?.answers || {},
       currentIndex: savedData?.currentIndex || 0,
       attemptId: savedData?.attemptId || null,
     });
   };
+
 
   const handleStartFresh = () => {
     clearState();
