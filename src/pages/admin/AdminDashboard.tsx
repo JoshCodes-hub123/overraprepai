@@ -34,6 +34,7 @@ import { QuestionModeration } from "@/components/admin/QuestionModeration";
 import { PlatformSettings } from "@/components/admin/PlatformSettings";
 import { PlatformAnalytics } from "@/components/admin/PlatformAnalytics";
 import { TokenPurchaseManagement } from "@/components/admin/TokenPurchaseManagement";
+import { UserDirectory } from "@/components/admin/UserDirectory";
 import { WithdrawalManagement } from "@/components/admin/WithdrawalManagement";
 import { AuditLogs } from "@/components/admin/AuditLogs";
 import { HealthDashboard } from "@/components/admin/HealthDashboard";
@@ -409,6 +410,10 @@ const AdminDashboard = () => {
                 <span className="hidden sm:inline">Insights</span>
                 <span className="sm:hidden">📈</span>
               </TabsTrigger>
+              <TabsTrigger value="users" className="flex items-center gap-2 text-xs md:text-sm">
+                <Users className="w-4 h-4" />
+                Users
+              </TabsTrigger>
               <TabsTrigger value="tutors" className="flex items-center gap-2 text-xs md:text-sm">
                 <GraduationCap className="w-4 h-4" />
                 Tutors
@@ -472,6 +477,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="insights">
             <AdminInsights />
+          </TabsContent>
+
+          <TabsContent value="users">
+            <UserDirectory />
           </TabsContent>
 
           <TabsContent value="tutors">
