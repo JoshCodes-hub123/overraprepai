@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Search, Users, Coins, Banknote, Mail, Phone } from "lucide-react";
 import { format } from "date-fns";
 import { exportToCsv } from "@/lib/exportCsv";
+import { exportToPdf } from "@/lib/exportPdf";
 import { ExportButton } from "./ExportButton";
 
 interface UserRow {
