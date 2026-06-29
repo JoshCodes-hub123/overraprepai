@@ -410,6 +410,10 @@ const AdminDashboard = () => {
                 <span className="hidden sm:inline">Insights</span>
                 <span className="sm:hidden">📈</span>
               </TabsTrigger>
+              <TabsTrigger value="users" className="flex items-center gap-2 text-xs md:text-sm">
+                <Users className="w-4 h-4" />
+                Users
+              </TabsTrigger>
               <TabsTrigger value="tutors" className="flex items-center gap-2 text-xs md:text-sm">
                 <GraduationCap className="w-4 h-4" />
                 Tutors
