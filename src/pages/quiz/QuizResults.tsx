@@ -7,6 +7,7 @@ import { RateQuizDialog } from "@/components/student/RateQuizDialog";
 import { ShareResultsButton } from "@/components/quiz/ShareResultsButton";
 import { QuizCelebration } from "@/components/quiz/QuizCelebration";
 import { QuizResultShareCard } from "@/components/quiz/QuizResultShareCard";
+import { QuizReviewList } from "@/components/quiz/QuizReviewList";
 import logo from "@/assets/logo.png";
 import {
   Trophy,
