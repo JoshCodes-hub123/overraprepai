@@ -354,6 +354,15 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
           correct_option: correctOption,
           explanation,
           difficulty,
+          topic: classifyTopic({
+            topic: rawTopic,
+            question_text: questionText,
+            option_a: optionA,
+            option_b: optionB,
+            option_c: optionC,
+            option_d: optionD,
+            explanation,
+          }),
         });
       }
 
