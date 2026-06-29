@@ -78,23 +78,40 @@ export function UserDirectory() {
     return { buyers: buyers.length, totalSpent, totalTokens };
   }, [rows]);
 
-  const handleExport = () => {
-    exportToCsv(
-      rows.map((r) => ({
-        Name: r.full_name || "",
-        Email: r.email || "",
-        Phone: r.phone || "",
-        University: r.university || "",
-        Department: r.department || "",
-        Path: r.academic_path || "",
-        TokenBalance: r.ai_token_balance,
-        TokensBought: r.total_tokens_bought,
-        AmountSpentNGN: Number(r.total_amount_spent_ngn || 0),
-        Purchases: r.purchase_count,
-        Joined: r.created_at,
-        LastSeen: r.last_seen_at || "",
-      })),
+  const exportRows = () =>
+    rows.map((r) => ({
+      Name: r.full_name || "",
+      Email: r.email || "",
+      Phone: r.phone || "",
+      University: r.university || "",
+      Department: r.department || "",
+      Path: r.academic_path || "",
+      TokenBalance: r.ai_token_balance,
+      TokensBought: r.total_tokens_bought,
+      AmountSpentNGN: Number(r.total_amount_spent_ngn || 0),
+      Purchases: r.purchase_count,
+      Joined: r.created_at,
+      LastSeen: r.last_seen_at || "",
+    }));
+
+  const handleExportCsv = () => {
+    exportToCsv(exportRows(), `users_${new Date().toISOString().slice(0, 10)}`);
+  };
+
+  const handleExportPdf = () => {
+    exportToPdf(
+      exportRows(),
       `users_${new Date().toISOString().slice(0, 10)}`,
+      "OverraPrep — Users & Token Purchases",
+      [
+        { key: "Name", label: "Name" },
+        { key: "Email", label: "Email" },
+        { key: "Phone", label: "Phone" },
+        { key: "University", label: "School" },
+        { key: "TokensBought", label: "Tokens" },
+        { key: "AmountSpentNGN", label: "Spent (NGN)" },
+        { key: "Purchases", label: "Purchases" },
+      ],
     );
   };
 
@@ -128,7 +145,7 @@ export function UserDirectory() {
                 className="pl-9"
               />
             </div>
-            <ExportButton onExport={handleExport} disabled={!rows.length} label="Export CSV" />
+            <ExportButton onExportCsv={handleExportCsv} onExportPdf={handleExportPdf} disabled={!rows.length} />
           </div>
         </CardHeader>
         <CardContent className="p-0">
