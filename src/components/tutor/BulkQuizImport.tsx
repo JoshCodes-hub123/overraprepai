@@ -52,6 +52,7 @@ interface ImportedQuestion {
   correct_option: string;
   explanation: string;
   difficulty: string;
+  topic: string;
 }
 
 interface ImportedQuiz {
