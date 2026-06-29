@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { prefetchDashboardNeighbors } from "@/lib/routePrefetch";
@@ -9,11 +9,20 @@ import WhatsNextCard from "@/components/student/dashboard/v2/WhatsNextCard";
 import { CommandPalette, useCommandPaletteHotkey } from "@/components/student/CommandPalette";
 
 import { TopAppBar } from "@/components/student/dashboard/v2/TopAppBar";
-import { CourseRail } from "@/components/student/dashboard/v2/CourseRail";
-import { QuickActions4 } from "@/components/student/dashboard/v2/QuickActions4";
-import ExploreTabs from "@/components/student/dashboard/v2/ExploreTabs";
 import SectionLabel from "@/components/student/dashboard/v2/SectionLabel";
-import QuizzesPreviewRail from "@/components/student/dashboard/v2/QuizzesPreviewRail";
+
+// Lazy-load below-the-fold sections to keep initial dashboard paint fast.
+const CourseRail = lazy(() => import("@/components/student/dashboard/v2/CourseRail"));
+const QuizzesPreviewRail = lazy(() => import("@/components/student/dashboard/v2/QuizzesPreviewRail"));
+const QuickActions4 = lazy(() =>
+  import("@/components/student/dashboard/v2/QuickActions4").then((m) => ({ default: m.QuickActions4 })),
+);
+const ExploreTabs = lazy(() => import("@/components/student/dashboard/v2/ExploreTabs"));
+
+const RailFallback = ({ h = 140 }: { h?: number }) => (
+  <div className="rounded-2xl bg-amber-50/40 animate-pulse" style={{ height: h }} />
+);
+
 
 if (typeof window !== "undefined") prefetchDashboardNeighbors();
 
