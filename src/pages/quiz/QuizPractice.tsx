@@ -559,7 +559,8 @@ const QuizPractice = () => {
         tutorMinutes={quiz?.duration_minutes ?? 0}
         onConfirm={(mins) => {
           setChosenMinutes(mins);
-          setSecondsLeft(mins > 0 ? mins * 60 : null);
+          warnedRef.current = new Set();
+          setEndsAt(mins > 0 ? Date.now() + mins * 60_000 : null);
           setShowTimerPicker(false);
         }}
       />
