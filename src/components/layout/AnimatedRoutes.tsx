@@ -113,6 +113,7 @@ const TutorCourses = lazy(() => import("@/pages/tutor/TutorCourses"));
 const TutorCurricula = lazy(() => import("@/pages/tutor/TutorCurricula"));
 const TutorCurriculumBuilder = lazy(() => import("@/pages/tutor/TutorCurriculumBuilder"));
 const AdminCourses = lazy(() => import("@/pages/admin/AdminCourses"));
+const AdminBulkUpload = lazy(() => import("@/pages/admin/AdminBulkUpload"));
 const CommunityWall = lazy(() => import("@/pages/community/CommunityWall"));
 
 // "I'm New" onboarding chain
