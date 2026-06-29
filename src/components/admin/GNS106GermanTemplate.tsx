@@ -128,8 +128,8 @@ function downloadXlsx() {
   ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Questions");
-  XLSX.writeFile(wb, "GNS106_German_Starter.xlsx");
-  toast.success("GNS 106 starter Excel downloaded (60 questions)");
+  XLSX.writeFile(wb, "GNS106_German_and_Objectives_Starter.xlsx");
+  toast.success("GNS 106 starter Excel downloaded (German + Objectives, 80 questions)");
 }
 
 function downloadCsv() {
