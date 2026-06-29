@@ -94,7 +94,7 @@ interface Course {
   name: string;
 }
 
-export function BulkQuizImport({ open, onOpenChange, onSuccess }: BulkQuizImportProps) {
+export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = false }: BulkQuizImportProps) {
   const { user } = useAuth();
   const [importedQuizzes, setImportedQuizzes] = useState<ImportedQuiz[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
@@ -113,10 +113,8 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess }: BulkQuizImport
   useState(() => {
     const fetchCourses = async () => {
       if (!user) return;
-      const { data } = await supabase
-        .from("courses")
-        .select("id, code, name")
-        .eq("created_by", user.id);
+      const query = supabase.from("courses").select("id, code, name");
+      const { data } = adminScope ? await query : await query.eq("created_by", user.id);
       if (data) setExistingCourses(data);
     };
     fetchCourses();
