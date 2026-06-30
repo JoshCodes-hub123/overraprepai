@@ -93,8 +93,16 @@ export default function AdminBroadcast() {
         </header>
         <main className="container mx-auto px-4 py-6 max-w-xl space-y-3">
           <p className="text-[12.5px] text-muted-foreground flex items-center gap-2">
-            <Megaphone className="h-4 w-4 text-amber-600" /> Announcements notify the chosen audience instantly.
+            <Megaphone className="h-4 w-4 text-amber-600" /> Sends an in-app notification, email AND a push to their phones.
           </p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={prefillChe102}
+            className="w-full border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+          >
+            🧪 Prefill: CHE 102 test tomorrow
+          </Button>
           <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
           <Textarea placeholder="Message" rows={5} value={body} onChange={(e) => setBody(e.target.value)} />
           <Input placeholder="Link URL (optional)" value={link} onChange={(e) => setLink(e.target.value)} />
