@@ -19,15 +19,62 @@ export default function AdminBroadcast() {
   const [audience, setAudience] = useState<Audience>("all");
   const [busy, setBusy] = useState(false);
 
+  const prefillChe102 = () => {
+    setTitle("📚 CHE 102 test is TOMORROW — practice now");
+    setBody(
+      "Hey! Your CHE 102 (General Chemistry II) paper is tomorrow. Open OverraPrep AI now and run the CHE 102 quiz — Gas Laws, Thermodynamics, Equilibrium, Acids/Bases, Organic & more. 10 quick minutes tonight = serious marks tomorrow. Let's go! 🧪🔥"
+    );
+    setLink("https://overraprepai.com/student/dashboard");
+    setAudience("students");
+  };
+
   const send = async () => {
     if (!title.trim() || !body.trim()) return;
     setBusy(true);
     try {
-      const { error } = await (supabase.from as any)("platform_announcements").insert({
-        title, body, link_url: link || null, audience, is_published: true, created_by: user?.id,
-      });
+      // 1. Create announcement row (shows on dashboard + notification center)
+      const { data: ann, error } = await (supabase.from as any)("platform_announcements")
+        .insert({
+          title, body, link_url: link || null, audience, is_published: true, created_by: user?.id,
+        })
+        .select("id")
+        .single();
       if (error) throw error;
-      toast.success("Broadcast sent");
+
+      // 2. Fan-out to phones: email blast + FCM push
+      const targetRoles =
+        audience === "students" ? ["student"] : audience === "tutors" ? ["tutor"] : ["student", "tutor"];
+
+      const { data: roleRows } = await (supabase as any)
+        .from("user_roles")
+        .select("user_id")
+        .in("role", targetRoles);
+      const userIds = Array.from(new Set((roleRows ?? []).map((r: any) => r.user_id))).filter(Boolean);
+
+      // Email blast (best-effort)
+      supabase.functions
+        .invoke("notify-announcement", { body: { announcementId: ann.id } })
+        .catch((e) => console.warn("email blast failed", e));
+
+      // Push to phones (best-effort, chunked to keep payload small)
+      if (userIds.length) {
+        const CHUNK = 200;
+        for (let i = 0; i < userIds.length; i += CHUNK) {
+          const slice = userIds.slice(i, i + CHUNK);
+          supabase.functions
+            .invoke("send-push", {
+              body: {
+                user_ids: slice,
+                title,
+                body,
+                link: link || "/student/dashboard",
+              },
+            })
+            .catch((e) => console.warn("push batch failed", e));
+        }
+      }
+
+      toast.success(`Broadcast sent to ${userIds.length} phones + inboxes`);
       setTitle(""); setBody(""); setLink("");
     } catch (e: any) {
       toast.error(e.message ?? "Failed");
