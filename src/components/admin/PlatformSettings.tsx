@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Save, Percent, Info } from "lucide-react";
+import { Loader2, Save, Percent, Info, CalendarClock } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
 
 interface Setting {
@@ -22,6 +23,13 @@ export function PlatformSettings() {
   const [isSaving, setIsSaving] = useState(false);
   const [commissionRate, setCommissionRate] = useState("80");
 
+  // Tomorrow's-exam pill (student dashboard)
+  const [examEnabled, setExamEnabled] = useState(false);
+  const [examPrefix, setExamPrefix] = useState("Heads-up: tomorrow is");
+  const [examLabel, setExamLabel] = useState("");
+  const [examEmoji, setExamEmoji] = useState("📚");
+  const [isSavingExam, setIsSavingExam] = useState(false);
+
   const fetchSettings = async () => {
     try {
       const { data } = await supabase
@@ -32,14 +40,44 @@ export function PlatformSettings() {
       if (data) {
         setSettings(data);
         const commission = data.find((s) => s.key === "tutor_commission_rate");
-        if (commission) {
-          setCommissionRate(commission.value);
-        }
+        if (commission) setCommissionRate(commission.value);
+
+        const map = Object.fromEntries(data.map((s) => [s.key, s.value]));
+        setExamEnabled((map.upcoming_exam_enabled ?? "false").toLowerCase() === "true");
+        setExamPrefix(map.upcoming_exam_prefix ?? "Heads-up: tomorrow is");
+        setExamLabel(map.upcoming_exam_label ?? "");
+        setExamEmoji(map.upcoming_exam_emoji ?? "📚");
       }
     } catch (error) {
       console.error("Error fetching settings:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const upsertSetting = async (key: string, value: string) => {
+    const { error } = await supabase
+      .from("platform_settings")
+      .upsert({ key, value, updated_by: user?.id }, { onConflict: "key" });
+    if (error) throw error;
+  };
+
+  const handleSaveExamPill = async () => {
+    setIsSavingExam(true);
+    try {
+      await Promise.all([
+        upsertSetting("upcoming_exam_enabled", examEnabled ? "true" : "false"),
+        upsertSetting("upcoming_exam_prefix", examPrefix),
+        upsertSetting("upcoming_exam_label", examLabel),
+        upsertSetting("upcoming_exam_emoji", examEmoji),
+      ]);
+      toast.success("Tomorrow's exam pill updated");
+      fetchSettings();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.message || "Failed to save");
+    } finally {
+      setIsSavingExam(false);
     }
   };
 
@@ -157,6 +195,66 @@ export function PlatformSettings() {
               </ul>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Tomorrow's Exam Pill */}
+      <div className="bg-card rounded-xl border border-border p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+            <CalendarClock className="w-5 h-5 text-emerald-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-display font-semibold text-foreground">Tomorrow's Exam Pill</h3>
+            <p className="text-sm text-muted-foreground">
+              Small reminder that appears at the top of the student dashboard.
+            </p>
+          </div>
+          <Switch checked={examEnabled} onCheckedChange={setExamEnabled} />
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="space-y-2 md:col-span-1">
+            <Label htmlFor="exam-prefix">Prefix</Label>
+            <Input
+              id="exam-prefix"
+              value={examPrefix}
+              onChange={(e) => setExamPrefix(e.target.value)}
+              placeholder="Heads-up: tomorrow is"
+            />
+          </div>
+          <div className="space-y-2 md:col-span-1">
+            <Label htmlFor="exam-label">Course / label</Label>
+            <Input
+              id="exam-label"
+              value={examLabel}
+              onChange={(e) => setExamLabel(e.target.value)}
+              placeholder="CHE 104"
+            />
+          </div>
+          <div className="space-y-2 md:col-span-1">
+            <Label htmlFor="exam-emoji">Emoji</Label>
+            <Input
+              id="exam-emoji"
+              value={examEmoji}
+              onChange={(e) => setExamEmoji(e.target.value)}
+              placeholder="🧪"
+              maxLength={4}
+            />
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <div className="text-sm text-muted-foreground">
+            Preview:{" "}
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/70 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 ml-2">
+              <CalendarClock className="h-3 w-3" />
+              {examPrefix} <span className="font-bold">{examLabel || "—"}</span> test {examEmoji}
+            </span>
+          </div>
+          <Button onClick={handleSaveExamPill} disabled={isSavingExam}>
+            {isSavingExam ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-2" />Save</>}
+          </Button>
         </div>
       </div>
 
