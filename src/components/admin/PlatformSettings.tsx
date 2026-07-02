@@ -23,6 +23,13 @@ export function PlatformSettings() {
   const [isSaving, setIsSaving] = useState(false);
   const [commissionRate, setCommissionRate] = useState("80");
 
+  // Tomorrow's-exam pill (student dashboard)
+  const [examEnabled, setExamEnabled] = useState(false);
+  const [examPrefix, setExamPrefix] = useState("Heads-up: tomorrow is");
+  const [examLabel, setExamLabel] = useState("");
+  const [examEmoji, setExamEmoji] = useState("📚");
+  const [isSavingExam, setIsSavingExam] = useState(false);
+
   const fetchSettings = async () => {
     try {
       const { data } = await supabase
@@ -33,14 +40,44 @@ export function PlatformSettings() {
       if (data) {
         setSettings(data);
         const commission = data.find((s) => s.key === "tutor_commission_rate");
-        if (commission) {
-          setCommissionRate(commission.value);
-        }
+        if (commission) setCommissionRate(commission.value);
+
+        const map = Object.fromEntries(data.map((s) => [s.key, s.value]));
+        setExamEnabled((map.upcoming_exam_enabled ?? "false").toLowerCase() === "true");
+        setExamPrefix(map.upcoming_exam_prefix ?? "Heads-up: tomorrow is");
+        setExamLabel(map.upcoming_exam_label ?? "");
+        setExamEmoji(map.upcoming_exam_emoji ?? "📚");
       }
     } catch (error) {
       console.error("Error fetching settings:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const upsertSetting = async (key: string, value: string) => {
+    const { error } = await supabase
+      .from("platform_settings")
+      .upsert({ key, value, updated_by: user?.id }, { onConflict: "key" });
+    if (error) throw error;
+  };
+
+  const handleSaveExamPill = async () => {
+    setIsSavingExam(true);
+    try {
+      await Promise.all([
+        upsertSetting("upcoming_exam_enabled", examEnabled ? "true" : "false"),
+        upsertSetting("upcoming_exam_prefix", examPrefix),
+        upsertSetting("upcoming_exam_label", examLabel),
+        upsertSetting("upcoming_exam_emoji", examEmoji),
+      ]);
+      toast.success("Tomorrow's exam pill updated");
+      fetchSettings();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.message || "Failed to save");
+    } finally {
+      setIsSavingExam(false);
     }
   };
 
