@@ -198,6 +198,66 @@ export function PlatformSettings() {
         </div>
       </div>
 
+      {/* Tomorrow's Exam Pill */}
+      <div className="bg-card rounded-xl border border-border p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+            <CalendarClock className="w-5 h-5 text-emerald-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-display font-semibold text-foreground">Tomorrow's Exam Pill</h3>
+            <p className="text-sm text-muted-foreground">
+              Small reminder that appears at the top of the student dashboard.
+            </p>
+          </div>
+          <Switch checked={examEnabled} onCheckedChange={setExamEnabled} />
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="space-y-2 md:col-span-1">
+            <Label htmlFor="exam-prefix">Prefix</Label>
+            <Input
+              id="exam-prefix"
+              value={examPrefix}
+              onChange={(e) => setExamPrefix(e.target.value)}
+              placeholder="Heads-up: tomorrow is"
+            />
+          </div>
+          <div className="space-y-2 md:col-span-1">
+            <Label htmlFor="exam-label">Course / label</Label>
+            <Input
+              id="exam-label"
+              value={examLabel}
+              onChange={(e) => setExamLabel(e.target.value)}
+              placeholder="CHE 104"
+            />
+          </div>
+          <div className="space-y-2 md:col-span-1">
+            <Label htmlFor="exam-emoji">Emoji</Label>
+            <Input
+              id="exam-emoji"
+              value={examEmoji}
+              onChange={(e) => setExamEmoji(e.target.value)}
+              placeholder="🧪"
+              maxLength={4}
+            />
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <div className="text-sm text-muted-foreground">
+            Preview:{" "}
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/70 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 ml-2">
+              <CalendarClock className="h-3 w-3" />
+              {examPrefix} <span className="font-bold">{examLabel || "—"}</span> test {examEmoji}
+            </span>
+          </div>
+          <Button onClick={handleSaveExamPill} disabled={isSavingExam}>
+            {isSavingExam ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-2" />Save</>}
+          </Button>
+        </div>
+      </div>
+
       {/* All Settings */}
       <div className="bg-card rounded-xl border border-border p-6">
         <h3 className="font-display font-semibold text-foreground mb-4">All Settings</h3>
