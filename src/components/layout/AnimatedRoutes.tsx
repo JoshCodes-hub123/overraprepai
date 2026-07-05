@@ -164,6 +164,7 @@ const AdminInsights = lazy(() => import("@/pages/admin/AdminInsights"));
 const AdminAudit = lazy(() => import("@/pages/admin/AdminAudit"));
 const AdminTrust = lazy(() => import("@/pages/admin/AdminTrust"));
 const AdminBroadcast = lazy(() => import("@/pages/admin/AdminBroadcast"));
+const AdminFeedback = lazy(() => import("@/pages/admin/AdminFeedback"));
 const SmartSearch = lazy(() => import("@/pages/SmartSearch"));
 const LiveRoom = lazy(() => import("@/pages/sessions/LiveRoom"));
 const CopilotPage = lazy(() => import("@/pages/student/CopilotPage"));
@@ -607,6 +608,7 @@ export const AnimatedRoutes = () => {
           <Route path="/admin/audit" element={<AdminRoute><PageTransition><AdminAudit /></PageTransition></AdminRoute>} />
           <Route path="/admin/trust" element={<AdminRoute><PageTransition><AdminTrust /></PageTransition></AdminRoute>} />
           <Route path="/admin/broadcast" element={<AdminRoute><PageTransition><AdminBroadcast /></PageTransition></AdminRoute>} />
+          <Route path="/admin/feedback" element={<AdminRoute><PageTransition><AdminFeedback /></PageTransition></AdminRoute>} />
           <Route path="/search" element={<PageTransition><SmartSearch /></PageTransition>} />
           <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
           <Route path="/help" element={<PageTransition><HelpSupport /></PageTransition>} />

@@ -29,6 +29,7 @@ const NAV_BY_ROLE: Record<Role, { label: string; to: string; icon: any }[]> = {
     { label: "Opportunities",  to: "/admin/opportunities", icon: Briefcase },
     { label: "Announcements",  to: "/admin/broadcast",     icon: Megaphone },
     { label: "Audit Logs",     to: "/admin/audit",         icon: Shield },
+    { label: "User Feedback",  to: "/admin/feedback",      icon: Star },
     { label: "Settings",       to: "/settings",            icon: Settings },
   ],
   tutor: [
