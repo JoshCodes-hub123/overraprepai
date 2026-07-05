@@ -7,7 +7,7 @@ import {
   Settings, Shield, Activity, Megaphone, Target, Building2, TrendingUp,
   Bell, HelpCircle, ArrowRight, Crown, BarChart3, Briefcase, Wallet,
   ClipboardCheck, Calendar, Heart, School as SchoolIcon, Sparkles,
-  Bot, Store, MessageCircle, Image as ImageIcon, User,
+  Bot, Store, MessageCircle, Image as ImageIcon, User, Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
@@ -29,6 +29,7 @@ const NAV_BY_ROLE: Record<Role, { label: string; to: string; icon: any }[]> = {
     { label: "Opportunities",  to: "/admin/opportunities", icon: Briefcase },
     { label: "Announcements",  to: "/admin/broadcast",     icon: Megaphone },
     { label: "Audit Logs",     to: "/admin/audit",         icon: Shield },
+    { label: "User Feedback",  to: "/admin/feedback",      icon: Star },
     { label: "Settings",       to: "/settings",            icon: Settings },
   ],
   tutor: [

@@ -8,6 +8,7 @@ import { DashboardOfflineBanner } from "@/components/dashboard/DashboardOfflineB
 import WhatsNextCard from "@/components/student/dashboard/v2/WhatsNextCard";
 import TomorrowGNS106Pill from "@/components/student/dashboard/v2/TomorrowGNS106Pill";
 import { CommandPalette, useCommandPaletteHotkey } from "@/components/student/CommandPalette";
+import { FeedbackPromptDialog } from "@/components/feedback/FeedbackPromptDialog";
 
 import { TopAppBar } from "@/components/student/dashboard/v2/TopAppBar";
 import SectionLabel from "@/components/student/dashboard/v2/SectionLabel";
@@ -59,6 +60,7 @@ const StudentDashboard = () => {
         url="https://overraprep.com/student/dashboard"
       />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+      <FeedbackPromptDialog />
       <PullToRefresh onRefresh={onRefresh}>
         <div className="relative min-h-screen pb-28 md:pb-12 bg-gradient-to-b from-amber-50/60 via-white to-white overflow-hidden">
           {/* Ambient gold glow */}
