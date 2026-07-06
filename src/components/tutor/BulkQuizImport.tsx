@@ -415,10 +415,20 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
               is_simulation: isSimulation,
             },
             questions: [],
+            seen: new Set<string>(),
           });
         }
 
-        quizMap.get(quizKey)!.questions.push({
+        const bucket = quizMap.get(quizKey)!;
+        const dedupKey = normalize(questionText) + "|" + [optionA, optionB, optionC, optionD].map(normalize).sort().join("|");
+        if (bucket.seen.has(dedupKey)) {
+          duplicateCount++;
+          pushReject(rowNum, row, [], "Duplicate question — skipped");
+          continue;
+        }
+        bucket.seen.add(dedupKey);
+
+        bucket.questions.push({
           question_text: questionText,
           option_a: optionA,
           option_b: optionB,
@@ -437,6 +447,7 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
             explanation,
           }),
         });
+
       }
 
       // Convert map to array
