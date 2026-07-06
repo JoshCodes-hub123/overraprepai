@@ -476,12 +476,14 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
       setRejectedRows(rejected);
 
       if (quizzes.length > 0) {
-        toast.success(`Successfully parsed ${quizzes.length} quizzes`);
+        const dupeMsg = duplicateCount > 0 ? ` (${duplicateCount} duplicate${duplicateCount === 1 ? "" : "s"} removed)` : "";
+        toast.success(`Successfully parsed ${quizzes.length} quizzes${dupeMsg}`);
         setViewMode("preview");
         setPreviewIndex(0);
       } else if (parseErrors.length > 0) {
         toast.error("No valid quizzes found. Check the errors below.");
       }
+
     } catch (error: any) {
       console.error("File processing error:", error);
       setErrors([error.message || "Failed to process file"]);
