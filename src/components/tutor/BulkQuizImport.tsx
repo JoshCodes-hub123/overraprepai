@@ -318,13 +318,17 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
       });
 
       // Group rows by quiz title - each row is one question for a quiz
-      const quizMap = new Map<string, { quizData: any; questions: any[] }>();
+      const quizMap = new Map<string, { quizData: any; questions: any[]; seen: Set<string> }>();
       const parseErrors: string[] = [];
       const rejected: RejectedRow[] = [];
+      let duplicateCount = 0;
       const pushReject = (rowNum: number, row: any, missing: string[], reason: string) => {
         parseErrors.push(`Row ${rowNum}: ${reason}`);
         rejected.push({ row: rowNum, reason, missing_fields: missing, data: row });
       };
+      const normalize = (s: string) =>
+        s.toLowerCase().replace(/\s+/g, " ").replace(/[^\w\s]/g, "").trim();
+
 
       for (let index = 0; index < jsonData.length; index++) {
         const row = jsonData[index] as any;
@@ -411,10 +415,20 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
               is_simulation: isSimulation,
             },
             questions: [],
+            seen: new Set<string>(),
           });
         }
 
-        quizMap.get(quizKey)!.questions.push({
+        const bucket = quizMap.get(quizKey)!;
+        const dedupKey = normalize(questionText) + "|" + [optionA, optionB, optionC, optionD].map(normalize).sort().join("|");
+        if (bucket.seen.has(dedupKey)) {
+          duplicateCount++;
+          pushReject(rowNum, row, [], "Duplicate question — skipped");
+          continue;
+        }
+        bucket.seen.add(dedupKey);
+
+        bucket.questions.push({
           question_text: questionText,
           option_a: optionA,
           option_b: optionB,
@@ -433,6 +447,7 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
             explanation,
           }),
         });
+
       }
 
       // Convert map to array
@@ -461,12 +476,14 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
       setRejectedRows(rejected);
 
       if (quizzes.length > 0) {
-        toast.success(`Successfully parsed ${quizzes.length} quizzes`);
+        const dupeMsg = duplicateCount > 0 ? ` (${duplicateCount} duplicate${duplicateCount === 1 ? "" : "s"} removed)` : "";
+        toast.success(`Successfully parsed ${quizzes.length} quizzes${dupeMsg}`);
         setViewMode("preview");
         setPreviewIndex(0);
       } else if (parseErrors.length > 0) {
         toast.error("No valid quizzes found. Check the errors below.");
       }
+
     } catch (error: any) {
       console.error("File processing error:", error);
       setErrors([error.message || "Failed to process file"]);
