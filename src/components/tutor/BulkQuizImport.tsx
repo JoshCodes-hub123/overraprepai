@@ -318,13 +318,17 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
       });
 
       // Group rows by quiz title - each row is one question for a quiz
-      const quizMap = new Map<string, { quizData: any; questions: any[] }>();
+      const quizMap = new Map<string, { quizData: any; questions: any[]; seen: Set<string> }>();
       const parseErrors: string[] = [];
       const rejected: RejectedRow[] = [];
+      let duplicateCount = 0;
       const pushReject = (rowNum: number, row: any, missing: string[], reason: string) => {
         parseErrors.push(`Row ${rowNum}: ${reason}`);
         rejected.push({ row: rowNum, reason, missing_fields: missing, data: row });
       };
+      const normalize = (s: string) =>
+        s.toLowerCase().replace(/\s+/g, " ").replace(/[^\w\s]/g, "").trim();
+
 
       for (let index = 0; index < jsonData.length; index++) {
         const row = jsonData[index] as any;
