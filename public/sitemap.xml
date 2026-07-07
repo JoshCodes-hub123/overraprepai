@@ -322,6 +322,24 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://overraprepai.com/courses/36f87e79-f2f1-49b6-8e04-f623cc0cdab0</loc>
+    <lastmod>2026-07-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://overraprepai.com/courses/cfc26104-2e6f-4e92-83f9-a9402e00c023</loc>
+    <lastmod>2026-07-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://overraprepai.com/courses/fe4da70e-294f-4391-a66e-f9bb06825266</loc>
+    <lastmod>2026-07-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://overraprepai.com/topics/physics-102</loc>
     <lastmod>2026-06-27</lastmod>
     <changefreq>monthly</changefreq>
@@ -546,6 +564,24 @@
   <url>
     <loc>https://overraprepai.com/topics/chemistry-lab-test-104</loc>
     <lastmod>2026-07-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.55</priority>
+  </url>
+  <url>
+    <loc>https://overraprepai.com/topics/csc-102</loc>
+    <lastmod>2026-07-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.55</priority>
+  </url>
+  <url>
+    <loc>https://overraprepai.com/topics/mts-104-vector-kinematics-calculus-based-dynamics-relative-motion</loc>
+    <lastmod>2026-07-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.55</priority>
+  </url>
+  <url>
+    <loc>https://overraprepai.com/topics/gns-102</loc>
+    <lastmod>2026-07-07</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.55</priority>
   </url>
