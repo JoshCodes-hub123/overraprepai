@@ -463,25 +463,93 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
         questions,
       }));
 
-      setProcessingStatus({ 
-        stage: "complete", 
-        progress: 100, 
-        message: `Complete! ${quizzes.length} quizzes ready.`,
+      // ---- DB-side dedup: filter out questions that already exist in the DB
+      // for the same course (matched by normalized question text + options).
+      let dbDuplicateCount = 0;
+      setProcessingStatus({
+        stage: "validating",
+        progress: 96,
+        message: "Checking database for existing duplicates...",
+      });
+      const uniqueCourseCodes = Array.from(new Set(quizzes.map((q) => q.course_code.toUpperCase())));
+      const existingKeysByCourse = new Map<string, Set<string>>();
+      for (const code of uniqueCourseCodes) {
+        const course = existingCourses.find((c) => c.code.toUpperCase() === code);
+        if (!course) continue; // new course → nothing existing yet
+        const keys = new Set<string>();
+        const PAGE = 1000;
+        let from = 0;
+        while (true) {
+          const { data, error } = await supabase
+            .from("questions")
+            .select("question_text, option_a, option_b, option_c, option_d")
+            .eq("course_id", course.id)
+            .range(from, from + PAGE - 1);
+          if (error) break;
+          const rows = data || [];
+          for (const r of rows) {
+            const k =
+              normalize(String(r.question_text || "")) +
+              "|" +
+              [r.option_a, r.option_b, r.option_c, r.option_d]
+                .map((o) => normalize(String(o || "")))
+                .sort()
+                .join("|");
+            keys.add(k);
+          }
+          if (rows.length < PAGE) break;
+          from += PAGE;
+        }
+        existingKeysByCourse.set(code, keys);
+      }
+      for (const quiz of quizzes) {
+        const keys = existingKeysByCourse.get(quiz.course_code.toUpperCase());
+        if (!keys || keys.size === 0) continue;
+        const before = quiz.questions.length;
+        quiz.questions = quiz.questions.filter((q) => {
+          const k =
+            normalize(q.question_text) +
+            "|" +
+            [q.option_a, q.option_b, q.option_c, q.option_d].map(normalize).sort().join("|");
+          if (keys.has(k)) {
+            rejected.push({
+              row: 0,
+              reason: `Duplicate of an existing question in ${quiz.course_code} — skipped`,
+              missing_fields: [],
+              data: { question_text: q.question_text },
+            });
+            return false;
+          }
+          return true;
+        });
+        dbDuplicateCount += before - quiz.questions.length;
+      }
+      const nonEmptyQuizzes = quizzes.filter((q) => q.questions.length > 0);
+
+      setProcessingStatus({
+        stage: "complete",
+        progress: 100,
+        message: `Complete! ${nonEmptyQuizzes.length} quizzes ready.`,
         totalRows: jsonData.length,
-        processedRows: jsonData.length
+        processedRows: jsonData.length,
       });
 
-      setImportedQuizzes(quizzes);
+      setImportedQuizzes(nonEmptyQuizzes);
       setErrors(parseErrors);
       setRejectedRows(rejected);
 
-      if (quizzes.length > 0) {
-        const dupeMsg = duplicateCount > 0 ? ` (${duplicateCount} duplicate${duplicateCount === 1 ? "" : "s"} removed)` : "";
-        toast.success(`Successfully parsed ${quizzes.length} quizzes${dupeMsg}`);
+      if (nonEmptyQuizzes.length > 0) {
+        const parts: string[] = [];
+        if (duplicateCount > 0) parts.push(`${duplicateCount} in-file duplicate${duplicateCount === 1 ? "" : "s"}`);
+        if (dbDuplicateCount > 0) parts.push(`${dbDuplicateCount} already in database`);
+        const dupeMsg = parts.length ? ` (${parts.join(", ")} removed)` : "";
+        toast.success(`Successfully parsed ${nonEmptyQuizzes.length} quizzes${dupeMsg}`);
         setViewMode("preview");
         setPreviewIndex(0);
       } else if (parseErrors.length > 0) {
         toast.error("No valid quizzes found. Check the errors below.");
+      } else if (dbDuplicateCount > 0) {
+        toast.info(`All ${dbDuplicateCount} question${dbDuplicateCount === 1 ? "" : "s"} are already in the database — nothing new to import.`);
       }
 
     } catch (error: any) {
