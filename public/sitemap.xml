@@ -340,6 +340,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://overraprepai.com/courses/5cbca953-315c-4c94-bbd1-8e16074898ef</loc>
+    <lastmod>2026-07-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://overraprepai.com/topics/physics-102</loc>
     <lastmod>2026-06-27</lastmod>
     <changefreq>monthly</changefreq>
@@ -582,6 +588,12 @@
   <url>
     <loc>https://overraprepai.com/topics/gns-102</loc>
     <lastmod>2026-07-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.55</priority>
+  </url>
+  <url>
+    <loc>https://overraprepai.com/topics/gns-203-gst-112</loc>
+    <lastmod>2026-07-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.55</priority>
   </url>
