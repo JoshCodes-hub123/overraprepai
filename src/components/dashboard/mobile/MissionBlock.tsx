@@ -7,6 +7,8 @@ interface MissionBlockProps {
   title: ReactNode;
   /** e.g. "~10 min · 20 questions" — only real, known values. */
   meta?: ReactNode;
+  /** Real academic urgency only, e.g. "Test tomorrow". Never fabricated. */
+  urgency?: string;
   cta: string;
   to: string;
   className?: string;
@@ -16,7 +18,7 @@ interface MissionBlockProps {
  * Today's mission — one sentence and one action. Deliberately lighter than the
  * hero so the page still has a single obvious primary step.
  */
-export function MissionBlock({ title, meta, cta, to, className }: MissionBlockProps) {
+export function MissionBlock({ title, meta, urgency, cta, to, className }: MissionBlockProps) {
   const navigate = useNavigate();
 
   return (
@@ -26,6 +28,11 @@ export function MissionBlock({ title, meta, cta, to, className }: MissionBlockPr
         className,
       )}
     >
+      {urgency && (
+        <p className="mb-1.5 text-[10.5px] font-bold uppercase tracking-[0.16em] text-env">
+          {urgency}
+        </p>
+      )}
       <p className="text-[15px] font-semibold leading-snug text-brand-ink">{title}</p>
       {meta && <p className="mt-1 text-[13px] text-brand-ink-soft">{meta}</p>}
       <button
