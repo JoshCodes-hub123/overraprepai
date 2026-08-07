@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Sparkles, Timer } from "lucide-react";
+import { Sparkles, Timer, TrendingDown } from "lucide-react";
 import { SEO } from "@/components/seo/SEO";
 import { useAuth } from "@/hooks/useAuth";
 import { Screen, Section, ListRow, EmptyState, BrandButton } from "@/components/ui-kit";
