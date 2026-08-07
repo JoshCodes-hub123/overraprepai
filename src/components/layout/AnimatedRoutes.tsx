@@ -550,6 +550,9 @@ export const AnimatedRoutes = () => {
           <Route path="/study-hub/:courseId" element={<PageTransition><StudyHubCourse /></PageTransition>} />
           <Route path="/pq-intelligence/:courseId" element={<PageTransition><PQIntelligence /></PageTransition>} />
           <Route path="/jamb/dashboard" element={<PageTransition><EnvironmentGuard allow="jamb"><JambDashboard /></EnvironmentGuard></PageTransition>} />
+          <Route path="/jamb/subjects" element={<PageTransition><EnvironmentGuard allow="jamb"><JambSubjects /></EnvironmentGuard></PageTransition>} />
+          <Route path="/jamb/subjects/:subjectId" element={<PageTransition><EnvironmentGuard allow="jamb"><JambSubject /></EnvironmentGuard></PageTransition>} />
+          <Route path="/jamb/subjects/:subjectId/topics/:topicId/practice" element={<PageTransition><EnvironmentGuard allow="jamb"><JambTopicPractice /></EnvironmentGuard></PageTransition>} />
           <Route path="/subjects" element={<PageTransition><SubjectBrowser /></PageTransition>} />
           <Route path="/flashcards" element={<PageTransition><Flashcards /></PageTransition>} />
           <Route
