@@ -7,7 +7,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCourseSnapshots } from "@/hooks/useCourseSnapshots";
 import { useReadinessAll } from "@/hooks/useIntelligence";
-import { useCourseTopics, useTopicQuestionCounts, useLastStudiedTopic } from "@/hooks/useCourseLearning";
+import {
+  useCourseTopics,
+  useTopicQuestionCounts,
+  useLastStudiedTopic,
+  useCourseProgress,
+} from "@/hooks/useCourseLearning";
 import { useTrackCourseOpen } from "@/hooks/useRecentlyOpenedCourses";
 import { nextStepFor, nextStepCta } from "@/lib/nextStep";
 import { SEO } from "@/components/seo/SEO";
@@ -42,6 +47,7 @@ const CourseWorkspace = () => {
   const { data: topics = [], isLoading: topicsLoading } = useCourseTopics(courseId);
   const { data: counts = {} } = useTopicQuestionCounts(courseId);
   const studied = useLastStudiedTopic(courseId);
+  const progress = useCourseProgress(courseId);
   const { data: snapshots = [] } = useCourseSnapshots();
   const { data: readiness = [] } = useReadinessAll();
 
@@ -98,6 +104,20 @@ const CourseWorkspace = () => {
             {identity && (
               <p className="-mt-3 mb-6 text-[13px] font-semibold tracking-tight text-brand-ink-soft">
                 {identity}
+              </p>
+            )}
+
+            {progress.studied > 0 && (
+              <p className="-mt-2 mb-5 text-[13px] text-brand-ink-soft">
+                {progress.studied} topic{progress.studied === 1 ? "" : "s"} studied
+                {progress.needsReview > 0 && (
+                  <>
+                    {" · "}
+                    <Link to="/weak-areas" className="font-semibold text-brand-ink underline underline-offset-4">
+                      {progress.needsReview} needing review
+                    </Link>
+                  </>
+                )}
               </p>
             )}
 
