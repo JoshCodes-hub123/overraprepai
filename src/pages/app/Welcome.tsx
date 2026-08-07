@@ -43,6 +43,7 @@ const Welcome = () => {
       : primaryRole === "tutor" ? "/tutor"
       : (primaryRole as any) === "school_owner" ? "/school"
       : (primaryRole as any) === "parent" ? "/parent"
+      : isJambStudent ? "/jamb"
       : "/student";
 
     let dest = roleHome;
@@ -58,7 +59,7 @@ const Welcome = () => {
       }
     } catch { /* localStorage unavailable */ }
     navigate(dest, { replace: true });
-  }, [user, primaryRole, isLoading, navigate]);
+  }, [user, profile, primaryRole, isLoading, navigate]);
 
 
   const handleSplashDone = () => {
