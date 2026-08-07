@@ -19,7 +19,7 @@ const UNIVERSITY_TABS: Tab[] = [
 /** JAMB world: Home · Subjects · Practice · AI Coach · Community */
 const JAMB_TABS: Tab[] = [
   { to: "/jamb/dashboard", label: "Home",      icon: Home },
-  { to: "/subjects",       label: "Subjects",  icon: Library },
+  { to: "/jamb/subjects", label: "Subjects",  icon: Library },
   { to: "/practice",       label: "Practice",  icon: Target },
   { to: "/coach",          label: "AI Coach",  icon: Bot },
   { to: "/community",      label: "Community", icon: Users },
