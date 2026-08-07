@@ -13,7 +13,7 @@ import { SEO } from "@/components/seo/SEO";
  */
 const Welcome = () => {
   const navigate = useNavigate();
-  const { user, primaryRole, isLoading } = useAuth();
+  const { user, profile, primaryRole, isLoading } = useAuth();
 
   // Always show splash on app open (per brand requirement)
   const [showSplash, setShowSplash] = useState(true);
@@ -24,11 +24,15 @@ const Welcome = () => {
   // generic dashboard.
   useEffect(() => {
     if (isLoading || !user) return;
+    const env = (profile as any)?.environment_type ?? (profile as any)?.academic_path;
+    const isJambStudent =
+      (!primaryRole || primaryRole === "student") && env === "jamb";
     const roleHome =
       primaryRole === "admin" ? "/admin/dashboard"
       : primaryRole === "tutor" ? "/tutor/dashboard"
       : (primaryRole as any) === "school_owner" ? "/school/dashboard"
       : (primaryRole as any) === "parent" ? "/parent/dashboard"
+      : isJambStudent ? "/jamb/dashboard"
       : "/student/dashboard";
 
     // Only restore a saved route when it belongs to the user's current role
