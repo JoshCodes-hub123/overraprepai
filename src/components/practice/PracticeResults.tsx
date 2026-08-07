@@ -15,6 +15,9 @@ interface Props {
   seconds: number;
   onReviewMistakes: () => void;
   onPracticeAgain: () => void;
+  /** Where "back" goes. Defaults to the course workspace. */
+  backTo?: string;
+  backLabel?: string;
 }
 
 function formatDuration(total: number) {
