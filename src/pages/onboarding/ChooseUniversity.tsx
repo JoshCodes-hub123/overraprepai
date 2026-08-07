@@ -80,6 +80,7 @@ export default function ChooseUniversity() {
       .from("user_roles")
       .upsert({ user_id: user.id, role: "student" }, { onConflict: "user_id,role", ignoreDuplicates: true });
     setSavingCode(null);
+    try { sessionStorage.removeItem("pending_environment"); } catch { /* noop */ }
     await refreshProfile();
     navigate("/onboarding/faculty");
   };
