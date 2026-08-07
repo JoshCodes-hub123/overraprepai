@@ -226,7 +226,7 @@ const StudentDashboard = () => {
           )}
 
           {/* Where do I get help. */}
-          <Section title="Ask Overra">;
+          <Section title="Ask Overra">
             <AskOverraBlock />
           </Section>
 
