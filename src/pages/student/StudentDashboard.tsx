@@ -160,16 +160,18 @@ const StudentDashboard = () => {
             )}
           </Section>
 
-          {/* Course progress — a list, not a wall of cards. */}
-          <Section title="Your courses" to="/courses" linkLabel="Manage">
-            {coursesLoading ? (
+          {/* Course progress — a list, not a wall of cards.
+              With no courses the hero above already carries the onboarding CTA,
+              so this section stays out of the way entirely. */}
+          {coursesLoading ? (
+            <Section title="Your courses" to="/courses" linkLabel="Manage">
               <div className="space-y-2.5">
                 <BrandSkeleton h={64} />
                 <BrandSkeleton h={64} />
               </div>
-            ) : recent.length === 0 ? (
-              <EmptyState title="No courses yet" description="Add courses to track your progress." />
-            ) : (
+            </Section>
+          ) : recent.length > 0 ? (
+            <Section title="Your courses" to="/courses" linkLabel="Manage">
               <div className="space-y-2.5">
                 {recent.slice(0, 5).map((c) => (
                   <ListRow
@@ -187,8 +189,9 @@ const StudentDashboard = () => {
                   />
                 ))}
               </div>
-            )}
-          </Section>
+            </Section>
+          ) : null}
+
 
           <Section title="Go to">
             <QuickAccess items={quickAccessItems("Practice", "CBT drills for your courses")} />
