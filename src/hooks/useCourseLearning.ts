@@ -54,6 +54,10 @@ export interface TopicActivity {
   mastery_score: number;
   attempts: number;
   last_seen: string | null;
+  /** Total questions answered in this topic across all sessions. */
+  questions_attempted: number;
+  /** Total questions answered incorrectly in this topic. */
+  questions_incorrect: number;
 }
 
 /**
@@ -69,15 +73,20 @@ export function useTopicActivity() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("topic_mastery")
-        .select("topic, mastery_score, attempts, last_seen")
+        .select("topic, mastery_score, attempts, last_seen, questions_attempted, questions_incorrect")
         .eq("user_id", user!.id)
         .order("last_seen", { ascending: false })
         .limit(200);
       if (error) throw error;
-      return (data ?? []) as TopicActivity[];
+      return (data ?? []).map((r: any) => ({
+        ...r,
+        questions_attempted: Number(r.questions_attempted) || 0,
+        questions_incorrect: Number(r.questions_incorrect) || 0,
+      })) as TopicActivity[];
     },
   });
 }
+
 
 /**
  * The most recently practised topic of a course, matched against that course's
