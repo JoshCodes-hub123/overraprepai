@@ -35,6 +35,8 @@ const ParentDashboard = lazy(() => import("@/pages/parent/ParentDashboard"));
 const SubjectBrowser = lazy(() => import("@/pages/subjects/SubjectBrowser"));
 const Flashcards = lazy(() => import("@/pages/flashcards/Flashcards"));
 const JambIntelligence = lazy(() => import("@/pages/jamb/JambIntelligence"));
+import EnvironmentGuard from "@/components/routing/EnvironmentGuard";
+
 const SurvivalKits = lazy(() => import("@/pages/survival-kits/SurvivalKits"));
 const SurvivalKitView = lazy(() => import("@/pages/survival-kits/SurvivalKitView"));
 const Strategy = lazy(() => import("@/pages/strategy/Strategy"));
@@ -125,6 +127,8 @@ const RefinePath = lazy(() => import("@/pages/onboarding/RefinePath"));
 const ChooseUniversity = lazy(() => import("@/pages/onboarding/ChooseUniversity"));
 const JambDashboard = lazy(() => import("@/pages/jamb/JambDashboard"));
 const ChooseFaculty = lazy(() => import("@/pages/onboarding/ChooseFaculty"));
+const JambSetup = lazy(() => import("@/pages/onboarding/JambSetup"));
+
 const ChooseDepartment = lazy(() => import("@/pages/onboarding/ChooseDepartment"));
 const ChooseLevel = lazy(() => import("@/pages/onboarding/ChooseLevel"));
 const ChooseCourses = lazy(() => import("@/pages/onboarding/ChooseCourses"));
@@ -249,6 +253,8 @@ export const AnimatedRoutes = () => {
           <Route path="/onboarding/level" element={<PageTransition><ChooseLevel /></PageTransition>} />
           <Route path="/onboarding/courses" element={<PageTransition><ChooseCourses /></PageTransition>} />
           <Route path="/onboarding/match" element={<PageTransition><TutorMatchingOnboarding /></PageTransition>} />
+          <Route path="/onboarding/jamb" element={<PageTransition><JambSetup /></PageTransition>} />
+
           <Route
             path="/auth"
             element={
@@ -263,10 +269,13 @@ export const AnimatedRoutes = () => {
             path="/dashboard"
             element={
               <PageTransition>
-                <Dashboard />
+                <EnvironmentGuard allow="university">
+                  <Dashboard />
+                </EnvironmentGuard>
               </PageTransition>
             }
           />
+
           <Route
             path="/student/dashboard"
             element={
@@ -524,7 +533,7 @@ export const AnimatedRoutes = () => {
           <Route path="/study-hub" element={<PageTransition><StudyHub /></PageTransition>} />
           <Route path="/study-hub/:courseId" element={<PageTransition><StudyHubCourse /></PageTransition>} />
           <Route path="/pq-intelligence/:courseId" element={<PageTransition><PQIntelligence /></PageTransition>} />
-          <Route path="/jamb/dashboard" element={<PageTransition><JambDashboard /></PageTransition>} />
+          <Route path="/jamb/dashboard" element={<PageTransition><EnvironmentGuard allow="jamb"><JambDashboard /></EnvironmentGuard></PageTransition>} />
           <Route path="/subjects" element={<PageTransition><SubjectBrowser /></PageTransition>} />
           <Route path="/flashcards" element={<PageTransition><Flashcards /></PageTransition>} />
           <Route

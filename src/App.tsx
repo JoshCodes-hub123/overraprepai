@@ -27,6 +27,8 @@ import OfflineAttemptSyncBanner from "@/components/offline/OfflineAttemptSyncBan
 import ScrollToTop from "@/components/system/ScrollToTop";
 import PageViewTracker from "@/components/system/PageViewTracker";
 import UpdatePrompt from "@/components/system/UpdatePrompt";
+import EnvironmentThemeApplier from "@/components/system/EnvironmentThemeApplier";
+
 import ReportProblemFab from "@/components/system/ReportProblemFab";
 import { initPushNotifications } from "@/lib/native/push";
 import { Capacitor } from "@capacitor/core";
@@ -154,6 +156,8 @@ const App = () => {
             <PageViewTracker />
             <AuthProvider>
               <PushBootstrap />
+              <EnvironmentThemeApplier />
+
               <OfflineAttemptSyncBanner />
               <DeviceTracker />
               <DashboardWarmup />

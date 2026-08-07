@@ -69,7 +69,7 @@ export default function ChoosePath() {
       return;
     }
     await refreshProfile();
-    navigate(env === "jamb" ? "/jamb/dashboard" : "/onboarding/university");
+    navigate(env === "jamb" ? "/onboarding/jamb" : "/onboarding/university");
   };
 
   return (
