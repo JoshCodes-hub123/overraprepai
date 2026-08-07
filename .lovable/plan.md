@@ -126,13 +126,38 @@ Clear on sign-out and on `SIGNED_IN` with a different user id: React Query cache
 
 ---
 
-## 10. Suggested build order
+## 10. Mobile rebrand foundation (new requirement)
 
-1. Schema + RLS (subjects, topics, questions, profile JAMB fields, `can_access_subject`).
-2. Landing page + `/signup` + explore.
-3. Onboarding: simplified university stepper + new JAMB flow + completeness gate.
-4. Environment-aware bottom nav and dashboard headers.
-5. `EnvironmentGuard` for deep links, logged-out preview + return-to-content.
-6. Environment-scoped search and recommendations.
-7. Admin persistent environment bar, JAMB admin menus, creation validation.
-8. Academic settings switch + logout/account-switch cache reset.
+Every screen this plan touches is rebuilt on a new mobile-first shell rather than patched onto the current UI. Existing functionality and data are preserved; the visual layer is not.
+
+**Design language:** White + premium gold + black. Spacious, minimal cards, strong hierarchy, one obvious action per screen, consistent typography, icons, spacing and buttons.
+
+**Token layer (`src/index.css` + `tailwind.config.ts`)**
+- One semantic token set: surface, ink, gold accent, borders, elevation, radii, spacing scale, type scale. No hardcoded colours in components anywhere in the new work.
+- Environment accent token: University and JAMB read the same brand tokens but resolve a distinct accent + header treatment, so the two worlds feel separate while staying OverraPrep AI. Driven by a `data-env` attribute on the app root — a purely CSS-level switch, no component forking.
+
+**Shared primitive layer (built once, reused everywhere)**
+- `AppShell` (safe areas, header, scroll body), `ScreenHeader` (title + optional environment chip + single action), `BottomNav` (environment-aware), `Section`, `ListRow`, `PrimaryButton` / `SecondaryButton`, `EmptyState`, `Skeleton`, `Sheet`.
+- All new screens compose only these primitives. Later redesigns of landing, auth, onboarding, dashboard, course/subject, practice/CBT, AI Coach, community, profile and admin become token + primitive edits, not rewrites.
+
+**Separation of concerns**
+- Data access stays in hooks (`useEnvironment`, course/subject/quiz hooks); screens are presentational. A future redesign can replace a screen's markup without touching queries, RLS or routing.
+- Environment logic lives in one context, never inlined per screen.
+
+**Scope discipline:** the backend gains power; the UI gets simpler. No new dashboards, no extra tabs, no popups beyond the existing gates.
+
+---
+
+## 11. Suggested build order
+
+1. Design tokens + primitive component layer + `data-env` theming.
+2. Schema + RLS (subjects, topics, questions, profile JAMB fields, `can_access_subject`).
+3. Landing page + `/signup` + explore, on the new shell.
+4. Onboarding: simplified university stepper + new JAMB flow + completeness gate.
+5. Environment-aware bottom nav, dashboards and screen headers.
+6. `EnvironmentGuard` for deep links, logged-out preview + return-to-content.
+7. Environment-scoped search and recommendations.
+8. Admin persistent environment bar, JAMB admin menus, creation validation.
+9. Academic settings switch + logout/account-switch cache reset.
+10. Progressive re-skin of remaining screens onto the primitives.
+
