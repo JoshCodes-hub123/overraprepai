@@ -50,7 +50,8 @@ const PARENT_TABS: Tab[] = [
   { to: "/profile/edit", label: "Profile", icon: User },
 ];
 
-const HIDDEN_PREFIXES = ["/auth", "/quiz/", "/school/intro", "/school/register", "/school/pending", "/website", "/forgot-password", "/reset-password"];
+// "/coach/chat" is a full-focus conversation: the composer owns the bottom edge.
+const HIDDEN_PREFIXES = ["/auth", "/quiz/", "/coach/chat", "/school/intro", "/school/register", "/school/pending", "/website", "/forgot-password", "/reset-password"];
 
 export const BottomTabBar = () => {
   const { primaryRole, user } = useAuth();
