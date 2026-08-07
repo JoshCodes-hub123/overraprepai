@@ -40,6 +40,8 @@ export function PracticeResults({
   seconds,
   onReviewMistakes,
   onPracticeAgain,
+  backTo,
+  backLabel,
 }: Props) {
   const attempted = responses.length;
   const correct = responses.filter((r) => r.isCorrect).length;
