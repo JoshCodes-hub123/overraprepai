@@ -27,7 +27,7 @@ export function AskOverraBlock({ className, to = "/coach" }: { className?: strin
           What are you struggling with today?
         </span>
         <span className="mt-1 block text-[13px] leading-relaxed text-brand-ink-soft">
-          Ask about a course, topic, concept or past question.
+          Ask about a course, topic, concept or question.
         </span>
         <span className="mt-2.5 inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-env">
           Ask Overra AI

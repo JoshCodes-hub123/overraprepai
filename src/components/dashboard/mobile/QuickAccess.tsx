@@ -8,10 +8,14 @@ export interface QuickAccessItem {
   icon: LucideIcon;
 }
 
-/** Shared trio for both environments — Practice · AI Coach · Community. */
+/**
+ * Shared trio for both environments — Practice · AI Coach · Community.
+ * "AI Coach" is the same Overra AI experience the dashboard's Ask Overra block
+ * opens (`/coach`); it is the navigation name, not a second AI product.
+ */
 export const quickAccessItems = (practiceLabel: string, practiceMeta: string): QuickAccessItem[] => [
   { to: "/practice", label: practiceLabel, meta: practiceMeta, icon: Target },
-  { to: "/coach", label: "AI Coach", meta: "Ask anything, get a study plan", icon: Bot },
+  { to: "/coach", label: "AI Coach", meta: "Where Ask Overra conversations live", icon: Bot },
   { to: "/community", label: "Community", meta: "Study with people like you", icon: Users },
 ];
 
