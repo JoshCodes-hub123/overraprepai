@@ -49,6 +49,8 @@ import { PremiumStatCard } from "@/components/dashboard/PremiumStatCard";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { PullToRefresh } from "@/components/native/PullToRefresh";
 import AdminKpiStrip from "@/components/admin/AdminKpiStrip";
+import { EnvironmentSwitcher } from "@/components/admin/EnvironmentSwitcher";
+import { useAdminEnvironment } from "@/hooks/useAdminEnvironment";
 import { RoleSidebarMenu } from "@/components/layout/RoleSidebarMenu";
 
 interface DashboardStats {
@@ -84,6 +86,7 @@ const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [refreshKey, setRefreshKey] = useState(0);
+  const adminEnv = useAdminEnvironment();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -237,6 +240,25 @@ const AdminDashboard = () => {
       <DashboardBreadcrumb role="admin" />
 
       <main className="container mx-auto px-4 py-8">
+        {/* Academic environment — admins manage one isolated environment at a time */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200/70 bg-amber-50/40 px-4 py-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-700">
+              Managing environment
+            </p>
+            <p className="text-sm font-bold truncate">
+              {adminEnv.isJamb
+                ? "JAMB / UTME — separate from all university content"
+                : `${adminEnv.current.label} — isolated campus environment`}
+            </p>
+          </div>
+          <EnvironmentSwitcher
+            current={adminEnv.current}
+            options={adminEnv.options}
+            onSelect={adminEnv.select}
+          />
+        </div>
+
         {/* Hero */}
         <DashboardHero
           role="admin"

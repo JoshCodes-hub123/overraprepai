@@ -20,7 +20,7 @@ const ROLE_HOME: Record<string, string> = {
  */
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, primaryRole, isLoading } = useAuth();
+  const { user, profile, primaryRole, isLoading } = useAuth();
 
   useEffect(() => {
     if (isLoading) return;
@@ -31,8 +31,14 @@ const Dashboard = () => {
     // Wait until the role actually resolves — otherwise admins/tutors get
     // bounced to /student/dashboard before their role loads.
     if (!primaryRole) return;
+    // JAMB students live in a completely separate environment.
+    const env = (profile as any)?.environment_type ?? (profile as any)?.academic_path;
+    if (primaryRole === "student" && env === "jamb") {
+      navigate("/jamb/dashboard", { replace: true });
+      return;
+    }
     navigate(ROLE_HOME[primaryRole] || "/student/dashboard", { replace: true });
-  }, [user, primaryRole, isLoading, navigate]);
+  }, [user, profile, primaryRole, isLoading, navigate]);
 
 
   return (

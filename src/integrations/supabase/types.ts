@@ -2171,13 +2171,14 @@ export type Database = {
           created_by: string | null
           department: string | null
           description: string | null
+          environment_type: Database["public"]["Enums"]["learning_environment"]
           faculty: string | null
           id: string
           is_active: boolean
           level: string | null
           name: string
           path_type: Database["public"]["Enums"]["academic_path"]
-          university: string
+          university: string | null
           university_code: string | null
           updated_at: string
         }
@@ -2187,13 +2188,14 @@ export type Database = {
           created_by?: string | null
           department?: string | null
           description?: string | null
+          environment_type?: Database["public"]["Enums"]["learning_environment"]
           faculty?: string | null
           id?: string
           is_active?: boolean
           level?: string | null
           name: string
           path_type?: Database["public"]["Enums"]["academic_path"]
-          university?: string
+          university?: string | null
           university_code?: string | null
           updated_at?: string
         }
@@ -2203,13 +2205,14 @@ export type Database = {
           created_by?: string | null
           department?: string | null
           description?: string | null
+          environment_type?: Database["public"]["Enums"]["learning_environment"]
           faculty?: string | null
           id?: string
           is_active?: boolean
           level?: string | null
           name?: string
           path_type?: Database["public"]["Enums"]["academic_path"]
-          university?: string
+          university?: string | null
           university_code?: string | null
           updated_at?: string
         }
@@ -3867,6 +3870,7 @@ export type Database = {
           date_of_birth: string | null
           department: string | null
           email: string
+          environment_type: Database["public"]["Enums"]["learning_environment"]
           faculty: string | null
           first_purchase_used: boolean
           flw_customer_id: string | null
@@ -3921,6 +3925,7 @@ export type Database = {
           date_of_birth?: string | null
           department?: string | null
           email: string
+          environment_type?: Database["public"]["Enums"]["learning_environment"]
           faculty?: string | null
           first_purchase_used?: boolean
           flw_customer_id?: string | null
@@ -3975,6 +3980,7 @@ export type Database = {
           date_of_birth?: string | null
           department?: string | null
           email?: string
+          environment_type?: Database["public"]["Enums"]["learning_environment"]
           faculty?: string | null
           first_purchase_used?: boolean
           flw_customer_id?: string | null
@@ -8301,6 +8307,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      can_access_course: { Args: { _course_id: string }; Returns: boolean }
       cancel_session_booking: {
         Args: { _booking_id: string }
         Returns: undefined
@@ -8407,6 +8414,7 @@ export type Database = {
           date_of_birth: string | null
           department: string | null
           email: string
+          environment_type: Database["public"]["Enums"]["learning_environment"]
           faculty: string | null
           first_purchase_used: boolean
           flw_customer_id: string | null
@@ -8769,6 +8777,10 @@ export type Database = {
         }
         Returns: number
       }
+      my_environment: {
+        Args: never
+        Returns: Database["public"]["Enums"]["learning_environment"]
+      }
       my_university: { Args: never; Returns: string }
       notify_admins_of_new_findings: {
         Args: { _run_id: string }
@@ -8883,6 +8895,7 @@ export type Database = {
       arena_status: "draft" | "scheduled" | "live" | "ended" | "settled"
       chat_context_kind: "study_pack" | "tutor_curriculum"
       chat_thread_kind: "dm" | "group" | "brainstorm"
+      learning_environment: "university" | "jamb"
       opportunity_category:
         | "internship"
         | "scholarship"
@@ -9053,6 +9066,7 @@ export const Constants = {
       arena_status: ["draft", "scheduled", "live", "ended", "settled"],
       chat_context_kind: ["study_pack", "tutor_curriculum"],
       chat_thread_kind: ["dm", "group", "brainstorm"],
+      learning_environment: ["university", "jamb"],
       opportunity_category: [
         "internship",
         "scholarship",

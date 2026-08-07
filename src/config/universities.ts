@@ -2,7 +2,7 @@
  * University → faculty → departments mapping.
  * Add a new university by appending a new top-level key.
  */
-export type UniversityCode = "FUTA" | "OAU";
+export type UniversityCode = "FUTA" | "OAU" | "UI" | "FUTESIYIN";
 
 export interface UniversityDef {
   code: UniversityCode;
@@ -92,6 +92,66 @@ export const UNIVERSITIES: Record<UniversityCode, UniversityDef> = {
         "Dentistry",
         "Pharmacy",
       ],
+    },
+  },
+  UI: {
+    code: "UI",
+    name: "University of Ibadan",
+    city: "Ibadan",
+    faculties: {
+      "Faculty of Science": [
+        "Computer Science",
+        "Mathematics",
+        "Physics",
+        "Chemistry",
+        "Statistics",
+        "Microbiology",
+      ],
+      "Faculty of Technology": [
+        "Computer Engineering",
+        "Civil Engineering",
+        "Electrical & Electronic Engineering",
+        "Mechanical Engineering",
+        "Petroleum Engineering",
+      ],
+      "College of Medicine": [
+        "Medicine & Surgery",
+        "Nursing",
+        "Physiotherapy",
+        "Pharmacy",
+      ],
+      "Faculty of Arts": ["English", "History", "Philosophy", "Linguistics"],
+      "Faculty of the Social Sciences": [
+        "Economics",
+        "Political Science",
+        "Sociology",
+        "Psychology",
+      ],
+      "Faculty of Law": ["Law"],
+    },
+  },
+  FUTESIYIN: {
+    code: "FUTESIYIN",
+    name: "Federal University of Technology and Environmental Studies, Iyin-Ekiti",
+    city: "Iyin-Ekiti",
+    faculties: {
+      "School of Computing": [
+        "Computer Science",
+        "Information Technology",
+        "Cyber Security",
+      ],
+      "School of Engineering": [
+        "Civil Engineering",
+        "Electrical & Electronics Engineering",
+        "Mechanical Engineering",
+      ],
+      "School of Environmental Studies": [
+        "Architecture",
+        "Estate Management",
+        "Quantity Surveying",
+        "Urban & Regional Planning",
+      ],
+      "School of Sciences": ["Mathematics", "Physics", "Chemistry", "Biology"],
     },
   },
 };

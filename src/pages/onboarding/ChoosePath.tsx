@@ -1,119 +1,139 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { GraduationCap, BookOpenCheck, School } from "lucide-react";
-import { useAuth, AcademicPath } from "@/hooks/useAuth";
+import { GraduationCap, Flame, Loader2, ArrowRight } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { SEO } from "@/components/seo/SEO";
 import { cn } from "@/lib/utils";
-import { FEATURES } from "@/config/features";
 import { toast } from "sonner";
+import { EnvironmentType } from "@/config/environments";
 
-const PATHS: {
-  id: AcademicPath;
+const TRACKS: {
+  id: EnvironmentType;
   title: string;
   tagline: string;
   description: string;
-  icon: typeof School;
+  icon: typeof Flame;
   accent: string;
 }[] = [
   {
-    id: "secondary",
-    title: "Secondary School",
-    tagline: "JSS1 – SS3 · WAEC / NECO",
-    description: "Foundation learning, simplified explanations, and exam mastery for junior and senior secondary students.",
-    icon: School,
-    accent: "from-blue-500/20 to-blue-700/10 border-blue-500/30",
+    id: "university",
+    title: "University Student",
+    tagline: "100 – 600 Level · FUTA · OAU · UI · FUTEsIyin",
+    description:
+      "Your campus, your courses. CBT practice, theory grading, survival kits and AI notes scoped to your department and level.",
+    icon: GraduationCap,
+    accent: "from-amber-500/15 to-amber-700/5 border-amber-500/30",
   },
   {
     id: "jamb",
     title: "JAMB / UTME",
     tagline: "Score the cut-off · Get admission",
-    description: "Past-question intelligence, score predictor, and brutal CBT simulation tuned to real JAMB style.",
-    icon: BookOpenCheck,
-    accent: "from-amber-500/20 to-amber-700/10 border-amber-500/30",
-  },
-  {
-    id: "university",
-    title: "University Student",
-    tagline: "100 – 500 Level",
-    description: "CBT, theory grading, course survival kits, and AI-deep notes for every department.",
-    icon: GraduationCap,
-    accent: "from-emerald-500/20 to-emerald-700/10 border-emerald-500/30",
+    description:
+      "A dedicated UTME environment — four subjects, past-question intelligence, timed CBT simulation and mock exams.",
+    icon: Flame,
+    accent: "from-emerald-500/15 to-emerald-700/5 border-emerald-500/30",
   },
 ];
 
+/**
+ * Step 1 of onboarding: pick the academic environment.
+ * University and JAMB are fully isolated systems — this choice decides
+ * every screen, feed and piece of content the student ever sees.
+ */
 export default function ChoosePath() {
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
+  const [saving, setSaving] = useState<EnvironmentType | null>(null);
 
-  const handleChoose = (path: AcademicPath) => {
-    if (path === "jamb" && !FEATURES.jamb) {
-      toast.info("JAMB track is paused — we're focusing on University for now.");
+  const handleChoose = async (env: EnvironmentType) => {
+    if (!user) {
+      // Not signed in yet — remember the choice and continue the flow.
+      sessionStorage.setItem("pending_environment", env);
+      navigate(env === "jamb" ? "/auth" : "/auth");
       return;
     }
-    sessionStorage.setItem("pending_academic_path", path);
-    navigate("/onboarding/refine");
+    setSaving(env);
+    const { error } = await (supabase as any)
+      .from("profiles")
+      .update({
+        environment_type: env,
+        academic_path: env,
+        ...(env === "jamb" ? { university: null, faculty: null } : {}),
+      })
+      .eq("id", user.id);
+    setSaving(null);
+    if (error) {
+      toast.error("Couldn't save your choice", { description: error.message });
+      return;
+    }
+    await refreshProfile();
+    navigate(env === "jamb" ? "/jamb/dashboard" : "/onboarding/university");
   };
 
   return (
     <>
       <SEO
         title="Choose Your Path | OverraPrep AI"
-        description="Pick your academic path — Secondary, JAMB, or University — to unlock a personalized learning experience."
+        description="Pick your academic environment — University or JAMB / UTME — to unlock a fully tailored learning experience."
       />
       <main className="min-h-screen bg-background py-12 px-4">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
+            className="text-center mb-10"
           >
-            <p className="text-sm uppercase tracking-[0.3em] text-primary mb-3">
+            <p className="text-[11px] uppercase tracking-[0.3em] text-amber-700 mb-3 font-semibold">
               Welcome{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}
             </p>
             <h1 className="font-display text-4xl md:text-5xl font-bold mb-4">
               What are you preparing for?
             </h1>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Your choice shapes everything you see — content, AI tone, recommendations, and difficulty.
-              You can change this later in your profile.
+              These are two separate learning environments. Pick the one you belong to —
+              you can change it later in your profile.
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-5">
-            {PATHS.map((path, i) => {
-              const Icon = path.icon;
-              const disabled = path.id === "jamb" && !FEATURES.jamb;
+          <div className="grid md:grid-cols-2 gap-5">
+            {TRACKS.map((t, i) => {
+              const Icon = t.icon;
+              const busy = saving === t.id;
               return (
                 <motion.button
-                  key={path.id}
+                  key={t.id}
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.05 + i * 0.08 }}
-                  whileHover={disabled ? undefined : { y: -4 }}
-                  onClick={() => handleChoose(path.id)}
-                  disabled={disabled}
+                  whileHover={{ y: -4 }}
+                  onClick={() => handleChoose(t.id)}
+                  disabled={!!saving}
                   className={cn(
                     "group relative text-left rounded-2xl border bg-gradient-to-br p-6 transition-all",
                     "hover:shadow-2xl hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary",
-                    path.accent,
-                    disabled && "opacity-60 cursor-not-allowed hover:shadow-none hover:border-inherit"
+                    t.accent,
+                    saving && !busy && "opacity-50"
                   )}
                 >
-                  {disabled && (
-                    <span className="absolute top-3 right-3 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-foreground/10 text-foreground/70">
-                      Coming soon
-                    </span>
-                  )}
                   <div className="w-14 h-14 rounded-xl bg-card/80 backdrop-blur flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <Icon className="w-7 h-7 text-foreground" />
+                    {busy ? (
+                      <Loader2 className="w-6 h-6 animate-spin text-foreground" />
+                    ) : (
+                      <Icon className="w-7 h-7 text-foreground" />
+                    )}
                   </div>
-                  <h2 className="font-display text-xl font-bold mb-1">{path.title}</h2>
+                  <h2 className="font-display text-xl font-bold mb-1">{t.title}</h2>
                   <p className="text-xs uppercase tracking-wider text-muted-foreground mb-3">
-                    {path.tagline}
+                    {t.tagline}
                   </p>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    {path.description}
+                    {t.description}
                   </p>
+                  <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-foreground">
+                    Continue <ArrowRight className="w-4 h-4" />
+                  </span>
                 </motion.button>
               );
             })}
