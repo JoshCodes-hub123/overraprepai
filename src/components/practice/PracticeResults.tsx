@@ -24,8 +24,9 @@ function formatDuration(total: number) {
 }
 
 /**
- * Results for one real practice session. Every number below is counted from
- * the answers the student just gave — nothing is estimated or filled in.
+ * Results for one real practice session, answering four questions: how did I
+ * do, what did I get wrong, where am I struggling, what should I do next.
+ * Every number is counted from the answers just given.
  */
 export function PracticeResults({
   courseId,
@@ -42,22 +43,6 @@ export function PracticeResults({
   const incorrect = attempted - correct;
   const accuracy = attempted > 0 ? Math.round((correct / attempted) * 100) : 0;
 
-  // The primary action follows actual performance, never a fixed script.
-  const primary =
-    incorrect > 0
-      ? accuracy < 60
-        ? { label: "Practice weak areas", action: onPracticeAgain }
-        : { label: "Review mistakes", action: onReviewMistakes }
-      : null;
-
-  const stats: { label: string; value: string }[] = [
-    { label: "Attempted", value: String(attempted) },
-    { label: "Correct", value: String(correct) },
-    { label: "Incorrect", value: String(incorrect) },
-    { label: "Accuracy", value: `${accuracy}%` },
-  ];
-  if (seconds > 0) stats.push({ label: "Time spent", value: formatDuration(seconds) });
-
   return (
     <Screen>
       <ScreenHeader
@@ -70,53 +55,58 @@ export function PracticeResults({
         subtitle={topicName ?? undefined}
       />
 
-      <dl className="grid grid-cols-2 gap-2.5">
-        {stats.map((s) => (
-          <div
-            key={s.label}
-            className="rounded-brand border border-brand-line bg-brand-surface px-4 py-3.5"
-          >
-            <dt className="text-[12px] font-semibold uppercase tracking-[0.12em] text-brand-ink-soft">
-              {s.label}
-            </dt>
-            <dd className="mt-1 text-[20px] font-bold tabular-nums leading-none text-brand-ink">
-              {s.value}
-            </dd>
-          </div>
-        ))}
-      </dl>
+      {/* How did I do? */}
+      <p className="-mt-3 text-[14.5px] leading-relaxed text-brand-ink-soft">
+        You answered {correct} of {attempted} correctly ({accuracy}%)
+        {seconds > 0 && <> in {formatDuration(seconds)}</>}.
+      </p>
 
-      {incorrect > 0 && (
+      {/* What did I get wrong? / Where am I struggling? */}
+      {incorrect > 0 ? (
         <div className="mt-6 rounded-brand-lg border border-brand-line bg-brand-soft/60 p-5">
           <p className="text-[12.5px] font-bold uppercase tracking-[0.14em] text-brand-ink-soft">
-            Needs attention
+            What you got wrong
           </p>
           <p className="mt-2 text-[16px] font-semibold leading-snug text-brand-ink">
-            {topicName ?? "This topic"}
+            {incorrect} question{incorrect === 1 ? "" : "s"} missed
+          </p>
+          {topicName && (
+            <p className="mt-1 text-[13.5px] text-brand-ink-soft">
+              All in this set: <span className="font-semibold text-brand-ink">{topicName}</span>
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className="mt-6 rounded-brand-lg border border-env bg-env-soft p-5">
+          <p className="text-[16px] font-semibold leading-snug text-brand-ink">
+            No mistakes in this set.
           </p>
           <p className="mt-1 text-[13.5px] text-brand-ink-soft">
-            You missed {incorrect} question{incorrect === 1 ? "" : "s"} in this set.
+            Nothing to review here — keep going.
           </p>
         </div>
       )}
 
-      <div className="mt-6 space-y-3">
-        {primary && (
-          <BrandButton block onClick={primary.action}>
-            {primary.label}
-          </BrandButton>
-        )}
-        {incorrect > 0 && primary?.label !== "Review mistakes" && (
-          <BrandButton block variant="secondary" onClick={onReviewMistakes}>
+      {/* What should I do next? */}
+      <p className="mt-7 text-[12.5px] font-bold uppercase tracking-[0.14em] text-brand-ink-soft">
+        What to do next
+      </p>
+      <div className="mt-3 space-y-3">
+        {incorrect > 0 && (
+          <BrandButton block onClick={onReviewMistakes}>
             Review mistakes
           </BrandButton>
         )}
-        {incorrect === 0 && (
-          <BrandButton block to={`/courses/${courseId}`}>
-            Continue learning
+        {incorrect > 0 && (
+          <BrandButton block variant="secondary" to="/weak-areas">
+            Practise weak topics
           </BrandButton>
         )}
-        <BrandButton block variant="secondary" onClick={onPracticeAgain}>
+        <BrandButton
+          block
+          variant={incorrect > 0 ? "secondary" : undefined}
+          onClick={onPracticeAgain}
+        >
           Practise again
         </BrandButton>
 
@@ -132,7 +122,7 @@ export function PracticeResults({
           })}
           className="flex min-h-[52px] items-center justify-center gap-2 rounded-full text-[15px] font-semibold text-env"
         >
-          <Sparkles className="h-4 w-4" aria-hidden /> Ask Overra AI
+          <Sparkles className="h-4 w-4" aria-hidden /> Ask Overra
         </Link>
 
         <Link

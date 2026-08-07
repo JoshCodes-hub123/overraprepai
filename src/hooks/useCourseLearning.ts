@@ -54,6 +54,10 @@ export interface TopicActivity {
   mastery_score: number;
   attempts: number;
   last_seen: string | null;
+  /** Total questions answered in this topic across all sessions. */
+  questions_attempted: number;
+  /** Total questions answered incorrectly in this topic. */
+  questions_incorrect: number;
 }
 
 /**
@@ -69,15 +73,20 @@ export function useTopicActivity() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("topic_mastery")
-        .select("topic, mastery_score, attempts, last_seen")
+        .select("topic, mastery_score, attempts, last_seen, questions_attempted, questions_incorrect")
         .eq("user_id", user!.id)
         .order("last_seen", { ascending: false })
         .limit(200);
       if (error) throw error;
-      return (data ?? []) as TopicActivity[];
+      return (data ?? []).map((r: any) => ({
+        ...r,
+        questions_attempted: Number(r.questions_attempted) || 0,
+        questions_incorrect: Number(r.questions_incorrect) || 0,
+      })) as TopicActivity[];
     },
   });
 }
+
 
 /**
  * The most recently practised topic of a course, matched against that course's
@@ -106,9 +115,10 @@ export function useRecordTopicPractice() {
   return async (topicName: string, correct: number, total: number) => {
     if (!user || !topicName || total <= 0) return;
     const score = Math.round((correct / total) * 100);
+    const incorrect = Math.max(0, total - correct);
     const { data: existing } = await (supabase as any)
       .from("topic_mastery")
-      .select("id, mastery_score, attempts")
+      .select("id, mastery_score, attempts, questions_attempted, questions_incorrect")
       .eq("user_id", user.id)
       .eq("topic", topicName)
       .maybeSingle();
@@ -120,7 +130,13 @@ export function useRecordTopicPractice() {
         ((Number(existing.mastery_score) || 0) * (attempts - 1) + score) / attempts;
       await (supabase as any)
         .from("topic_mastery")
-        .update({ mastery_score: Math.round(blended), attempts, last_seen: new Date().toISOString() })
+        .update({
+          mastery_score: Math.round(blended),
+          attempts,
+          last_seen: new Date().toISOString(),
+          questions_attempted: (Number(existing.questions_attempted) || 0) + total,
+          questions_incorrect: (Number(existing.questions_incorrect) || 0) + incorrect,
+        })
         .eq("id", existing.id);
     } else {
       await (supabase as any).from("topic_mastery").insert({
@@ -129,10 +145,13 @@ export function useRecordTopicPractice() {
         mastery_score: score,
         attempts: 1,
         last_seen: new Date().toISOString(),
+        questions_attempted: total,
+        questions_incorrect: incorrect,
       });
     }
     qc.invalidateQueries({ queryKey: ["topic-activity", user.id] });
   };
+
 }
 
 export interface PracticeQuestion {
@@ -175,9 +194,13 @@ export function useTopicQuestions(topicId?: string, take = 20) {
 export interface CourseProgress {
   /** Topics in this course the student has actually practised. */
   studied: number;
-  /** Practised topics whose real mastery is still below 75%. */
+  /** Practised topics with at least one recorded mistake. */
   needsReview: number;
   total: number;
+  /** Real counted questions answered in this course. */
+  attempted: number;
+  correct: number;
+  incorrect: number;
 }
 
 /**
@@ -189,20 +212,38 @@ export function useCourseProgress(courseId?: string): CourseProgress {
   const { data: activity = [] } = useTopicActivity();
 
   return useMemo(() => {
-    if (!topics.length || !activity.length) {
-      return { studied: 0, needsReview: 0, total: topics.length };
-    }
+    const empty = {
+      studied: 0,
+      needsReview: 0,
+      total: topics.length,
+      attempted: 0,
+      correct: 0,
+      incorrect: 0,
+    };
+    if (!topics.length || !activity.length) return empty;
     const byName = new Map(
       activity.map((a) => [(a.topic ?? "").trim().toLowerCase(), a]),
     );
     let studied = 0;
     let needsReview = 0;
+    let attempted = 0;
+    let incorrect = 0;
     for (const t of topics) {
       const hit = byName.get(t.name.trim().toLowerCase());
       if (!hit) continue;
       studied += 1;
-      if ((Number(hit.mastery_score) || 0) < 75) needsReview += 1;
+      attempted += hit.questions_attempted;
+      incorrect += hit.questions_incorrect;
+      if (hit.questions_incorrect > 0) needsReview += 1;
     }
-    return { studied, needsReview, total: topics.length };
+    return {
+      studied,
+      needsReview,
+      total: topics.length,
+      attempted,
+      incorrect,
+      correct: Math.max(0, attempted - incorrect),
+    };
   }, [topics, activity]);
+
 }

@@ -12,17 +12,22 @@ export interface WeakArea {
   topicId: string | null;
   topicName: string;
   status: WeakStatus;
+  /** Practice sessions recorded for this topic. */
   attempts: number;
+  /** Real counted questions answered in this topic. */
+  attempted: number;
+  incorrect: number;
+  /** Only present when there is enough data to be meaningful. */
+  accuracy: number | null;
+  /** True when we have too few questions to judge accuracy. */
+  lowData: boolean;
+  /** Plain-language next action, derived from the counts above. */
+  recommendation: string;
   lastSeen: string | null;
 }
 
-/** Real practice history only — a topic must have been attempted to appear. */
-function statusFor(score: number): WeakStatus | null {
-  if (score < 50) return "Needs practice";
-  if (score < 75) return "Needs review";
-  if (score < 90) return "Improving";
-  return null;
-}
+/** Minimum answered questions before we quote an accuracy figure. */
+const ACCURACY_THRESHOLD = 5;
 
 /**
  * Weak areas derived strictly from the student's own `topic_mastery` rows,
@@ -59,8 +64,28 @@ export function useWeakAreas() {
     for (const a of activity) {
       const hit = byName.get((a.topic ?? "").trim().toLowerCase());
       if (!hit) continue;
-      const status = statusFor(Number(a.mastery_score) || 0);
-      if (!status) continue;
+
+      const attempted = a.questions_attempted;
+      const incorrect = a.questions_incorrect;
+      // Evidence-based only: a topic appears because real mistakes were recorded.
+      if (incorrect <= 0) continue;
+
+      const lowData = attempted < ACCURACY_THRESHOLD;
+      const accuracy =
+        !lowData && attempted > 0
+          ? Math.round(((attempted - incorrect) / attempted) * 100)
+          : null;
+
+      const missRate = attempted > 0 ? incorrect / attempted : 1;
+      const status: WeakStatus =
+        missRate >= 0.5 ? "Needs practice" : missRate >= 0.25 ? "Needs review" : "Improving";
+
+      const recommendation = lowData
+        ? "Practise a few more questions here so we can read this topic properly."
+        : missRate >= 0.5
+        ? "Review the topic first, then practise again."
+        : "Practise this topic again to lock it in.";
+
       out.push({
         courseId: hit.course_id,
         courseCode: codeById.get(hit.course_id) ?? "",
@@ -68,6 +93,11 @@ export function useWeakAreas() {
         topicName: hit.name,
         status,
         attempts: a.attempts ?? 0,
+        attempted,
+        incorrect,
+        accuracy,
+        lowData,
+        recommendation,
         lastSeen: a.last_seen,
       });
     }
@@ -76,7 +106,9 @@ export function useWeakAreas() {
       "Needs review": 1,
       Improving: 2,
     };
-    return out.sort((x, y) => order[x.status] - order[y.status]);
+    return out.sort(
+      (x, y) => order[x.status] - order[y.status] || y.incorrect - x.incorrect,
+    );
   }, [activity, topics, courses]);
 
   return {

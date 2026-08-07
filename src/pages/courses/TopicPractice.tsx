@@ -105,7 +105,8 @@ const TopicPractice = () => {
     if (topic && !savedRef.current) {
       savedRef.current = true;
       const correct = responses.filter((r) => r.isCorrect).length;
-      await record(topic.name, correct, questions.length);
+      await record(topic.name, correct, responses.length);
+
     }
   };
 

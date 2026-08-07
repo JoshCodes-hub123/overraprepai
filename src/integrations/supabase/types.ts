@@ -6707,6 +6707,8 @@ export type Database = {
           id: string
           last_seen: string
           mastery_score: number
+          questions_attempted: number
+          questions_incorrect: number
           topic: string
           user_id: string
         }
@@ -6715,6 +6717,8 @@ export type Database = {
           id?: string
           last_seen?: string
           mastery_score?: number
+          questions_attempted?: number
+          questions_incorrect?: number
           topic: string
           user_id: string
         }
@@ -6723,6 +6727,8 @@ export type Database = {
           id?: string
           last_seen?: string
           mastery_score?: number
+          questions_attempted?: number
+          questions_incorrect?: number
           topic?: string
           user_id?: string
         }
