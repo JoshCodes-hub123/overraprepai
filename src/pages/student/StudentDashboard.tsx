@@ -72,6 +72,17 @@ const StudentDashboard = () => {
   const { data: courses = [], isLoading: coursesLoading } = useCourseSnapshots();
   const { data: mission } = useTodayMission();
   const { data: weekly } = useWeeklyReport();
+  const { data: readiness = [] } = useReadinessAll();
+
+  /** course_id → weakest real topic, when the intelligence layer knows one. */
+  const weakTopicByCourse = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const r of readiness) {
+      const topic = r.weak_topics?.[0]?.topic;
+      if (r.course_id && topic) map[r.course_id] = topic;
+    }
+    return map;
+  }, [readiness]);
 
   // "FUTA · Computer Engineering · 200L" — only the parts that actually exist.
   const identityParts = useMemo(() => {
