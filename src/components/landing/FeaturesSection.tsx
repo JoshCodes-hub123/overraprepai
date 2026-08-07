@@ -88,7 +88,7 @@ const FeaturesSection = () => {
             variant="hero" 
             size="lg" 
             className="group"
-            onClick={() => navigate("/auth")}
+            onClick={() => navigate("/start")}
           >
             Get Started Free
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

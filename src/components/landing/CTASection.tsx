@@ -54,7 +54,7 @@ const CTASection = () => {
                 variant="hero" 
                 size="xl" 
                 className="group shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30"
-                onClick={() => navigate("/auth")}
+                onClick={() => navigate("/start")}
               >
                 Get Started Free
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

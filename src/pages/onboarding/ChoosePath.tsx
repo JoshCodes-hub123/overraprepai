@@ -18,22 +18,22 @@ const TRACKS: {
   accent: string;
 }[] = [
   {
+    id: "jamb",
+    title: "JAMB / UTME",
+    tagline: "Prepare for your UTME journey.",
+    description:
+      "Four subjects, past-question intelligence, timed CBT simulation and mock exams — built only for UTME.",
+    icon: Flame,
+    accent: "from-emerald-500/15 to-emerald-700/5 border-emerald-500/30",
+  },
+  {
     id: "university",
-    title: "University Student",
-    tagline: "100 – 600 Level · FUTA · OAU · UI · FUTEsIyin",
+    title: "University",
+    tagline: "Master your university courses.",
     description:
       "Your campus, your courses. CBT practice, theory grading, survival kits and AI notes scoped to your department and level.",
     icon: GraduationCap,
     accent: "from-amber-500/15 to-amber-700/5 border-amber-500/30",
-  },
-  {
-    id: "jamb",
-    title: "JAMB / UTME",
-    tagline: "Score the cut-off · Get admission",
-    description:
-      "A dedicated UTME environment — four subjects, past-question intelligence, timed CBT simulation and mock exams.",
-    icon: Flame,
-    accent: "from-emerald-500/15 to-emerald-700/5 border-emerald-500/30",
   },
 ];
 
@@ -48,10 +48,10 @@ export default function ChoosePath() {
   const [saving, setSaving] = useState<EnvironmentType | null>(null);
 
   const handleChoose = async (env: EnvironmentType) => {
+    // Remember the choice either way — signup finishes the right onboarding.
+    try { sessionStorage.setItem("pending_environment", env); } catch { /* noop */ }
     if (!user) {
-      // Not signed in yet — remember the choice and continue the flow.
-      sessionStorage.setItem("pending_environment", env);
-      navigate(env === "jamb" ? "/auth" : "/auth");
+      navigate("/auth?mode=signup");
       return;
     }
     setSaving(env);

@@ -141,36 +141,58 @@ const Auth = () => {
     reader.readAsDataURL(file);
   };
 
+  /** Environment the visitor picked on "What are you preparing for?" (pre-signup). */
+  const pendingEnvironment = (): "jamb" | "university" | null => {
+    try {
+      const v = sessionStorage.getItem("pending_environment");
+      return v === "jamb" || v === "university" ? v : null;
+    } catch { return null; }
+  };
+
+  /** Dashboard that matches the profile's saved environment. Never crosses over. */
+  const environmentHome = () => {
+    const env = (profile as any)?.environment_type ?? (profile as any)?.academic_path;
+    return env === "jamb" ? "/jamb/dashboard" : "/student/dashboard";
+  };
+
   const postAuthDestination = (justSignedUp = false) => {
     if (redirect) return redirect;
     if (intent === "tutor") return "/apply-tutor";
     if (intent === "school_owner") return "/school/register";
     if (intent === "parent") return "/parent/dashboard";
-    // Zero-friction entry: new and returning students go straight to the
-    // dashboard. University / faculty / level can be picked later from the
-    // profile screen — no forced onboarding chain.
-    if (justSignedUp) return "/student/dashboard";
-    // Resume where the user left off, if we have a saved route for this account.
-    try {
-      const uid = user?.id;
-      if (uid) {
-        const saved = localStorage.getItem(`overra_last_route:${uid}`);
-        if (saved && saved.startsWith("/")) return saved;
-      }
-    } catch { /* noop */ }
+    // Brand new student: continue the onboarding for the environment they chose.
+    if (justSignedUp) {
+      const env = pendingEnvironment();
+      if (env === "jamb") return "/onboarding/jamb";
+      if (env === "university") return "/onboarding/university";
+      return "/start";
+    }
     if (primaryRole === "admin") return "/admin/dashboard";
     if (primaryRole === "tutor") return "/tutor/dashboard";
     if (primaryRole === "school_owner" || primaryRole === "school_admin" || primaryRole === "teacher") return "/school/dashboard";
     if (primaryRole === "parent") return "/parent/dashboard";
-    return "/student/dashboard";
+
+    const home = environmentHome();
+    const prefix = home === "/jamb/dashboard" ? "/jamb" : "/student";
+    // Resume where the user left off — only inside their own environment.
+    try {
+      const uid = user?.id;
+      if (uid) {
+        const saved = localStorage.getItem(`overra_last_route:${uid}`);
+        if (saved && saved.startsWith(prefix)) return saved;
+      }
+    } catch { /* noop */ }
+    return home;
   };
 
+
   useEffect(() => {
-    if (user && primaryRole) {
+    // Wait for the profile so we can route into the right environment.
+    if (user && primaryRole && profile) {
       navigate(postAuthDestination());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, primaryRole, navigate]);
+  }, [user, primaryRole, profile, navigate]);
 
   const signInForm = useForm<SignInFormData>({
     resolver: zodResolver(signInSchema),
@@ -277,16 +299,20 @@ const Auth = () => {
     }
   };
 
-  // Persist the chosen university + name on the profile.
+  // Persist the name + the environment the visitor picked before signing up.
   const persistExtraSignupDetails = async (data: SignUpFormData) => {
     try {
       const { data: { user: newUser } } = await supabase.auth.getUser();
       if (!newUser?.id) return;
+      const env = pendingEnvironment();
+      const envFields =
+        env === "jamb"
+          ? { environment_type: "jamb", academic_path: "jamb", university: null, faculty: null }
+          : { environment_type: "university", academic_path: "university", university: data.university };
       await supabase
         .from("profiles")
         .update({
-          university: data.university,
-          academic_path: "university" as any,
+          ...envFields,
           full_name: data.fullName,
         } as any)
         .eq("id", newUser.id);

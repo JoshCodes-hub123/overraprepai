@@ -144,7 +144,7 @@ const Navbar = () => {
                     <Button 
                       variant="hero" 
                       size="sm" 
-                      onClick={() => navigate("/auth")}
+                      onClick={() => navigate("/start")}
                       className="shadow-md shadow-primary/20"
                     >
                       Get Started
@@ -229,7 +229,7 @@ const Navbar = () => {
                       <Button variant="ghost" className="w-full justify-center" onClick={() => navigate("/auth")}>
                         Sign In
                       </Button>
-                      <Button variant="hero" className="w-full justify-center" onClick={() => navigate("/auth")}>
+                      <Button variant="hero" className="w-full justify-center" onClick={() => navigate("/start")}>
                         Get Started Free
                       </Button>
                     </>

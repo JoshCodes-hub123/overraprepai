@@ -99,7 +99,7 @@ const HeroSection = () => {
                 </button>
                 <span className="hidden sm:inline text-border">•</span>
                 <button
-                  onClick={() => navigate("/auth")}
+                  onClick={() => navigate("/start")}
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Already have an account? <span className="text-primary font-medium">Sign in</span>

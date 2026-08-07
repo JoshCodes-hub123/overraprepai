@@ -84,16 +84,15 @@ const MobileWelcome = () => {
             </span>
 
             <h1 className="text-[2rem] leading-[1.05] font-bold tracking-tight text-foreground">
-              Prepare Smarter.
+              Turn your preparation
               <br />
               <span className="bg-gradient-to-r from-[hsl(43_85%_50%)] to-[hsl(38_75%_45%)] bg-clip-text text-transparent">
-                Perform Better.
+                into confidence.
               </span>
             </h1>
 
             <p className="mt-3 text-[14px] leading-relaxed text-muted-foreground">
-              CBT practice, AI explanations, and study tools — all in one calm,
-              focused app.
+              Prepare smarter. Learn better. Perform better.
             </p>
 
             <div className="mt-6 flex flex-col gap-2.5">
@@ -101,12 +100,16 @@ const MobileWelcome = () => {
                 onClick={() => navigate("/start")}
                 className="h-12 px-5 rounded-full font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30"
               >
-                Get Started Free
+                Get Started
                 <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
-              <p className="text-center text-[11px] text-muted-foreground">
-                3 free AI actions every day · no card required
-              </p>
+              <Button
+                variant="outline"
+                onClick={() => navigate("/website")}
+                className="h-12 px-5 rounded-full font-semibold"
+              >
+                Explore
+              </Button>
             </div>
           </motion.section>
 

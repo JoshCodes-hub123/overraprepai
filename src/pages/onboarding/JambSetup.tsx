@@ -96,6 +96,7 @@ export default function JambSetup() {
       toast.error("Couldn't save your setup", { description: error.message });
       return;
     }
+    try { sessionStorage.removeItem("pending_environment"); } catch { /* noop */ }
     await refreshProfile();
     navigate("/jamb/dashboard", { replace: true });
   };
