@@ -8363,6 +8363,13 @@ export type Database = {
         Returns: boolean
       }
       course_owner: { Args: { _course_id: string }; Returns: boolean }
+      course_topic_question_counts: {
+        Args: { _course_id: string }
+        Returns: {
+          question_count: number
+          topic_id: string
+        }[]
+      }
       credit_tokens_for_purchase: {
         Args: {
           p_amount_cents: number

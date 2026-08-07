@@ -23,6 +23,8 @@ import { useStudentScope } from "@/hooks/useStudentScope";
 import { useTodayMission, useWeeklyReport, useReadinessAll } from "@/hooks/useIntelligence";
 import useEnvironment from "@/hooks/useEnvironment";
 import { INSTITUTIONS, isInstitutionCode } from "@/config/environments";
+// One shared source of truth for "what should this student do next".
+import { courseActionLabel as courseAction } from "@/lib/nextStep";
 
 if (typeof window !== "undefined") prefetchDashboardNeighbors();
 
@@ -33,15 +35,7 @@ function greetingFor(date = new Date()) {
   return "Good evening";
 }
 
-/**
- * The single next useful action for a course, from real data only:
- * a known weak topic → last-opened activity → nothing yet.
- */
-function courseAction(topic: string | null, lastOpened: string | null) {
-  if (topic) return topic;
-  if (lastOpened) return "Continue where you stopped";
-  return "Ready to practice";
-}
+
 
 /**
  * University student home.
@@ -153,7 +147,7 @@ const StudentDashboard = () => {
               title={current.name}
               context={courseAction(weakTopicByCourse[current.id] ?? null, current.last_opened_at)}
               cta="Continue"
-              to={`/study-hub/${current.id}`}
+              to={`/courses/${current.id}`}
             />
           ) : (
             <EmptyState
@@ -204,7 +198,7 @@ const StudentDashboard = () => {
                 {recent.slice(0, 4).map((c) => (
                   <CourseRow
                     key={c.id}
-                    to={`/study-hub/${c.id}`}
+                    to={`/courses/${c.id}`}
                     code={c.code}
                     name={c.name}
                     action={courseAction(weakTopicByCourse[c.id] ?? null, c.last_opened_at)}
