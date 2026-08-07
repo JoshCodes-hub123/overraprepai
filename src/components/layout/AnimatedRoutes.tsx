@@ -128,6 +128,9 @@ const ChoosePath = lazy(() => import("@/pages/onboarding/ChoosePath"));
 const RefinePath = lazy(() => import("@/pages/onboarding/RefinePath"));
 const ChooseUniversity = lazy(() => import("@/pages/onboarding/ChooseUniversity"));
 const JambDashboard = lazy(() => import("@/pages/jamb/JambDashboard"));
+const JambSubjects = lazy(() => import("@/pages/jamb/JambSubjects"));
+const JambSubject = lazy(() => import("@/pages/jamb/JambSubject"));
+const JambTopicPractice = lazy(() => import("@/pages/jamb/JambTopicPractice"));
 const ChooseFaculty = lazy(() => import("@/pages/onboarding/ChooseFaculty"));
 const JambSetup = lazy(() => import("@/pages/onboarding/JambSetup"));
 
