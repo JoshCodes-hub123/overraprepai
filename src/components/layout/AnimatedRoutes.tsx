@@ -35,6 +35,8 @@ const ParentDashboard = lazy(() => import("@/pages/parent/ParentDashboard"));
 const SubjectBrowser = lazy(() => import("@/pages/subjects/SubjectBrowser"));
 const Flashcards = lazy(() => import("@/pages/flashcards/Flashcards"));
 const JambIntelligence = lazy(() => import("@/pages/jamb/JambIntelligence"));
+import EnvironmentGuard from "@/components/routing/EnvironmentGuard";
+
 const SurvivalKits = lazy(() => import("@/pages/survival-kits/SurvivalKits"));
 const SurvivalKitView = lazy(() => import("@/pages/survival-kits/SurvivalKitView"));
 const Strategy = lazy(() => import("@/pages/strategy/Strategy"));
