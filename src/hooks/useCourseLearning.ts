@@ -115,9 +115,10 @@ export function useRecordTopicPractice() {
   return async (topicName: string, correct: number, total: number) => {
     if (!user || !topicName || total <= 0) return;
     const score = Math.round((correct / total) * 100);
+    const incorrect = Math.max(0, total - correct);
     const { data: existing } = await (supabase as any)
       .from("topic_mastery")
-      .select("id, mastery_score, attempts")
+      .select("id, mastery_score, attempts, questions_attempted, questions_incorrect")
       .eq("user_id", user.id)
       .eq("topic", topicName)
       .maybeSingle();
@@ -129,7 +130,13 @@ export function useRecordTopicPractice() {
         ((Number(existing.mastery_score) || 0) * (attempts - 1) + score) / attempts;
       await (supabase as any)
         .from("topic_mastery")
-        .update({ mastery_score: Math.round(blended), attempts, last_seen: new Date().toISOString() })
+        .update({
+          mastery_score: Math.round(blended),
+          attempts,
+          last_seen: new Date().toISOString(),
+          questions_attempted: (Number(existing.questions_attempted) || 0) + total,
+          questions_incorrect: (Number(existing.questions_incorrect) || 0) + incorrect,
+        })
         .eq("id", existing.id);
     } else {
       await (supabase as any).from("topic_mastery").insert({
@@ -138,10 +145,13 @@ export function useRecordTopicPractice() {
         mastery_score: score,
         attempts: 1,
         last_seen: new Date().toISOString(),
+        questions_attempted: total,
+        questions_incorrect: incorrect,
       });
     }
     qc.invalidateQueries({ queryKey: ["topic-activity", user.id] });
   };
+
 }
 
 export interface PracticeQuestion {
