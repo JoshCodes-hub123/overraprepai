@@ -64,6 +64,8 @@ export default function ChooseUniversity() {
     const { error } = await supabase
       .from("profiles")
       .update({
+        environment_type: "university",
+        academic_path: "university",
         university: u.code,
         faculty: null,
         department: null,
