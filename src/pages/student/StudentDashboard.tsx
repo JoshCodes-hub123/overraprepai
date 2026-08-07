@@ -20,7 +20,7 @@ import QuickAccess, { quickAccessItems } from "@/components/dashboard/mobile/Qui
 
 import { useCourseSnapshots } from "@/hooks/useCourseSnapshots";
 import { useStudentScope } from "@/hooks/useStudentScope";
-import { useTodayMission, useWeeklyReport } from "@/hooks/useIntelligence";
+import { useTodayMission, useWeeklyReport, useReadinessAll } from "@/hooks/useIntelligence";
 import useEnvironment from "@/hooks/useEnvironment";
 import { INSTITUTIONS, isInstitutionCode } from "@/config/environments";
 
@@ -33,9 +33,14 @@ function greetingFor(date = new Date()) {
   return "Good evening";
 }
 
-function lastOpenedLabel(iso: string | null) {
-  if (!iso) return "Ready to practice";
-  return "Continue where you stopped";
+/**
+ * The single next useful action for a course, from real data only:
+ * a known weak topic → last-opened activity → nothing yet.
+ */
+function courseAction(topic: string | null, lastOpened: string | null) {
+  if (topic) return topic;
+  if (lastOpened) return "Continue where you stopped";
+  return "Ready to practice";
 }
 
 /**
