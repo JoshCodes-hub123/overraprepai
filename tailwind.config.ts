@@ -66,16 +66,41 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        /* Mobile rebrand palette — white · premium gold · black */
+        brand: {
+          surface: "hsl(var(--brand-surface))",
+          soft: "hsl(var(--brand-surface-soft))",
+          ink: "hsl(var(--brand-ink))",
+          "ink-soft": "hsl(var(--brand-ink-soft))",
+          line: "hsl(var(--brand-line))",
+          gold: "hsl(var(--brand-gold))",
+          "gold-soft": "hsl(var(--brand-gold-soft))",
+          "gold-line": "hsl(var(--brand-gold-line))",
+          "on-gold": "hsl(var(--brand-on-gold))",
+        },
+        /* Academic environment accent — resolves per [data-env] */
+        env: {
+          DEFAULT: "hsl(var(--env-accent))",
+          soft: "hsl(var(--env-accent-soft))",
+          line: "hsl(var(--env-accent-line))",
+          foreground: "hsl(var(--env-on-accent))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        brand: "var(--brand-radius)",
+        "brand-sm": "var(--brand-radius-sm)",
+        "brand-lg": "var(--brand-radius-lg)",
       },
       boxShadow: {
         'glow': 'var(--shadow-glow)',
         'accent-glow': 'var(--shadow-accent-glow)',
+        'brand': 'var(--brand-elev)',
+        'brand-lifted': 'var(--brand-elev-lifted)',
       },
+
 keyframes: {
         "accordion-down": {
           from: { height: "0" },
