@@ -20,7 +20,7 @@ import QuickAccess, { quickAccessItems } from "@/components/dashboard/mobile/Qui
 
 import { useCourseSnapshots } from "@/hooks/useCourseSnapshots";
 import { useStudentScope } from "@/hooks/useStudentScope";
-import { useTodayMission, useWeeklyReport } from "@/hooks/useIntelligence";
+import { useTodayMission, useWeeklyReport, useReadinessAll } from "@/hooks/useIntelligence";
 import useEnvironment from "@/hooks/useEnvironment";
 import { INSTITUTIONS, isInstitutionCode } from "@/config/environments";
 
@@ -33,9 +33,14 @@ function greetingFor(date = new Date()) {
   return "Good evening";
 }
 
-function lastOpenedLabel(iso: string | null) {
-  if (!iso) return "Ready to practice";
-  return "Continue where you stopped";
+/**
+ * The single next useful action for a course, from real data only:
+ * a known weak topic → last-opened activity → nothing yet.
+ */
+function courseAction(topic: string | null, lastOpened: string | null) {
+  if (topic) return topic;
+  if (lastOpened) return "Continue where you stopped";
+  return "Ready to practice";
 }
 
 /**
@@ -67,6 +72,17 @@ const StudentDashboard = () => {
   const { data: courses = [], isLoading: coursesLoading } = useCourseSnapshots();
   const { data: mission } = useTodayMission();
   const { data: weekly } = useWeeklyReport();
+  const { data: readiness = [] } = useReadinessAll();
+
+  /** course_id → weakest real topic, when the intelligence layer knows one. */
+  const weakTopicByCourse = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const r of readiness) {
+      const topic = r.weak_topics?.[0]?.topic;
+      if (r.course_id && topic) map[r.course_id] = topic;
+    }
+    return map;
+  }, [readiness]);
 
   // "FUTA · Computer Engineering · 200L" — only the parts that actually exist.
   const identityParts = useMemo(() => {
@@ -135,7 +151,7 @@ const StudentDashboard = () => {
               eyebrow="Your next step"
               kicker={current.code}
               title={current.name}
-              context={lastOpenedLabel(current.last_opened_at)}
+              context={courseAction(weakTopicByCourse[current.id] ?? null, current.last_opened_at)}
               cta="Continue"
               to={`/study-hub/${current.id}`}
             />
@@ -191,7 +207,7 @@ const StudentDashboard = () => {
                     to={`/study-hub/${c.id}`}
                     code={c.code}
                     name={c.name}
-                    action={lastOpenedLabel(c.last_opened_at)}
+                    action={courseAction(weakTopicByCourse[c.id] ?? null, c.last_opened_at)}
                     badge={c.unread_updates > 0 ? `${c.unread_updates} new` : undefined}
                   />
                 ))}
@@ -210,7 +226,7 @@ const StudentDashboard = () => {
           )}
 
           {/* Where do I get help. */}
-          <Section title="Ask Overra AI">
+          <Section title="Ask Overra">
             <AskOverraBlock />
           </Section>
 

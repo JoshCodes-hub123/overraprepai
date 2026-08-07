@@ -9,6 +9,11 @@ interface NextStepHeroProps {
   /** Short code / kicker line, e.g. "CHE 102". */
   kicker?: string;
   title: ReactNode;
+  /**
+   * Real academic urgency only — e.g. "Test tomorrow". Rendered as a quiet
+   * pill. Never pass a fabricated or inferred date.
+   */
+  urgency?: string;
   /** Contextual line, e.g. "Continue where you stopped". */
   context?: ReactNode;
   cta: string;
@@ -27,6 +32,7 @@ export function NextStepHero({
   eyebrow = "Your next step",
   kicker,
   title,
+  urgency,
   context,
   cta,
   to,
@@ -42,7 +48,14 @@ export function NextStepHero({
         className,
       )}
     >
-      <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-env">{eyebrow}</p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-env">{eyebrow}</p>
+        {urgency && (
+          <span className="shrink-0 rounded-full bg-brand-ink px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wide text-brand-surface">
+            {urgency}
+          </span>
+        )}
+      </div>
 
       {kicker && (
         <p className="mt-3.5 text-[13px] font-bold uppercase tracking-[0.1em] text-brand-ink-soft">
@@ -55,6 +68,7 @@ export function NextStepHero({
       {context && (
         <p className="mt-2 text-[13.5px] leading-relaxed text-brand-ink-soft">{context}</p>
       )}
+
 
       <button
         type="button"
