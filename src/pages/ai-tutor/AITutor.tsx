@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import DashboardNav from "@/components/layout/DashboardNav";
 import { DashboardBreadcrumb } from "@/components/layout/DashboardBreadcrumb";
@@ -86,6 +86,9 @@ const titleFromText = (s: string) => {
 const AITutor = () => {
   const navigate = useNavigate();
   const { threadId: routeThreadId } = useParams<{ threadId?: string }>();
+  // Context-aware entry: /ai-tutor?q=... prefills the composer from the
+  // course/topic/question the student came from.
+  const [contextParams] = useSearchParams();
   const { user, profile, primaryRole } = useAuth();
   const navRole = (primaryRole === "admin" || primaryRole === "tutor" ? primaryRole : "student") as
     "admin" | "tutor" | "student";
@@ -107,7 +110,7 @@ const AITutor = () => {
 
   // Local view = DB messages mapped to LocalMsg + any temp streaming/pending message
   const [stream, setStream] = useState<LocalMsg | null>(null);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(() => contextParams.get("q") ?? "");
   const [loading, setLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
