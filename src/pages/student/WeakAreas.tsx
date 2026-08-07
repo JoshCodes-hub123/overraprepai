@@ -1,14 +1,15 @@
 import { Link } from "react-router-dom";
-import { Target, Sparkles } from "lucide-react";
+import { Target, Sparkles, BookOpen, Play } from "lucide-react";
 
 import { SEO } from "@/components/seo/SEO";
 import { Screen, ScreenHeader, EmptyState, BrandSkeleton } from "@/components/ui-kit";
 import { useWeakAreas } from "@/hooks/useWeakAreas";
 import { coachHref } from "@/lib/coachLink";
+import { lastPracticed } from "@/lib/lastPracticed";
 
 /**
- * Weak areas built only from the student's real practice history. If there is
- * no history yet we say so plainly instead of inventing mastery numbers.
+ * Weak areas built only from the student's real practice history. Every number
+ * here is counted from recorded answers — nothing is estimated.
  */
 const WeakAreas = () => {
   const { areas, isLoading } = useWeakAreas();
@@ -25,61 +26,94 @@ const WeakAreas = () => {
             </span>
           }
           title="What to work on"
-          subtitle="Based on the topics you've practised."
+          subtitle="Based only on the questions you've answered."
         />
 
         {isLoading ? (
-          <div className="space-y-2">
-            <BrandSkeleton h={72} />
-            <BrandSkeleton h={72} />
-            <BrandSkeleton h={72} />
+          <div className="space-y-3">
+            <BrandSkeleton h={148} />
+            <BrandSkeleton h={148} />
+            <BrandSkeleton h={148} />
           </div>
         ) : areas.length === 0 ? (
           <EmptyState
             icon={<Target className="h-5 w-5" />}
-            title="No weak areas yet"
-            description="Keep practicing. Overra will identify the topics you need to work on."
+            title="Nothing to work on yet"
+            description="Once you practise and miss a few questions, the topics you need to strengthen will show up here."
           />
         ) : (
-          <ul className="divide-y divide-brand-line rounded-brand border border-brand-line bg-brand-surface">
-            {areas.map((a) => (
-              <li key={`${a.courseId}-${a.topicId}`} className="px-4 py-4">
-                <div className="flex items-start gap-3">
-                  <div className="min-w-0 flex-1">
-                    {a.courseCode && (
-                      <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-env">
-                        {a.courseCode}
-                      </p>
-                    )}
-                    <p className="mt-0.5 text-[15.5px] font-semibold leading-snug text-brand-ink">
-                      {a.topicName}
+          <ul className="space-y-3">
+            {areas.map((a) => {
+              const when = lastPracticed(a.lastSeen);
+              return (
+                <li
+                  key={`${a.courseId}-${a.topicId}`}
+                  className="rounded-brand-lg border border-brand-line bg-brand-surface p-5"
+                >
+                  {a.courseCode && (
+                    <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-env">
+                      {a.courseCode}
                     </p>
-                    <p className="mt-0.5 text-[13px] text-brand-ink-soft">{a.status}</p>
-                  </div>
-                </div>
-                <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
-                  {a.topicId && (
-                    <Link
-                      to={`/courses/${a.courseId}/topics/${a.topicId}/practice`}
-                      className="text-[13.5px] font-semibold text-brand-ink underline underline-offset-4"
-                    >
-                      Practise this topic
-                    </Link>
                   )}
-                  <Link
-                    to={coachHref({
-                      courseId: a.courseId,
-                      courseCode: a.courseCode,
-                      topicId: a.topicId,
-                      topicName: a.topicName,
-                    })}
-                    className="inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-env"
-                  >
-                    <Sparkles className="h-3.5 w-3.5" aria-hidden /> Ask Overra
-                  </Link>
-                </div>
-              </li>
-            ))}
+                  <h2 className="mt-1 text-[17px] font-semibold leading-snug text-brand-ink">
+                    {a.topicName}
+                  </h2>
+
+                  <p className="mt-2 text-[14px] leading-relaxed text-brand-ink-soft">
+                    {a.incorrect} mistake{a.incorrect === 1 ? "" : "s"} from {a.attempted} question
+                    {a.attempted === 1 ? "" : "s"}
+                    {a.accuracy !== null && <> · {a.accuracy}% accuracy</>}
+                  </p>
+                  {a.lowData && (
+                    <p className="mt-1 text-[13px] text-brand-ink-soft">
+                      Not enough practice yet to judge accuracy.
+                    </p>
+                  )}
+                  {when && (
+                    <p className="mt-1 text-[13px] text-brand-ink-soft">Last practised: {when}</p>
+                  )}
+
+                  <div className="mt-4 rounded-brand border border-brand-line bg-brand-soft/60 px-4 py-3">
+                    <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brand-ink-soft">
+                      Next step
+                    </p>
+                    <p className="mt-1 text-[14px] leading-relaxed text-brand-ink">
+                      {a.recommendation}
+                    </p>
+                  </div>
+
+                  <div className="mt-4 space-y-2">
+                    {a.topicId && (
+                      <>
+                        <Link
+                          to={`/courses/${a.courseId}/topics/${a.topicId}`}
+                          className="flex min-h-[52px] items-center justify-center gap-2 rounded-full border border-brand-line bg-brand-surface text-[15px] font-semibold text-brand-ink"
+                        >
+                          <BookOpen className="h-4 w-4" aria-hidden /> Review topic
+                        </Link>
+                        <Link
+                          to={`/courses/${a.courseId}/topics/${a.topicId}/practice`}
+                          className="flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-brand-ink text-[15px] font-semibold text-brand-surface"
+                        >
+                          <Play className="h-4 w-4" aria-hidden /> Practise
+                        </Link>
+                      </>
+                    )}
+                    <Link
+                      to={coachHref({
+                        courseId: a.courseId,
+                        courseCode: a.courseCode,
+                        topicId: a.topicId,
+                        topicName: a.topicName,
+                      })}
+                      className="flex min-h-[52px] items-center justify-center gap-2 rounded-full text-[15px] font-semibold text-env"
+                    >
+                      <Sparkles className="h-4 w-4" aria-hidden /> Ask Overra
+                    </Link>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </Screen>
