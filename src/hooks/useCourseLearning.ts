@@ -194,9 +194,13 @@ export function useTopicQuestions(topicId?: string, take = 20) {
 export interface CourseProgress {
   /** Topics in this course the student has actually practised. */
   studied: number;
-  /** Practised topics whose real mastery is still below 75%. */
+  /** Practised topics with at least one recorded mistake. */
   needsReview: number;
   total: number;
+  /** Real counted questions answered in this course. */
+  attempted: number;
+  correct: number;
+  incorrect: number;
 }
 
 /**
@@ -208,20 +212,38 @@ export function useCourseProgress(courseId?: string): CourseProgress {
   const { data: activity = [] } = useTopicActivity();
 
   return useMemo(() => {
-    if (!topics.length || !activity.length) {
-      return { studied: 0, needsReview: 0, total: topics.length };
-    }
+    const empty = {
+      studied: 0,
+      needsReview: 0,
+      total: topics.length,
+      attempted: 0,
+      correct: 0,
+      incorrect: 0,
+    };
+    if (!topics.length || !activity.length) return empty;
     const byName = new Map(
       activity.map((a) => [(a.topic ?? "").trim().toLowerCase(), a]),
     );
     let studied = 0;
     let needsReview = 0;
+    let attempted = 0;
+    let incorrect = 0;
     for (const t of topics) {
       const hit = byName.get(t.name.trim().toLowerCase());
       if (!hit) continue;
       studied += 1;
-      if ((Number(hit.mastery_score) || 0) < 75) needsReview += 1;
+      attempted += hit.questions_attempted;
+      incorrect += hit.questions_incorrect;
+      if (hit.questions_incorrect > 0) needsReview += 1;
     }
-    return { studied, needsReview, total: topics.length };
+    return {
+      studied,
+      needsReview,
+      total: topics.length,
+      attempted,
+      incorrect,
+      correct: Math.max(0, attempted - incorrect),
+    };
   }, [topics, activity]);
+
 }
