@@ -9,6 +9,11 @@ interface NextStepHeroProps {
   /** Short code / kicker line, e.g. "CHE 102". */
   kicker?: string;
   title: ReactNode;
+  /**
+   * Real academic urgency only — e.g. "Test tomorrow". Rendered as a quiet
+   * pill. Never pass a fabricated or inferred date.
+   */
+  urgency?: string;
   /** Contextual line, e.g. "Continue where you stopped". */
   context?: ReactNode;
   cta: string;
@@ -27,6 +32,7 @@ export function NextStepHero({
   eyebrow = "Your next step",
   kicker,
   title,
+  urgency,
   context,
   cta,
   to,
