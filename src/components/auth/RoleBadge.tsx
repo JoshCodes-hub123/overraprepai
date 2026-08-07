@@ -17,6 +17,10 @@ export const RoleBadge = () => {
 
   if (!user || !primaryRole) return null;
   if (HIDDEN_PREFIXES.some((p) => location.pathname.startsWith(p))) return null;
+  // Students never get a floating environment/account switcher on their home
+  // screen — switching lives in Profile → Academic Settings.
+  if (primaryRole !== "admin" && primaryRole !== "tutor") return null;
+
 
   const isAdmin = primaryRole === "admin";
   const isTutor = primaryRole === "tutor";

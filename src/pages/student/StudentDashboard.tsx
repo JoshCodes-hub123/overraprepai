@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Sparkles } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { SEO } from "@/components/seo/SEO";
 import { PullToRefresh } from "@/components/native/PullToRefresh";
@@ -9,34 +9,40 @@ import { CommandPalette, useCommandPaletteHotkey } from "@/components/student/Co
 import { FeedbackPromptDialog } from "@/components/feedback/FeedbackPromptDialog";
 import { prefetchDashboardNeighbors } from "@/lib/routePrefetch";
 
-import { Screen, Section, ListRow, EmptyState, BrandSkeleton, BrandButton } from "@/components/ui-kit";
+import { Screen, Section, EmptyState, BrandSkeleton, BrandButton } from "@/components/ui-kit";
 import BrandTopBar from "@/components/dashboard/mobile/BrandTopBar";
-import ContinueBlock from "@/components/dashboard/mobile/ContinueBlock";
+import NextStepHero from "@/components/dashboard/mobile/NextStepHero";
+import MissionBlock from "@/components/dashboard/mobile/MissionBlock";
+import CourseRow from "@/components/dashboard/mobile/CourseRow";
+import WeeklyPulse from "@/components/dashboard/mobile/WeeklyPulse";
+import AskOverraBlock from "@/components/dashboard/mobile/AskOverraBlock";
 import QuickAccess, { quickAccessItems } from "@/components/dashboard/mobile/QuickAccess";
 
 import { useCourseSnapshots } from "@/hooks/useCourseSnapshots";
 import { useStudentScope } from "@/hooks/useStudentScope";
-import { useTodayMission } from "@/hooks/useIntelligence";
+import { useTodayMission, useWeeklyReport } from "@/hooks/useIntelligence";
 import useEnvironment from "@/hooks/useEnvironment";
 import { INSTITUTIONS, isInstitutionCode } from "@/config/environments";
 
 if (typeof window !== "undefined") prefetchDashboardNeighbors();
 
-function timeAgo(iso: string | null) {
-  if (!iso) return "Not opened yet";
-  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (m < 1) return "Just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
+function greetingFor(date = new Date()) {
+  const h = date.getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
+
+function lastOpenedLabel(iso: string | null) {
+  if (!iso) return "Ready to practice";
+  return "Continue where you stopped";
 }
 
 /**
- * University home — one screen, one obvious next step.
+ * University student home.
  *
- * Order of thought: who am I → continue learning → what to practise today →
- * my courses → the three places I go most. Everything is scoped by the
+ * Answers, in order: who am I · what should I study next · what should I do
+ * today · what am I taking · where do I get help. Everything is scoped by the
  * student's own profile and RLS, so a FUTA student never sees OAU, UI,
  * FUTEsIyin or JAMB content.
  */
@@ -60,6 +66,7 @@ const StudentDashboard = () => {
   const { level, department } = useStudentScope();
   const { data: courses = [], isLoading: coursesLoading } = useCourseSnapshots();
   const { data: mission } = useTodayMission();
+  const { data: weekly } = useWeeklyReport();
 
   // "FUTA · Computer Engineering · 200L" — only the parts that actually exist.
   const identityParts = useMemo(() => {
@@ -69,7 +76,6 @@ const StudentDashboard = () => {
       .map((p) => (typeof p === "string" ? p.trim() : p))
       .filter((p): p is string => Boolean(p));
   }, [institution, profile, department, level]);
-
 
   const firstName = profile?.full_name?.split(" ")[0];
 
@@ -100,13 +106,14 @@ const StudentDashboard = () => {
         <Screen>
           <BrandTopBar />
 
-          {/* Academic identity — the first thing the student reads. */}
-          <div className="pb-7 pt-7">
-            <h1 className="text-[30px] font-bold leading-[1.1] tracking-tight text-brand-ink">
-              {firstName ? `Hello, ${firstName}` : "Welcome back"}
+          {/* Who am I. */}
+          <div className="pb-6 pt-6">
+            <h1 className="text-[27px] font-bold leading-[1.15] tracking-tight text-brand-ink">
+              {greetingFor()}
+              {firstName ? `, ${firstName}` : ""}
             </h1>
             {identityParts.length > 0 && (
-              <p className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] font-semibold tracking-tight text-brand-ink">
+              <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13.5px] font-semibold tracking-tight text-brand-ink-soft">
                 {identityParts.map((part, i) => (
                   <span key={part} className="flex items-center gap-2">
                     {i > 0 && <span aria-hidden className="h-1 w-1 rounded-full bg-env" />}
@@ -117,18 +124,18 @@ const StudentDashboard = () => {
             )}
           </div>
 
-
           <DashboardOfflineBanner onReattempt={onRefresh} />
 
-          {/* The one primary action. */}
+          {/* What should I study next. */}
           {coursesLoading ? (
-            <BrandSkeleton h={170} />
+            <BrandSkeleton h={190} />
           ) : current ? (
-            <ContinueBlock
-              key={`continue-${refreshKey}`}
-              eyebrow="Continue learning"
+            <NextStepHero
+              key={`next-${refreshKey}`}
+              eyebrow="Your next step"
+              kicker={current.code}
               title={current.name}
-              meta={`${current.code} · ${timeAgo(current.last_opened_at)}`}
+              context={lastOpenedLabel(current.last_opened_at)}
               cta="Continue"
               to={`/study-hub/${current.id}`}
             />
@@ -141,57 +148,71 @@ const StudentDashboard = () => {
             />
           )}
 
-          {/* Today's recommended practice — quiet, single line. */}
-          <Section title="Today" className="mt-8">
+          {/* What should I do today. */}
+          <Section title="Today's mission" className="mt-8">
             {nextTask ? (
-              <ListRow
-                to={nextTask.link}
+              <MissionBlock
                 title={nextTask.label}
                 meta="Recommended for you today"
-                icon={<Sparkles className="h-5 w-5" />}
+                cta="Start now"
+                to={nextTask.link}
+              />
+            ) : mission && mission.completed_today > 0 ? (
+              <MissionBlock
+                title="Today's mission is done"
+                meta="Anything extra is a bonus — keep it light."
+                cta="Practice anyway"
+                to="/practice"
               />
             ) : (
-              <ListRow
-                to="/practice"
-                title="Practice a past question set"
-                meta="Recommended for you today"
-                icon={<Sparkles className="h-5 w-5" />}
+              <MissionBlock
+                title={current ? `Practise a ${current.code} question set` : "Practise a past question set"}
+                meta="A short, focused session is enough for today."
+                cta="Start practice"
+                to={current ? `/practice?course=${current.id}` : "/practice"}
               />
             )}
           </Section>
 
-          {/* Course progress — a list, not a wall of cards.
-              With no courses the hero above already carries the onboarding CTA,
-              so this section stays out of the way entirely. */}
+          {/* What am I taking. */}
           {coursesLoading ? (
-            <Section title="Your courses" to="/courses" linkLabel="Manage">
+            <Section title="Your courses" to="/courses" linkLabel="See all">
               <div className="space-y-2.5">
-                <BrandSkeleton h={64} />
-                <BrandSkeleton h={64} />
+                <BrandSkeleton h={78} />
+                <BrandSkeleton h={78} />
               </div>
             </Section>
           ) : recent.length > 0 ? (
-            <Section title="Your courses" to="/courses" linkLabel="Manage">
+            <Section title="Your courses" to="/courses" linkLabel="See all">
               <div className="space-y-2.5">
-                {recent.slice(0, 5).map((c) => (
-                  <ListRow
+                {recent.slice(0, 4).map((c) => (
+                  <CourseRow
                     key={c.id}
                     to={`/study-hub/${c.id}`}
-                    title={c.code}
-                    meta={`${c.name} · ${timeAgo(c.last_opened_at)}`}
-                    trailing={
-                      c.unread_updates > 0 ? (
-                        <span className="rounded-full bg-env-soft px-2 py-0.5 text-[11px] font-bold text-env">
-                          {c.unread_updates} new
-                        </span>
-                      ) : undefined
-                    }
+                    code={c.code}
+                    name={c.name}
+                    action={lastOpenedLabel(c.last_opened_at)}
+                    badge={c.unread_updates > 0 ? `${c.unread_updates} new` : undefined}
                   />
                 ))}
               </div>
             </Section>
           ) : null}
 
+          {/* Quiet, real confidence — only when the week actually has activity. */}
+          {weekly?.ok && (weekly.quizzes_completed ?? 0) > 0 && (
+            <Section title="This week">
+              <WeeklyPulse
+                quizzes={weekly.quizzes_completed}
+                accuracyPct={weekly.accuracy_pct}
+              />
+            </Section>
+          )}
+
+          {/* Where do I get help. */}
+          <Section title="Ask Overra AI">
+            <AskOverraBlock />
+          </Section>
 
           <Section title="Go to">
             <QuickAccess items={quickAccessItems("Practice", "CBT drills for your courses")} />

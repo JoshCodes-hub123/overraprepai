@@ -1,10 +1,13 @@
 import { useMemo } from "react";
-import { Sparkles, BookOpenCheck, Timer } from "lucide-react";
+import { Sparkles, Timer } from "lucide-react";
 import { SEO } from "@/components/seo/SEO";
 import { useAuth } from "@/hooks/useAuth";
 import { Screen, Section, ListRow, EmptyState, BrandButton } from "@/components/ui-kit";
 import BrandTopBar from "@/components/dashboard/mobile/BrandTopBar";
-import ContinueBlock from "@/components/dashboard/mobile/ContinueBlock";
+import NextStepHero from "@/components/dashboard/mobile/NextStepHero";
+import MissionBlock from "@/components/dashboard/mobile/MissionBlock";
+import CourseRow from "@/components/dashboard/mobile/CourseRow";
+import AskOverraBlock from "@/components/dashboard/mobile/AskOverraBlock";
 import QuickAccess, { quickAccessItems } from "@/components/dashboard/mobile/QuickAccess";
 
 /**
@@ -16,6 +19,13 @@ const JambDashboard = () => {
   const { profile } = useAuth();
   const firstName = profile?.full_name?.split(" ")[0];
   const p = profile as any;
+
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return "Good morning";
+    if (h < 17) return "Good afternoon";
+    return "Good evening";
+  })();
 
   const subjects: string[] = useMemo(
     () => (Array.isArray(p?.jamb_subjects) ? p.jamb_subjects.filter(Boolean) : []),
@@ -29,7 +39,9 @@ const JambDashboard = () => {
     return subjects[day % subjects.length];
   }, [subjects]);
 
-  const goal = [p?.target_course, p?.target_university].filter(Boolean).join(" · ");
+  const identityParts = ["JAMB / UTME", p?.target_course, p?.target_university].filter(
+    (x): x is string => Boolean(x),
+  );
 
   return (
     <>
@@ -42,20 +54,27 @@ const JambDashboard = () => {
       <Screen>
         <BrandTopBar />
 
-        <div className="pb-7 pt-7">
-          <h1 className="text-[30px] font-bold leading-[1.1] tracking-tight text-brand-ink">
-            {firstName ? `Hello, ${firstName}` : "Welcome back"}
+        <div className="pb-6 pt-6">
+          <h1 className="text-[27px] font-bold leading-[1.15] tracking-tight text-brand-ink">
+            {greeting}
+            {firstName ? `, ${firstName}` : ""}
           </h1>
-          <p className="mt-2 text-[14px] font-medium tracking-wide text-brand-ink-soft">
-            {goal ? `JAMB / UTME · ${goal}` : "JAMB / UTME"}
+          <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13.5px] font-semibold tracking-tight text-brand-ink-soft">
+            {identityParts.map((part, i) => (
+              <span key={part} className="flex items-center gap-2">
+                {i > 0 && <span aria-hidden className="h-1 w-1 rounded-full bg-env" />}
+                <span>{part}</span>
+              </span>
+            ))}
           </p>
         </div>
 
         {todaySubject ? (
-          <ContinueBlock
-            eyebrow="Continue practice"
+          <NextStepHero
+            eyebrow="Your next step"
+            kicker="Today's subject"
             title={todaySubject}
-            meta="Timed CBT practice, exactly like the real thing"
+            context="Timed CBT practice, exactly like the real thing."
             cta="Continue"
             to={`/practice?subject=${encodeURIComponent(todaySubject)}`}
           />
@@ -68,31 +87,33 @@ const JambDashboard = () => {
           />
         )}
 
-        <Section title="Today" className="mt-8">
-          <ListRow
+        <Section title="Today's mission" className="mt-8">
+          <MissionBlock
+            title={todaySubject ? `Complete one ${todaySubject} practice set` : "Start a CBT practice set"}
+            meta="A short, focused session is enough for today."
+            cta="Start practice"
             to={todaySubject ? `/practice?subject=${encodeURIComponent(todaySubject)}` : "/practice"}
-            title={todaySubject ? `Focus on ${todaySubject}` : "Start a CBT practice set"}
-            meta="Recommended for you today"
-            icon={<Sparkles className="h-5 w-5" />}
           />
         </Section>
 
-        <Section title="Your subjects" to="/onboarding/jamb" linkLabel="Edit">
-          {subjects.length === 0 ? (
-            <EmptyState title="No subjects yet" description="Pick four UTME subjects to begin." />
-          ) : (
+        {subjects.length > 0 && (
+          <Section title="Your subjects" to="/onboarding/jamb" linkLabel="Edit">
             <div className="space-y-2.5">
               {subjects.map((s) => (
-                <ListRow
+                <CourseRow
                   key={s}
                   to={`/practice?subject=${encodeURIComponent(s)}`}
-                  title={s}
-                  meta="Practice questions"
-                  icon={<BookOpenCheck className="h-5 w-5" />}
+                  code={s}
+                  name="UTME subject"
+                  action={s === todaySubject ? "Today's focus · practice now" : "Ready to practice"}
                 />
               ))}
             </div>
-          )}
+          </Section>
+        )}
+
+        <Section title="Ask Overra AI">
+          <AskOverraBlock />
         </Section>
 
         <Section title="Go to">
