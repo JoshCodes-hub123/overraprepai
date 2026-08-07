@@ -178,6 +178,11 @@ const AffiliateRedirect = lazy(() => import("@/pages/AffiliateRedirect"));
 const NotificationsPage = lazy(() => import("@/pages/NotificationsPage"));
 const CourseDirectory = lazy(() => import("@/pages/courses/CourseDirectory"));
 const CourseHub = lazy(() => import("@/pages/courses/CourseHub"));
+const CoursesScreen = lazy(() => import("@/pages/courses/CoursesScreen"));
+const CourseWorkspace = lazy(() => import("@/pages/courses/CourseWorkspace"));
+const TopicDetail = lazy(() => import("@/pages/courses/TopicDetail"));
+const TopicPractice = lazy(() => import("@/pages/courses/TopicPractice"));
+
 const TutorCourseEditor = lazy(() => import("@/pages/tutor/TutorCourseEditor"));
 const Subscription = lazy(() => import("@/pages/student/Subscription"));
 const Referrals = lazy(() => import("@/pages/student/Referrals"));
