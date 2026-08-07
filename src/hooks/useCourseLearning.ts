@@ -171,3 +171,38 @@ export function useTopicQuestions(topicId?: string, take = 20) {
     },
   });
 }
+
+export interface CourseProgress {
+  /** Topics in this course the student has actually practised. */
+  studied: number;
+  /** Practised topics whose real mastery is still below 75%. */
+  needsReview: number;
+  total: number;
+}
+
+/**
+ * Lightweight, honest course progress. Counts only topics with a real
+ * `topic_mastery` row, so a fresh course shows nothing rather than zeros.
+ */
+export function useCourseProgress(courseId?: string): CourseProgress {
+  const { data: topics = [] } = useCourseTopics(courseId);
+  const { data: activity = [] } = useTopicActivity();
+
+  return useMemo(() => {
+    if (!topics.length || !activity.length) {
+      return { studied: 0, needsReview: 0, total: topics.length };
+    }
+    const byName = new Map(
+      activity.map((a) => [(a.topic ?? "").trim().toLowerCase(), a]),
+    );
+    let studied = 0;
+    let needsReview = 0;
+    for (const t of topics) {
+      const hit = byName.get(t.name.trim().toLowerCase());
+      if (!hit) continue;
+      studied += 1;
+      if ((Number(hit.mastery_score) || 0) < 75) needsReview += 1;
+    }
+    return { studied, needsReview, total: topics.length };
+  }, [topics, activity]);
+}
