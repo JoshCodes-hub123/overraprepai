@@ -267,10 +267,13 @@ export const AnimatedRoutes = () => {
             path="/dashboard"
             element={
               <PageTransition>
-                <Dashboard />
+                <EnvironmentGuard allow="university">
+                  <Dashboard />
+                </EnvironmentGuard>
               </PageTransition>
             }
           />
+
           <Route
             path="/student/dashboard"
             element={
@@ -528,7 +531,7 @@ export const AnimatedRoutes = () => {
           <Route path="/study-hub" element={<PageTransition><StudyHub /></PageTransition>} />
           <Route path="/study-hub/:courseId" element={<PageTransition><StudyHubCourse /></PageTransition>} />
           <Route path="/pq-intelligence/:courseId" element={<PageTransition><PQIntelligence /></PageTransition>} />
-          <Route path="/jamb/dashboard" element={<PageTransition><JambDashboard /></PageTransition>} />
+          <Route path="/jamb/dashboard" element={<PageTransition><EnvironmentGuard allow="jamb"><JambDashboard /></EnvironmentGuard></PageTransition>} />
           <Route path="/subjects" element={<PageTransition><SubjectBrowser /></PageTransition>} />
           <Route path="/flashcards" element={<PageTransition><Flashcards /></PageTransition>} />
           <Route
