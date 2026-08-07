@@ -29,9 +29,9 @@ const SUBJECTS = [
 ];
 
 const TILES = [
-  { to: "/quiz/cbt", label: "CBT Simulation", desc: "Real UTME timing & interface", icon: Timer },
+  { to: "/practice", label: "CBT Practice", desc: "Real UTME timing & interface", icon: Timer },
   { to: "/exams", label: "Mock Exams", desc: "Full 4-subject mock papers", icon: BookOpenCheck },
-  { to: "/study-hub/pq-intelligence", label: "Past Question Intelligence", desc: "What JAMB repeats most", icon: Brain },
+  { to: "/jamb-intelligence", label: "Past Question Intelligence", desc: "What JAMB repeats most", icon: Brain },
   { to: "/arena", label: "Arena", desc: "Compete daily with other candidates", icon: Trophy },
   { to: "/intelligence", label: "My Readiness", desc: "Score prediction & weak topics", icon: BarChart3 },
   { to: "/flashcards", label: "Flashcards", desc: "Fast recall before the exam", icon: Target },
@@ -73,7 +73,7 @@ const JambDashboard = () => {
               timing, and AI that knows what JAMB actually asks.
             </p>
             <div className="flex flex-wrap gap-2 mt-4">
-              <Button onClick={() => navigate("/quiz/cbt")} className="gap-2">
+              <Button onClick={() => navigate("/practice")} className="gap-2">
                 Start CBT practice <ArrowRight className="w-4 h-4" />
               </Button>
               <Button variant="outline" onClick={() => navigate("/exams")}>
