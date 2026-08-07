@@ -54,6 +54,7 @@ const HIDDEN_PREFIXES = ["/auth", "/quiz/", "/school/intro", "/school/register",
 
 export const BottomTabBar = () => {
   const { primaryRole, user } = useAuth();
+  const { isJamb } = useEnvironment();
   const location = useLocation();
 
   if (!user) return null;
@@ -64,9 +65,13 @@ export const BottomTabBar = () => {
   // (so admins/tutors previewing the student dashboard still see the quick footer).
   const isStudentRoute =
     location.pathname.startsWith("/student") ||
-    ["/learn", "/study", "/practice", "/people", "/me", "/study-packs", "/chat", "/profile/edit", "/notifications", "/library", "/review", "/courses", "/wallet"].some((p) =>
+    location.pathname.startsWith("/jamb") ||
+    ["/learn", "/study", "/practice", "/people", "/me", "/study-packs", "/chat", "/profile/edit", "/notifications", "/library", "/review", "/courses", "/subjects", "/coach", "/community", "/wallet"].some((p) =>
       location.pathname.startsWith(p)
     );
+
+  // The student tab set follows the academic environment, never the route.
+  const STUDENT_TABS = isJamb ? JAMB_TABS : UNIVERSITY_TABS;
 
   let tabs: Tab[];
   if (isStudentRoute) tabs = STUDENT_TABS;
@@ -79,7 +84,7 @@ export const BottomTabBar = () => {
   return (
     <nav
       aria-label="Bottom navigation"
-      className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/90 backdrop-blur-2xl border-t border-amber-100/70 shadow-[0_-6px_20px_-12px_rgba(180,140,40,0.18)]"
+      className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-brand-surface/95 backdrop-blur-xl border-t border-brand-line"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <ul className="grid grid-cols-5 relative">
@@ -94,9 +99,11 @@ export const BottomTabBar = () => {
                 className={cn(
                   "relative flex flex-col items-center justify-end gap-0.5 pt-2 pb-2 text-[10.5px] font-semibold tracking-tight min-h-[60px] transition-colors",
                   active
-                    ? "text-amber-700"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "text-env"
+                    : "text-brand-ink-soft hover:text-brand-ink"
                 )}
+              >
+
               >
                 <span className="relative h-7 flex items-center justify-center">
                     {active && (
