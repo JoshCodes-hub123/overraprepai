@@ -14,6 +14,7 @@ import { nextStepFor } from "@/lib/nextStep";
 import { SEO } from "@/components/seo/SEO";
 import { Screen, ScreenHeader, Section, EmptyState, BrandSkeleton, BrandButton } from "@/components/ui-kit";
 import CourseRow from "@/components/dashboard/mobile/CourseRow";
+import CourseDirectory from "@/pages/courses/CourseDirectory";
 
 /**
  * The student's Courses screen: their own academic courses first, one search
@@ -22,7 +23,7 @@ import CourseRow from "@/components/dashboard/mobile/CourseRow";
  */
 const CoursesScreen = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, primaryRole } = useAuth();
   const qc = useQueryClient();
   const { parts } = useAcademicIdentity();
   const { courseIds, refresh } = useMyCourses();
@@ -84,6 +85,9 @@ const CoursesScreen = () => {
     refresh();
     qc.invalidateQueries({ queryKey: ["course-snapshots"] });
   };
+
+  // Tutors and admins keep the full catalogue/management view untouched.
+  if (primaryRole === "admin" || primaryRole === "tutor") return <CourseDirectory />;
 
   return (
     <>
