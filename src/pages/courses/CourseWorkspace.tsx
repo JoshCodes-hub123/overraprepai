@@ -108,18 +108,26 @@ const CourseWorkspace = () => {
             )}
 
             {progress.studied > 0 && (
-              <p className="-mt-2 mb-5 text-[13px] text-brand-ink-soft">
-                {progress.studied} topic{progress.studied === 1 ? "" : "s"} studied
+              <p className="-mt-2 mb-5 text-[13px] leading-relaxed text-brand-ink-soft">
+                {progress.attempted > 0 && (
+                  <>
+                    {progress.attempted} question{progress.attempted === 1 ? "" : "s"} attempted ·{" "}
+                    {progress.correct} correct · {progress.incorrect} incorrect
+                    <br />
+                  </>
+                )}
+                {progress.studied} topic{progress.studied === 1 ? "" : "s"} practised
                 {progress.needsReview > 0 && (
                   <>
                     {" · "}
                     <Link to="/weak-areas" className="font-semibold text-brand-ink underline underline-offset-4">
-                      {progress.needsReview} needing review
+                      {progress.needsReview} needing work
                     </Link>
                   </>
                 )}
               </p>
             )}
+
 
             {topicsLoading ? (
               <BrandSkeleton h={170} />
