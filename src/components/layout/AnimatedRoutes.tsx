@@ -41,6 +41,8 @@ const SurvivalKits = lazy(() => import("@/pages/survival-kits/SurvivalKits"));
 const SurvivalKitView = lazy(() => import("@/pages/survival-kits/SurvivalKitView"));
 const Strategy = lazy(() => import("@/pages/strategy/Strategy"));
 const AITutor = lazy(() => import("@/pages/ai-tutor/AITutor"));
+const CoachHome = lazy(() => import("@/pages/coach/CoachHome"));
+const CoachChat = lazy(() => import("@/pages/coach/CoachChat"));
 const ViralMode = lazy(() => import("@/pages/viral/ViralMode"));
 
 // Lazy load all other pages for code splitting
@@ -578,6 +580,9 @@ export const AnimatedRoutes = () => {
           <Route path="/strategy" element={<PageTransition><Strategy /></PageTransition>} />
           <Route path="/ai-tutor" element={<PageTransition><AITutor /></PageTransition>} />
           <Route path="/ai-tutor/:threadId" element={<PageTransition><AITutor /></PageTransition>} />
+          <Route path="/coach" element={<PageTransition><CoachHome /></PageTransition>} />
+          <Route path="/coach/chat" element={<PageTransition><CoachChat /></PageTransition>} />
+          <Route path="/coach/chat/:threadId" element={<PageTransition><CoachChat /></PageTransition>} />
           <Route path="/terms" element={<PageTransition><Terms /></PageTransition>} />
           <Route path="/privacy" element={<PageTransition><Privacy /></PageTransition>} />
           <Route path="/settings/privacy" element={<PageTransition><PrivacySettings /></PageTransition>} />
