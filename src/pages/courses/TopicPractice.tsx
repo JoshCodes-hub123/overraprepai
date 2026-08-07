@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Check, X, Sparkles } from "lucide-react";
@@ -10,8 +10,12 @@ import {
   useRecordTopicPractice,
   PracticeQuestion,
 } from "@/hooks/useCourseLearning";
+import { PracticeResponse } from "@/lib/practiceSession";
+import { coachHref } from "@/lib/coachLink";
 import { SEO } from "@/components/seo/SEO";
 import { Screen, ScreenHeader, EmptyState, BrandSkeleton, BrandButton } from "@/components/ui-kit";
+import PracticeResults from "@/components/practice/PracticeResults";
+import ReviewMistakes from "@/components/practice/ReviewMistakes";
 import { cn } from "@/lib/utils";
 
 const LETTERS = ["A", "B", "C", "D"] as const;
@@ -29,9 +33,12 @@ function optionText(q: PracticeQuestion, letter: string) {
   }
 }
 
+type Phase = "run" | "results" | "review";
+
 /**
- * A deliberately quiet question runner: one question, four large targets,
- * honest feedback, real explanations only. No confetti, no noise.
+ * The practice runner and the loop that follows it: answer → results →
+ * review mistakes → ask Overra → practise again. Everything shown afterwards
+ * is computed from the answers captured here.
  */
 const TopicPractice = () => {
   const { courseId = "", topicId = "" } = useParams();
@@ -53,25 +60,38 @@ const TopicPractice = () => {
 
   const { data: topics = [] } = useCourseTopics(courseId);
   const topic = topics.find((t) => t.id === topicId) ?? null;
-  const { data: questions = [], isLoading } = useTopicQuestions(topicId, 20);
+  const { data: questions = [], isLoading, refetch } = useTopicQuestions(topicId, 20);
   const record = useRecordTopicPractice();
 
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<string | null>(null);
-  const [answers, setAnswers] = useState<Record<string, boolean>>({});
-  const [done, setDone] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [responses, setResponses] = useState<PracticeResponse[]>([]);
+  const [phase, setPhase] = useState<Phase>("run");
+  const [seconds, setSeconds] = useState(0);
+  const startedAt = useRef<number>(Date.now());
+  const savedRef = useRef(false);
 
   const q = questions[index];
-  const correctCount = useMemo(
-    () => Object.values(answers).filter(Boolean).length,
-    [answers],
-  );
+  const mistakes = useMemo(() => responses.filter((r) => !r.isCorrect), [responses]);
 
   const choose = (letter: string) => {
     if (picked || !q) return;
-    setPicked(letter);
-    setAnswers((a) => ({ ...a, [q.id]: letter.toUpperCase() === q.correct_option.toUpperCase() }));
+    const L = letter.toUpperCase();
+    const correct = q.correct_option.toUpperCase();
+    setPicked(L);
+    setResponses((prev) => [
+      ...prev,
+      {
+        questionId: q.id,
+        questionText: q.question_text,
+        picked: L,
+        pickedText: optionText(q, L) ?? null,
+        correct,
+        correctText: optionText(q, correct) ?? null,
+        explanation: q.explanation,
+        isCorrect: L === correct,
+      },
+    ]);
   };
 
   const advance = async () => {
@@ -80,13 +100,24 @@ const TopicPractice = () => {
       setPicked(null);
       return;
     }
-    setDone(true);
-    if (topic && !saved) {
-      setSaved(true);
-      const total = questions.length;
-      const correct = Object.values(answers).filter(Boolean).length;
-      await record(topic.name, correct, total);
+    setSeconds(Math.max(0, Math.round((Date.now() - startedAt.current) / 1000)));
+    setPhase("results");
+    if (topic && !savedRef.current) {
+      savedRef.current = true;
+      const correct = responses.filter((r) => r.isCorrect).length;
+      await record(topic.name, correct, questions.length);
     }
+  };
+
+  const restart = async () => {
+    savedRef.current = false;
+    setResponses([]);
+    setIndex(0);
+    setPicked(null);
+    setSeconds(0);
+    startedAt.current = Date.now();
+    setPhase("run");
+    await refetch();
   };
 
   if (isLoading) {
@@ -115,62 +146,41 @@ const TopicPractice = () => {
     );
   }
 
-  if (done) {
-    const total = questions.length;
-    const pct = Math.round((correctCount / total) * 100);
-    const missed = questions.filter((x) => answers[x.id] === false).length;
-
+  if (phase === "review") {
     return (
       <>
-        <SEO title="Practice complete" noindex />
-        <Screen>
-          <ScreenHeader
-            chip={
-              <span className="text-[12px] font-bold uppercase tracking-[0.16em] text-env">
-                Practice complete
-              </span>
-            }
-            title={`${correctCount} / ${total}`}
-            subtitle={`${pct}% on ${topic?.name ?? "this topic"}`}
-          />
-
-          <div className="rounded-brand-lg border border-brand-line bg-brand-surface p-5">
-            <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-brand-ink-soft">
-              Recommended next step
-            </p>
-            <p className="mt-2 text-[18px] font-bold leading-snug text-brand-ink">
-              {missed > 0 ? topic?.name ?? "Practise again" : "Move to the next topic"}
-            </p>
-            <p className="mt-1.5 text-[13.5px] text-brand-ink-soft">
-              {missed > 0
-                ? `You missed ${missed} question${missed === 1 ? "" : "s"} here — one more pass will help.`
-                : "You answered everything correctly in this set."}
-            </p>
-          </div>
-
-          <div className="mt-6 space-y-3">
-            <BrandButton
-              block
-              onClick={() => {
-                setIndex(0);
-                setPicked(null);
-                setAnswers({});
-                setDone(false);
-                setSaved(false);
-              }}
-            >
-              Practise again
-            </BrandButton>
-            <BrandButton block variant="secondary" to={`/courses/${courseId}`}>
-              Back to {course?.code ?? "course"}
-            </BrandButton>
-          </div>
-        </Screen>
+        <SEO title="Review mistakes" noindex />
+        <ReviewMistakes
+          courseId={courseId}
+          courseCode={course?.code ?? null}
+          topicId={topicId}
+          topicName={topic?.name ?? null}
+          mistakes={mistakes}
+          onBack={() => setPhase("results")}
+        />
       </>
     );
   }
 
-  const isCorrect = picked ? picked.toUpperCase() === q.correct_option.toUpperCase() : null;
+  if (phase === "results") {
+    return (
+      <>
+        <SEO title="Practice results" noindex />
+        <PracticeResults
+          courseId={courseId}
+          courseCode={course?.code ?? null}
+          topicId={topicId}
+          topicName={topic?.name ?? null}
+          responses={responses}
+          seconds={seconds}
+          onReviewMistakes={() => setPhase("review")}
+          onPracticeAgain={restart}
+        />
+      </>
+    );
+  }
+
+  const isCorrect = picked ? picked === q.correct_option.toUpperCase() : null;
 
   return (
     <>
@@ -206,7 +216,7 @@ const TopicPractice = () => {
             const text = optionText(q, letter);
             if (!text) return null;
             const isAnswer = letter === q.correct_option.toUpperCase();
-            const chosen = picked?.toUpperCase() === letter;
+            const chosen = picked === letter;
             return (
               <button
                 key={letter}
@@ -258,9 +268,15 @@ const TopicPractice = () => {
               </>
             ) : (
               <Link
-                to={`/ai-tutor?q=${encodeURIComponent(
-                  `Explain this ${course?.code ?? ""} question: ${q.question_text} The correct answer is ${q.correct_option.toUpperCase()}. ${optionText(q, q.correct_option) ?? ""}`,
-                )}`}
+                to={coachHref({
+                  courseId,
+                  courseCode: course?.code ?? null,
+                  topicId,
+                  topicName: topic?.name ?? null,
+                  question: q.question_text,
+                  studentAnswer: `${picked}. ${optionText(q, picked) ?? ""}`.trim(),
+                  correctAnswer: `${q.correct_option.toUpperCase()}. ${optionText(q, q.correct_option) ?? ""}`.trim(),
+                })}
                 className="mt-3 inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-env"
               >
                 <Sparkles className="h-3.5 w-3.5" aria-hidden /> Ask Overra to explain
