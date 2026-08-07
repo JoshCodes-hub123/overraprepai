@@ -1,18 +1,30 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, BookOpen, User, LucideIcon, School, ClipboardCheck, Wallet, Megaphone, Users, Target } from "lucide-react";
+import { Home, BookOpen, User, LucideIcon, School, ClipboardCheck, Wallet, Megaphone, Users, Target, Bot, Library } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import useEnvironment from "@/hooks/useEnvironment";
 import { motion } from "framer-motion";
 
 interface Tab { to: string; label: string; icon: LucideIcon; }
 
-const STUDENT_TABS: Tab[] = [
-  { to: "/student/dashboard", label: "Home",     icon: Home },
-  { to: "/study",             label: "Study",    icon: BookOpen },
-  { to: "/practice",          label: "Practice", icon: Target },
-  { to: "/people",            label: "People",   icon: Users },
-  { to: "/me",                label: "Me",       icon: User },
+/** University world: Home · Courses · Practice · AI Coach · Community */
+const UNIVERSITY_TABS: Tab[] = [
+  { to: "/student/dashboard", label: "Home",      icon: Home },
+  { to: "/courses",           label: "Courses",   icon: BookOpen },
+  { to: "/practice",          label: "Practice",  icon: Target },
+  { to: "/coach",             label: "AI Coach",  icon: Bot },
+  { to: "/community",         label: "Community", icon: Users },
 ];
+
+/** JAMB world: Home · Subjects · Practice · AI Coach · Community */
+const JAMB_TABS: Tab[] = [
+  { to: "/jamb/dashboard", label: "Home",      icon: Home },
+  { to: "/subjects",       label: "Subjects",  icon: Library },
+  { to: "/practice",       label: "Practice",  icon: Target },
+  { to: "/coach",          label: "AI Coach",  icon: Bot },
+  { to: "/community",      label: "Community", icon: Users },
+];
+
 
 const SCHOOL_TABS: Tab[] = [
   { to: "/school/dashboard", label: "Overview", icon: School },
@@ -42,6 +54,7 @@ const HIDDEN_PREFIXES = ["/auth", "/quiz/", "/school/intro", "/school/register",
 
 export const BottomTabBar = () => {
   const { primaryRole, user } = useAuth();
+  const { isJamb } = useEnvironment();
   const location = useLocation();
 
   if (!user) return null;
@@ -52,9 +65,13 @@ export const BottomTabBar = () => {
   // (so admins/tutors previewing the student dashboard still see the quick footer).
   const isStudentRoute =
     location.pathname.startsWith("/student") ||
-    ["/learn", "/study", "/practice", "/people", "/me", "/study-packs", "/chat", "/profile/edit", "/notifications", "/library", "/review", "/courses", "/wallet"].some((p) =>
+    location.pathname.startsWith("/jamb") ||
+    ["/learn", "/study", "/practice", "/people", "/me", "/study-packs", "/chat", "/profile/edit", "/notifications", "/library", "/review", "/courses", "/subjects", "/coach", "/community", "/wallet"].some((p) =>
       location.pathname.startsWith(p)
     );
+
+  // The student tab set follows the academic environment, never the route.
+  const STUDENT_TABS = isJamb ? JAMB_TABS : UNIVERSITY_TABS;
 
   let tabs: Tab[];
   if (isStudentRoute) tabs = STUDENT_TABS;
@@ -67,7 +84,7 @@ export const BottomTabBar = () => {
   return (
     <nav
       aria-label="Bottom navigation"
-      className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/90 backdrop-blur-2xl border-t border-amber-100/70 shadow-[0_-6px_20px_-12px_rgba(180,140,40,0.18)]"
+      className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-brand-surface/95 backdrop-blur-xl border-t border-brand-line"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <ul className="grid grid-cols-5 relative">
@@ -82,8 +99,8 @@ export const BottomTabBar = () => {
                 className={cn(
                   "relative flex flex-col items-center justify-end gap-0.5 pt-2 pb-2 text-[10.5px] font-semibold tracking-tight min-h-[60px] transition-colors",
                   active
-                    ? "text-amber-700"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "text-env"
+                    : "text-brand-ink-soft hover:text-brand-ink"
                 )}
               >
                 <span className="relative h-7 flex items-center justify-center">
@@ -91,9 +108,10 @@ export const BottomTabBar = () => {
                       <motion.span
                         layoutId="tab-pill"
                         transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                        className="absolute inset-x-[-10px] inset-y-0 rounded-full bg-amber-100/80"
+                        className="absolute inset-x-[-10px] inset-y-0 rounded-full bg-env-soft"
                       />
                     )}
+
                     <Icon
                       className={cn(
                         "relative w-[22px] h-[22px] transition-transform duration-200",
