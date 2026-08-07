@@ -26,7 +26,7 @@ export const RoleBadge = () => {
   const isTutor = primaryRole === "tutor";
 
   const Icon = isAdmin ? Shield : isTutor ? GraduationCap : UserIcon;
-  const label = isAdmin ? "Admin" : isTutor ? "Tutor" : primaryRole.replace("_", " ");
+  const label = isAdmin ? "Admin" : "Tutor";
 
   const handleSwitch = async () => {
     await logSecurityEvent(user.id, "role_switch", {
