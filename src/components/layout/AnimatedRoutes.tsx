@@ -184,6 +184,7 @@ const CoursesScreen = lazy(() => import("@/pages/courses/CoursesScreen"));
 const CourseWorkspace = lazy(() => import("@/pages/courses/CourseWorkspace"));
 const TopicDetail = lazy(() => import("@/pages/courses/TopicDetail"));
 const TopicPractice = lazy(() => import("@/pages/courses/TopicPractice"));
+const WeakAreas = lazy(() => import("@/pages/student/WeakAreas"));
 
 const TutorCourseEditor = lazy(() => import("@/pages/tutor/TutorCourseEditor"));
 const Subscription = lazy(() => import("@/pages/student/Subscription"));
@@ -532,6 +533,7 @@ export const AnimatedRoutes = () => {
           <Route path="/intelligence" element={<PageTransition><IntelligenceCenter /></PageTransition>} />
           <Route path="/student/success" element={<PageTransition><IntelligenceCenter /></PageTransition>} />
           <Route path="/study-mode/:courseId" element={<PageTransition><StudyMode /></PageTransition>} />
+          <Route path="/weak-areas" element={<PageTransition><WeakAreas /></PageTransition>} />
           <Route path="/courses" element={<PageTransition><CoursesScreen /></PageTransition>} />
           <Route path="/courses/browse" element={<PageTransition><CourseDirectory /></PageTransition>} />
           <Route path="/courses/:courseId" element={<PageTransition><CourseWorkspace /></PageTransition>} />

@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCourseTopics, useTopicQuestionCounts, useTopicActivity } from "@/hooks/useCourseLearning";
 import { SEO } from "@/components/seo/SEO";
 import { Screen, ScreenHeader, Section, EmptyState, BrandSkeleton, BrandButton } from "@/components/ui-kit";
+import { coachHref } from "@/lib/coachLink";
 
 /** One topic: what you'll learn, what you can practise, and where to get help. */
 const TopicDetail = () => {
@@ -51,10 +52,13 @@ const TopicDetail = () => {
   });
 
   const askHref = topic
-    ? `/ai-tutor?q=${encodeURIComponent(
-        `Explain ${topic.name} in ${course?.code ?? "this course"}${course?.name ? ` (${course.name})` : ""}.`,
-      )}`
-    : "/ai-tutor";
+    ? coachHref({
+        courseId,
+        courseCode: course?.code ?? null,
+        topicId,
+        topicName: topic.name,
+      })
+    : "/coach/chat";
 
   return (
     <>
