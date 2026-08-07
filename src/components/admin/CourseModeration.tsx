@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { EnvironmentScope, scopeCourseQuery } from "@/lib/environmentScope";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -46,7 +47,7 @@ interface Topic {
   order_index: number;
 }
 
-export function CourseModeration() {
+export function CourseModeration({ scope }: { scope?: EnvironmentScope | null } = {}) {
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -64,10 +65,13 @@ export function CourseModeration() {
 
   const fetchCourses = async () => {
     try {
-      const { data: coursesData } = await supabase
-        .from("courses")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data: coursesData } = await scopeCourseQuery(
+        supabase
+          .from("courses")
+          .select("*")
+          .order("created_at", { ascending: false }),
+        scope,
+      );
 
       if (coursesData) {
         const coursesWithCounts = await Promise.all(
@@ -111,8 +115,11 @@ export function CourseModeration() {
   };
 
   useEffect(() => {
+    setIsLoading(true);
     fetchCourses();
-  }, []);
+    // Refetch whenever the admin switches academic environment.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scope?.environment_type, scope?.university]);
 
   const fetchTopics = async (courseId: string) => {
     const { data } = await supabase

@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import { exportToCsv } from "@/lib/exportCsv";
 import { exportToPdf } from "@/lib/exportPdf";
 import { ExportButton } from "./ExportButton";
+import { EnvironmentScope, matchesScope } from "@/lib/environmentScope";
 
 interface UserRow {
   id: string;
@@ -33,7 +34,7 @@ interface UserRow {
 const PAGE_SIZE = 50;
 const ngn = new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 });
 
-export function UserDirectory() {
+export function UserDirectory({ scope }: { scope?: EnvironmentScope | null } = {}) {
   const [rows, setRows] = useState<UserRow[]>([]);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -60,12 +61,12 @@ export function UserDirectory() {
         console.error("[UserDirectory] rpc error", error);
         setRows([]);
       } else {
-        setRows(data ?? []);
+        setRows(((data ?? []) as UserRow[]).filter((r) => matchesScope(r, scope)));
       }
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [debounced, page]);
+  }, [debounced, page, scope?.environment_type, scope?.university]);
 
   const totalUsers = rows[0]?.total_users ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalUsers / PAGE_SIZE));

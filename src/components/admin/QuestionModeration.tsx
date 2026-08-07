@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { EnvironmentScope, scopeCourseQuery, scopeEmbeddedCourseQuery } from "@/lib/environmentScope";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -62,7 +63,7 @@ interface Course {
   name: string;
 }
 
-export function QuestionModeration() {
+export function QuestionModeration({ scope }: { scope?: EnvironmentScope | null } = {}) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -73,15 +74,18 @@ export function QuestionModeration() {
 
   const fetchQuestions = async () => {
     try {
-      const { data: questionsData } = await supabase
-        .from("questions")
-        .select(`
-          *,
-          courses(code, name),
-          topics(name)
-        `)
-        .order("created_at", { ascending: false })
-        .limit(100);
+      const { data: questionsData } = await scopeEmbeddedCourseQuery(
+        supabase
+          .from("questions")
+          .select(`
+            *,
+            courses!inner(code, name, environment_type, university),
+            topics(name)
+          `)
+          .order("created_at", { ascending: false })
+          .limit(100),
+        scope,
+      );
 
       if (questionsData) {
         const questionsWithTutor = await Promise.all(
@@ -107,10 +111,10 @@ export function QuestionModeration() {
         setQuestions(questionsWithTutor);
       }
 
-      const { data: coursesData } = await supabase
-        .from("courses")
-        .select("id, code, name")
-        .order("code");
+      const { data: coursesData } = await scopeCourseQuery(
+        supabase.from("courses").select("id, code, name").order("code"),
+        scope,
+      );
 
       if (coursesData) {
         setCourses(coursesData);
@@ -123,8 +127,11 @@ export function QuestionModeration() {
   };
 
   useEffect(() => {
+    setIsLoading(true);
     fetchQuestions();
-  }, []);
+    // Refetch whenever the admin switches academic environment.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scope?.environment_type, scope?.university]);
 
   const handleToggleApproval = async (questionId: string, currentStatus: boolean) => {
     try {
