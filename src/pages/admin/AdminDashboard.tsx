@@ -176,10 +176,13 @@ const AdminDashboard = () => {
         ]);
 
         // Calculate revenue from premium quiz attempts
-        const { data: premiumQuizzes } = await supabase
-          .from("quizzes")
-          .select("id, token_cost")
-          .eq("is_premium", true);
+        const { data: premiumQuizzes } = await scopeEmbeddedCourseQuery(
+          supabase
+            .from("quizzes")
+            .select("id, token_cost, courses!inner(environment_type, university)")
+            .eq("is_premium", true),
+          envScope,
+        );
 
         let totalRevenue = 0;
         if (premiumQuizzes) {
