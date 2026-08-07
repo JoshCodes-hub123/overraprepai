@@ -61,11 +61,15 @@ const StudentDashboard = () => {
   const { data: courses = [], isLoading: coursesLoading } = useCourseSnapshots();
   const { data: mission } = useTodayMission();
 
-  // "FUTA · Computer Engineering · 200L"
-  const identity = useMemo(() => {
+  // "FUTA · Computer Engineering · 200L" — only the parts that actually exist.
+  const identityParts = useMemo(() => {
     const code = institution ?? (isInstitutionCode((profile as any)?.university) ? (profile as any).university : null);
-    return [code ? INSTITUTIONS[code].short : null, department, level].filter(Boolean).join(" · ");
+    const lvl = level ? (/l$/i.test(String(level)) ? String(level) : `${level}L`) : null;
+    return [code ? INSTITUTIONS[code].short : null, department, lvl]
+      .map((p) => (typeof p === "string" ? p.trim() : p))
+      .filter((p): p is string => Boolean(p));
   }, [institution, profile, department, level]);
+
 
   const firstName = profile?.full_name?.split(" ")[0];
 
