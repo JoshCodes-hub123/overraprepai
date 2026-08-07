@@ -1,18 +1,30 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, BookOpen, User, LucideIcon, School, ClipboardCheck, Wallet, Megaphone, Users, Target } from "lucide-react";
+import { Home, BookOpen, User, LucideIcon, School, ClipboardCheck, Wallet, Megaphone, Users, Target, Bot, Library } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import useEnvironment from "@/hooks/useEnvironment";
 import { motion } from "framer-motion";
 
 interface Tab { to: string; label: string; icon: LucideIcon; }
 
-const STUDENT_TABS: Tab[] = [
-  { to: "/student/dashboard", label: "Home",     icon: Home },
-  { to: "/study",             label: "Study",    icon: BookOpen },
-  { to: "/practice",          label: "Practice", icon: Target },
-  { to: "/people",            label: "People",   icon: Users },
-  { to: "/me",                label: "Me",       icon: User },
+/** University world: Home · Courses · Practice · AI Coach · Community */
+const UNIVERSITY_TABS: Tab[] = [
+  { to: "/student/dashboard", label: "Home",      icon: Home },
+  { to: "/courses",           label: "Courses",   icon: BookOpen },
+  { to: "/practice",          label: "Practice",  icon: Target },
+  { to: "/coach",             label: "AI Coach",  icon: Bot },
+  { to: "/community",         label: "Community", icon: Users },
 ];
+
+/** JAMB world: Home · Subjects · Practice · AI Coach · Community */
+const JAMB_TABS: Tab[] = [
+  { to: "/jamb/dashboard", label: "Home",      icon: Home },
+  { to: "/subjects",       label: "Subjects",  icon: Library },
+  { to: "/practice",       label: "Practice",  icon: Target },
+  { to: "/coach",          label: "AI Coach",  icon: Bot },
+  { to: "/community",      label: "Community", icon: Users },
+];
+
 
 const SCHOOL_TABS: Tab[] = [
   { to: "/school/dashboard", label: "Overview", icon: School },
