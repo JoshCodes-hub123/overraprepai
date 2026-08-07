@@ -1,43 +1,48 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { BookOpen, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { prefetchDashboardNeighbors } from "@/lib/routePrefetch";
 import { SEO } from "@/components/seo/SEO";
 import { PullToRefresh } from "@/components/native/PullToRefresh";
 import { DashboardOfflineBanner } from "@/components/dashboard/DashboardOfflineBanner";
-import WhatsNextCard from "@/components/student/dashboard/v2/WhatsNextCard";
-import TomorrowGNS106Pill from "@/components/student/dashboard/v2/TomorrowGNS106Pill";
 import { CommandPalette, useCommandPaletteHotkey } from "@/components/student/CommandPalette";
 import { FeedbackPromptDialog } from "@/components/feedback/FeedbackPromptDialog";
+import { prefetchDashboardNeighbors } from "@/lib/routePrefetch";
 
-import { TopAppBar } from "@/components/student/dashboard/v2/TopAppBar";
-import SectionLabel from "@/components/student/dashboard/v2/SectionLabel";
-import { SectionErrorBoundary } from "@/components/student/dashboard/v2/SectionErrorBoundary";
+import { Screen, Section, ListRow, EmptyState, BrandSkeleton, BrandButton } from "@/components/ui-kit";
+import BrandTopBar from "@/components/dashboard/mobile/BrandTopBar";
+import ContinueBlock from "@/components/dashboard/mobile/ContinueBlock";
+import QuickAccess, { quickAccessItems } from "@/components/dashboard/mobile/QuickAccess";
 
-// Lazy-load below-the-fold sections to keep initial dashboard paint fast.
-const CourseRail = lazy(() => import("@/components/student/dashboard/v2/CourseRail"));
-const QuizzesPreviewRail = lazy(() => import("@/components/student/dashboard/v2/QuizzesPreviewRail"));
-const QuickActions4 = lazy(() =>
-  import("@/components/student/dashboard/v2/QuickActions4").then((m) => ({ default: m.QuickActions4 })),
-);
-const ExploreTabs = lazy(() => import("@/components/student/dashboard/v2/ExploreTabs"));
-
-const RailFallback = ({ h = 140 }: { h?: number }) => (
-  <div className="rounded-2xl bg-amber-50/40 animate-pulse" style={{ height: h }} />
-);
-
+import { useCourseSnapshots } from "@/hooks/useCourseSnapshots";
+import { useStudentScope } from "@/hooks/useStudentScope";
+import { useTodayMission } from "@/hooks/useIntelligence";
+import useEnvironment from "@/hooks/useEnvironment";
+import { INSTITUTIONS, isInstitutionCode } from "@/config/environments";
 
 if (typeof window !== "undefined") prefetchDashboardNeighbors();
 
+function timeAgo(iso: string | null) {
+  if (!iso) return "Not opened yet";
+  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (m < 1) return "Just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
 /**
- * Student Dashboard V2 — premium, calm, mobile-first "what's next" screen.
- * Sectioned layout with a single "Next Best Action" hero up top, then
- * Today → Courses → Opportunities → Community. Highly responsive:
- * single column on phones, two-column grid from lg.
+ * University home — one screen, one obvious next step.
+ *
+ * Order of thought: who am I → continue learning → what to practise today →
+ * my courses → the three places I go most. Everything is scoped by the
+ * student's own profile and RLS, so a FUTA student never sees OAU, UI,
+ * FUTEsIyin or JAMB content.
  */
 const StudentDashboard = () => {
   const navigate = useNavigate();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, profile, isLoading: authLoading } = useAuth();
   const [paletteOpen, setPaletteOpen] = useState(false);
   useCommandPaletteHotkey(setPaletteOpen);
 
@@ -51,99 +56,132 @@ const StudentDashboard = () => {
     await new Promise((r) => setTimeout(r, 350));
   };
 
+  const { institution } = useEnvironment();
+  const { level, department } = useStudentScope();
+  const { data: courses = [], isLoading: coursesLoading } = useCourseSnapshots();
+  const { data: mission } = useTodayMission();
+
+  // "FUTA · Computer Engineering · 200L"
+  const identity = useMemo(() => {
+    const code = institution ?? (isInstitutionCode((profile as any)?.university) ? (profile as any).university : null);
+    return [code ? INSTITUTIONS[code].short : null, department, level].filter(Boolean).join(" · ");
+  }, [institution, profile, department, level]);
+
+  const firstName = profile?.full_name?.split(" ")[0];
+
+  const recent = useMemo(
+    () =>
+      [...courses].sort((a, b) => {
+        const ta = a.last_opened_at ? new Date(a.last_opened_at).getTime() : 0;
+        const tb = b.last_opened_at ? new Date(b.last_opened_at).getTime() : 0;
+        return tb - ta;
+      }),
+    [courses],
+  );
+  const current = recent[0];
+
+  const nextTask = mission?.tasks?.find((t) => !t.done);
+
   return (
     <>
       <SEO
         title="Student Dashboard"
         description="Your calm academic home — know exactly what to do next."
-        noindex={true}
+        noindex
         url="https://overraprep.com/student/dashboard"
       />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
       <FeedbackPromptDialog />
       <PullToRefresh onRefresh={onRefresh}>
-        <div className="relative min-h-screen pb-28 md:pb-12 bg-gradient-to-b from-amber-50/60 via-white to-white overflow-hidden">
-          {/* Ambient gold glow */}
-          <div aria-hidden className="pointer-events-none absolute inset-0 -z-0">
-            <div className="absolute -top-32 -right-24 w-[320px] sm:w-[420px] h-[320px] sm:h-[420px] rounded-full bg-amber-200/40 blur-3xl" />
-            <div className="absolute top-1/3 -left-32 w-[280px] sm:w-[360px] h-[280px] sm:h-[360px] rounded-full bg-orange-100/50 blur-3xl" />
+        <Screen>
+          <BrandTopBar />
+
+          {/* Academic identity — the first thing the student reads. */}
+          <div className="pb-7 pt-7">
+            <h1 className="text-[30px] font-bold leading-[1.1] tracking-tight text-brand-ink">
+              {firstName ? `Hello, ${firstName}` : "Welcome back"}
+            </h1>
+            <p className="mt-2 text-[14px] font-medium tracking-wide text-brand-ink-soft">
+              {identity || "Finish setting up your campus profile"}
+            </p>
           </div>
 
-          <main className="relative container mx-auto px-3 sm:px-4 lg:px-6 pt-3 max-w-2xl lg:max-w-6xl">
-            <TopAppBar />
-            <TomorrowGNS106Pill />
-            <div className="mt-3">
-              <DashboardOfflineBanner onReattempt={onRefresh} />
-            </div>
+          <DashboardOfflineBanner onReattempt={onRefresh} />
 
-            {/* One smart "what's next" hero */}
-            <div className="mt-3">
-              <SectionErrorBoundary name="What's next">
-                <WhatsNextCard key={`wn-${refreshKey}`} />
-              </SectionErrorBoundary>
-            </div>
+          {/* The one primary action. */}
+          {coursesLoading ? (
+            <BrandSkeleton h={170} />
+          ) : current ? (
+            <ContinueBlock
+              key={`continue-${refreshKey}`}
+              eyebrow="Continue learning"
+              title={current.name}
+              meta={`${current.code} · ${timeAgo(current.last_opened_at)}`}
+              cta="Continue"
+              to={`/study-hub/${current.id}`}
+            />
+          ) : (
+            <EmptyState
+              icon={<BookOpen className="h-5 w-5" />}
+              title="Pick your courses to begin"
+              description="Choose the courses you're taking this semester and your whole dashboard adapts to them."
+              action={<BrandButton to="/courses">Choose courses</BrandButton>}
+            />
+          )}
 
-            {/* Two-column grid on lg+ */}
-            <div className="mt-6 sm:mt-8 grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
-              {/* Primary column */}
-              <div className="lg:col-span-2 space-y-6 sm:space-y-7 min-w-0">
+          {/* Today's recommended practice — quiet, single line. */}
+          <Section title="Today" className="mt-8">
+            {nextTask ? (
+              <ListRow
+                to={nextTask.link}
+                title={nextTask.label}
+                meta="Recommended for you today"
+                icon={<Sparkles className="h-5 w-5" />}
+              />
+            ) : (
+              <ListRow
+                to="/practice"
+                title="Practice a past question set"
+                meta="Recommended for you today"
+                icon={<Sparkles className="h-5 w-5" />}
+              />
+            )}
+          </Section>
 
-
-                <section aria-labelledby="sec-learn" className="space-y-3">
-                  <SectionLabel
-                    eyebrow="Learn"
-                    title="Continue your courses"
-                    hint="Pick up where you left off."
-                    to="/study-hub"
-                  />
-                  <SectionErrorBoundary name="Courses">
-                    <Suspense fallback={<RailFallback h={180} />}>
-                      <CourseRail key={`cr-${refreshKey}`} />
-                    </Suspense>
-                  </SectionErrorBoundary>
-                </section>
-
-                <SectionErrorBoundary name="Quizzes">
-                  <Suspense fallback={<RailFallback h={220} />}>
-                    <QuizzesPreviewRail key={`qpr-${refreshKey}`} />
-                  </Suspense>
-                </SectionErrorBoundary>
-
-
-
-                <section aria-labelledby="sec-tools" className="space-y-3">
-                  <SectionLabel
-                    eyebrow="Tools"
-                    title="Quick actions"
-                    hint="Practice, summarize, ask the AI tutor."
-                  />
-                  <SectionErrorBoundary name="Quick actions">
-                    <Suspense fallback={<RailFallback h={120} />}>
-                      <QuickActions4 />
-                    </Suspense>
-                  </SectionErrorBoundary>
-                </section>
+          {/* Course progress — a list, not a wall of cards. */}
+          <Section title="Your courses" to="/courses" linkLabel="Manage">
+            {coursesLoading ? (
+              <div className="space-y-2.5">
+                <BrandSkeleton h={64} />
+                <BrandSkeleton h={64} />
               </div>
-
-              {/* Side column */}
-              <aside className="space-y-6 sm:space-y-7 min-w-0">
-                <section aria-labelledby="sec-explore" className="space-y-3">
-                  <SectionLabel
-                    eyebrow="Explore"
-                    title="Compete · Grow · Community"
-                    hint="One tap into Arena, Opportunities or the feed."
+            ) : recent.length === 0 ? (
+              <EmptyState title="No courses yet" description="Add courses to track your progress." />
+            ) : (
+              <div className="space-y-2.5">
+                {recent.slice(0, 5).map((c) => (
+                  <ListRow
+                    key={c.id}
+                    to={`/study-hub/${c.id}`}
+                    title={c.code}
+                    meta={`${c.name} · ${timeAgo(c.last_opened_at)}`}
+                    trailing={
+                      c.unread_updates > 0 ? (
+                        <span className="rounded-full bg-env-soft px-2 py-0.5 text-[11px] font-bold text-env">
+                          {c.unread_updates} new
+                        </span>
+                      ) : undefined
+                    }
                   />
-                  <SectionErrorBoundary name="Explore">
-                    <Suspense fallback={<RailFallback h={240} />}>
-                      <ExploreTabs refreshKey={refreshKey} />
-                    </Suspense>
-                  </SectionErrorBoundary>
-                </section>
-              </aside>
-            </div>
+                ))}
+              </div>
+            )}
+          </Section>
 
-          </main>
-        </div>
+          <Section title="Go to">
+            <QuickAccess items={quickAccessItems("Practice", "CBT drills for your courses")} />
+          </Section>
+        </Screen>
       </PullToRefresh>
     </>
   );
