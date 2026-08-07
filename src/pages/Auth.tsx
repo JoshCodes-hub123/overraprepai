@@ -299,16 +299,20 @@ const Auth = () => {
     }
   };
 
-  // Persist the chosen university + name on the profile.
+  // Persist the name + the environment the visitor picked before signing up.
   const persistExtraSignupDetails = async (data: SignUpFormData) => {
     try {
       const { data: { user: newUser } } = await supabase.auth.getUser();
       if (!newUser?.id) return;
+      const env = pendingEnvironment();
+      const envFields =
+        env === "jamb"
+          ? { environment_type: "jamb", academic_path: "jamb", university: null, faculty: null }
+          : { environment_type: "university", academic_path: "university", university: data.university };
       await supabase
         .from("profiles")
         .update({
-          university: data.university,
-          academic_path: "university" as any,
+          ...envFields,
           full_name: data.fullName,
         } as any)
         .eq("id", newUser.id);
