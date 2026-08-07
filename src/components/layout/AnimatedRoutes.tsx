@@ -125,6 +125,8 @@ const RefinePath = lazy(() => import("@/pages/onboarding/RefinePath"));
 const ChooseUniversity = lazy(() => import("@/pages/onboarding/ChooseUniversity"));
 const JambDashboard = lazy(() => import("@/pages/jamb/JambDashboard"));
 const ChooseFaculty = lazy(() => import("@/pages/onboarding/ChooseFaculty"));
+const JambSetup = lazy(() => import("@/pages/onboarding/JambSetup"));
+
 const ChooseDepartment = lazy(() => import("@/pages/onboarding/ChooseDepartment"));
 const ChooseLevel = lazy(() => import("@/pages/onboarding/ChooseLevel"));
 const ChooseCourses = lazy(() => import("@/pages/onboarding/ChooseCourses"));
@@ -249,6 +251,8 @@ export const AnimatedRoutes = () => {
           <Route path="/onboarding/level" element={<PageTransition><ChooseLevel /></PageTransition>} />
           <Route path="/onboarding/courses" element={<PageTransition><ChooseCourses /></PageTransition>} />
           <Route path="/onboarding/match" element={<PageTransition><TutorMatchingOnboarding /></PageTransition>} />
+          <Route path="/onboarding/jamb" element={<PageTransition><JambSetup /></PageTransition>} />
+
           <Route
             path="/auth"
             element={
