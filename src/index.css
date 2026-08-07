@@ -143,6 +143,59 @@
   }
 }
 
+/* ==========================================================================
+   OverraPrep AI — Mobile rebrand token layer (White · Premium Gold · Black)
+   Additive only. Existing tokens above are untouched so current screens keep
+   rendering exactly as they do today while screens migrate progressively.
+   ========================================================================== */
+@layer base {
+  :root {
+    /* Core rebrand surfaces */
+    --brand-surface: 0 0% 100%;
+    --brand-surface-soft: 40 33% 98%;
+    --brand-ink: 0 0% 7%;
+    --brand-ink-soft: 0 0% 38%;
+    --brand-line: 40 20% 90%;
+    --brand-gold: 42 74% 48%;
+    --brand-gold-soft: 44 90% 96%;
+    --brand-gold-line: 42 60% 82%;
+    --brand-on-gold: 0 0% 7%;
+
+    /* Academic environment accent — swapped by [data-env] below.
+       Both worlds stay OverraPrep AI; only the accent + chip differ. */
+    --env-accent: var(--brand-gold);
+    --env-accent-soft: var(--brand-gold-soft);
+    --env-accent-line: var(--brand-gold-line);
+    --env-on-accent: var(--brand-on-gold);
+
+    /* Spacing / radius / elevation rhythm for the new primitives */
+    --brand-radius-sm: 0.625rem;
+    --brand-radius: 1rem;
+    --brand-radius-lg: 1.375rem;
+    --brand-gutter: 1.25rem;
+    --brand-section-gap: 2rem;
+    --brand-elev: 0 1px 2px hsl(0 0% 7% / 0.04);
+    --brand-elev-lifted: 0 12px 30px -18px hsl(0 0% 7% / 0.24);
+  }
+
+  /* University world — gold. */
+  [data-env="university"] {
+    --env-accent: 42 74% 48%;
+    --env-accent-soft: 44 90% 96%;
+    --env-accent-line: 42 60% 82%;
+    --env-on-accent: 0 0% 7%;
+  }
+
+  /* JAMB / UTME world — deep ink with a gold edge, clearly a separate place. */
+  [data-env="jamb"] {
+    --env-accent: 0 0% 10%;
+    --env-accent-soft: 40 14% 96%;
+    --env-accent-line: 0 0% 84%;
+    --env-on-accent: 0 0% 100%;
+  }
+}
+
+
 @layer base {
   * {
     @apply border-border;
