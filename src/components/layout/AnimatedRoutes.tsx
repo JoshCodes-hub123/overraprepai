@@ -123,6 +123,7 @@ const ChooseProduct = lazy(() => import("@/pages/onboarding/ChooseProduct"));
 const ChoosePath = lazy(() => import("@/pages/onboarding/ChoosePath"));
 const RefinePath = lazy(() => import("@/pages/onboarding/RefinePath"));
 const ChooseUniversity = lazy(() => import("@/pages/onboarding/ChooseUniversity"));
+const JambDashboard = lazy(() => import("@/pages/jamb/JambDashboard"));
 const ChooseFaculty = lazy(() => import("@/pages/onboarding/ChooseFaculty"));
 const ChooseDepartment = lazy(() => import("@/pages/onboarding/ChooseDepartment"));
 const ChooseLevel = lazy(() => import("@/pages/onboarding/ChooseLevel"));
