@@ -151,7 +151,7 @@ const StudentDashboard = () => {
               eyebrow="Your next step"
               kicker={current.code}
               title={current.name}
-              context={lastOpenedLabel(current.last_opened_at)}
+              context={courseAction(weakTopicByCourse[current.id] ?? null, current.last_opened_at)}
               cta="Continue"
               to={`/study-hub/${current.id}`}
             />
@@ -207,7 +207,7 @@ const StudentDashboard = () => {
                     to={`/study-hub/${c.id}`}
                     code={c.code}
                     name={c.name}
-                    action={lastOpenedLabel(c.last_opened_at)}
+                    action={courseAction(weakTopicByCourse[c.id] ?? null, c.last_opened_at)}
                     badge={c.unread_updates > 0 ? `${c.unread_updates} new` : undefined}
                   />
                 ))}
@@ -226,7 +226,7 @@ const StudentDashboard = () => {
           )}
 
           {/* Where do I get help. */}
-          <Section title="Ask Overra AI">
+          <Section title="Ask Overra">;
             <AskOverraBlock />
           </Section>
 
