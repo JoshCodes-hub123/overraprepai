@@ -49,6 +49,7 @@ import { PremiumStatCard } from "@/components/dashboard/PremiumStatCard";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { PullToRefresh } from "@/components/native/PullToRefresh";
 import AdminKpiStrip from "@/components/admin/AdminKpiStrip";
+import { scopeCourseQuery, scopeEmbeddedCourseQuery } from "@/lib/environmentScope";
 import { EnvironmentSwitcher } from "@/components/admin/EnvironmentSwitcher";
 import { useAdminEnvironment } from "@/hooks/useAdminEnvironment";
 import { RoleSidebarMenu } from "@/components/layout/RoleSidebarMenu";
@@ -100,6 +101,16 @@ const AdminDashboard = () => {
     const fetchStats = async () => {
       if (!user || !hasRole("admin")) return;
 
+      const envScope = adminEnv.scope;
+      // Profiles carry the environment on themselves (no course relation).
+      const scopeProfiles = (q: any) => {
+        let out = q.eq("environment_type", envScope.environment_type);
+        if (envScope.environment_type === "university" && envScope.university) {
+          out = out.eq("university", envScope.university);
+        }
+        return out;
+      };
+
       try {
         // Fetch all counts in parallel
         const [
@@ -114,17 +125,33 @@ const AdminDashboard = () => {
           commissionResult,
           schoolsResult,
         ] = await Promise.all([
-          supabase
-            .from("user_roles")
-            .select("*", { count: "exact", head: true })
-            .eq("role", "student"),
+          scopeProfiles(
+            supabase.from("profiles").select("*", { count: "exact", head: true }),
+          ),
           supabase
             .from("user_roles")
             .select("*", { count: "exact", head: true })
             .eq("role", "tutor"),
-          supabase.from("courses").select("*", { count: "exact", head: true }),
-          supabase.from("questions").select("*", { count: "exact", head: true }),
-          supabase.from("quiz_attempts").select("*", { count: "exact", head: true }),
+          scopeCourseQuery(
+            supabase.from("courses").select("*", { count: "exact", head: true }),
+            envScope,
+          ),
+          scopeEmbeddedCourseQuery(
+            supabase
+              .from("questions")
+              .select("*, courses!inner(environment_type, university)", { count: "exact", head: true }),
+            envScope,
+          ),
+          scopeEmbeddedCourseQuery(
+            supabase
+              .from("quiz_attempts")
+              .select("*, quizzes!inner(courses!inner(environment_type, university))", {
+                count: "exact",
+                head: true,
+              }),
+            envScope,
+            "quizzes.courses",
+          ),
           supabase
             .from("tutor_applications")
             .select("*", { count: "exact", head: true })
@@ -191,7 +218,8 @@ const AdminDashboard = () => {
     if (user && hasRole("admin")) {
       fetchStats();
     }
-  }, [user, hasRole, refreshKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, hasRole, refreshKey, adminEnv.scope.environment_type, adminEnv.scope.university]);
 
   const handleRefresh = async () => {
     setRefreshKey((k) => k + 1);
@@ -502,7 +530,7 @@ const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="users">
-            <UserDirectory />
+            <UserDirectory scope={adminEnv.scope} />
           </TabsContent>
 
           <TabsContent value="tutors">
@@ -518,11 +546,11 @@ const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="courses">
-            <CourseModeration />
+            <CourseModeration scope={adminEnv.scope} />
           </TabsContent>
 
           <TabsContent value="questions">
-            <QuestionModeration />
+            <QuestionModeration scope={adminEnv.scope} />
           </TabsContent>
 
           <TabsContent value="settings">

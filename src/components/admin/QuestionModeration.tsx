@@ -127,8 +127,11 @@ export function QuestionModeration({ scope }: { scope?: EnvironmentScope | null 
   };
 
   useEffect(() => {
+    setIsLoading(true);
     fetchQuestions();
-  }, []);
+    // Refetch whenever the admin switches academic environment.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scope?.environment_type, scope?.university]);
 
   const handleToggleApproval = async (questionId: string, currentStatus: boolean) => {
     try {
