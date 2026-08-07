@@ -48,10 +48,10 @@ export default function ChoosePath() {
   const [saving, setSaving] = useState<EnvironmentType | null>(null);
 
   const handleChoose = async (env: EnvironmentType) => {
+    // Remember the choice either way — signup finishes the right onboarding.
+    try { sessionStorage.setItem("pending_environment", env); } catch { /* noop */ }
     if (!user) {
-      // Not signed in yet — remember the choice and continue the flow.
-      sessionStorage.setItem("pending_environment", env);
-      navigate(env === "jamb" ? "/auth" : "/auth");
+      navigate("/auth?mode=signup");
       return;
     }
     setSaving(env);
