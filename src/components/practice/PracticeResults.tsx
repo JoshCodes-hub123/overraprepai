@@ -131,10 +131,10 @@ export function PracticeResults({
         </Link>
 
         <Link
-          to={`/courses/${courseId}`}
+          to={backTo ?? `/courses/${courseId}`}
           className="flex min-h-[48px] items-center justify-center gap-1.5 text-[14px] font-semibold text-brand-ink-soft"
         >
-          Back to {courseCode ?? "course"} <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+          Back to {backLabel ?? courseCode ?? "course"} <ArrowRight className="h-3.5 w-3.5" aria-hidden />
         </Link>
       </div>
     </Screen>
