@@ -252,7 +252,7 @@ export const AnimatedRoutes = () => {
           <Route path="/release-notes" element={<PageTransition><ReleaseNotes /></PageTransition>} />
           <Route path="/release-notes/:version" element={<PageTransition><ReleaseNotes /></PageTransition>} />
           {/* "I'm New" onboarding flow */}
-          <Route path="/start" element={<PageTransition><ChooseProduct /></PageTransition>} />
+          <Route path="/start" element={<PageTransition><ChoosePath /></PageTransition>} />
           <Route path="/start/product" element={<PageTransition><ChooseProduct /></PageTransition>} />
           <Route path="/start/persona" element={<PageTransition><ChoosePersona /></PageTransition>} />
           <Route path="/start/path" element={<PageTransition><ChoosePath /></PageTransition>} />
