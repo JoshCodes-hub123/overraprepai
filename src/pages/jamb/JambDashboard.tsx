@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Sparkles, Timer } from "lucide-react";
+import { Sparkles, Timer, TrendingDown } from "lucide-react";
 import { SEO } from "@/components/seo/SEO";
 import { useAuth } from "@/hooks/useAuth";
 import { Screen, Section, ListRow, EmptyState, BrandButton } from "@/components/ui-kit";
@@ -97,12 +97,12 @@ const JambDashboard = () => {
         </Section>
 
         {subjects.length > 0 && (
-          <Section title="Your subjects" to="/onboarding/jamb" linkLabel="Edit">
+          <Section title="Your subjects" to="/jamb/subjects" linkLabel="See all">
             <div className="space-y-2.5">
               {subjects.map((s) => (
                 <CourseRow
                   key={s}
-                  to={`/practice?subject=${encodeURIComponent(s)}`}
+                  to="/jamb/subjects"
                   code={s}
                   name="UTME subject"
                   action={s === todaySubject ? "Today's focus · practice now" : "Ready to practice"}
@@ -118,12 +118,18 @@ const JambDashboard = () => {
 
         <Section title="Go to">
           <QuickAccess items={quickAccessItems("CBT Practice", "Real UTME timing and interface")} />
-          <div className="mt-2.5">
+          <div className="mt-2.5 space-y-2.5">
             <ListRow
               to="/exams"
-              title="Mock exams"
-              meta="Full four-subject papers"
+              title="Mock CBT"
+              meta="Full timed mock exams"
               icon={<Timer className="h-5 w-5" />}
+            />
+            <ListRow
+              to="/weak-areas"
+              title="Weak areas"
+              meta="Topics your practice says need work"
+              icon={<TrendingDown className="h-5 w-5" />}
             />
           </div>
         </Section>
