@@ -3880,6 +3880,7 @@ export type Database = {
           id: string
           is_official: boolean
           is_pending_verification: boolean
+          jamb_subjects: string[] | null
           last_reminder_sent_at: string | null
           last_seen_at: string | null
           level: string | null
@@ -3895,6 +3896,8 @@ export type Database = {
           reminder_hour_lagos: number
           state_of_origin: string | null
           study_interests: string[] | null
+          target_course: string | null
+          target_university: string | null
           trial_ends_at: string | null
           tutor_code: string | null
           tutor_match_prefs: Json
@@ -3935,6 +3938,7 @@ export type Database = {
           id: string
           is_official?: boolean
           is_pending_verification?: boolean
+          jamb_subjects?: string[] | null
           last_reminder_sent_at?: string | null
           last_seen_at?: string | null
           level?: string | null
@@ -3950,6 +3954,8 @@ export type Database = {
           reminder_hour_lagos?: number
           state_of_origin?: string | null
           study_interests?: string[] | null
+          target_course?: string | null
+          target_university?: string | null
           trial_ends_at?: string | null
           tutor_code?: string | null
           tutor_match_prefs?: Json
@@ -3990,6 +3996,7 @@ export type Database = {
           id?: string
           is_official?: boolean
           is_pending_verification?: boolean
+          jamb_subjects?: string[] | null
           last_reminder_sent_at?: string | null
           last_seen_at?: string | null
           level?: string | null
@@ -4005,6 +4012,8 @@ export type Database = {
           reminder_hour_lagos?: number
           state_of_origin?: string | null
           study_interests?: string[] | null
+          target_course?: string | null
+          target_university?: string | null
           trial_ends_at?: string | null
           tutor_code?: string | null
           tutor_match_prefs?: Json
@@ -4209,7 +4218,7 @@ export type Database = {
       questions: {
         Row: {
           correct_option: string
-          course_id: string
+          course_id: string | null
           created_at: string
           difficulty: string
           explanation: string | null
@@ -4223,13 +4232,14 @@ export type Database = {
           option_c: string
           option_d: string
           question_text: string
+          subject_id: string | null
           topic_id: string
           tutor_id: string | null
           year: number | null
         }
         Insert: {
           correct_option: string
-          course_id: string
+          course_id?: string | null
           created_at?: string
           difficulty?: string
           explanation?: string | null
@@ -4243,13 +4253,14 @@ export type Database = {
           option_c: string
           option_d: string
           question_text: string
+          subject_id?: string | null
           topic_id: string
           tutor_id?: string | null
           year?: number | null
         }
         Update: {
           correct_option?: string
-          course_id?: string
+          course_id?: string | null
           created_at?: string
           difficulty?: string
           explanation?: string | null
@@ -4263,6 +4274,7 @@ export type Database = {
           option_c?: string
           option_d?: string
           question_text?: string
+          subject_id?: string | null
           topic_id?: string
           tutor_id?: string | null
           year?: number | null
@@ -4273,6 +4285,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questions_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
             referencedColumns: ["id"]
           },
           {
@@ -6070,28 +6089,34 @@ export type Database = {
           category: Database["public"]["Enums"]["academic_path"]
           created_at: string
           description: string | null
+          environment_type: Database["public"]["Enums"]["learning_environment"]
           id: string
           is_active: boolean
           level: string | null
           name: string
+          university: string | null
         }
         Insert: {
           category: Database["public"]["Enums"]["academic_path"]
           created_at?: string
           description?: string | null
+          environment_type?: Database["public"]["Enums"]["learning_environment"]
           id?: string
           is_active?: boolean
           level?: string | null
           name: string
+          university?: string | null
         }
         Update: {
           category?: Database["public"]["Enums"]["academic_path"]
           created_at?: string
           description?: string | null
+          environment_type?: Database["public"]["Enums"]["learning_environment"]
           id?: string
           is_active?: boolean
           level?: string | null
           name?: string
+          university?: string | null
         }
         Relationships: []
       }
@@ -6705,28 +6730,31 @@ export type Database = {
       }
       topics: {
         Row: {
-          course_id: string
+          course_id: string | null
           created_at: string
           description: string | null
           id: string
           name: string
           order_index: number
+          subject_id: string | null
         }
         Insert: {
-          course_id: string
+          course_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
           name: string
           order_index?: number
+          subject_id?: string | null
         }
         Update: {
-          course_id?: string
+          course_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
           name?: string
           order_index?: number
+          subject_id?: string | null
         }
         Relationships: [
           {
@@ -6734,6 +6762,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "topics_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
             referencedColumns: ["id"]
           },
         ]
@@ -8308,6 +8343,7 @@ export type Database = {
         Returns: undefined
       }
       can_access_course: { Args: { _course_id: string }; Returns: boolean }
+      can_access_subject: { Args: { _subject_id: string }; Returns: boolean }
       cancel_session_booking: {
         Args: { _booking_id: string }
         Returns: undefined
@@ -8424,6 +8460,7 @@ export type Database = {
           id: string
           is_official: boolean
           is_pending_verification: boolean
+          jamb_subjects: string[] | null
           last_reminder_sent_at: string | null
           last_seen_at: string | null
           level: string | null
@@ -8439,6 +8476,8 @@ export type Database = {
           reminder_hour_lagos: number
           state_of_origin: string | null
           study_interests: string[] | null
+          target_course: string | null
+          target_university: string | null
           trial_ends_at: string | null
           tutor_code: string | null
           tutor_match_prefs: Json
