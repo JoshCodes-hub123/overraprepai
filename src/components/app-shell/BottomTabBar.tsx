@@ -103,16 +103,15 @@ export const BottomTabBar = () => {
                     : "text-brand-ink-soft hover:text-brand-ink"
                 )}
               >
-
-              >
                 <span className="relative h-7 flex items-center justify-center">
                     {active && (
                       <motion.span
                         layoutId="tab-pill"
                         transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                        className="absolute inset-x-[-10px] inset-y-0 rounded-full bg-amber-100/80"
+                        className="absolute inset-x-[-10px] inset-y-0 rounded-full bg-env-soft"
                       />
                     )}
+
                     <Icon
                       className={cn(
                         "relative w-[22px] h-[22px] transition-transform duration-200",
