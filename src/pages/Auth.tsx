@@ -187,11 +187,12 @@ const Auth = () => {
 
 
   useEffect(() => {
-    if (user && primaryRole) {
+    // Wait for the profile so we can route into the right environment.
+    if (user && primaryRole && profile) {
       navigate(postAuthDestination());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, primaryRole, navigate]);
+  }, [user, primaryRole, profile, navigate]);
 
   const signInForm = useForm<SignInFormData>({
     resolver: zodResolver(signInSchema),
