@@ -61,11 +61,15 @@ const StudentDashboard = () => {
   const { data: courses = [], isLoading: coursesLoading } = useCourseSnapshots();
   const { data: mission } = useTodayMission();
 
-  // "FUTA · Computer Engineering · 200L"
-  const identity = useMemo(() => {
+  // "FUTA · Computer Engineering · 200L" — only the parts that actually exist.
+  const identityParts = useMemo(() => {
     const code = institution ?? (isInstitutionCode((profile as any)?.university) ? (profile as any).university : null);
-    return [code ? INSTITUTIONS[code].short : null, department, level].filter(Boolean).join(" · ");
+    const lvl = level ? (/l$/i.test(String(level)) ? String(level) : `${level}L`) : null;
+    return [code ? INSTITUTIONS[code].short : null, department, lvl]
+      .map((p) => (typeof p === "string" ? p.trim() : p))
+      .filter((p): p is string => Boolean(p));
   }, [institution, profile, department, level]);
+
 
   const firstName = profile?.full_name?.split(" ")[0];
 
@@ -101,10 +105,18 @@ const StudentDashboard = () => {
             <h1 className="text-[30px] font-bold leading-[1.1] tracking-tight text-brand-ink">
               {firstName ? `Hello, ${firstName}` : "Welcome back"}
             </h1>
-            <p className="mt-2 text-[14px] font-medium tracking-wide text-brand-ink-soft">
-              {identity || "Finish setting up your campus profile"}
-            </p>
+            {identityParts.length > 0 && (
+              <p className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] font-semibold tracking-tight text-brand-ink">
+                {identityParts.map((part, i) => (
+                  <span key={part} className="flex items-center gap-2">
+                    {i > 0 && <span aria-hidden className="h-1 w-1 rounded-full bg-env" />}
+                    <span>{part}</span>
+                  </span>
+                ))}
+              </p>
+            )}
           </div>
+
 
           <DashboardOfflineBanner onReattempt={onRefresh} />
 
@@ -148,16 +160,18 @@ const StudentDashboard = () => {
             )}
           </Section>
 
-          {/* Course progress — a list, not a wall of cards. */}
-          <Section title="Your courses" to="/courses" linkLabel="Manage">
-            {coursesLoading ? (
+          {/* Course progress — a list, not a wall of cards.
+              With no courses the hero above already carries the onboarding CTA,
+              so this section stays out of the way entirely. */}
+          {coursesLoading ? (
+            <Section title="Your courses" to="/courses" linkLabel="Manage">
               <div className="space-y-2.5">
                 <BrandSkeleton h={64} />
                 <BrandSkeleton h={64} />
               </div>
-            ) : recent.length === 0 ? (
-              <EmptyState title="No courses yet" description="Add courses to track your progress." />
-            ) : (
+            </Section>
+          ) : recent.length > 0 ? (
+            <Section title="Your courses" to="/courses" linkLabel="Manage">
               <div className="space-y-2.5">
                 {recent.slice(0, 5).map((c) => (
                   <ListRow
@@ -175,8 +189,9 @@ const StudentDashboard = () => {
                   />
                 ))}
               </div>
-            )}
-          </Section>
+            </Section>
+          ) : null}
+
 
           <Section title="Go to">
             <QuickAccess items={quickAccessItems("Practice", "CBT drills for your courses")} />
