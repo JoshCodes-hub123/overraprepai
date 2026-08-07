@@ -105,10 +105,18 @@ const StudentDashboard = () => {
             <h1 className="text-[30px] font-bold leading-[1.1] tracking-tight text-brand-ink">
               {firstName ? `Hello, ${firstName}` : "Welcome back"}
             </h1>
-            <p className="mt-2 text-[14px] font-medium tracking-wide text-brand-ink-soft">
-              {identity || "Finish setting up your campus profile"}
-            </p>
+            {identityParts.length > 0 && (
+              <p className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] font-semibold tracking-tight text-brand-ink">
+                {identityParts.map((part, i) => (
+                  <span key={part} className="flex items-center gap-2">
+                    {i > 0 && <span aria-hidden className="h-1 w-1 rounded-full bg-env" />}
+                    <span>{part}</span>
+                  </span>
+                ))}
+              </p>
+            )}
           </div>
+
 
           <DashboardOfflineBanner onReattempt={onRefresh} />
 
