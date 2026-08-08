@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, LogIn, Sparkles, Star, ChevronRight, GraduationCap } from "lucide-react";
@@ -6,19 +6,41 @@ import { SEO } from "@/components/seo/SEO";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.png";
 import bgsAsset from "@/assets/bgs-futa-ambassador.jpg.asset.json";
+import machineryAsset from "@/assets/machinery-ambassador.jpg.asset.json";
 
-const AMBASSADOR = {
-  src: bgsAsset.url,
-  name: "BGS FUTA",
-  school: "Lead Ambassador · Federal University of Technology, Akure",
-  quote: "Driving OverraPrep across every faculty at FUTA — study smarter, together.",
-  alt: "BGS FUTA, OverraPrep Lead Campus Ambassador at the Federal University of Technology, Akure",
-};
+const AMBASSADORS = [
+  {
+    src: bgsAsset.url,
+    name: "BGS FUTA",
+    role: "Lead Ambassador",
+    school: "Lead Ambassador · Federal University of Technology, Akure",
+    quote: "Driving OverraPrep across every faculty at FUTA — study smarter, together.",
+    alt: "BGS FUTA, OverraPrep Lead Campus Ambassador at the Federal University of Technology, Akure",
+  },
+  {
+    src: machineryAsset.url,
+    name: "Abdulquadri Ademokun (Machinery)",
+    role: "Ambassador",
+    school: "Founder, Learn with Machinery",
+    quote: "Building a learning culture — helping students study smarter and stay consistent.",
+    alt: "Abdulquadri Ademokun (Machinery), Founder of Learn with Machinery and OverraPrep Ambassador",
+  },
+];
 
 const Ambassadors = () => {
   const navigate = useNavigate();
+  const [index, setIndex] = useState(0);
   const [imgFailed, setImgFailed] = useState(false);
-  const current = AMBASSADOR;
+  const current = AMBASSADORS[index];
+
+  // Gentle auto-rotation so every ambassador is seen without any interaction.
+  useEffect(() => {
+    const t = setInterval(() => setIndex((i) => (i + 1) % AMBASSADORS.length), 6000);
+    return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => setImgFailed(false), [index]);
+
 
   return (
     <>
