@@ -4,6 +4,7 @@ import { PremiumPageHero } from "@/components/shell/PremiumPageHero";
 import { Card } from "@/components/ui/card";
 import { Crown, Star } from "lucide-react";
 import bgsFutaAvatar from "@/assets/bgs-futa-ambassador.jpg.asset.json";
+import machineryAvatar from "@/assets/machinery-ambassador.jpg.asset.json";
 
 export default function Ambassadors() {
   return (
