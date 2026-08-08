@@ -4,6 +4,7 @@ import { PremiumPageHero } from "@/components/shell/PremiumPageHero";
 import { Card } from "@/components/ui/card";
 import { Crown, Star } from "lucide-react";
 import bgsFutaAvatar from "@/assets/bgs-futa-ambassador.jpg.asset.json";
+import machineryAvatar from "@/assets/machinery-ambassador.jpg.asset.json";
 
 export default function Ambassadors() {
   return (
@@ -29,6 +30,26 @@ export default function Ambassadors() {
                 <p className="text-sm text-zinc-700">Federal University of Technology, Akure</p>
                 <p className="mt-2 text-xs text-zinc-600 leading-relaxed">
                   Driving OverraPrep adoption across FUTA — championing study groups, peer mentoring, and exam-readiness culture campus-wide.
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="mt-4 overflow-hidden border-amber-300/60 bg-gradient-to-br from-amber-50 via-white to-white">
+            <div className="flex flex-col sm:flex-row items-center gap-4 p-5">
+              <img
+                src={machineryAvatar.url}
+                alt="Abdulquadri Ademokun (Machinery) — OverraPrep Ambassador"
+                className="h-28 w-28 sm:h-32 sm:w-32 rounded-2xl object-cover border-2 border-amber-300 shadow-md"
+              />
+              <div className="flex-1 text-center sm:text-left">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+                  <Star className="h-3 w-3 fill-white" /> Ambassador
+                </div>
+                <h2 className="mt-2 font-display text-xl font-bold text-zinc-900">Abdulquadri Ademokun (Machinery)</h2>
+                <p className="text-sm text-zinc-700">Founder, Learn with Machinery</p>
+                <p className="mt-2 text-xs text-zinc-600 leading-relaxed">
+                  Building a learning culture with Learn with Machinery — helping students study smarter and stay consistent.
                 </p>
               </div>
             </div>

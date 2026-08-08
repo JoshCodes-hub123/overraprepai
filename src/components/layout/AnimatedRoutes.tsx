@@ -222,6 +222,8 @@ const CampusBattles = lazy(() => import("@/pages/growth/CampusBattles"));
 const CampusBattleDetail = lazy(() => import("@/pages/growth/CampusBattleDetail"));
 const Ambassadors = lazy(() => import("@/pages/growth/Ambassadors"));
 const CampusImpact = lazy(() => import("@/pages/growth/CampusImpact"));
+const StudyMaterials = lazy(() => import("@/pages/materials/StudyMaterials"));
+const MaterialsCourse = lazy(() => import("@/pages/materials/MaterialsCourse"));
 const AdminGrowth = lazy(() => import("@/pages/admin/AdminGrowth"));
 import { DashboardSkeleton } from "@/components/student/dashboard/DashboardSkeleton";
 
@@ -531,6 +533,8 @@ export const AnimatedRoutes = () => {
           <Route path="/growth/battles/:id" element={<PageTransition><CampusBattleDetail /></PageTransition>} />
           <Route path="/growth/ambassadors" element={<PageTransition><Ambassadors /></PageTransition>} />
           <Route path="/growth/impact" element={<PageTransition><CampusImpact /></PageTransition>} />
+          <Route path="/materials" element={<PageTransition><StudyMaterials /></PageTransition>} />
+          <Route path="/materials/:courseId" element={<PageTransition><MaterialsCourse /></PageTransition>} />
           <Route path="/admin/growth" element={<AdminRoute><PageTransition><AdminGrowth /></PageTransition></AdminRoute>} />
           <Route path="/student/weak-area-drill" element={<PageTransition><MasteryBreakdown /></PageTransition>} />
           <Route path="/intelligence" element={<PageTransition><IntelligenceCenter /></PageTransition>} />
