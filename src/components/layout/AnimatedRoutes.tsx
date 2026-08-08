@@ -222,6 +222,8 @@ const CampusBattles = lazy(() => import("@/pages/growth/CampusBattles"));
 const CampusBattleDetail = lazy(() => import("@/pages/growth/CampusBattleDetail"));
 const Ambassadors = lazy(() => import("@/pages/growth/Ambassadors"));
 const CampusImpact = lazy(() => import("@/pages/growth/CampusImpact"));
+const StudyMaterials = lazy(() => import("@/pages/materials/StudyMaterials"));
+const MaterialsCourse = lazy(() => import("@/pages/materials/MaterialsCourse"));
 const AdminGrowth = lazy(() => import("@/pages/admin/AdminGrowth"));
 import { DashboardSkeleton } from "@/components/student/dashboard/DashboardSkeleton";
 
