@@ -193,6 +193,7 @@ const Ambassadors = () => {
                 </div>
               ) : (
                 <motion.img
+                  key={current.src}
                   src={current.src}
                   alt={current.alt}
                   width={768}
@@ -205,6 +206,7 @@ const Ambassadors = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                 />
+
               )}
 
               {/* Top shine */}
