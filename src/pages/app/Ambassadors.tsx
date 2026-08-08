@@ -227,9 +227,10 @@ const Ambassadors = () => {
               {!imgFailed && (
                 <div className="absolute inset-x-0 bottom-0 p-4 pt-14 bg-gradient-to-t from-black/85 via-black/45 to-transparent">
                   <motion.div
+                    key={current.name}
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.3 }}
+                    transition={{ duration: 0.5, delay: 0.15 }}
                     className="text-white"
                   >
                     <div className="flex items-center gap-1.5 mb-1">
@@ -239,7 +240,7 @@ const Ambassadors = () => {
                         ))}
                       </div>
                       <span className="text-[9px] font-semibold uppercase tracking-wider text-amber-200 ml-0.5">
-                        Lead Ambassador
+                        {current.role}
                       </span>
                     </div>
                     <p className="font-bold text-[17px] leading-tight">{current.name}</p>
@@ -252,7 +253,24 @@ const Ambassadors = () => {
               )}
             </div>
           </motion.div>
+
+          {/* Ambassador switcher */}
+          <div className="mt-2.5 flex items-center justify-center gap-2">
+            {AMBASSADORS.map((a, i) => (
+              <button
+                key={a.name}
+                onClick={() => setIndex(i)}
+                aria-label={`Show ${a.name}`}
+                aria-current={i === index}
+                className={`h-1.5 rounded-full transition-all ${
+                  i === index ? "w-6 bg-primary" : "w-1.5 bg-primary/30 hover:bg-primary/50"
+                }`}
+              />
+            ))}
+          </div>
         </section>
+
+
 
 
         {/* CTAs */}
