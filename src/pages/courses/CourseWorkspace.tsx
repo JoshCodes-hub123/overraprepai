@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ListChecks, Sparkles } from "lucide-react";
+import { ListChecks, Sparkles, ClipboardList, Clock } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -46,6 +46,23 @@ const CourseWorkspace = () => {
 
   const { data: topics = [], isLoading: topicsLoading } = useCourseTopics(courseId);
   const { data: counts = {} } = useTopicQuestionCounts(courseId);
+
+  // Every quiz published for this course — students expect the full list here.
+  const { data: quizzes = [], isLoading: quizzesLoading } = useQuery({
+    queryKey: ["course-quizzes", courseId],
+    enabled: !!courseId,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("quizzes")
+        .select("id, title, question_count, duration_minutes, is_simulation, created_at")
+        .eq("course_id", courseId)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
   const studied = useLastStudiedTopic(courseId);
   const progress = useCourseProgress(courseId);
   const { data: snapshots = [] } = useCourseSnapshots();
@@ -190,6 +207,53 @@ const CourseWorkspace = () => {
                 </ul>
               )}
             </Section>
+
+            <Section title={`Quizzes${quizzes.length ? ` (${quizzes.length})` : ""}`}>
+              {quizzesLoading ? (
+                <div className="space-y-2">
+                  <BrandSkeleton h={58} />
+                  <BrandSkeleton h={58} />
+                </div>
+              ) : quizzes.length === 0 ? (
+                <EmptyState
+                  icon={<ClipboardList className="h-5 w-5" />}
+                  title="No quizzes yet"
+                  description="Tutors publish quizzes for this course regularly. Practise by topic meanwhile."
+                />
+              ) : (
+                <ul className="divide-y divide-brand-line rounded-brand border border-brand-line bg-brand-surface">
+                  {quizzes.map((q: any) => (
+                    <li key={q.id}>
+                      <Link
+                        to={`/quiz/${q.id}`}
+                        className="flex min-h-[60px] items-center gap-4 px-4 py-3.5 transition-colors hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-env"
+                      >
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-env-soft text-env">
+                          <ClipboardList className="h-4.5 w-4.5" aria-hidden />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[15px] font-semibold leading-snug text-brand-ink">
+                            {q.title}
+                          </span>
+                          <span className="mt-0.5 flex items-center gap-2 text-[12.5px] text-brand-ink-soft">
+                            {q.question_count} question{q.question_count === 1 ? "" : "s"}
+                            {q.duration_minutes ? (
+                              <>
+                                <span aria-hidden>·</span>
+                                <Clock className="h-3.5 w-3.5" aria-hidden />
+                                {q.duration_minutes} min
+                              </>
+                            ) : null}
+                            {q.is_simulation ? <span aria-hidden>· CBT</span> : null}
+                          </span>
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Section>
+
 
             <Section title="Study materials">
               <Link
