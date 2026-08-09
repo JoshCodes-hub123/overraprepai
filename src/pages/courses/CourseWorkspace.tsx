@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ListChecks, Sparkles } from "lucide-react";
+import { ListChecks, Sparkles, ClipboardList, Clock } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -46,6 +46,23 @@ const CourseWorkspace = () => {
 
   const { data: topics = [], isLoading: topicsLoading } = useCourseTopics(courseId);
   const { data: counts = {} } = useTopicQuestionCounts(courseId);
+
+  // Every quiz published for this course — students expect the full list here.
+  const { data: quizzes = [], isLoading: quizzesLoading } = useQuery({
+    queryKey: ["course-quizzes", courseId],
+    enabled: !!courseId,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("quizzes")
+        .select("id, title, question_count, duration_minutes, is_simulation, created_at")
+        .eq("course_id", courseId)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
   const studied = useLastStudiedTopic(courseId);
   const progress = useCourseProgress(courseId);
   const { data: snapshots = [] } = useCourseSnapshots();
