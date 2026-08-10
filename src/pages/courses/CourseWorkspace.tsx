@@ -255,10 +255,62 @@ const CourseWorkspace = () => {
             </Section>
 
 
-            <Section title="Study materials">
+            <Section
+              title={`Documents & materials${materialCount ? ` (${materialCount})` : ""}`}
+            >
+              {materialsLoading ? (
+                <div className="space-y-2">
+                  <BrandSkeleton h={58} />
+                  <BrandSkeleton h={58} />
+                </div>
+              ) : materialCount === 0 ? (
+                <EmptyState
+                  icon={<FileText className="h-5 w-5" />}
+                  title="No documents yet"
+                  description="Notes, PDFs and past questions uploaded for this course will appear here."
+                />
+              ) : (
+                <div className="space-y-5">
+                  {materialGroups.map((g) => (
+                    <div key={g.topicId ?? "general"}>
+                      <p className="mb-2 text-[12.5px] font-semibold uppercase tracking-wide text-brand-ink-soft">
+                        {g.topicName}
+                      </p>
+                      <ul className="divide-y divide-brand-line rounded-brand border border-brand-line bg-brand-surface">
+                        {g.items.map((m) => (
+                          <li key={m.id}>
+                            <a
+                              href={m.file_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex min-h-[60px] items-center gap-4 px-4 py-3.5 transition-colors hover:bg-brand-soft"
+                            >
+                              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-env-soft text-env">
+                                <FileText className="h-4.5 w-4.5" aria-hidden />
+                              </span>
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-[15px] font-semibold leading-snug text-brand-ink">
+                                  {m.title}
+                                </span>
+                                <span className="mt-0.5 block truncate text-[12.5px] text-brand-ink-soft">
+                                  {(m.file_type || "file").toUpperCase()}
+                                  {m.file_size ? ` · ${Math.max(1, Math.round(m.file_size / 1024))} KB` : ""}
+                                  {m.owner_name ? ` · ${m.owner_name}` : ""}
+                                </span>
+                              </span>
+                              <Download className="h-4 w-4 shrink-0 text-brand-ink-soft/70" aria-hidden />
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <Link
                 to={`/study-hub/${courseId}`}
-                className="flex items-center gap-3 rounded-brand border border-brand-line bg-brand-surface px-4 py-4 transition-colors hover:bg-brand-soft"
+                className="mt-4 flex items-center gap-3 rounded-brand border border-brand-line bg-brand-surface px-4 py-4 transition-colors hover:bg-brand-soft"
               >
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-env-soft text-env">
                   <Sparkles className="h-5 w-5" aria-hidden />
