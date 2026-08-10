@@ -19,6 +19,7 @@ import AskOverraBlock from "@/components/dashboard/mobile/AskOverraBlock";
 import QuickAccess, { quickAccessItems } from "@/components/dashboard/mobile/QuickAccess";
 import DashboardSearch from "@/components/dashboard/mobile/DashboardSearch";
 import OpportunityStrip from "@/components/dashboard/mobile/OpportunityStrip";
+import TopArticlesStrip from "@/components/dashboard/mobile/TopArticlesStrip";
 
 import { useCourseSnapshots } from "@/hooks/useCourseSnapshots";
 import { useStudentScope } from "@/hooks/useStudentScope";
