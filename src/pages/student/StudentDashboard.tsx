@@ -19,11 +19,13 @@ import AskOverraBlock from "@/components/dashboard/mobile/AskOverraBlock";
 import QuickAccess, { quickAccessItems } from "@/components/dashboard/mobile/QuickAccess";
 import DashboardSearch from "@/components/dashboard/mobile/DashboardSearch";
 import OpportunityStrip from "@/components/dashboard/mobile/OpportunityStrip";
+import TopArticlesStrip from "@/components/dashboard/mobile/TopArticlesStrip";
 
 import { useCourseSnapshots } from "@/hooks/useCourseSnapshots";
 import { useStudentScope } from "@/hooks/useStudentScope";
 import { useTodayMission, useWeeklyReport, useReadinessAll } from "@/hooks/useIntelligence";
 import { useOpportunities } from "@/hooks/useOpportunities";
+import { usePosts } from "@/hooks/usePosts";
 import useEnvironment from "@/hooks/useEnvironment";
 import { INSTITUTIONS, isInstitutionCode } from "@/config/environments";
 // One shared source of truth for "what should this student do next".
@@ -71,6 +73,7 @@ const StudentDashboard = () => {
   const { data: weekly } = useWeeklyReport();
   const { data: readiness = [] } = useReadinessAll();
   const { data: opportunities = [] } = useOpportunities({ limit: 8 });
+  const { data: articles = [] } = usePosts({ type: "article", limit: 6 });
 
   /** course_id → weakest real topic, when the intelligence layer knows one. */
   const weakTopicByCourse = useMemo(() => {
@@ -231,6 +234,13 @@ const StudentDashboard = () => {
           {opportunities.length > 0 && (
             <Section title="Today's opportunities" to="/opportunities" linkLabel="See all">
               <OpportunityStrip items={opportunities.slice(0, 8)} />
+            </Section>
+          )}
+
+          {/* Top articles today — image-led, light on text. */}
+          {articles.length > 0 && (
+            <Section title="Top articles today" to="/posts" linkLabel="See all">
+              <TopArticlesStrip items={articles.slice(0, 6)} />
             </Section>
           )}
 
