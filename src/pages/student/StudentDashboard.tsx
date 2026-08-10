@@ -17,10 +17,13 @@ import CourseRow from "@/components/dashboard/mobile/CourseRow";
 import WeeklyPulse from "@/components/dashboard/mobile/WeeklyPulse";
 import AskOverraBlock from "@/components/dashboard/mobile/AskOverraBlock";
 import QuickAccess, { quickAccessItems } from "@/components/dashboard/mobile/QuickAccess";
+import DashboardSearch from "@/components/dashboard/mobile/DashboardSearch";
+import OpportunityStrip from "@/components/dashboard/mobile/OpportunityStrip";
 
 import { useCourseSnapshots } from "@/hooks/useCourseSnapshots";
 import { useStudentScope } from "@/hooks/useStudentScope";
 import { useTodayMission, useWeeklyReport, useReadinessAll } from "@/hooks/useIntelligence";
+import { useOpportunities } from "@/hooks/useOpportunities";
 import useEnvironment from "@/hooks/useEnvironment";
 import { INSTITUTIONS, isInstitutionCode } from "@/config/environments";
 // One shared source of truth for "what should this student do next".
@@ -67,6 +70,7 @@ const StudentDashboard = () => {
   const { data: mission } = useTodayMission();
   const { data: weekly } = useWeeklyReport();
   const { data: readiness = [] } = useReadinessAll();
+  const { data: opportunities = [] } = useOpportunities({ limit: 8 });
 
   /** course_id → weakest real topic, when the intelligence layer knows one. */
   const weakTopicByCourse = useMemo(() => {
@@ -132,6 +136,10 @@ const StudentDashboard = () => {
                 ))}
               </p>
             )}
+          </div>
+
+          <div className="mb-6">
+            <DashboardSearch onOpen={() => setPaletteOpen(true)} />
           </div>
 
           <DashboardOfflineBanner onReattempt={onRefresh} />
@@ -219,7 +227,15 @@ const StudentDashboard = () => {
             </Section>
           )}
 
+          {/* Scholarships & opportunities — fresh, scannable, never noisy. */}
+          {opportunities.length > 0 && (
+            <Section title="Today's opportunities" to="/opportunities" linkLabel="See all">
+              <OpportunityStrip items={opportunities.slice(0, 8)} />
+            </Section>
+          )}
+
           {/* Where do I get help. */}
+
           <Section title="Ask Overra">
             <AskOverraBlock />
           </Section>
