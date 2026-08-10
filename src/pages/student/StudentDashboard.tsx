@@ -25,6 +25,7 @@ import { useCourseSnapshots } from "@/hooks/useCourseSnapshots";
 import { useStudentScope } from "@/hooks/useStudentScope";
 import { useTodayMission, useWeeklyReport, useReadinessAll } from "@/hooks/useIntelligence";
 import { useOpportunities } from "@/hooks/useOpportunities";
+import { usePosts } from "@/hooks/usePosts";
 import useEnvironment from "@/hooks/useEnvironment";
 import { INSTITUTIONS, isInstitutionCode } from "@/config/environments";
 // One shared source of truth for "what should this student do next".
