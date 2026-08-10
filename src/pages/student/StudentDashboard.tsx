@@ -237,6 +237,13 @@ const StudentDashboard = () => {
             </Section>
           )}
 
+          {/* Top articles today — image-led, light on text. */}
+          {articles.length > 0 && (
+            <Section title="Top articles today" to="/posts" linkLabel="See all">
+              <TopArticlesStrip items={articles.slice(0, 6)} />
+            </Section>
+          )}
+
           {/* Where do I get help. */}
 
           <Section title="Ask Overra">
