@@ -19,11 +19,11 @@ const AMBASSADORS = [
   },
   {
     src: machineryAsset.url,
-    name: "Abdulquadri Ademokun (Machinery)",
+    name: "Abdulquadri Ademokun (Marchinery)",
     role: "Ambassador",
-    school: "Founder, Learn with Machinery",
+    school: "Founder, Learn with Marchinery",
     quote: "Building a learning culture — helping students study smarter and stay consistent.",
-    alt: "Abdulquadri Ademokun (Machinery), Founder of Learn with Machinery and OverraPrep Ambassador",
+    alt: "Abdulquadri Ademokun (Marchinery), Founder of Learn with Marchinery and OverraPrep Ambassador",
   },
 ];
 
