@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ListChecks, Sparkles, ClipboardList, Clock } from "lucide-react";
+import { ListChecks, Sparkles, ClipboardList, Clock, FileText, Download } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +14,7 @@ import {
   useCourseProgress,
 } from "@/hooks/useCourseLearning";
 import { useTrackCourseOpen } from "@/hooks/useRecentlyOpenedCourses";
+import { useCourseMaterials } from "@/hooks/useStudyMaterials";
 import { nextStepFor, nextStepCta } from "@/lib/nextStep";
 import { SEO } from "@/components/seo/SEO";
 import { Screen, ScreenHeader, Section, EmptyState, BrandSkeleton } from "@/components/ui-kit";
@@ -64,6 +65,10 @@ const CourseWorkspace = () => {
     },
   });
   const studied = useLastStudiedTopic(courseId);
+  // Every document/note uploaded for this course, grouped by its real topic.
+  const { data: materialData, isLoading: materialsLoading } = useCourseMaterials(courseId);
+  const materialGroups = materialData?.groups ?? [];
+  const materialCount = materialGroups.reduce((n, g) => n + g.items.length, 0);
   const progress = useCourseProgress(courseId);
   const { data: snapshots = [] } = useCourseSnapshots();
   const { data: readiness = [] } = useReadinessAll();
