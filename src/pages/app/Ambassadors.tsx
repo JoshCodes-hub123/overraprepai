@@ -44,8 +44,8 @@ const Ambassadors = () => {
   return (
     <>
       <SEO
-        title="Meet BGS FUTA — OverraPrep Lead Campus Ambassador"
-        description="BGS FUTA leads the OverraPrep student ambassador program at the Federal University of Technology, Akure. Real students. Real results."
+        title="Meet FUTA Class 24 BGS. — OverraPrep Lead Campus Ambassador"
+        description="FUTA Class 24 BGS. leads the OverraPrep student ambassador program at the Federal University of Technology, Akure. Real students. Real results."
         url="/"
         image={bgsAsset.url}
       />
