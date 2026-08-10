@@ -11,7 +11,7 @@ import machineryAsset from "@/assets/machinery-ambassador.jpg.asset.json";
 const AMBASSADORS = [
   {
     src: bgsAsset.url,
-    name: "BGS FUTA",
+    name: "FUTA Class 24 BGS.",
     role: "Lead Ambassador",
     school: "Lead Ambassador · Federal University of Technology, Akure",
     quote: "Driving OverraPrep across every faculty at FUTA — study smarter, together.",
@@ -40,7 +40,6 @@ const Ambassadors = () => {
   }, []);
 
   useEffect(() => setImgFailed(false), [index]);
-
 
   return (
     <>
@@ -145,9 +144,7 @@ const Ambassadors = () => {
             >
               <Sparkles className="w-3 h-3 text-primary" />
             </motion.span>
-            <span className="text-[9px] font-bold tracking-[0.15em] uppercase text-primary">
-              Meet Our Ambassadors
-            </span>
+            <span className="text-[9px] font-bold tracking-[0.15em] uppercase text-primary">Meet Our Ambassadors</span>
           </motion.span>
           <motion.h1
             initial={{ opacity: 0, y: 8 }}
@@ -206,7 +203,6 @@ const Ambassadors = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                 />
-
               )}
 
               {/* Top shine */}
@@ -245,9 +241,7 @@ const Ambassadors = () => {
                     </div>
                     <p className="font-bold text-[17px] leading-tight">{current.name}</p>
                     <p className="text-[11px] text-white/80">{current.school}</p>
-                    <p className="mt-1.5 text-[12px] italic text-white/95 line-clamp-2">
-                      "{current.quote}"
-                    </p>
+                    <p className="mt-1.5 text-[12px] italic text-white/95 line-clamp-2">"{current.quote}"</p>
                   </motion.div>
                 </div>
               )}
@@ -270,9 +264,6 @@ const Ambassadors = () => {
           </div>
         </section>
 
-
-
-
         {/* CTAs */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
@@ -294,8 +285,7 @@ const Ambassadors = () => {
               <motion.span
                 className="absolute inset-0 -skew-x-12"
                 style={{
-                  background:
-                    "linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)",
+                  background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)",
                 }}
                 animate={{ x: ["-150%", "150%"] }}
                 transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 1.5 }}
@@ -308,8 +298,7 @@ const Ambassadors = () => {
               variant="outline"
               className="w-full h-11 rounded-full font-semibold text-[14px] border-2 border-primary/40 hover:bg-primary/5 hover:border-primary/60 transition-all bg-white/60 backdrop-blur-sm"
             >
-              <LogIn className="w-4 h-4 mr-1.5" />
-              I already have an account
+              <LogIn className="w-4 h-4 mr-1.5" />I already have an account
             </Button>
           </motion.div>
           <button
