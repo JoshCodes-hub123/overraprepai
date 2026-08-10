@@ -70,6 +70,7 @@ const StudentDashboard = () => {
   const { data: mission } = useTodayMission();
   const { data: weekly } = useWeeklyReport();
   const { data: readiness = [] } = useReadinessAll();
+  const { data: opportunities = [] } = useOpportunities({ limit: 8 });
 
   /** course_id → weakest real topic, when the intelligence layer knows one. */
   const weakTopicByCourse = useMemo(() => {
@@ -135,6 +136,10 @@ const StudentDashboard = () => {
                 ))}
               </p>
             )}
+          </div>
+
+          <div className="mb-6">
+            <DashboardSearch onOpen={() => setPaletteOpen(true)} />
           </div>
 
           <DashboardOfflineBanner onReattempt={onRefresh} />
@@ -222,7 +227,15 @@ const StudentDashboard = () => {
             </Section>
           )}
 
+          {/* Scholarships & opportunities — fresh, scannable, never noisy. */}
+          {opportunities.length > 0 && (
+            <Section title="Today's opportunities" to="/opportunities" linkLabel="See all">
+              <OpportunityStrip items={opportunities.slice(0, 8)} />
+            </Section>
+          )}
+
           {/* Where do I get help. */}
+
           <Section title="Ask Overra">
             <AskOverraBlock />
           </Section>
