@@ -44,23 +44,23 @@ export function NextStepHero({
       <div className="absolute left-0 right-0 top-0 h-1 bg-env" aria-hidden />
 
       <div className="mb-5 flex items-center justify-between">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-foreground/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-accent-foreground/80">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-surface/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-brand-surface/80">
           <Sparkles className="h-3 w-3 text-env" aria-hidden />
           {eyebrow}
         </span>
         {kicker && (
-          <span className="rounded-full border border-accent-foreground/15 bg-accent-foreground/5 px-3 py-1 text-[11px] font-bold text-env">
+          <span className="rounded-full border border-brand-surface/15 bg-brand-surface/5 px-3 py-1 text-[11px] font-bold text-env">
             {kicker}
           </span>
         )}
       </div>
 
-      <h2 className="font-display text-[22px] font-bold leading-[1.15] tracking-tight text-accent-foreground">
+      <h2 className="font-display text-[22px] font-bold leading-[1.15] tracking-tight text-brand-surface">
         {title}
       </h2>
 
       {context && (
-        <p className="mt-2 line-clamp-2 text-[14px] leading-relaxed text-accent-foreground/70">
+        <p className="mt-2 line-clamp-2 text-[14px] leading-relaxed text-brand-surface/70">
           {context}
         </p>
       )}
