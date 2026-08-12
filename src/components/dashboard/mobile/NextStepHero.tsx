@@ -35,7 +35,7 @@ export function NextStepHero({
       type="button"
       onClick={() => navigate(to)}
       className={cn(
-        "group relative flex w-full flex-col overflow-hidden rounded-3xl bg-accent p-6 text-left text-accent-foreground shadow-brand-lifted transition-all hover:shadow-brand-heavy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-env",
+        "group relative flex w-full flex-col overflow-hidden rounded-3xl bg-brand-ink p-6 text-left text-brand-surface shadow-brand-lifted transition-all hover:shadow-brand-heavy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-env",
         className,
       )}
       aria-label={`${eyebrow}: ${title}`}
