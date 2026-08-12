@@ -13,7 +13,7 @@ import { Screen, Section, EmptyState, BrandSkeleton, BrandButton } from "@/compo
 import BrandTopBar from "@/components/dashboard/mobile/BrandTopBar";
 import NextStepHero from "@/components/dashboard/mobile/NextStepHero";
 import MissionBlock from "@/components/dashboard/mobile/MissionBlock";
-import CourseRow from "@/components/dashboard/mobile/CourseRow";
+import CourseRow, { EmptyCourses } from "@/components/dashboard/mobile/CourseRow";
 import WeeklyPulse from "@/components/dashboard/mobile/WeeklyPulse";
 import AskOverraBlock from "@/components/dashboard/mobile/AskOverraBlock";
 import QuickAccess, { quickAccessItems } from "@/components/dashboard/mobile/QuickAccess";
@@ -28,7 +28,6 @@ import { useOpportunities } from "@/hooks/useOpportunities";
 import { usePosts } from "@/hooks/usePosts";
 import useEnvironment from "@/hooks/useEnvironment";
 import { INSTITUTIONS, isInstitutionCode } from "@/config/environments";
-// One shared source of truth for "what should this student do next".
 import { courseActionLabel as courseAction } from "@/lib/nextStep";
 
 if (typeof window !== "undefined") prefetchDashboardNeighbors();
@@ -40,10 +39,8 @@ function greetingFor(date = new Date()) {
   return "Good evening";
 }
 
-
-
 /**
- * University student home.
+ * University student home — redesigned as a bento-gold-minimalist dashboard.
  *
  * Answers, in order: who am I · what should I study next · what should I do
  * today · what am I taking · where do I get help. Everything is scoped by the
@@ -107,7 +104,11 @@ const StudentDashboard = () => {
   );
   const current = recent[0];
 
-  const nextTask = mission?.tasks?.find((t) => !t.done);
+  const missionTasks = useMemo(
+    () => (mission?.tasks ?? []).map((t) => ({ label: t.label, done: t.done, link: t.link })),
+    [mission],
+  );
+  const completedMissions = missionTasks.filter((t) => t.done).length;
 
   return (
     <>
@@ -125,12 +126,12 @@ const StudentDashboard = () => {
 
           {/* Who am I. */}
           <div className="pb-6 pt-6">
-            <h1 className="text-[27px] font-bold leading-[1.15] tracking-tight text-brand-ink">
+            <h1 className="font-display text-[28px] font-bold leading-[1.1] tracking-tight text-brand-ink">
               {greetingFor()}
               {firstName ? `, ${firstName}` : ""}
             </h1>
             {identityParts.length > 0 && (
-              <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13.5px] font-semibold tracking-tight text-brand-ink-soft">
+              <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-semibold tracking-tight text-brand-ink-soft">
                 {identityParts.map((part, i) => (
                   <span key={part} className="flex items-center gap-2">
                     {i > 0 && <span aria-hidden className="h-1 w-1 rounded-full bg-env" />}
@@ -169,29 +170,41 @@ const StudentDashboard = () => {
             />
           )}
 
-          {/* What should I do today. */}
-          <Section title="Today's mission" className="mt-8">
-            {nextTask ? (
-              <MissionBlock
-                title={nextTask.label}
-                meta="Recommended for you today"
-                cta="Start now"
-                to={nextTask.link}
-              />
-            ) : mission && mission.completed_today > 0 ? (
-              <MissionBlock
-                title="Today's mission is done"
-                meta="Anything extra is a bonus — keep it light."
-                cta="Practice anyway"
-                to="/practice"
-              />
+          {/* Today's mission + Weekly pulse as a bento grid. */}
+          <Section title="Today" className="mt-8">
+            {mission ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <MissionBlock
+                  title="Daily mission"
+                  subtitle="Small steps, big results"
+                  missions={missionTasks}
+                  completed={completedMissions}
+                  total={missionTasks.length || 1}
+                />
+                <WeeklyPulse
+                  quizzesCompleted={weekly?.quizzes_completed ?? 0}
+                  accuracy={weekly?.accuracy_pct ?? 0}
+                />
+              </div>
             ) : (
-              <MissionBlock
-                title={current ? `Practise a ${current.code} question set` : "Practise a past question set"}
-                meta="A short, focused session is enough for today."
-                cta="Start practice"
-                to={current ? `/practice?course=${current.id}` : "/practice"}
-              />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <MissionBlock
+                  title="Daily mission"
+                  subtitle="A short, focused session is enough for today."
+                  missions={[
+                    {
+                      label: current
+                        ? `Practise a ${current.code} question set`
+                        : "Practise a past question set",
+                      done: false,
+                      link: current ? `/practice?course=${current.id}` : "/practice",
+                    },
+                  ]}
+                  completed={0}
+                  total={1}
+                />
+                <WeeklyPulse quizzesCompleted={0} accuracy={0} />
+              </div>
             )}
           </Section>
 
@@ -209,24 +222,20 @@ const StudentDashboard = () => {
                 {recent.slice(0, 4).map((c) => (
                   <CourseRow
                     key={c.id}
-                    to={`/courses/${c.id}`}
+                    id={c.id}
                     code={c.code}
                     name={c.name}
-                    action={courseAction(weakTopicByCourse[c.id] ?? null, c.last_opened_at)}
-                    badge={c.unread_updates > 0 ? `${c.unread_updates} new` : undefined}
+                    department={c.department}
+                    level={c.level}
+                    unreadUpdates={c.unread_updates ?? 0}
+                    actionLabel={courseAction(weakTopicByCourse[c.id] ?? null, c.last_opened_at)}
                   />
                 ))}
               </div>
             </Section>
-          ) : null}
-
-          {/* Quiet, real confidence — only when the week actually has activity. */}
-          {weekly?.ok && (weekly.quizzes_completed ?? 0) > 0 && (
-            <Section title="This week">
-              <WeeklyPulse
-                quizzes={weekly.quizzes_completed}
-                accuracyPct={weekly.accuracy_pct}
-              />
+          ) : (
+            <Section title="Your courses">
+              <EmptyCourses />
             </Section>
           )}
 
@@ -245,7 +254,6 @@ const StudentDashboard = () => {
           )}
 
           {/* Where do I get help. */}
-
           <Section title="Ask Overra">
             <AskOverraBlock />
           </Section>

@@ -128,11 +128,13 @@ const CoursesScreen = () => {
               return (
                 <CourseRow
                   key={c.id}
-                  to={`/courses/${c.id}`}
+                  id={c.id}
                   code={c.code}
                   name={c.name}
-                  action={step.label}
-                  badge={c.unread_updates > 0 ? `${c.unread_updates} new` : undefined}
+                  department={c.department}
+                  level={c.level}
+                  unreadUpdates={c.unread_updates ?? 0}
+                  actionLabel={step.label}
                 />
               );
             })}
