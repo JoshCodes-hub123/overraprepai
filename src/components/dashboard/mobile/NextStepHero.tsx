@@ -1,38 +1,28 @@
-import { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface NextStepHeroProps {
-  /** Small caps label, e.g. "Your next step". */
+export interface NextStepHeroProps {
   eyebrow?: string;
-  /** Short code / kicker line, e.g. "CHE 102". */
   kicker?: string;
-  title: ReactNode;
-  /**
-   * Real academic urgency only — e.g. "Test tomorrow". Rendered as a quiet
-   * pill. Never pass a fabricated or inferred date.
-   */
-  urgency?: string;
-  /** Contextual line, e.g. "Continue where you stopped". */
-  context?: ReactNode;
+  title: string;
+  context?: string;
   cta: string;
   to: string;
   className?: string;
 }
 
 /**
- * The single strongest element of the home screen.
+ * The hero card that answers "what should I study next?".
  *
- * One quiet surface, one gold action. No statistics, no decoration — the
- * hierarchy comes from type scale and space, which is what keeps the screen
- * readable in about three seconds.
+ * Rendered as a premium dark-zinc card with a gold accent line, keeping the
+ * white + gold brand but adding the depth and hierarchy expected in a bento
+ * dashboard.
  */
 export function NextStepHero({
   eyebrow = "Your next step",
   kicker,
   title,
-  urgency,
   context,
   cta,
   to,
@@ -41,44 +31,45 @@ export function NextStepHero({
   const navigate = useNavigate();
 
   return (
-    <section
-      aria-label={eyebrow}
+    <button
+      type="button"
+      onClick={() => navigate(to)}
       className={cn(
-        "rounded-brand-lg border border-env-line bg-env-soft/70 p-5",
+        "group relative flex w-full flex-col overflow-hidden rounded-3xl bg-accent p-6 text-left text-accent-foreground shadow-brand-lifted transition-all hover:shadow-brand-heavy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-env",
         className,
       )}
+      aria-label={`${eyebrow}: ${title}`}
     >
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[10.5px] font-bold uppercase tracking-[0.2em] text-env">{eyebrow}</p>
-        {urgency && (
-          <span className="shrink-0 rounded-full bg-brand-ink px-2.5 py-1 text-[10.5px] font-bold uppercase tracking-wide text-brand-surface">
-            {urgency}
+      {/* Gold accent line at the top */}
+      <div className="absolute left-0 right-0 top-0 h-1 bg-env" aria-hidden />
+
+      <div className="mb-5 flex items-center justify-between">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-foreground/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-accent-foreground/80">
+          <Sparkles className="h-3 w-3 text-env" aria-hidden />
+          {eyebrow}
+        </span>
+        {kicker && (
+          <span className="rounded-full border border-accent-foreground/15 bg-accent-foreground/5 px-3 py-1 text-[11px] font-bold text-env">
+            {kicker}
           </span>
         )}
       </div>
 
-      {kicker && (
-        <p className="mt-3.5 text-[13px] font-bold uppercase tracking-[0.1em] text-brand-ink-soft">
-          {kicker}
-        </p>
-      )}
-      <h2 className="mt-1 text-[23px] font-bold leading-[1.15] tracking-tight text-brand-ink">
+      <h2 className="font-display text-[22px] font-bold leading-[1.15] tracking-tight text-accent-foreground">
         {title}
       </h2>
+
       {context && (
-        <p className="mt-2 text-[13.5px] leading-relaxed text-brand-ink-soft">{context}</p>
+        <p className="mt-2 line-clamp-2 text-[14px] leading-relaxed text-accent-foreground/70">
+          {context}
+        </p>
       )}
 
-
-      <button
-        type="button"
-        onClick={() => navigate(to)}
-        className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-env text-[15px] font-semibold text-env-foreground shadow-brand transition-all active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-env focus-visible:ring-offset-2"
-      >
+      <div className="mt-6 flex items-center gap-2 text-[14px] font-bold text-env transition-transform group-hover:translate-x-1">
         {cta}
         <ArrowRight className="h-4 w-4" aria-hidden />
-      </button>
-    </section>
+      </div>
+    </button>
   );
 }
 

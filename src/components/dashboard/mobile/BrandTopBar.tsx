@@ -1,75 +1,60 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Bell } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { resolveAvatarUrl } from "@/lib/avatar";
-import { SidebarMenu } from "@/components/student/dashboard/v2/SidebarMenu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
-/**
- * Minimal home bar: menu · wordmark · notifications · avatar.
- *
- * Deliberately quiet — the academic identity is stated by the headline right
- * below it, not by chrome. Reuses the existing SidebarMenu so every route that
- * was reachable before is still reachable.
- */
-export function BrandTopBar() {
-  const navigate = useNavigate();
-  const { user, profile } = useAuth();
-  const [unread, setUnread] = useState(0);
+export function BrandTopBar({ className }: { className?: string }) {
+  const { profile } = useAuth();
 
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    const load = async () => {
-      const { count } = await (supabase as any)
-        .from("notifications")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("is_read", false);
-      if (!cancelled) setUnread(count ?? 0);
-    };
-    load();
-    const ch = supabase
-      .channel(`homebar-notif-${user.id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
-        load,
-      )
-      .subscribe();
-    return () => {
-      cancelled = true;
-      supabase.removeChannel(ch);
-    };
-  }, [user]);
-
-  const first = profile?.full_name?.split(" ")[0] || "Student";
+  const initials = profile?.full_name
+    ?.split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() ?? "OP";
 
   return (
-    <header className="flex items-center justify-between gap-2 pt-2">
-      <SidebarMenu />
-      <span className="text-[15px] font-bold tracking-tight text-brand-ink">
-        OverraPrep <span className="text-env">AI</span>
-      </span>
-      <div className="flex items-center gap-1">
-        <button
-          type="button"
-          onClick={() => navigate("/notifications")}
+    <header
+      className={cn(
+        "flex items-center justify-between py-4",
+        className,
+      )}
+    >
+      <Link
+        to="/"
+        className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-env"
+        aria-label="OverraPrep AI home"
+      >
+        <img
+          src="/app-icon.png"
+          alt="OverraPrep AI"
+          className="h-8 w-8 rounded-lg object-contain"
+        />
+        <span className="font-display text-[16px] font-bold tracking-tight text-brand-ink">
+          OverraPrep
+        </span>
+      </Link>
+
+      <div className="flex items-center gap-3">
+        <Link
+          to="/notifications"
+          className="relative flex h-10 w-10 items-center justify-center rounded-full border border-brand-line bg-brand-surface text-brand-ink-soft transition-colors hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-env"
           aria-label="Notifications"
-          className="relative inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-brand-soft"
         >
-          <Bell className="h-5 w-5 text-brand-ink" strokeWidth={1.7} />
-          {unread > 0 && (
-            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-env ring-2 ring-brand-surface" />
-          )}
-        </button>
-        <Link to="/profile/edit" aria-label="Profile" className="rounded-full">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src={resolveAvatarUrl(profile)} alt={profile?.full_name || "Profile"} />
-            <AvatarFallback className="bg-brand-soft text-[13px] font-bold text-brand-ink">
-              {first.charAt(0).toUpperCase()}
+          <Bell className="h-5 w-5" aria-hidden />
+          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-env" aria-hidden />
+        </Link>
+
+        <Link
+          to="/profile"
+          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-env rounded-full"
+          aria-label="My profile"
+        >
+          <Avatar className="h-10 w-10 border border-brand-line">
+            <AvatarImage src={profile?.avatar_url ?? ""} alt={profile?.full_name ?? "Profile"} />
+            <AvatarFallback className="bg-brand-gold-soft font-display text-[12px] font-bold text-env">
+              {initials}
             </AvatarFallback>
           </Avatar>
         </Link>
