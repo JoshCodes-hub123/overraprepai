@@ -1,5 +1,4 @@
 import { Bot, Target, Users, FolderOpen, LucideIcon } from "lucide-react";
-import { ListRow } from "@/components/ui-kit";
 
 export interface QuickAccessItem {
   to: string;
@@ -10,8 +9,7 @@ export interface QuickAccessItem {
 
 /**
  * Shared quick access for both environments — Practice · Study Materials ·
- * AI Coach · Community. "AI Coach" is the same Overra AI experience the
- * dashboard's Ask Overra block opens (`/coach`).
+ * AI Coach · Community. Rendered as a compact icon grid for the bento layout.
  */
 export const quickAccessItems = (practiceLabel: string, practiceMeta: string): QuickAccessItem[] => [
   { to: "/practice", label: practiceLabel, meta: practiceMeta, icon: Target },
@@ -27,9 +25,18 @@ export const quickAccessItems = (practiceLabel: string, practiceMeta: string): Q
 
 export function QuickAccess({ items }: { items: QuickAccessItem[] }) {
   return (
-    <div className="space-y-2.5">
-      {items.map(({ to, label, meta, icon: Icon }) => (
-        <ListRow key={to} to={to} title={label} meta={meta} icon={<Icon className="h-5 w-5" />} />
+    <div className="grid grid-cols-4 gap-3">
+      {items.map(({ to, label, icon: Icon }) => (
+        <a
+          key={to}
+          href={to}
+          className="flex flex-col items-center gap-2 rounded-2xl border border-brand-line bg-brand-surface p-3 text-center transition-all hover:bg-brand-soft hover:shadow-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-env"
+        >
+          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-soft text-env">
+            <Icon className="h-5 w-5" aria-hidden />
+          </span>
+          <span className="text-[10px] font-semibold leading-tight text-brand-ink-soft">{label}</span>
+        </a>
       ))}
     </div>
   );
