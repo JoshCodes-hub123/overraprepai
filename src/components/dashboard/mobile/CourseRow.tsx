@@ -30,8 +30,11 @@ function colorFromCode(code: string) {
 }
 
 function initials(code: string) {
-  return code
-    .split(/\s+/)
+  const parts = code.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2 && /^\d/.test(parts[1])) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return parts
     .map((w) => w[0]?.toUpperCase())
     .filter(Boolean)
     .slice(0, 2)
