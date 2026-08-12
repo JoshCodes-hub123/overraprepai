@@ -33,7 +33,7 @@ export function OpportunityStrip({ items }: { items: Opportunity[] }) {
           <Link
             key={o.id}
             to={`/opportunities/${o.id}`}
-            className="group relative flex w-[248px] shrink-0 flex-col justify-between overflow-hidden rounded-brand border border-brand-line bg-brand-surface p-4 transition-all hover:-translate-y-0.5 hover:bg-brand-soft"
+            className="group relative flex w-[248px] shrink-0 flex-col justify-between overflow-hidden rounded-3xl border border-brand-line bg-brand-surface p-4 transition-all hover:-translate-y-0.5 hover:bg-brand-soft"
           >
             <span
               aria-hidden

@@ -19,9 +19,9 @@ export function TopArticlesStrip({ items }: { items: Post[] }) {
           <Link
             key={p.id}
             to={`/posts/${p.id}`}
-            className="group w-[236px] shrink-0 overflow-hidden rounded-brand border border-brand-line bg-brand-surface transition-all hover:-translate-y-0.5 hover:bg-brand-soft"
+            className="group flex w-[260px] shrink-0 flex-col overflow-hidden rounded-3xl border border-brand-line bg-brand-surface transition-all hover:-translate-y-0.5 hover:bg-brand-soft"
           >
-            <div className="relative h-[112px] w-full overflow-hidden bg-env-soft">
+            <div className="relative aspect-[16/10] w-full overflow-hidden bg-env-soft">
               {p.cover_image_url ? (
                 <img
                   src={p.cover_image_url}
@@ -32,15 +32,15 @@ export function TopArticlesStrip({ items }: { items: Post[] }) {
                 />
               ) : (
                 <span className="flex h-full w-full items-center justify-center">
-                  <Newspaper className="h-7 w-7 text-env" aria-hidden />
+                  <Newspaper className="h-8 w-8 text-env" aria-hidden />
                 </span>
               )}
             </div>
-            <div className="p-3.5">
-              <p className="line-clamp-2 font-display text-[14.5px] font-semibold leading-snug tracking-tight text-brand-ink">
+            <div className="flex flex-1 flex-col p-4">
+              <p className="line-clamp-2 font-display text-[15px] font-semibold leading-snug tracking-tight text-brand-ink">
                 {p.title}
               </p>
-              <p className="mt-1.5 truncate text-[11.5px] font-medium text-brand-ink-soft">
+              <p className="mt-auto truncate pt-2 text-[12px] font-medium text-brand-ink-soft">
                 {p.author?.full_name ?? p.organization ?? "OverraPrep"} · {readTime(p.body)}
               </p>
             </div>

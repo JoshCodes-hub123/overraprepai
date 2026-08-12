@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -73,9 +73,9 @@
     --shadow-card: 0 4px 20px hsl(220 45% 12% / 0.06), 0 0 0 1px hsl(220 20% 90% / 0.6);
     --shadow-card-hover: 0 20px 40px hsl(220 45% 12% / 0.1), 0 0 0 1px hsl(43 78% 52% / 0.18);
 
-    /* Inter for both body and display headings (minimal, modern) */
-    --font-display: 'Inter', sans-serif;
-    --font-body: 'Inter', sans-serif;
+    /* Space Grotesk display headings + DM Sans body (premium, modern) */
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
 
     --sidebar-background: 220 45% 10%;
     --sidebar-foreground: 0 0% 96%;

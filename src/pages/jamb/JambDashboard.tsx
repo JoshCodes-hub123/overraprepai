@@ -43,6 +43,10 @@ const JambDashboard = () => {
     (x): x is string => Boolean(x),
   );
 
+  const missionLink = todaySubject
+    ? `/practice?subject=${encodeURIComponent(todaySubject)}`
+    : "/practice";
+
   return (
     <>
       <SEO
@@ -55,11 +59,11 @@ const JambDashboard = () => {
         <BrandTopBar />
 
         <div className="pb-6 pt-6">
-          <h1 className="text-[27px] font-bold leading-[1.15] tracking-tight text-brand-ink">
+          <h1 className="font-display text-[28px] font-bold leading-[1.1] tracking-tight text-brand-ink">
             {greeting}
             {firstName ? `, ${firstName}` : ""}
           </h1>
-          <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13.5px] font-semibold tracking-tight text-brand-ink-soft">
+          <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-semibold tracking-tight text-brand-ink-soft">
             {identityParts.map((part, i) => (
               <span key={part} className="flex items-center gap-2">
                 {i > 0 && <span aria-hidden className="h-1 w-1 rounded-full bg-env" />}
@@ -76,7 +80,7 @@ const JambDashboard = () => {
             title={todaySubject}
             context="Timed CBT practice, exactly like the real thing."
             cta="Continue"
-            to={`/practice?subject=${encodeURIComponent(todaySubject)}`}
+            to={missionLink}
           />
         ) : (
           <EmptyState
@@ -89,10 +93,19 @@ const JambDashboard = () => {
 
         <Section title="Today's mission" className="mt-8">
           <MissionBlock
-            title={todaySubject ? `Complete one ${todaySubject} practice set` : "Start a CBT practice set"}
-            meta="A short, focused session is enough for today."
-            cta="Start practice"
-            to={todaySubject ? `/practice?subject=${encodeURIComponent(todaySubject)}` : "/practice"}
+            title="Daily mission"
+            subtitle="A short, focused session is enough for today."
+            missions={[
+              {
+                label: todaySubject
+                  ? `Complete one ${todaySubject} practice set`
+                  : "Start a CBT practice set",
+                done: false,
+                link: missionLink,
+              },
+            ]}
+            completed={0}
+            total={1}
           />
         </Section>
 
@@ -102,10 +115,10 @@ const JambDashboard = () => {
               {subjects.map((s) => (
                 <CourseRow
                   key={s}
-                  to="/jamb/subjects"
+                  id={s}
                   code={s}
                   name="UTME subject"
-                  action={s === todaySubject ? "Today's focus · practice now" : "Ready to practice"}
+                  actionLabel={s === todaySubject ? "Today's focus · practice now" : "Ready to practice"}
                 />
               ))}
             </div>
