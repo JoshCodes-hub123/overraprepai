@@ -19,7 +19,7 @@ export function TopArticlesStrip({ items }: { items: Post[] }) {
           <Link
             key={p.id}
             to={`/posts/${p.id}`}
-            className="group w-[236px] shrink-0 overflow-hidden rounded-brand border border-brand-line bg-brand-surface transition-all hover:-translate-y-0.5 hover:bg-brand-soft"
+            className="group w-[236px] shrink-0 overflow-hidden rounded-3xl border border-brand-line bg-brand-surface transition-all hover:-translate-y-0.5 hover:bg-brand-soft"
           >
             <div className="relative h-[112px] w-full overflow-hidden bg-env-soft">
               {p.cover_image_url ? (
