@@ -42,15 +42,15 @@ export function WeeklyPulse({ quizzesCompleted, accuracy, className }: WeeklyPul
         </div>
       </div>
 
-      <div className="mt-auto flex items-end justify-between gap-1.5">
+      <div className="mt-auto flex h-16 items-end justify-between gap-1.5">
         {bars.map((bar, i) => (
           <div
             key={i}
             className={cn(
-              "w-full rounded-t-md transition-all",
-              bar.active ? "bg-env" : "bg-brand-line",
+              "w-full rounded-t-lg transition-all",
+              bar.active ? "bg-env" : "bg-brand-gold-soft",
             )}
-            style={{ height: `${bar.height}%`, minHeight: 24 }}
+            style={{ height: `${bar.height}%`, minHeight: 20 }}
             aria-hidden
           />
         ))}
