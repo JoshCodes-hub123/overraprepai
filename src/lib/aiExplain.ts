@@ -52,8 +52,8 @@ export async function getAIExplanation(input: ExplainInput): Promise<string> {
   const cached = readCachedExplanation(input);
   if (cached) return cached;
 
-  const allowed = await aiGate.consume("ai_explain", { silent: true } as any);
-  if (allowed === false) throw new Error("paywall");
+  const allowed = await aiGate.consume("ai_explain", { silent: true });
+  if (!allowed) throw new Error("paywall");
 
   const answer = (input.userAnswer ?? "").toUpperCase();
   const { data, error } = await edgeInvoke("ai-explanation", {
