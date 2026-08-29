@@ -8838,6 +8838,17 @@ export type Database = {
         Args: { _run_id: string }
         Returns: number
       }
+      notify_course_students: {
+        Args: {
+          _course_id: string
+          _exclude_user?: string
+          _link: string
+          _message: string
+          _title: string
+          _type: string
+        }
+        Returns: undefined
+      }
       notify_course_tutors: {
         Args: { _course_id: string; _link: string; _snippet: string }
         Returns: number
@@ -8888,6 +8899,22 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      recommend_tutors_for_me: {
+        Args: { _limit?: number }
+        Returns: {
+          avatar_url: string
+          avg_rating: number
+          course_code: string
+          course_id: string
+          course_name: string
+          department: string
+          full_name: string
+          profile_image_url: string
+          rating_count: number
+          reason: string
+          tutor_id: string
+        }[]
       }
       record_device_login: {
         Args: { _label: string; _ua: string }
