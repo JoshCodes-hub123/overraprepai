@@ -174,3 +174,25 @@ export async function uploadPostImage(userId: string, file: File): Promise<strin
   const { data } = supabase.storage.from("post-media").getPublicUrl(path);
   return data.publicUrl;
 }
+/** Articles the student has bookmarked, newest save first. */
+export function useSavedPosts() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["saved-posts", user?.id],
+    enabled: !!user,
+    staleTime: 60_000,
+    queryFn: async (): Promise<Post[]> => {
+      const { data: marks, error } = await (supabase.from as any)("post_bookmarks")
+        .select("post_id, created_at")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      const ids = (marks ?? []).map((m: any) => m.post_id);
+      if (ids.length === 0) return [];
+      const { data: posts } = await (supabase.from as any)("posts").select(SELECT).in("id", ids);
+      const withAuthors = await attachAuthors((posts ?? []) as Post[]);
+      const order = new Map<string, number>(ids.map((id: string, i: number) => [id, i]));
+      return withAuthors.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0)) as Post[];
+    },
+  });
+}
