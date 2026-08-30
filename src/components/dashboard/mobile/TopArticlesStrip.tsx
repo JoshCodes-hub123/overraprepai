@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Newspaper } from "lucide-react";
 import type { Post } from "@/hooks/usePosts";
+import { BookmarkArticleButton } from "@/components/posts/BookmarkArticleButton";
 
 function readTime(body: string) {
   const words = (body ?? "").trim().split(/\s+/).length;
@@ -35,7 +36,9 @@ export function TopArticlesStrip({ items }: { items: Post[] }) {
                   <Newspaper className="h-8 w-8 text-env" aria-hidden />
                 </span>
               )}
+              <BookmarkArticleButton postId={p.id} className="absolute right-2 top-2" />
             </div>
+
             <div className="flex flex-1 flex-col p-4">
               <p className="line-clamp-2 font-display text-[15px] font-semibold leading-snug tracking-tight text-brand-ink">
                 {p.title}

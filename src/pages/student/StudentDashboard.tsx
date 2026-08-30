@@ -20,6 +20,9 @@ import QuickAccess, { quickAccessItems } from "@/components/dashboard/mobile/Qui
 import DashboardSearch from "@/components/dashboard/mobile/DashboardSearch";
 import OpportunityStrip from "@/components/dashboard/mobile/OpportunityStrip";
 import TopArticlesStrip from "@/components/dashboard/mobile/TopArticlesStrip";
+import ProgressCards from "@/components/dashboard/mobile/ProgressCards";
+import TutorStrip from "@/components/dashboard/mobile/TutorStrip";
+import { useRecommendedTutors } from "@/hooks/useRecommendedTutors";
 
 import { useCourseSnapshots } from "@/hooks/useCourseSnapshots";
 import { useStudentScope } from "@/hooks/useStudentScope";
@@ -71,6 +74,8 @@ const StudentDashboard = () => {
   const { data: readiness = [] } = useReadinessAll();
   const { data: opportunities = [] } = useOpportunities({ limit: 8 });
   const { data: articles = [] } = usePosts({ type: "article", limit: 6 });
+  const { data: tutors = [] } = useRecommendedTutors(8);
+
 
   /** course_id → weakest real topic, when the intelligence layer knows one. */
   const weakTopicByCourse = useMemo(() => {
@@ -208,6 +213,11 @@ const StudentDashboard = () => {
             )}
           </Section>
 
+          {/* How am I doing. */}
+          <Section title="Your progress">
+            <ProgressCards />
+          </Section>
+
           {/* What am I taking. */}
           {coursesLoading ? (
             <Section title="Your courses" to="/courses" linkLabel="See all">
@@ -246,12 +256,20 @@ const StudentDashboard = () => {
             </Section>
           )}
 
+          {/* Tutors for my courses. */}
+          {tutors.length > 0 && (
+            <Section title="Tutors for you" to="/tutors" linkLabel="See all">
+              <TutorStrip items={tutors} />
+            </Section>
+          )}
+
           {/* Top articles today — image-led, light on text. */}
           {articles.length > 0 && (
-            <Section title="Top articles today" to="/posts" linkLabel="See all">
+            <Section title="Top articles today" to="/posts/saved" linkLabel="Saved">
               <TopArticlesStrip items={articles.slice(0, 6)} />
             </Section>
           )}
+
 
           {/* Where do I get help. */}
           <Section title="Ask Overra">
