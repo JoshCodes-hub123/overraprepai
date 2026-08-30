@@ -213,6 +213,11 @@ const StudentDashboard = () => {
             )}
           </Section>
 
+          {/* How am I doing. */}
+          <Section title="Your progress">
+            <ProgressCards />
+          </Section>
+
           {/* What am I taking. */}
           {coursesLoading ? (
             <Section title="Your courses" to="/courses" linkLabel="See all">
