@@ -137,7 +137,10 @@ export function usePostBookmark(postId: string | undefined) {
         await (supabase.from as any)("post_bookmarks").insert({ post_id: postId, user_id: user.id });
       }
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["post-bookmarked", postId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["post-bookmarked", postId] });
+      qc.invalidateQueries({ queryKey: ["saved-posts"] });
+    },
   });
   return { bookmarked: bookmarked.data ?? false, toggle };
 }
