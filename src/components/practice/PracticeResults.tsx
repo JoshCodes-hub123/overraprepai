@@ -93,10 +93,23 @@ export function PracticeResults({
         </div>
       )}
 
+      {/* Every question, colour-coded, with AI explanations on demand. */}
+      {responses.length > 0 && (
+        <>
+          <p className="mt-7 text-[12.5px] font-bold uppercase tracking-[0.14em] text-brand-ink-soft">
+            Your answers
+          </p>
+          <div className="mt-3">
+            <AnswerReviewList responses={responses} topicName={topicName} />
+          </div>
+        </>
+      )}
+
       {/* What should I do next? */}
       <p className="mt-7 text-[12.5px] font-bold uppercase tracking-[0.14em] text-brand-ink-soft">
         What to do next
       </p>
+
       <div className="mt-3 space-y-3">
         {incorrect > 0 && (
           <BrandButton block onClick={onReviewMistakes}>
