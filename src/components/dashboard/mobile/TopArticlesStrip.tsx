@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Newspaper } from "lucide-react";
 import type { Post } from "@/hooks/usePosts";
+import { BookmarkArticleButton } from "@/components/posts/BookmarkArticleButton";
 
 function readTime(body: string) {
   const words = (body ?? "").trim().split(/\s+/).length;
