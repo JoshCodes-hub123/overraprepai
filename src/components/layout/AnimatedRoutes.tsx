@@ -200,6 +200,7 @@ const AdminOpportunities = lazy(() => import("@/pages/admin/AdminOpportunities")
 const PostsFeed = lazy(() => import("@/pages/posts/PostsFeed"));
 const PostDetail = lazy(() => import("@/pages/posts/PostDetail"));
 const PostComposer = lazy(() => import("@/pages/posts/PostComposer"));
+const SavedArticles = lazy(() => import("@/pages/posts/SavedArticles"));
 const AdminPosts = lazy(() => import("@/pages/admin/AdminPosts"));
 const Spotlight = lazy(() => import("@/pages/student/Spotlight"));
 const AdminSpotlights = lazy(() => import("@/pages/admin/AdminSpotlights"));
@@ -517,6 +518,7 @@ export const AnimatedRoutes = () => {
           <Route path="/admin/opportunities" element={<AdminRoute><PageTransition><AdminOpportunities /></PageTransition></AdminRoute>} />
           <Route path="/feed" element={<PageTransition><PostsFeed /></PageTransition>} />
           <Route path="/posts/new" element={<PageTransition><PostComposer /></PageTransition>} />
+          <Route path="/posts/saved" element={<PageTransition><SavedArticles /></PageTransition>} />
           <Route path="/posts/:id" element={<PageTransition><PostDetail /></PageTransition>} />
           <Route path="/admin/posts" element={<AdminRoute><PageTransition><AdminPosts /></PageTransition></AdminRoute>} />
           <Route path="/admin/spotlights" element={<AdminRoute><PageTransition><AdminSpotlights /></PageTransition></AdminRoute>} />
