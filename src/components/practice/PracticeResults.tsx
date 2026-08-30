@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Sparkles, ArrowRight } from "lucide-react";
 
 import { Screen, ScreenHeader, BrandButton } from "@/components/ui-kit";
+import { AnswerReviewList } from "@/components/practice/AnswerReviewList";
 import { coachHref } from "@/lib/coachLink";
 import { PracticeResponse } from "@/lib/practiceSession";
 
