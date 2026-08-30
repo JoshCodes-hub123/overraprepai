@@ -20,6 +20,9 @@ import QuickAccess, { quickAccessItems } from "@/components/dashboard/mobile/Qui
 import DashboardSearch from "@/components/dashboard/mobile/DashboardSearch";
 import OpportunityStrip from "@/components/dashboard/mobile/OpportunityStrip";
 import TopArticlesStrip from "@/components/dashboard/mobile/TopArticlesStrip";
+import ProgressCards from "@/components/dashboard/mobile/ProgressCards";
+import TutorStrip from "@/components/dashboard/mobile/TutorStrip";
+import { useRecommendedTutors } from "@/hooks/useRecommendedTutors";
 
 import { useCourseSnapshots } from "@/hooks/useCourseSnapshots";
 import { useStudentScope } from "@/hooks/useStudentScope";
