@@ -74,6 +74,8 @@ const StudentDashboard = () => {
   const { data: readiness = [] } = useReadinessAll();
   const { data: opportunities = [] } = useOpportunities({ limit: 8 });
   const { data: articles = [] } = usePosts({ type: "article", limit: 6 });
+  const { data: tutors = [] } = useRecommendedTutors(8);
+
 
   /** course_id → weakest real topic, when the intelligence layer knows one. */
   const weakTopicByCourse = useMemo(() => {
