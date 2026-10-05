@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import useEnvironment from "@/hooks/useEnvironment";
 import { useMyCourses } from "@/hooks/useMyCourses";
 import { useCourseSnapshots } from "@/hooks/useCourseSnapshots";
 import { useReadinessAll } from "@/hooks/useIntelligence";
@@ -24,6 +25,7 @@ import CourseDirectory from "@/pages/courses/CourseDirectory";
 const CoursesScreen = () => {
   const navigate = useNavigate();
   const { user, primaryRole } = useAuth();
+  const { isUniversity, institution } = useEnvironment();
   const qc = useQueryClient();
   const { parts } = useAcademicIdentity();
   const { courseIds, refresh } = useMyCourses();
@@ -31,6 +33,7 @@ const CoursesScreen = () => {
   const { data: readiness = [] } = useReadinessAll();
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const isStudent = primaryRole !== "admin" && primaryRole !== "tutor";
 
   const weakByCourse = useMemo(() => {
     const map: Record<string, string> = {};
@@ -52,14 +55,17 @@ const CoursesScreen = () => {
 
   // Only searched — we never dump the whole catalogue on this screen.
   const { data: catalogue = [] } = useQuery({
-    queryKey: ["course-search-scoped", term],
-    enabled: term.length >= 2,
+    queryKey: ["course-search-scoped", user?.id, institution, term],
+    enabled: isStudent && !!user && isUniversity && !!institution && term.length >= 2,
     staleTime: 30_000,
     queryFn: async () => {
+      if (!isUniversity || !institution) return [];
       const { data, error } = await supabase
         .from("courses")
         .select("id, code, name, level")
         .eq("is_active", true)
+        .eq("environment_type", "university")
+        .eq("university", institution)
         .or(`code.ilike.%${term}%,name.ilike.%${term}%`)
         .order("code")
         .limit(20);

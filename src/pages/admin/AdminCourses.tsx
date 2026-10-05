@@ -16,6 +16,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { SEO } from "@/components/seo/SEO";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Search, BookOpen } from "lucide-react";
+import { ADMIN_ENVIRONMENTS } from "@/config/environments";
 
 const LEVELS = ["100", "200", "300", "400", "500", "600"];
 
@@ -39,7 +40,9 @@ const AdminCourses = () => {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<typeof empty>(empty);
+  const [newEnvironmentId, setNewEnvironmentId] = useState("");
   const [saving, setSaving] = useState(false);
+  const newEnvironment = ADMIN_ENVIRONMENTS.find((option) => option.id === newEnvironmentId);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -57,7 +60,7 @@ const AdminCourses = () => {
 
   useEffect(() => { load(); }, []);
 
-  const openNew = () => { setEditing(empty); setOpen(true); };
+  const openNew = () => { setEditing(empty); setNewEnvironmentId(""); setOpen(true); };
   const openEdit = (c: Course) => {
     setEditing({
       id: c.id, code: c.code, name: c.name,
@@ -72,6 +75,10 @@ const AdminCourses = () => {
       toast.error("Code and name are required");
       return;
     }
+    if (!editing.id && !newEnvironment) {
+      toast.error("Choose an academic environment for this course");
+      return;
+    }
     setSaving(true);
     const payload = {
       code: editing.code.toUpperCase().trim(),
@@ -83,7 +90,14 @@ const AdminCourses = () => {
     };
     const { error } = editing.id
       ? await supabase.from("courses").update(payload as any).eq("id", editing.id)
-      : await supabase.from("courses").insert({ ...payload, created_by: user!.id } as any);
+      : await supabase.from("courses").insert({
+          ...payload,
+          created_by: user!.id,
+          environment_type: newEnvironment!.env,
+          path_type: newEnvironment!.env,
+          university: newEnvironment!.institution,
+          university_code: newEnvironment!.institution,
+        } as any);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success(editing.id ? "Course updated" : "Course created");
@@ -160,6 +174,19 @@ const AdminCourses = () => {
           <DialogContent>
             <DialogHeader><DialogTitle>{editing.id ? "Edit Course" : "New Course"}</DialogTitle></DialogHeader>
             <div className="space-y-3">
+              {!editing.id && (
+                <div className="space-y-1.5">
+                  <Label>Academic environment *</Label>
+                  <Select value={newEnvironmentId} onValueChange={setNewEnvironmentId}>
+                    <SelectTrigger><SelectValue placeholder="Choose an environment" /></SelectTrigger>
+                    <SelectContent>
+                      {ADMIN_ENVIRONMENTS.map((option) => (
+                        <SelectItem key={option.id} value={option.id}>{option.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>Code *</Label>

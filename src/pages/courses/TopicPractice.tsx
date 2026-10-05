@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Check, X, Sparkles } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import {
   useCourseTopics,
   useTopicQuestions,
@@ -43,10 +44,11 @@ type Phase = "run" | "results" | "review";
 const TopicPractice = () => {
   const { courseId = "", topicId = "" } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const { data: course } = useQuery({
-    queryKey: ["course-workspace", courseId],
-    enabled: !!courseId,
+    queryKey: ["course-workspace", user?.id, courseId],
+    enabled: !!user && !!courseId,
     staleTime: 60_000,
     queryFn: async () => {
       const { data } = await supabase

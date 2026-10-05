@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -49,26 +49,100 @@ const queryClient = new QueryClient({
   },
 });
 
-// Persist the React Query cache to localStorage. On a return visit the
-// dashboard paints from cache in <1s while live data revalidates.
-try {
-  // Lazy import to avoid blocking first paint.
-  void import("@tanstack/react-query-persist-client").then(({ persistQueryClient }) => {
-    void import("@tanstack/query-sync-storage-persister").then(({ createSyncStoragePersister }) => {
-      const persister = createSyncStoragePersister({
-        storage: window.localStorage,
-        key: "overra-rq-cache-v1",
-        throttleTime: 1500,
-      });
-      persistQueryClient({
-        queryClient: queryClient as any,
-        persister,
-        maxAge: 1000 * 60 * 60 * 24, // 24h
-        buster: "v1",
-      });
-    });
-  });
-} catch { /* noop */ }
+const ACADEMIC_QUERY_KEY_ROOT = /(?:^|[-_])(course|courses|topic|topics|question|questions|quiz|quizzes|subject|subjects|jamb|curriculum|curricula|material|materials|study|learning|learn|exam|exams|readiness|flashcard|flashcards|mock|weak-area|intel|arena|theory|srs|quick-jump)(?:[-_]|$)/i;
+
+function AccountQueryCacheBoundary({ children }: { children: ReactNode }) {
+  const { user, profile, isLoading } = useAuth();
+  const client = useQueryClient();
+  const currentProfile = user && profile?.id === user.id ? profile as any : null;
+  const scopePartition = currentProfile
+    ? JSON.stringify([
+        currentProfile.environment_type ?? "unresolved",
+        currentProfile.academic_path ?? "unresolved",
+        currentProfile.university ?? "unresolved",
+      ])
+    : null;
+  const identity = isLoading || (user && !scopePartition)
+    ? null
+    : user
+    ? `${user.id}:${encodeURIComponent(scopePartition!)}`
+    : "anonymous";
+  const sessionIdentity = isLoading ? null : user?.id ?? "anonymous";
+  const [readyIdentity, setReadyIdentity] = useState<string | null>(null);
+  const activeSession = useRef<string | null>(null);
+  const activeScope = useRef<string | null>(null);
+  const pendingRestore = useRef<Promise<void>>(Promise.resolve());
+
+  useEffect(() => {
+    if (!sessionIdentity) return;
+
+    let cancelled = false;
+    let stopPersistence = () => {};
+
+    void (async () => {
+      await pendingRestore.current.catch(() => {});
+      if (cancelled) return;
+
+      if (activeSession.current !== sessionIdentity) {
+        client.clear();
+      } else if (activeScope.current !== scopePartition) {
+        client.removeQueries({
+          predicate: (query) => {
+            const root = query.queryKey[0];
+            return typeof root === "string" && ACADEMIC_QUERY_KEY_ROOT.test(root);
+          },
+        });
+      }
+      activeSession.current = sessionIdentity;
+      activeScope.current = scopePartition;
+
+      if (!identity) {
+        setReadyIdentity(null);
+        return;
+      }
+      if (identity === "anonymous") {
+        setReadyIdentity(identity);
+        return;
+      }
+
+      try {
+        const [{ persistQueryClient }, { createSyncStoragePersister }] = await Promise.all([
+          import("@tanstack/react-query-persist-client"),
+          import("@tanstack/query-sync-storage-persister"),
+        ]);
+        if (cancelled) return;
+
+        const persister = createSyncStoragePersister({
+          storage: window.localStorage,
+          key: `overra-rq-cache-v3:${identity}`,
+          throttleTime: 1500,
+        });
+        const [unsubscribe, restored] = persistQueryClient({
+          queryClient: client,
+          persister,
+          maxAge: 1000 * 60 * 60 * 24,
+          buster: "v3",
+        });
+        stopPersistence = unsubscribe;
+        const restoreTask = Promise.resolve(restored).then(() => undefined).catch(() => undefined);
+        pendingRestore.current = restoreTask;
+        await restoreTask;
+      } catch {
+        // Cache persistence is optional; the live query path remains available.
+      }
+
+      if (!cancelled) setReadyIdentity(identity);
+    })();
+
+    return () => {
+      cancelled = true;
+      stopPersistence();
+    };
+  }, [client, identity, scopePartition, sessionIdentity]);
+
+  if (!identity || readyIdentity !== identity) return null;
+  return children;
+}
 
 // Auto-register push when a user signs in (native only).
 function PushBootstrap() {
@@ -155,29 +229,31 @@ const App = () => {
             <ScrollToTop />
             <PageViewTracker />
             <AuthProvider>
-              <PushBootstrap />
-              <EnvironmentThemeApplier />
+              <AccountQueryCacheBoundary>
+                <PushBootstrap />
+                <EnvironmentThemeApplier />
 
-              <OfflineAttemptSyncBanner />
-              <DeviceTracker />
-              <DashboardWarmup />
-              <LastRouteTracker />
-              <BiometricUnlock>
-                <PaymentTestModeBanner />
-                <EmailVerificationBanner />
-                <InstallNudge />
-                <GlobalPaywall />
-                
-                <main id="main-content" className="pb-16 md:pb-0">
-                  <AnimatedRoutes />
-                </main>
-                <BottomTabBar />
-                <StudentMenuFab />
-                <NewStudyPackFAB />
-                <ReportProblemFab />
-                <MiniPlayerBar />
-                <RoleBadge />
-              </BiometricUnlock>
+                <OfflineAttemptSyncBanner />
+                <DeviceTracker />
+                <DashboardWarmup />
+                <LastRouteTracker />
+                <BiometricUnlock>
+                  <PaymentTestModeBanner />
+                  <EmailVerificationBanner />
+                  <InstallNudge />
+                  <GlobalPaywall />
+
+                  <main id="main-content" className="pb-16 md:pb-0">
+                    <AnimatedRoutes />
+                  </main>
+                  <BottomTabBar />
+                  <StudentMenuFab />
+                  <NewStudyPackFAB />
+                  <ReportProblemFab />
+                  <MiniPlayerBar />
+                  <RoleBadge />
+                </BiometricUnlock>
+              </AccountQueryCacheBoundary>
             </AuthProvider>
           </BrowserRouter>
         </TooltipProvider>

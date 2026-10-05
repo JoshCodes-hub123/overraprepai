@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUniversityScope } from "@/hooks/useUniversityScope";
+import useEnvironment from "@/hooks/useEnvironment";
 import { useRecentlyOpenedCourses } from "@/hooks/useRecentlyOpenedCourses";
 import { useCourseSearch } from "@/hooks/useCourseSearch";
 import DashboardNav from "@/components/layout/DashboardNav";
@@ -65,17 +66,21 @@ const HorizontalScroll = ({ children }: { children: React.ReactNode }) => (
 const Learn = () => {
   const { user } = useAuth();
   const { university, department, level } = useUniversityScope();
+  const { isUniversity } = useEnvironment();
   const [q, setQ] = useState("");
 
   // 1) Current semester: scoped by uni + dept + level
   const { data: current = [], isLoading: loadingCurrent } = useQuery({
     queryKey: ["learn-current", university, department, level],
-    enabled: !!user,
+    enabled: !!user && isUniversity && !!university,
     queryFn: async () => {
+      if (!university) return [];
       let query = supabase
         .from("courses")
         .select("id, code, name, department, level")
         .eq("is_active", true)
+        .eq("environment_type", "university")
+        .eq("university", university)
         .order("code", { ascending: true })
         .limit(20);
       if (department) query = query.eq("department", department);
@@ -110,12 +115,15 @@ const Learn = () => {
   // 3) Recommended: same dept different level OR same faculty
   const { data: recommended = [] } = useQuery({
     queryKey: ["learn-recommended", university, department],
-    enabled: !!user,
+    enabled: !!user && isUniversity && !!university,
     queryFn: async () => {
+      if (!university) return [];
       let query = supabase
         .from("courses")
         .select("id, code, name, department, level")
         .eq("is_active", true)
+        .eq("environment_type", "university")
+        .eq("university", university)
         .order("created_at", { ascending: false })
         .limit(8);
       if (department) query = query.eq("department", department);
@@ -153,7 +161,7 @@ const Learn = () => {
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder={`Search ${university} courses, topics, tutors…`}
+            placeholder={university ? `Search ${university} courses, topics, tutors…` : "University scope not set"}
             className="pl-9 h-11 bg-white border-amber-100 focus-visible:ring-amber-300"
           />
           {q.trim().length >= 2 && (

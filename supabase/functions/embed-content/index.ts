@@ -45,7 +45,18 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const items: Array<{ entity_type: string; entity_id: string; title: string; body?: string; url: string; owner_id?: string; is_public?: boolean }> = body.items ?? [];
+    const items: Array<{
+      entity_type: string;
+      entity_id: string;
+      title: string;
+      body?: string;
+      url: string;
+      owner_id?: string;
+      is_public?: boolean;
+      scope_environment?: 'university' | 'jamb' | null;
+      scope_university?: string | null;
+      is_global?: boolean;
+    }> = body.items ?? [];
     if (!Array.isArray(items) || items.length === 0) {
       return new Response(JSON.stringify({ error: 'items required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
@@ -62,6 +73,9 @@ Deno.serve(async (req) => {
           url: it.url,
           owner_id: it.owner_id ?? null,
           is_public: it.is_public ?? true,
+          scope_environment: it.scope_environment ?? null,
+          scope_university: it.scope_university ?? null,
+          is_global: it.is_global ?? false,
           embedding: emb as unknown as string,
           updated_at: new Date().toISOString(),
         }, { onConflict: 'entity_type,entity_id' });

@@ -21,6 +21,7 @@ import AuthBrandPanel from "@/components/auth/AuthBrandPanel";
 import { mapAuthError } from "@/lib/authErrors";
 import { prefetchStudentDashboard } from "@/lib/routePrefetch";
 import AuthPerfOverlay, { isPerfTestMode, isSimulatedLowEnd } from "@/components/auth/AuthPerfOverlay";
+import { INSTITUTION_LIST, type InstitutionCode } from "@/config/environments";
 
 const NIGERIAN_STATES = [
   "Abia","Adamawa","Akwa Ibom","Anambra","Bauchi","Bayelsa","Benue","Borno","Cross River","Delta",
@@ -38,7 +39,7 @@ const signUpSchema = z.object({
   fullName: z.string().trim().min(2, "Please enter your full name").max(80),
   email: z.string().trim().email("Please enter a valid email address").max(255),
   password: z.string().min(6, "Password must be at least 6 characters").max(72),
-  university: z.enum(["FUTA", "OAU"], { required_error: "Pick your university" }),
+  university: z.enum(["FUTA", "OAU", "UI", "FUTESIYIN"]).optional(),
   referralCode: z.string().optional(),
 });
 
@@ -218,7 +219,7 @@ const Auth = () => {
       fullName: "",
       email: "",
       password: "",
-      university: "FUTA",
+      university: undefined,
       referralCode: referralCodeFromUrl,
     },
   });
@@ -300,24 +301,31 @@ const Auth = () => {
   };
 
   // Persist the name + the environment the visitor picked before signing up.
-  const persistExtraSignupDetails = async (data: SignUpFormData) => {
+  const persistExtraSignupDetails = async (data: SignUpFormData): Promise<boolean> => {
     try {
       const { data: { user: newUser } } = await supabase.auth.getUser();
-      if (!newUser?.id) return;
+      if (!newUser?.id) return false;
       const env = pendingEnvironment();
       const envFields =
         env === "jamb"
           ? { environment_type: "jamb", academic_path: "jamb", university: null, faculty: null }
-          : { environment_type: "university", academic_path: "university", university: data.university };
-      await supabase
+          : {
+              environment_type: "university",
+              academic_path: "university",
+              university: data.university ?? null,
+            };
+      const { error } = await supabase
         .from("profiles")
         .update({
           ...envFields,
           full_name: data.fullName,
         } as any)
         .eq("id", newUser.id);
+      if (error) throw error;
+      return true;
     } catch (e) {
       console.warn("Could not persist signup details:", e);
+      return false;
     }
   };
 
@@ -343,7 +351,15 @@ const Auth = () => {
       sessionData = (await supabase.auth.getSession()).data;
     }
 
-    await persistExtraSignupDetails(data);
+    if (!(await persistExtraSignupDetails(data))) {
+      toast({
+        variant: "destructive",
+        title: "Couldn't save your study scope",
+        description: "Sign in and finish setting up your university before studying.",
+      });
+      setIsSubmitting(false);
+      return;
+    }
     toast({
       title: `Welcome, ${data.fullName.split(" ")[0]}! 🎉`,
       description: "Your account is ready. Let's start studying.",
@@ -370,7 +386,15 @@ const Auth = () => {
       return;
     }
     if (pendingSignUp) {
-      await persistExtraSignupDetails(pendingSignUp);
+      if (!(await persistExtraSignupDetails(pendingSignUp))) {
+        toast({
+          variant: "destructive",
+          title: "Couldn't save your study scope",
+          description: "Sign in and finish setting up your university before studying.",
+        });
+        setOtpSubmitting(false);
+        return;
+      }
     }
     toast({
       title: "You're in! 🎉",
@@ -732,8 +756,8 @@ const Auth = () => {
               <div className="space-y-2">
                 <Label className="text-foreground text-xs sm:text-sm font-medium">University</Label>
                 <Select
-                  value={universityValue}
-                  onValueChange={(v) => signUpForm.setValue("university", v as "FUTA" | "OAU", { shouldValidate: true })}
+                  value={universityValue ?? ""}
+                  onValueChange={(v) => signUpForm.setValue("university", v as InstitutionCode, { shouldValidate: true })}
                 >
                   <SelectTrigger className="h-10 sm:h-12 text-sm sm:text-base">
                     <div className="flex items-center gap-2">
@@ -742,8 +766,11 @@ const Auth = () => {
                     </div>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="FUTA">Federal University of Technology, Akure (FUTA)</SelectItem>
-                    <SelectItem value="OAU">Obafemi Awolowo University (OAU)</SelectItem>
+                    {INSTITUTION_LIST.map((institution) => (
+                      <SelectItem key={institution.code} value={institution.code}>
+                        {institution.name} ({institution.short})
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {signUpForm.formState.errors.university && (

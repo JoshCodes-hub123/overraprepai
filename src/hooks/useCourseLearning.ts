@@ -12,9 +12,10 @@ export interface CourseTopic {
 
 /** Topics for a course. RLS already scopes this to the student's environment. */
 export function useCourseTopics(courseId?: string) {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ["course-topics", courseId],
-    enabled: !!courseId,
+    queryKey: ["course-topics", user?.id, courseId],
+    enabled: !!user && !!courseId,
     staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -31,9 +32,10 @@ export function useCourseTopics(courseId?: string) {
 
 /** topic_id → number of approved practice questions. Real counts only. */
 export function useTopicQuestionCounts(courseId?: string) {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ["topic-question-counts", courseId],
-    enabled: !!courseId,
+    queryKey: ["topic-question-counts", user?.id, courseId],
+    enabled: !!user && !!courseId,
     staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await (supabase as any).rpc("course_topic_question_counts", {
@@ -168,9 +170,10 @@ export interface PracticeQuestion {
 
 /** Approved questions for one topic, shuffled client-side. */
 export function useTopicQuestions(topicId?: string, take = 20) {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ["topic-questions", topicId, take],
-    enabled: !!topicId,
+    queryKey: ["topic-questions", user?.id, topicId, take],
+    enabled: !!user && !!topicId,
     staleTime: 0,
     gcTime: 0,
     queryFn: async () => {

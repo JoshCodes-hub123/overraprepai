@@ -2027,6 +2027,7 @@ export type Database = {
           course_id: string
           created_at: string
           id: string
+          storage_path: string | null
           topic_id: string | null
           uploaded_by: string
           url: string
@@ -2036,6 +2037,7 @@ export type Database = {
           course_id: string
           created_at?: string
           id?: string
+          storage_path?: string | null
           topic_id?: string | null
           uploaded_by: string
           url: string
@@ -2045,6 +2047,7 @@ export type Database = {
           course_id?: string
           created_at?: string
           id?: string
+          storage_path?: string | null
           topic_id?: string | null
           uploaded_by?: string
           url?: string

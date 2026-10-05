@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import useEnvironment from "@/hooks/useEnvironment";
+import { useAuth } from "@/hooks/useAuth";
 
 /**
  * Student-facing view of the SAME `study_materials` rows admins and tutors
@@ -29,10 +30,12 @@ export interface StudyMaterial {
 
 /** Courses (JAMB: subjects) in the student's environment that have materials. */
 export function useMaterialCourses() {
+  const { user } = useAuth();
   const { environment, institution } = useEnvironment();
 
   return useQuery({
-    queryKey: ["material-courses", environment, institution],
+    queryKey: ["material-courses", user?.id, environment, institution],
+    enabled: !!user && (environment === "jamb" || !!institution),
     staleTime: 60_000,
     queryFn: async (): Promise<MaterialCourse[]> => {
       let q = (supabase as any)
@@ -73,9 +76,10 @@ export interface MaterialsByTopic {
 
 /** All materials for one course, grouped by their real topic. */
 export function useCourseMaterials(courseId?: string) {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ["course-materials", courseId],
-    enabled: !!courseId,
+    queryKey: ["course-materials", user?.id, courseId],
+    enabled: !!user && !!courseId,
     staleTime: 60_000,
     queryFn: async (): Promise<{ course: { code: string; name: string } | null; groups: MaterialsByTopic[] }> => {
       const [{ data: course }, { data: mats }, { data: topics }] = await Promise.all([

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Sparkles, FileText, Target } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { useCourseTopics, useTopicQuestionCounts, useTopicActivity } from "@/hooks/useCourseLearning";
 import { SEO } from "@/components/seo/SEO";
 import { Screen, ScreenHeader, Section, EmptyState, BrandSkeleton, BrandButton } from "@/components/ui-kit";
@@ -11,10 +12,11 @@ import { coachHref } from "@/lib/coachLink";
 /** One topic: what you'll learn, what you can practise, and where to get help. */
 const TopicDetail = () => {
   const { courseId = "", topicId = "" } = useParams();
+  const { user } = useAuth();
 
   const { data: course } = useQuery({
-    queryKey: ["course-workspace", courseId],
-    enabled: !!courseId,
+    queryKey: ["course-workspace", user?.id, courseId],
+    enabled: !!user && !!courseId,
     staleTime: 60_000,
     queryFn: async () => {
       const { data } = await supabase
@@ -37,8 +39,8 @@ const TopicDetail = () => {
     : null;
 
   const { data: materials = [] } = useQuery({
-    queryKey: ["topic-materials", topicId],
-    enabled: !!topicId,
+    queryKey: ["topic-materials", user?.id, topicId],
+    enabled: !!user && !!topicId,
     staleTime: 60_000,
     queryFn: async () => {
       const { data } = await supabase

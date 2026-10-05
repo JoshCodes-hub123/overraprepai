@@ -46,8 +46,8 @@ const CourseHub = () => {
   useTrackCourseOpen(courseId);
 
   const { data: course } = useQuery({
-    queryKey: ["course", courseId],
-    enabled: !!courseId,
+    queryKey: ["course", user?.id, courseId],
+    enabled: !!courseId && !!user,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("courses")
@@ -60,8 +60,8 @@ const CourseHub = () => {
   });
 
   const { data: documents = [] } = useQuery({
-    queryKey: ["course-docs", courseId, topicFilter],
-    enabled: !!courseId,
+    queryKey: ["course-docs", user?.id, courseId, topicFilter],
+    enabled: !!courseId && !!user,
     queryFn: async () => {
       let q = supabase
         .from("lecture_notes")
@@ -76,8 +76,8 @@ const CourseHub = () => {
   });
 
   const { data: quizzes = [] } = useQuery({
-    queryKey: ["course-quizzes", courseId, topicFilter],
-    enabled: !!courseId,
+    queryKey: ["course-quizzes", user?.id, courseId, topicFilter],
+    enabled: !!courseId && !!user,
     queryFn: async () => {
       let q = supabase
         .from("quizzes")
@@ -113,8 +113,8 @@ const CourseHub = () => {
   });
 
   const { data: flashDecks = [] } = useQuery({
-    queryKey: ["course-flashcards", courseId, topicFilter],
-    enabled: !!courseId,
+    queryKey: ["course-flashcards", user?.id, courseId, topicFilter],
+    enabled: !!courseId && !!user,
     queryFn: async () => {
       let q = supabase
         .from("flashcards")
@@ -129,15 +129,32 @@ const CourseHub = () => {
   });
 
   const { data: images = [] } = useQuery({
-    queryKey: ["course-images", courseId],
-    enabled: !!courseId,
+    queryKey: ["course-images", user?.id, courseId],
+    enabled: !!courseId && !!user,
     queryFn: async () => {
       const { data } = await supabase
         .from("course_images")
-        .select("id, url, caption, created_at")
+        .select("id, storage_path, url, caption, created_at")
         .eq("course_id", courseId)
         .order("created_at", { ascending: false });
-      return data ?? [];
+      return Promise.all((data ?? []).map(async (image) => {
+        const marker = "/storage/v1/object/public/course-images/";
+        const markerIndex = image.url.indexOf(marker);
+        let path = image.storage_path;
+        if (!path && markerIndex >= 0) {
+          try {
+            path = decodeURIComponent(image.url.slice(markerIndex + marker.length).split("?")[0]);
+          } catch {
+            return image;
+          }
+        }
+        if (!path) return image;
+        const { data: signed, error } = await supabase.storage
+          .from("course-images")
+          .createSignedUrl(path, 60 * 60);
+        if (error) throw error;
+        return { ...image, url: signed.signedUrl };
+      }));
     },
   });
 

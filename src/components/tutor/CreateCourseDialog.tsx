@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import useEnvironment from "@/hooks/useEnvironment";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +30,7 @@ export function CreateCourseDialog({
   onSuccess,
 }: CreateCourseDialogProps) {
   const { user } = useAuth();
+  const { environment, institution, isConfigured } = useEnvironment();
   const [isLoading, setIsLoading] = useState(false);
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
@@ -54,6 +56,10 @@ export function CreateCourseDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    if (!isConfigured || (environment === "university" && !institution)) {
+      toast.error("Set a supported university in your profile before creating a course");
+      return;
+    }
 
     if (!code.trim() || !name.trim()) {
       toast.error("Course code and name are required");
@@ -73,6 +79,10 @@ export function CreateCourseDialog({
           description: description.trim() || null,
           level: levelToDb(level),
           created_by: user.id,
+          environment_type: environment,
+          path_type: environment,
+          university: institution,
+          university_code: institution,
         })
         .select()
         .single();

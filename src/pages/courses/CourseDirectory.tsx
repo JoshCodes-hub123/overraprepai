@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useStudentScope } from "@/hooks/useStudentScope";
+import useEnvironment from "@/hooks/useEnvironment";
 import { useMyCourses } from "@/hooks/useMyCourses";
 import { toast } from "sonner";
 import { GraduationCap, Search, Plus, Sparkles, BookOpen } from "lucide-react";
@@ -25,6 +26,7 @@ const LEVEL_ORDER = ["100", "200", "300", "400", "500", "JAMB", "Secondary", "Ot
 
 const CourseDirectory = () => {
   const { user, primaryRole } = useAuth();
+  const { isUniversity, institution } = useEnvironment();
   const { level: studentLevel } = useStudentScope();
   const { courseIds, refresh } = useMyCourses();
   const qc = useQueryClient();
@@ -37,14 +39,22 @@ const CourseDirectory = () => {
     "admin" | "tutor" | "student";
 
   const { data: courses = [], isLoading } = useQuery({
-    queryKey: ["course-directory"],
+    queryKey: ["course-directory", user?.id, navRole, institution],
+    enabled: !!user && (navRole !== "student" || (isUniversity && !!institution)),
     queryFn: async () => {
-      const { data, error } = await supabase
+      if (navRole === "student" && (!isUniversity || !institution)) return [];
+      let query = supabase
         .from("courses")
         .select("id, code, name, department, level")
         .eq("is_active", true)
         .order("code", { ascending: true })
         .limit(1000);
+      if (navRole === "student") {
+        query = query
+          .eq("environment_type", "university")
+          .eq("university", institution);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return (data ?? []) as CourseRow[];
     },

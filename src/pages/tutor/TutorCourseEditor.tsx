@@ -324,13 +324,17 @@ const ImagesUploader = ({ courseId, userId }: { courseId: string; userId?: strin
     if (upErr) { toast.error(upErr.message); setBusy(false); return; }
     const { data: pub } = supabase.storage.from("course-images").getPublicUrl(path);
     const { error } = await supabase.from("course_images").insert({
-      course_id: courseId, uploaded_by: userId, url: pub.publicUrl, caption: caption.trim() || null,
+      course_id: courseId,
+      uploaded_by: userId,
+      storage_path: path,
+      url: pub.publicUrl,
+      caption: caption.trim() || null,
     });
     setBusy(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Image uploaded");
     setFile(null); setCaption("");
-    qc.invalidateQueries({ queryKey: ["course-images", courseId] });
+    qc.invalidateQueries({ queryKey: ["course-images", userId, courseId] });
   };
 
   return (
