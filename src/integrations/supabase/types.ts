@@ -2191,13 +2191,13 @@ export type Database = {
           created_by?: string | null
           department?: string | null
           description?: string | null
-          environment_type?: Database["public"]["Enums"]["learning_environment"]
+          environment_type: Database["public"]["Enums"]["learning_environment"]
           faculty?: string | null
           id?: string
           is_active?: boolean
           level?: string | null
           name: string
-          path_type?: Database["public"]["Enums"]["academic_path"]
+          path_type: Database["public"]["Enums"]["academic_path"]
           university?: string | null
           university_code?: string | null
           updated_at?: string
@@ -5491,8 +5491,13 @@ export type Database = {
           entity_id: string
           entity_type: string
           id: string
+          is_global: boolean
           is_public: boolean
           owner_id: string | null
+          scope_environment:
+            | Database["public"]["Enums"]["learning_environment"]
+            | null
+          scope_university: string | null
           title: string
           updated_at: string
           url: string
@@ -5504,8 +5509,13 @@ export type Database = {
           entity_id: string
           entity_type: string
           id?: string
+          is_global?: boolean
           is_public?: boolean
           owner_id?: string | null
+          scope_environment?:
+            | Database["public"]["Enums"]["learning_environment"]
+            | null
+          scope_university?: string | null
           title: string
           updated_at?: string
           url: string
@@ -5517,8 +5527,13 @@ export type Database = {
           entity_id?: string
           entity_type?: string
           id?: string
+          is_global?: boolean
           is_public?: boolean
           owner_id?: string | null
+          scope_environment?:
+            | Database["public"]["Enums"]["learning_environment"]
+            | null
+          scope_university?: string | null
           title?: string
           updated_at?: string
           url?: string
@@ -8351,8 +8366,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      can_access_course: { Args: { _course_id: string }; Returns: boolean }
-      can_access_subject: { Args: { _subject_id: string }; Returns: boolean }
       cancel_session_booking: {
         Args: { _booking_id: string }
         Returns: undefined
@@ -8367,11 +8380,23 @@ export type Database = {
       }
       complete_session: { Args: { _booking_id: string }; Returns: undefined }
       consume_ai_token: { Args: { _kind: string }; Returns: Json }
+      course_image_storage_path_from_url: {
+        Args: { _url: string }
+        Returns: string
+      }
       course_in_my_university: {
         Args: { _course_id: string }
         Returns: boolean
       }
       course_owner: { Args: { _course_id: string }; Returns: boolean }
+      course_scope_is_valid: {
+        Args: {
+          _environment_type: Database["public"]["Enums"]["learning_environment"]
+          _path_type: Database["public"]["Enums"]["academic_path"]
+          _university: string
+        }
+        Returns: boolean
+      }
       course_topic_question_counts: {
         Args: { _course_id: string }
         Returns: {
