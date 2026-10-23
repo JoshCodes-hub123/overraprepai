@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { AdminPersistentHeader } from '@/components/admin/AdminPersistentHeader';
+import { ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function AdminWithdrawals() {
   const { user } = useAuth();
@@ -52,9 +55,16 @@ export default function AdminWithdrawals() {
   });
 
   return (
-    <div className="container mx-auto p-4 max-w-3xl space-y-4">
-      <h1 className="text-2xl font-bold">Withdrawals &amp; refunds</h1>
-      <div className="flex gap-1.5">
+    <div className="min-h-screen bg-background pb-20">
+      <AdminPersistentHeader showNavStrip={true} />
+      <div className="container mx-auto p-4 max-w-3xl space-y-4">
+        <div className="flex items-center gap-2">
+          <Link to="/admin" className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground">
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+          <h1 className="text-2xl font-bold">Withdrawals &amp; refunds</h1>
+        </div>
+        <div className="flex gap-1.5">
         {(['withdrawals','refunds'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={`text-[12px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-md border ${
@@ -83,20 +93,21 @@ export default function AdminWithdrawals() {
       ))}
       {(data ?? []).length === 0 && <Card><CardContent className="p-6 text-center text-muted-foreground">No withdrawals yet.</CardContent></Card>}
       </>}
-      {tab === 'refunds' && <>
-        {refunds.length === 0 && <Card><CardContent className="p-6 text-center text-muted-foreground">No refunds recorded.</CardContent></Card>}
-        {refunds.map((r: any) => (
-          <Card key={r.id}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">{r.paddle_transaction_id ?? r.id.slice(0,8)}</CardTitle>
-                <Badge variant="destructive">{((r.amount_cents ?? 0) / 100).toFixed(2)} {r.currency ?? ''}</Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">{r.reason ?? 'No reason'} • {new Date(r.created_at).toLocaleString()}</p>
-            </CardHeader>
-          </Card>
-        ))}
-      </>}
+        {tab === 'refunds' && <>
+          {refunds.length === 0 && <Card><CardContent className="p-6 text-center text-muted-foreground">No refunds recorded.</CardContent></Card>}
+          {refunds.map((r: any) => (
+            <Card key={r.id}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">{r.paddle_transaction_id ?? r.id.slice(0,8)}</CardTitle>
+                  <Badge variant="destructive">{((r.amount_cents ?? 0) / 100).toFixed(2)} {r.currency ?? ''}</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">{r.reason ?? 'No reason'} • {new Date(r.created_at).toLocaleString()}</p>
+              </CardHeader>
+            </Card>
+          ))}
+        </>}
+      </div>
     </div>
   );
 }

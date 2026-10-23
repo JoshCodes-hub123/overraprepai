@@ -31,15 +31,32 @@ export function useTokenBalance() {
 
   useEffect(() => {
     if (!user?.id) return;
-    const ch = (supabase as any)
-      .channel(`wallet-${user.id}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
-        () => qc.invalidateQueries({ queryKey: ["token-balance", user.id] }),
-      )
-      .subscribe();
-    return () => { try { (supabase as any).removeChannel(ch); } catch { /* noop */ } };
+
+    // Use a unique channel instance ID to avoid collision when multiple components mount concurrently
+    const channelName = `wallet-${user.id}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    let ch: any = null;
+    try {
+      ch = (supabase as any)
+        .channel(channelName)
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` },
+          () => qc.invalidateQueries({ queryKey: ["token-balance", user.id] }),
+        )
+        .subscribe();
+    } catch (err) {
+      console.warn("Could not setup realtime token balance listener:", err);
+    }
+
+    return () => {
+      if (ch) {
+        try {
+          (supabase as any).removeChannel(ch);
+        } catch {
+          /* noop */
+        }
+      }
+    };
   }, [user?.id, qc]);
 
   const balance = query.data?.ai_token_balance ?? 0;

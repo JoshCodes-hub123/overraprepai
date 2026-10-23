@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { MathMarkdown } from "@/components/quiz/MathMarkdown";
 
 interface Props {
   attemptId: string;
@@ -214,9 +215,9 @@ export const QuizReviewList = ({ attemptId, quizId }: Props) => {
                   {idx + 1}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm sm:text-[15px] font-medium text-foreground line-clamp-2">
-                    {row.question.question_text}
-                  </p>
+                  <div className="text-sm sm:text-[15px] font-medium text-foreground line-clamp-2">
+                    <MathMarkdown content={row.question.question_text} />
+                  </div>
                   <div className="mt-1 flex items-center gap-2 text-[11px]">
                     {status === "correct" && (
                       <span className="inline-flex items-center gap-1 text-success font-semibold">
@@ -273,7 +274,9 @@ export const QuizReviewList = ({ attemptId, quizId }: Props) => {
                         >
                           {k}
                         </span>
-                        <span className="flex-1 text-foreground">{text}</span>
+                        <div className="flex-1 text-foreground">
+                          <MathMarkdown content={text} />
+                        </div>
                         {isCorrect && <CheckCircle2 className="w-4 h-4 text-success shrink-0 mt-0.5" />}
                         {!isCorrect && isPicked && <XCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />}
                       </div>
@@ -281,9 +284,9 @@ export const QuizReviewList = ({ attemptId, quizId }: Props) => {
                   })}
 
                   {row.question.explanation && (
-                    <div className="p-3 rounded-lg bg-muted/40 text-xs text-muted-foreground">
+                    <div className="p-3 rounded-lg bg-muted/40 text-xs text-muted-foreground leading-relaxed">
                       <span className="font-semibold text-foreground">Explanation: </span>
-                      {row.question.explanation}
+                      <MathMarkdown content={row.question.explanation} />
                     </div>
                   )}
 
@@ -291,11 +294,11 @@ export const QuizReviewList = ({ attemptId, quizId }: Props) => {
                     <div className="p-3 rounded-lg border border-amber-300/40 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/10">
                       <div className="flex items-center gap-2 mb-1.5">
                         <Lightbulb className="w-4 h-4 text-amber-600" />
-                        <span className="text-xs font-bold text-amber-800 dark:text-amber-300">AI Explanation</span>
+                        <span className="text-xs font-bold text-amber-800 dark:text-amber-300">AI Step-by-Step Breakdown</span>
                       </div>
-                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                        {aiByQuestion[row.question_id]}
-                      </p>
+                      <div className="text-sm text-foreground leading-relaxed">
+                        <MathMarkdown content={aiByQuestion[row.question_id]} />
+                      </div>
                     </div>
                   ) : (
                     <Button

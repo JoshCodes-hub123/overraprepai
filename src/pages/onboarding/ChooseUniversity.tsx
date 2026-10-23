@@ -160,7 +160,7 @@ export default function ChooseUniversity() {
                   <Plus className="w-5 h-5 text-amber-700" />
                 </span>
                 <div className="flex-1">
-                  <p className="font-semibold text-sm">My school isn't listed</p>
+                  <p className="font-semibold text-sm">My university isn't listed</p>
                   <p className="text-xs text-muted-foreground">Tell us about it — we'll add it within 24 hours. You can keep using the app in the meantime.</p>
                 </div>
               </button>
@@ -194,7 +194,7 @@ function RequestUniversitySheet({
   const submit = async () => {
     if (!user) return;
     const trimmed = name.trim();
-    if (trimmed.length < 4) { toast.error("Please enter your school's full name"); return; }
+    if (trimmed.length < 4) { toast.error("Please enter your university's full name"); return; }
     setBusy(true);
     try {
       // Save the request
@@ -207,14 +207,12 @@ function RequestUniversitySheet({
       if (reqErr) throw reqErr;
 
       // Mark profile as pending verification so the user can still use the app.
-      // We stash the requested school name on profiles.university so downstream
-      // screens (dashboard, faculty picker) have a label to show.
       await supabase.from("profiles").update({
         university: trimmed.slice(0, 64),
         is_pending_verification: true,
       } as any).eq("id", user.id);
 
-      toast.success("Got it! We'll add your school within 24h.", {
+      toast.success("Got it! We'll add your university within 24h.", {
         description: "You can keep onboarding and using the app right now.",
       });
       onSubmitted();
@@ -247,7 +245,7 @@ function RequestUniversitySheet({
               <div className="mx-auto h-14 w-14 rounded-2xl bg-amber-100 flex items-center justify-center">
                 <Building2 className="h-7 w-7 text-amber-700" />
               </div>
-              <h2 className="mt-4 font-display text-xl font-extrabold text-center">Tell us about your school</h2>
+              <h2 className="mt-4 font-display text-xl font-extrabold text-center">Tell us about your university</h2>
               <p className="mt-1 text-sm text-muted-foreground text-center">We'll add it to OverraPrep, usually within 24 hours.</p>
 
               <div className="mt-5 space-y-3">

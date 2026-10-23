@@ -1,14 +1,11 @@
 /**
- * OverraPrep AI runs two completely isolated academic environments:
+ * OverraPrep AI is dedicated exclusively to higher education / university students:
+ *   FUTA · OAU · UI · FUTEsIyin · UNILAG · etc.
  *
- *   1. UNIVERSITY  → FUTA · OAU · UI · FUTEsIyin (each its own content island)
- *   2. JAMB / UTME → its own preparation platform, never mixed with university content
- *
- * The boundary is enforced in the database (profiles.environment_type +
- * courses.environment_type + RLS). These constants keep the UI in sync.
+ * Each campus has its own scoped course outlines, past questions, and departmental curricula.
  */
 
-export type EnvironmentType = "university" | "jamb";
+export type EnvironmentType = "university";
 
 export type InstitutionCode = "FUTA" | "OAU" | "UI" | "FUTESIYIN";
 
@@ -53,27 +50,25 @@ export const INSTITUTION_CODES = INSTITUTION_LIST.map((i) => i.code);
 export const isInstitutionCode = (code?: string | null): code is InstitutionCode =>
   !!code && (INSTITUTION_CODES as string[]).includes(code);
 
-/** Human label for whichever environment is active. */
+/** Human label for university campus. */
 export const environmentLabel = (
-  env: EnvironmentType,
+  env: string,
   institution?: string | null
 ): string => {
-  if (env === "jamb") return "JAMB / UTME";
   return isInstitutionCode(institution) ? INSTITUTIONS[institution].short : "University";
 };
 
 /** Full name used in headers and admin indicators. */
 export const environmentFullName = (
-  env: EnvironmentType,
+  env: string,
   institution?: string | null
 ): string => {
-  if (env === "jamb") return "JAMB / UTME Preparation";
   return isInstitutionCode(institution)
     ? INSTITUTIONS[institution].name
     : "University";
 };
 
-/** Admin environment switcher options — the four universities plus JAMB. */
+/** Admin environment switcher options — scoped to university institutions. */
 export interface AdminEnvironmentOption {
   id: string;
   env: EnvironmentType;
@@ -88,5 +83,4 @@ export const ADMIN_ENVIRONMENTS: AdminEnvironmentOption[] = [
     institution: i.code,
     label: i.short,
   })),
-  { id: "JAMB", env: "jamb", institution: null, label: "JAMB / UTME" },
 ];

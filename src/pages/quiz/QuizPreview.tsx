@@ -146,9 +146,15 @@ const QuizPreview = () => {
 
     if (!user) {
       toast.error("Please sign in to take this quiz");
-      navigate("/auth", { state: { returnTo: `/quiz/${quizId}` } });
+      try {
+        sessionStorage.setItem("overra_intended_deep_link", `/quiz/${quizId}`);
+      } catch {}
+      navigate(`/auth?redirect=${encodeURIComponent(`/quiz/${quizId}`)}`, {
+        state: { returnTo: `/quiz/${quizId}` },
+      });
       return;
     }
+
 
     const reqLvl = quiz.level || quiz.course?.level || null;
     const locked = !!studentLevel && !!reqLvl && reqLvl !== studentLevel;

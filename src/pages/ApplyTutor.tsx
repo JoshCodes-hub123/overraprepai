@@ -27,7 +27,7 @@ interface FormState {
   phone: string;
   department: string;
   level: string;
-  specialization: "secondary" | "jamb" | "university" | "";
+  specialization: "university" | "";
   // Step 2 - Academic
   highestQualification: string;
   institution: string;
@@ -342,19 +342,19 @@ const ApplyTutor = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Specialization *</Label>
-                      <div className="grid grid-cols-3 gap-2">
+                      <Label>Tutoring Level Focus *</Label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         {([
-                          { v: "secondary", label: "Secondary", sub: "WAEC / NECO" },
-                          { v: "jamb", label: "JAMB", sub: "UTME prep" },
-                          { v: "university", label: "University", sub: "100–500 lvl" },
-                        ] as const).map((opt) => {
+                          { v: "university", label: "Foundational", sub: "100L – 200L Courses" },
+                          { v: "university", label: "Departmental", sub: "300L – 500L Cores" },
+                          { v: "university", label: "General & Faculty", sub: "GST, Math & Sciences" },
+                        ] as const).map((opt, i) => {
                           const active = form.specialization === opt.v;
                           return (
                             <button
-                              key={opt.v}
+                              key={i}
                               type="button"
-                              onClick={() => update("specialization", opt.v)}
+                              onClick={() => update("specialization", "university")}
                               className={`rounded-xl border p-3 text-left transition-all ${active ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"}`}
                             >
                               <div className="font-medium text-sm">{opt.label}</div>

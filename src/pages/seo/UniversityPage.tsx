@@ -29,8 +29,7 @@ export default function UniversityPage() {
 
   const faqs = [
     { q: `What does OverraPrep AI offer for ${short} students?`, a: `Course-by-course AI tutors, past questions, flashcards, audio summaries, mock CBTs and live tutor sessions — all mapped to the ${short} curriculum.` },
-    { q: `Are the tutors really from ${short}?`, a: "Yes — verified students and scholars currently studying at the university." },
-    { q: "Do you cover Post-UTME prep too?", a: `Yes — visit the ${short} Post-UTME page for screening practice.` },
+    { q: `Can I practice with ${short} past questions?`, a: `Yes — all major departmental course codes from 100L upwards are covered with CBT past questions and step-by-step solutions.` },
   ];
 
   const jsonLd = [
@@ -57,11 +56,11 @@ export default function UniversityPage() {
       ]}
       faqs={faqs}
       related={[
-        { label: `${short} Post-UTME`, href: `/post-utme/${key}` },
-        { label: "JAMB Hub", href: "/jamb" },
-        { label: "Courses", href: "/courses" },
+        { label: `${short} Courses`, href: "/courses" },
         { label: "Mock Exams", href: "/mock-exams" },
         { label: "AI Quiz Generator", href: "/ai/quiz-generator" },
+        { label: "Flashcards", href: "/flashcards" },
+        { label: "Study Hub", href: "/study" },
       ]}
     />
   );

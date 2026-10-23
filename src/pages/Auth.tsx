@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,7 +21,8 @@ import AuthBrandPanel from "@/components/auth/AuthBrandPanel";
 import { mapAuthError } from "@/lib/authErrors";
 import { prefetchStudentDashboard } from "@/lib/routePrefetch";
 import AuthPerfOverlay, { isPerfTestMode, isSimulatedLowEnd } from "@/components/auth/AuthPerfOverlay";
-import { INSTITUTION_LIST, type InstitutionCode } from "@/config/environments";
+import { INSTITUTION_LIST, type InstitutionCode, type EnvironmentType } from "@/config/environments";
+import { isPathInEnvironment, getValidResumeRoute } from "@/lib/environmentScope";
 
 const NIGERIAN_STATES = [
   "Abia","Adamawa","Akwa Ibom","Anambra","Bauchi","Bayelsa","Benue","Borno","Cross River","Delta",
@@ -55,6 +56,7 @@ const INTENT_LABELS: Record<string, string> = {
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const referralCodeFromUrl = searchParams.get("ref") || "";
   const modeFromUrl = searchParams.get("mode");
   const intent = searchParams.get("intent") || "";
@@ -142,49 +144,50 @@ const Auth = () => {
     reader.readAsDataURL(file);
   };
 
-  /** Environment the visitor picked on "What are you preparing for?" (pre-signup). */
-  const pendingEnvironment = (): "jamb" | "university" | null => {
-    try {
-      const v = sessionStorage.getItem("pending_environment");
-      return v === "jamb" || v === "university" ? v : null;
-    } catch { return null; }
-  };
+  /** Academic environment is strictly university. */
+  const pendingEnvironment = (): EnvironmentType => "university";
 
-  /** Dashboard that matches the profile's saved environment. Never crosses over. */
+  /** Dashboard that matches the profile's environment. */
   const environmentHome = () => {
-    const env = (profile as any)?.environment_type ?? (profile as any)?.academic_path;
-    return env === "jamb" ? "/jamb/dashboard" : "/student/dashboard";
+    return "/student/dashboard";
   };
 
   const postAuthDestination = (justSignedUp = false) => {
-    if (redirect) return redirect;
     if (intent === "tutor") return "/apply-tutor";
-    if (intent === "school_owner") return "/school/register";
-    if (intent === "parent") return "/parent/dashboard";
-    // Brand new student: continue the onboarding for the environment they chose.
+    // Brand new student: continue university onboarding
     if (justSignedUp) {
-      const env = pendingEnvironment();
-      if (env === "jamb") return "/onboarding/jamb";
-      if (env === "university") return "/onboarding/university";
-      return "/start";
+      return "/onboarding/university";
     }
     if (primaryRole === "admin") return "/admin/dashboard";
     if (primaryRole === "tutor") return "/tutor/dashboard";
-    if (primaryRole === "school_owner" || primaryRole === "school_admin" || primaryRole === "teacher") return "/school/dashboard";
-    if (primaryRole === "parent") return "/parent/dashboard";
+    const env: EnvironmentType = "university";
 
-    const home = environmentHome();
-    const prefix = home === "/jamb/dashboard" ? "/jamb" : "/student";
-    // Resume where the user left off — only inside their own environment.
-    try {
-      const uid = user?.id;
-      if (uid) {
-        const saved = localStorage.getItem(`overra_last_route:${uid}`);
-        if (saved && saved.startsWith(prefix)) return saved;
+    // Check query redirect, location state returnTo, or session-stored intended deep link
+    let target = redirect || (location.state as any)?.returnTo || "";
+    if (!target) {
+      try {
+        target = sessionStorage.getItem("overra_intended_deep_link") || "";
+      } catch {
+        /* noop */
       }
-    } catch { /* noop */ }
-    return home;
+    }
+
+    if (target) {
+      try {
+        sessionStorage.removeItem("overra_intended_deep_link");
+      } catch {
+        /* noop */
+      }
+      // Resume after auth IF the content is in range for the student's academic environment
+      if (isPathInEnvironment(target, env)) {
+        return target;
+      }
+    }
+
+    // Returning users: resume valid saved route or land on environment home
+    return getValidResumeRoute(user?.id, env);
   };
+
 
 
   useEffect(() => {
@@ -305,15 +308,11 @@ const Auth = () => {
     try {
       const { data: { user: newUser } } = await supabase.auth.getUser();
       if (!newUser?.id) return false;
-      const env = pendingEnvironment();
-      const envFields =
-        env === "jamb"
-          ? { environment_type: "jamb", academic_path: "jamb", university: null, faculty: null }
-          : {
-              environment_type: "university",
-              academic_path: "university",
-              university: data.university ?? null,
-            };
+      const envFields = {
+        environment_type: "university",
+        academic_path: "university",
+        university: data.university ?? null,
+      };
       const { error } = await supabase
         .from("profiles")
         .update({
@@ -442,7 +441,6 @@ const Auth = () => {
             className="absolute inset-0 w-full h-full object-cover opacity-30"
             loading="eager"
             decoding="async"
-            fetchPriority="high"
           />
           {enableBgVideo && (
             <video

@@ -80,6 +80,8 @@ interface BulkQuizImportProps {
   onSuccess: () => void;
   /** When true, fetch ALL courses (admin scope) instead of only those created by the current user. */
   adminScope?: boolean;
+  targetEnvironment?: "university" | "jamb";
+  targetUniversity?: string | null;
 }
 
 interface ProcessingStatus {
@@ -165,7 +167,14 @@ function ColumnMappingSummary({ detected }: { detected: string[] }) {
 
 
 
-export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = false }: BulkQuizImportProps) {
+export function BulkQuizImport({
+  open,
+  onOpenChange,
+  onSuccess,
+  adminScope = false,
+  targetEnvironment,
+  targetUniversity,
+}: BulkQuizImportProps) {
   const { user } = useAuth();
   const [importedQuizzes, setImportedQuizzes] = useState<ImportedQuiz[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
@@ -183,16 +192,21 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
   const [detectedColumns, setDetectedColumns] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch existing courses on mount
-  useState(() => {
+  // Fetch existing courses on mount or scope change
+  useEffect(() => {
     const fetchCourses = async () => {
       if (!user) return;
-      const query = supabase.from("courses").select("id, code, name");
+      let query = supabase.from("courses").select("id, code, name");
+      if (targetEnvironment === "university" && targetUniversity) {
+        query = query.eq("university", targetUniversity);
+      } else if (targetEnvironment) {
+        query = query.eq("environment_type", targetEnvironment);
+      }
       const { data } = adminScope ? await query : await query.eq("created_by", user.id);
       if (data) setExistingCourses(data);
     };
     fetchCourses();
-  });
+  }, [user, adminScope, targetEnvironment, targetUniversity]);
 
   const isQuizValid = (q: ImportedQuiz): boolean => {
     return !!(
@@ -852,15 +866,25 @@ export function BulkQuizImport({ open, onOpenChange, onSuccess, adminScope = fal
           if (existingCourse) {
             courseId = existingCourse.id;
           } else {
-            // Create new course
+            // Create new course inheriting the active academic environment
+            const coursePayload: Record<string, any> = {
+              code: quiz.course_code,
+              name: quiz.course_name,
+              created_by: user.id,
+              level: levelToDb(defaultLevel),
+            };
+            if (targetEnvironment) {
+              coursePayload.environment_type = targetEnvironment;
+              coursePayload.path_type = targetEnvironment;
+            }
+            if (targetUniversity) {
+              coursePayload.university = targetUniversity;
+              coursePayload.university_code = targetUniversity;
+            }
+
             const { data: newCourse, error: courseError } = await supabase
               .from("courses")
-              .insert({
-                code: quiz.course_code,
-                name: quiz.course_name,
-                created_by: user.id,
-                level: levelToDb(defaultLevel),
-              })
+              .insert(coursePayload as any)
               .select("id")
               .single();
 

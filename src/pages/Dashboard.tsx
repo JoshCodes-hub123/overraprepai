@@ -8,10 +8,6 @@ const ROLE_HOME: Record<string, string> = {
   student: "/student/dashboard",
   tutor: "/tutor/dashboard",
   admin: "/admin/dashboard",
-  school_owner: "/school/dashboard",
-  school_admin: "/school/dashboard",
-  teacher: "/school/dashboard",
-  parent: "/parent/dashboard",
 };
 
 /**
@@ -28,15 +24,8 @@ const Dashboard = () => {
       navigate("/auth", { replace: true });
       return;
     }
-    // Wait until the role actually resolves — otherwise admins/tutors get
-    // bounced to /student/dashboard before their role loads.
+    // Wait until the role actually resolves
     if (!primaryRole) return;
-    // JAMB students live in a completely separate environment.
-    const env = (profile as any)?.environment_type ?? (profile as any)?.academic_path;
-    if (primaryRole === "student" && env === "jamb") {
-      navigate("/jamb/dashboard", { replace: true });
-      return;
-    }
     navigate(ROLE_HOME[primaryRole] || "/student/dashboard", { replace: true });
   }, [user, profile, primaryRole, isLoading, navigate]);
 

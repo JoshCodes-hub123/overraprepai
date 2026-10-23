@@ -14,8 +14,6 @@ import AnimatedRoutes from "@/components/layout/AnimatedRoutes";
 import BiometricUnlock from "@/components/native/BiometricUnlock";
 import OfflineBanner from "@/components/native/OfflineBanner";
 import BottomTabBar from "@/components/app-shell/BottomTabBar";
-import NewStudyPackFAB from "@/components/student/NewStudyPackFAB";
-import StudentMenuFab from "@/components/student/StudentMenuFab";
 import MiniPlayerBar from "@/components/audio/MiniPlayerBar";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import EmailVerificationBanner from "@/components/auth/EmailVerificationBanner";
@@ -72,6 +70,14 @@ function AccountQueryCacheBoundary({ children }: { children: ReactNode }) {
   const activeSession = useRef<string | null>(null);
   const activeScope = useRef<string | null>(null);
   const pendingRestore = useRef<Promise<void>>(Promise.resolve());
+
+  useEffect(() => {
+    const handlePurge = () => {
+      client.clear();
+    };
+    window.addEventListener("overra:session_purged", handlePurge);
+    return () => window.removeEventListener("overra:session_purged", handlePurge);
+  }, [client]);
 
   useEffect(() => {
     if (!sessionIdentity) return;
@@ -247,8 +253,6 @@ const App = () => {
                     <AnimatedRoutes />
                   </main>
                   <BottomTabBar />
-                  <StudentMenuFab />
-                  <NewStudyPackFAB />
                   <ReportProblemFab />
                   <MiniPlayerBar />
                   <RoleBadge />

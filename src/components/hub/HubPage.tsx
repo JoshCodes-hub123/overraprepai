@@ -75,7 +75,7 @@ export const HubPage = ({ eyebrow, title, intro, sections, seoTitle, seoDescript
                         key={tile.to + tile.label}
                         to={tile.to}
                         className={cn(
-                          "group relative flex items-center gap-3 rounded-2xl border bg-card p-3.5 transition-all",
+                          "group relative flex items-center gap-3 rounded-2xl border bg-card p-3.5 transition-all min-h-[58px] active:scale-[0.98] select-none",
                           "hover:border-amber-300/70 hover:shadow-[0_8px_24px_-12px_rgba(180,140,40,0.28)] hover:-translate-y-0.5",
                           tile.accent
                             ? "border-amber-200/80 bg-gradient-to-br from-amber-50/80 to-white"

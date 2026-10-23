@@ -1,16 +1,18 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, GraduationCap, ChevronRight } from "lucide-react";
+import { Menu, X, GraduationCap, ChevronRight, Smartphone } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import TutorApplicationDialog from "@/components/landing/TutorApplicationDialog";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { InstallAppModal } from "@/components/pwa/InstallAppModal";
 import logo from "@/assets/logo.png";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showTutorDialog, setShowTutorDialog] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -100,13 +102,23 @@ const Navbar = () => {
             </div>
 
             {/* Desktop CTA */}
-            <div className="hidden lg:flex items-center gap-3">
+            <div className="hidden lg:flex items-center gap-2.5">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowInstallModal(true)}
+                className="gap-1.5 text-xs font-semibold rounded-full border-primary/40 text-foreground hover:bg-primary/10 shadow-xs"
+              >
+                <Smartphone className="w-3.5 h-3.5 text-primary" />
+                Install App
+              </Button>
+
               {showTutorButton && (
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   onClick={() => setShowTutorDialog(true)}
-                  className="gap-1.5 text-muted-foreground hover:text-foreground"
+                  className="gap-1.5 text-muted-foreground hover:text-foreground text-xs"
                 >
                   <GraduationCap className="w-4 h-4" />
                   Become a Tutor
@@ -120,10 +132,10 @@ const Navbar = () => {
                       variant="hero" 
                       size="sm" 
                       onClick={() => navigate("/dashboard")}
-                      className="shadow-md shadow-primary/20"
+                      className="shadow-md shadow-primary/20 text-xs font-semibold"
                     >
                       Dashboard
-                      <ChevronRight className="w-4 h-4 ml-1" />
+                      <ChevronRight className="w-3.5 h-3.5 ml-1" />
                     </Button>
                     <button
                       onClick={() => navigate("/profile/edit")}
@@ -138,17 +150,17 @@ const Navbar = () => {
                   </>
                 ) : (
                   <>
-                    <Button variant="ghost" size="sm" onClick={() => navigate("/auth")}>
+                    <Button variant="ghost" size="sm" onClick={() => navigate("/auth")} className="text-xs">
                       Sign In
                     </Button>
                     <Button 
                       variant="hero" 
                       size="sm" 
                       onClick={() => navigate("/start")}
-                      className="shadow-md shadow-primary/20"
+                      className="shadow-md shadow-primary/20 text-xs font-semibold rounded-full px-4"
                     >
                       Get Started
-                      <ChevronRight className="w-4 h-4 ml-1" />
+                      <ChevronRight className="w-3.5 h-3.5 ml-1" />
                     </Button>
                   </>
                 )
@@ -156,13 +168,25 @@ const Navbar = () => {
             </div>
 
             {/* Mobile Menu Button */}
-            <button
-              className="lg:hidden p-2 text-foreground rounded-lg hover:bg-muted/50 transition-colors"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              aria-label="Toggle menu"
-            >
-              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+            <div className="flex items-center gap-1.5 lg:hidden">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowInstallModal(true)}
+                className="h-8 px-2.5 text-[11px] font-semibold rounded-full border-primary/40 text-primary hover:bg-primary/10"
+              >
+                <Smartphone className="w-3.5 h-3.5 mr-1" />
+                App
+              </Button>
+
+              <button
+                className="p-2 text-foreground rounded-lg hover:bg-muted/50 transition-colors"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-label="Toggle menu"
+              >
+                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
           </div>
 
           {/* Mobile Menu */}
@@ -193,6 +217,15 @@ const Navbar = () => {
                   )
                 ))}
                 <div className="flex flex-col gap-2 pt-4 mt-2 border-t border-border/50">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-center gap-1.5 border-primary/30"
+                    onClick={() => { setIsMenuOpen(false); setShowInstallModal(true); }}
+                  >
+                    <Smartphone className="w-4 h-4 text-primary" />
+                    Install OverraPrep App (Play Store / PWA)
+                  </Button>
+
                   {showTutorButton && (
                     <Button 
                       variant="outline" 
@@ -244,6 +277,11 @@ const Navbar = () => {
       <TutorApplicationDialog 
         open={showTutorDialog} 
         onOpenChange={setShowTutorDialog} 
+      />
+
+      <InstallAppModal
+        open={showInstallModal}
+        onOpenChange={setShowInstallModal}
       />
     </>
   );

@@ -69,38 +69,17 @@ export function useCoachContext() {
     },
   });
 
-  /** "FUTA · Computer Engineering · 200L" or "JAMB / UTME · Medicine". */
+  /** "FUTA · Computer Engineering · 200L" */
   const contextLine = useMemo(() => {
-    if (isJamb) {
-      const target = (profile as any)?.target_course;
-      return ["JAMB / UTME", target].filter(Boolean).join(" · ");
-    }
     return identity.text || (institution ? INSTITUTIONS[institution].short : "");
-  }, [isJamb, profile, identity.text, institution]);
-
-  const jambSubjects: string[] = useMemo(() => {
-    const raw = (profile as any)?.jamb_subjects;
-    return Array.isArray(raw) ? raw.filter((s: unknown) => typeof s === "string") : [];
-  }, [profile]);
+  }, [identity.text, institution]);
 
   /**
-   * Up to two suggestions built strictly from real data:
+   * Up to two suggestions built strictly from real course/topic data:
    * 1. the topic the student most recently practised (with its real course)
    * 2. another real course/topic pair they haven't just been doing
    */
   const suggestions: CoachSuggestion[] = useMemo(() => {
-    if (isJamb) {
-      return jambSubjects.slice(0, 2).map((subject, i) => ({
-        scope: subject,
-        topic: null,
-        label: i === 0 ? "Explain a concept simply" : "Give me 5 practice questions",
-        prompt:
-          i === 0
-            ? `Explain a core ${subject} concept I need for JAMB, simply.`
-            : `Give me 5 JAMB-style practice questions on ${subject}.`,
-      }));
-    }
-
     if (!courses.length) return [];
 
     const byCourse = new Map(courses.map((c) => [c.id, c]));
@@ -156,9 +135,9 @@ export function useCoachContext() {
     }
 
     return out.slice(0, 2);
-  }, [isJamb, jambSubjects, courses, topics, activity]);
+  }, [courses, topics, activity]);
 
-  return { contextLine, courses, topics, suggestions, isJamb, jambSubjects };
+  return { contextLine, courses, topics, suggestions, isJamb: false, jambSubjects: [] };
 }
 
 export default useCoachContext;

@@ -35,6 +35,7 @@ const Settings = () => {
       title: "Account",
       rows: [
         { icon: User, label: "Edit profile", hint: "Name, photo, bio", to: "/profile/edit" },
+        { icon: GraduationCap, label: "Academic settings", hint: "University campus & department", to: "/settings/academic" },
         { icon: Sparkles, label: "Study preferences", hint: "Goals & schedule", to: "/profile/preparation" },
         { icon: Wallet, label: "Wallet & tokens", hint: "Top up and history", to: "/wallet" },
         { icon: CreditCard, label: "Subscription", hint: "Plan & billing", to: "/subscription" },

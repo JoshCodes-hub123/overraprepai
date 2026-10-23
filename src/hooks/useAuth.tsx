@@ -3,8 +3,18 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { logSecurityEvent } from "@/lib/securityAudit";
 import { useSingleSession } from "@/hooks/useSingleSession";
+import { track } from "@/lib/analytics";
+import { purgeUserSessionData } from "@/lib/sessionPurge";
 
-type AppRole = "student" | "tutor" | "admin" | "school_owner" | "school_admin" | "teacher" | "parent";
+type AppRole =
+  | "student"
+  | "tutor"
+  | "admin"
+  | "school_owner"
+  | "school_admin"
+  | "teacher"
+  | "parent"
+  | "content_creator";
 export type AcademicPath = "secondary" | "jamb" | "university";
 
 export interface AcademicMetadata {
@@ -106,10 +116,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
 
         if (session?.user) {
+          const prevId = sessionStorage.getItem("overra_last_user_id");
+          if (prevId && prevId !== session.user.id) {
+            purgeUserSessionData(prevId);
+          }
           setTimeout(() => {
             fetchUserData(session.user.id);
           }, 0);
         } else {
+          const lastUserId = sessionStorage.getItem("overra_last_user_id");
+          purgeUserSessionData(lastUserId);
           setProfile(null);
           setRoles([]);
           // Detect involuntary sign-outs (e.g. refresh-token expired) and
@@ -118,7 +134,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             try {
               const wasSignedIn = sessionStorage.getItem("overra_was_signed_in") === "1";
               const manual = sessionStorage.getItem("overra_manual_signout") === "1";
-              const lastUserId = sessionStorage.getItem("overra_last_user_id");
               sessionStorage.removeItem("overra_manual_signout");
               sessionStorage.removeItem("overra_was_signed_in");
               sessionStorage.removeItem("overra_last_user_id");
@@ -172,7 +187,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
     if (!error) {
-      const { track } = await import("@/lib/analytics");
       void track("signup", { has_referral: !!referralCode });
     }
     return { error };
@@ -182,7 +196,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (!error) {
       // (LoginCelebration removed — no fresh-login flag.)
-      const { track } = await import("@/lib/analytics");
       void track("signin", {});
     }
     return { error };
@@ -190,7 +203,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try { sessionStorage.setItem("overra_manual_signout", "1"); } catch { /* noop */ }
+    const prevId = user?.id;
     await supabase.auth.signOut();
+    purgeUserSessionData(prevId);
     setProfile(null);
     setRoles([]);
   };

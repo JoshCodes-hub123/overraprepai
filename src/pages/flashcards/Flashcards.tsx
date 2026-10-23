@@ -99,7 +99,7 @@ export default function Flashcards() {
           question: `Generate ONE concise flashcard (front=question/term, back=answer/definition) for: ${form.topic || form.subject}. Reply in this exact format:\nFRONT: <question>\nBACK: <answer>`,
           options: { A: "n/a", B: "n/a", C: "n/a", D: "n/a" },
           correctOption: "A",
-          tone: profile?.academic_path === "secondary" ? "simple" : "default",
+          tone: "default",
         },
       });
       if (error) throw error;

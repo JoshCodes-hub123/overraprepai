@@ -13,11 +13,11 @@ export default function TopicPage() {
   const faqs = [
     { q: `How does OverraPrep AI teach ${topic}?`, a: `We combine a concept summary, worked examples, AI-generated practice questions, flashcards and an audio summary — all in one flow.` },
     { q: `Can I generate ${topic} flashcards from my own notes?`, a: "Yes — upload a PDF, DOCX or paste text and we'll turn it into spaced-repetition flashcards in seconds." },
-    { q: `Is ${topic} part of JAMB or university courses?`, a: "Both — we map topics to JAMB syllabi and to specific Nigerian university course codes." },
+    { q: `Is ${topic} part of university degree courses?`, a: "Yes — topics are mapped directly to Nigerian university course codes and departmental syllabi." },
   ];
 
   const jsonLd = [
-    { "@type": "LearningResource", name: topic, learningResourceType: "Topic", educationalLevel: "Secondary, Tertiary", inLanguage: "en-NG", provider: { "@type": "Organization", name: "OverraPrep AI" } },
+    { "@type": "LearningResource", name: topic, learningResourceType: "Topic", educationalLevel: "Tertiary, Higher Education", inLanguage: "en-NG", provider: { "@type": "Organization", name: "OverraPrep AI" } },
     { "@type": "FAQPage", mainEntity: faqs.map(f => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) },
   ];
 
@@ -43,7 +43,7 @@ export default function TopicPage() {
         { label: "AI Flashcard Generator", href: "/ai/flashcard-generator" },
         { label: "AI Quiz Generator", href: "/ai/quiz-generator" },
         { label: "Courses", href: "/courses" },
-        { label: "JAMB Hub", href: "/jamb" },
+        { label: "Mock Exams", href: "/mock-exams" },
         { label: "Audio Learning", href: "/audio-learning" },
       ]}
     />

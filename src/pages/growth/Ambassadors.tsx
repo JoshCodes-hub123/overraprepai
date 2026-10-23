@@ -1,4 +1,5 @@
 import { SEO } from "@/components/seo/SEO";
+import { Link } from "react-router-dom";
 import DashboardNav from "@/components/layout/DashboardNav";
 import { PremiumPageHero } from "@/components/shell/PremiumPageHero";
 import { Card } from "@/components/ui/card";
@@ -56,8 +57,8 @@ export default function Ambassadors() {
           </Card>
 
           <Card className="p-6 text-center text-sm text-muted-foreground mt-6">
-            More ambassadors coming soon. Want to represent your campus?{" "}
-            <a href="/growth" className="text-amber-700 font-semibold hover:underline">Apply here</a>.
+            More campus ambassadors being announced. Want to lead your faculty or institution?{" "}
+            <Link to="/growth" className="text-amber-700 font-semibold hover:underline">Apply here</Link>.
           </Card>
         </main>
       </div>

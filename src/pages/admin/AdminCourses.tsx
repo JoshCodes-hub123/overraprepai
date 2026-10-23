@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,8 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { SEO } from "@/components/seo/SEO";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Search, BookOpen } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, BookOpen, AlertCircle, ArrowRight } from "lucide-react";
 import { ADMIN_ENVIRONMENTS } from "@/config/environments";
+import { useAdminEnvironment } from "@/hooks/useAdminEnvironment";
+import { AdminPersistentHeader } from "@/components/admin/AdminPersistentHeader";
 
 const LEVELS = ["100", "200", "300", "400", "500", "600"];
 
@@ -28,6 +30,8 @@ interface Course {
   level: string | null;
   description: string | null;
   is_active: boolean;
+  environment_type?: string;
+  university?: string;
 }
 
 const empty = { id: "", code: "", name: "", department: "", level: "", description: "", is_active: true };
@@ -35,12 +39,13 @@ const empty = { id: "", code: "", name: "", department: "", level: "", descripti
 const AdminCourses = () => {
   const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const adminEnv = useAdminEnvironment();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<typeof empty>(empty);
-  const [newEnvironmentId, setNewEnvironmentId] = useState("");
+  const [newEnvironmentId, setNewEnvironmentId] = useState(adminEnv.current.id);
   const [saving, setSaving] = useState(false);
   const newEnvironment = ADMIN_ENVIRONMENTS.find((option) => option.id === newEnvironmentId);
 
@@ -48,19 +53,35 @@ const AdminCourses = () => {
     if (!authLoading && !user) navigate("/auth");
   }, [user, authLoading, navigate]);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
+    const envScope = adminEnv.scope;
+    let query = supabase
       .from("courses")
-      .select("id, code, name, department, level, description, is_active")
+      .select("id, code, name, department, level, description, is_active, environment_type, university")
       .order("code");
+
+    if (envScope.environment_type === "university" && envScope.university) {
+      query = query.eq("university", envScope.university);
+    } else {
+      query = query.eq("environment_type", envScope.environment_type);
+    }
+
+    const { data } = await query;
     setCourses((data as any) ?? []);
     setLoading(false);
+  }, [adminEnv.scope]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const openNew = () => {
+    setEditing(empty);
+    setNewEnvironmentId(adminEnv.current.id);
+    setOpen(true);
   };
 
-  useEffect(() => { load(); }, []);
-
-  const openNew = () => { setEditing(empty); setNewEnvironmentId(""); setOpen(true); };
   const openEdit = (c: Course) => {
     setEditing({
       id: c.id, code: c.code, name: c.name,
@@ -79,6 +100,7 @@ const AdminCourses = () => {
       toast.error("Choose an academic environment for this course");
       return;
     }
+
     setSaving(true);
     const payload = {
       code: editing.code.toUpperCase().trim(),
@@ -129,10 +151,14 @@ const AdminCourses = () => {
       <Navbar />
       <div className="pt-16 md:pt-[72px]"><DashboardNav role="admin" /></div>
       <main className="container mx-auto px-4 pt-6 pb-16 max-w-6xl">
+        <AdminPersistentHeader showNavStrip={true} />
+
         <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
           <div>
             <h1 className="font-display text-3xl font-bold mb-1">Course Management</h1>
-            <p className="text-muted-foreground">Create courses, set their level, and manage availability.</p>
+            <p className="text-muted-foreground">
+              Managing courses for <span className="font-semibold text-foreground">{adminEnv.current.label}</span>.
+            </p>
           </div>
           <Button onClick={openNew}><Plus className="w-4 h-4 mr-1" /> New Course</Button>
         </div>

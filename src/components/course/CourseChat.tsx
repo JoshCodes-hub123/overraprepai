@@ -230,7 +230,7 @@ export const CourseChat = ({ courseId, courseCode }: Props) => {
     invokeAI(prompt.replace(/@AI\b/i, "").trim() || prompt, aiMsg.parent_id ?? null);
   };
 
-  const useAsPrompt = (content: string) => {
+  const applyPrompt = (content: string) => {
     setText((t) => (t ? `${t} ${content}` : content));
   };
 
@@ -495,7 +495,7 @@ export const CourseChat = ({ courseId, courseCode }: Props) => {
                 <div key={p.id} className="group inline-flex items-center gap-1 bg-white border border-amber-200 rounded-full pl-2.5 pr-1 py-0.5 shadow-sm">
                   <button
                     type="button"
-                    onClick={() => useAsPrompt(p.content)}
+                    onClick={() => applyPrompt(p.content)}
                     className="text-[11px] font-medium text-amber-900 hover:text-amber-700 max-w-[260px] truncate"
                     title={p.content}
                   >

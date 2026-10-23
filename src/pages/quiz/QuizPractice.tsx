@@ -26,9 +26,11 @@ import {
 import ReportQuestionDialog from "@/components/student/ReportQuestionDialog";
 import { ImageZoomModal, ClickableQuestionImage } from "@/components/quiz/ImageZoomModal";
 import { SpeakButton } from "@/components/audio/SpeakButton";
+import { MathMarkdown } from "@/components/quiz/MathMarkdown";
 import { haptic } from "@/lib/native";
 import PreQuizTimerDialog from "@/components/quiz/PreQuizTimerDialog";
 import { UnlockQuizSheet } from "@/components/student/UnlockQuizSheet";
+import { track } from "@/lib/analytics";
 
 interface Question {
   id: string;
@@ -72,9 +74,7 @@ const QuizPractice = () => {
   const [isCorrect, setIsCorrect] = useState(false);
   const [aiExplanation, setAiExplanation] = useState<string | null>(null);
   const [isLoadingExplanation, setIsLoadingExplanation] = useState(false);
-  const [explanationTone, setExplanationTone] = useState<"simple" | "default" | "deep">(
-    profile?.academic_path === "secondary" ? "simple" : profile?.academic_path === "university" ? "deep" : "default"
-  );
+  const [explanationTone, setExplanationTone] = useState<"simple" | "default" | "deep">("deep");
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [isLoading, setIsLoading] = useState(true);
@@ -91,6 +91,7 @@ const QuizPractice = () => {
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const warnedRef = useRef<Set<number>>(new Set());
   const [needsUnlock, setNeedsUnlock] = useState(false);
+  const [unlockSheetOpen, setUnlockSheetOpen] = useState(true);
   const unlockSucceededRef = useRef(false);
 
   // Show timer picker once the quiz is loaded (and not resuming with timer)
@@ -242,7 +243,6 @@ const QuizPractice = () => {
 
         if (attemptError) throw attemptError;
         setAttemptId(attemptData.id);
-        const { track } = await import("@/lib/analytics");
         void track("quiz_started", { quiz_id: quizId, mode: "practice", total_questions: formattedQuestions.length });
       }
     } catch (error) {
@@ -386,7 +386,6 @@ const QuizPractice = () => {
       })
       .eq("id", attemptId);
 
-    const { track } = await import("@/lib/analytics");
     void track("quiz_completed", {
       quiz_id: quizId,
       mode: "practice",
@@ -475,14 +474,17 @@ const QuizPractice = () => {
             <p className="text-sm text-muted-foreground mb-6">
               Unlock this quiz with your tokens. Once unlocked, you can replay it forever for free.
             </p>
-            <Button onClick={() => { /* sheet auto-opens via prop below */ }} className="w-full">
+            <Button onClick={() => setUnlockSheetOpen(true)} className="w-full">
               See unlock cost
             </Button>
           </div>
         </div>
         <UnlockQuizSheet
-          open={true}
-          onOpenChange={(v) => { if (!v && !unlockSucceededRef.current) navigate(-1); }}
+          open={unlockSheetOpen}
+          onOpenChange={(v) => {
+            setUnlockSheetOpen(v);
+            if (!v && !unlockSucceededRef.current) navigate(-1);
+          }}
           quizId={quiz.id}
           quizTitle={quiz.title}
           onUnlocked={() => { unlockSucceededRef.current = true; setNeedsUnlock(false); setIsLoading(true); fetchQuizData(); }}
@@ -597,9 +599,9 @@ const QuizPractice = () => {
 
         {/* Question Card */}
         <div className="bg-card rounded-2xl border border-border p-4 sm:p-6 mb-4 sm:mb-6">
-          <h2 className="font-display text-base sm:text-xl font-semibold text-foreground mb-3 sm:mb-4 leading-relaxed break-words">
-            {currentQuestion?.question_text}
-          </h2>
+          <div className="font-display text-base sm:text-xl font-semibold text-foreground mb-3 sm:mb-4 leading-relaxed break-words">
+            <MathMarkdown content={currentQuestion?.question_text} />
+          </div>
 
           {/* Question Image */}
           <ClickableQuestionImage
@@ -644,7 +646,9 @@ const QuizPractice = () => {
                     }`}>
                       {option.key}
                     </span>
-                    <span className="text-foreground flex-1 pt-0.5 sm:pt-1 text-sm sm:text-base break-words min-w-0">{option.text}</span>
+                    <div className="text-foreground flex-1 pt-0.5 sm:pt-1 text-sm sm:text-base break-words min-w-0">
+                      <MathMarkdown content={option.text} />
+                    </div>
                     {isAnswered && isCorrectAnswer && (
                       <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0 mt-1" />
                     )}
@@ -713,9 +717,9 @@ const QuizPractice = () => {
             </div>
             
             {currentQuestion?.explanation && (
-              <p className="text-sm text-muted-foreground mb-3">
-                {currentQuestion.explanation}
-              </p>
+              <div className="text-sm text-muted-foreground mb-3 leading-relaxed">
+                <MathMarkdown content={currentQuestion.explanation} />
+              </div>
             )}
 
             {/* AI Explanation */}
@@ -757,16 +761,16 @@ const QuizPractice = () => {
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2">
                     <Lightbulb className="w-4 h-4 text-accent" />
-                    <span className="font-medium text-foreground text-sm">AI Explanation</span>
+                    <span className="font-medium text-foreground text-sm">AI Step-by-Step Breakdown</span>
                     <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                       {explanationTone === "simple" ? "Like I'm 12" : explanationTone === "deep" ? "Lecturer" : "Standard"}
                     </span>
                   </div>
                   <SpeakButton text={aiExplanation} />
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                  {aiExplanation}
-                </p>
+                <div className="text-sm text-muted-foreground leading-relaxed">
+                  <MathMarkdown content={aiExplanation} />
+                </div>
               </div>
             )}
           </div>

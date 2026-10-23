@@ -13,8 +13,8 @@ const STUDENT_PREFIXES = [
   "/review", "/courses", "/wallet", "/flashcards", "/audio", "/ai-tutor",
   "/community", "/opportunities", "/leaderboard", "/settings", "/help",
   "/copilot", "/referrals", "/spotlight", "/challenges", "/cgpa",
-  "/mock-exams", "/exam-readiness", "/strategy", "/sessions", "/jamb",
-  "/subjects", "/theory", "/survival-kits", "/posts", "/feed",
+  "/mock-exams", "/exam-readiness", "/strategy", "/sessions",
+  "/theory", "/survival-kits", "/posts", "/feed",
 ];
 
 /**

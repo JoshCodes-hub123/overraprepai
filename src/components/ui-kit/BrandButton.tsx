@@ -21,8 +21,8 @@ const VARIANTS: Record<Variant, string> = {
 };
 
 const SIZES: Record<Size, string> = {
-  md: "h-11 px-5 text-[15px]",
-  lg: "h-13 min-h-[52px] px-6 text-base",
+  md: "min-h-[48px] h-12 px-5 text-[15px]",
+  lg: "min-h-[52px] h-13 px-6 text-base",
 };
 
 /**
@@ -31,7 +31,7 @@ const SIZES: Record<Size, string> = {
 export const BrandButton = forwardRef<HTMLButtonElement, BrandButtonProps>(
   ({ variant = "primary", size = "md", block, loading, to, className, children, ...props }, ref) => {
     const classes = cn(
-      "inline-flex items-center justify-center gap-2 rounded-full font-semibold tracking-tight transition-all active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-env",
+      "inline-flex items-center justify-center gap-2 rounded-full font-semibold tracking-tight transition-all active:scale-95 disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-env select-none",
       VARIANTS[variant],
       SIZES[size],
       block && "w-full",

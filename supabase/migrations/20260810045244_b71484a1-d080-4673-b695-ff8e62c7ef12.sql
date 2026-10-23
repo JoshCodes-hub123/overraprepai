@@ -1,1 +1,0 @@
-UPDATE public.study_materials SET visibility = 'public' WHERE course_id IS NOT NULL AND visibility = 'private';

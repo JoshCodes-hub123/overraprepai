@@ -8,33 +8,28 @@ import {
 } from "@/config/environments";
 
 /**
- * The signed-in student's academic environment.
- *
- * `isJamb`  → JAMB / UTME preparation platform (no university content at all)
- * `isUniversity` + `institution` → a single, isolated campus environment
+ * The signed-in student's academic environment (University campus).
  */
 export function useEnvironment() {
   const { profile, isLoading } = useAuth();
   const p = profile as any;
 
-  const environment = ((p?.environment_type as EnvironmentType) ||
-    (p?.academic_path === "jamb" ? "jamb" : "university")) as EnvironmentType;
+  const environment: EnvironmentType = "university";
 
-  const institution =
-    environment === "university" && isInstitutionCode(p?.university)
-      ? (p.university as InstitutionCode)
-      : null;
+  const institution = isInstitutionCode(p?.university)
+    ? (p.university as InstitutionCode)
+    : null;
 
   return {
     isLoading,
     environment,
     institution,
-    isJamb: environment === "jamb",
-    isUniversity: environment === "university",
-    /** True once the student has fully picked their environment. */
-    isConfigured: environment === "jamb" || !!institution,
-    label: environmentLabel(environment, institution),
-    fullName: environmentFullName(environment, institution),
+    isJamb: false,
+    isUniversity: true,
+    /** True once the student has picked their university. */
+    isConfigured: !!p?.university,
+    label: environmentLabel("university", institution),
+    fullName: environmentFullName("university", institution),
   };
 }
 

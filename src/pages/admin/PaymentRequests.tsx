@@ -9,10 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Wallet, Download, Search, Loader2, Zap } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
 import { exportToCsv } from "@/lib/exportCsv";
+import { AdminPersistentHeader } from "@/components/admin/AdminPersistentHeader";
 
-const NAIRA_PER_TOKEN = 25;
+const NAIRA_PER_TOKEN = 50;
 
 const Stat = ({ label, value, sub }: { label: string; value: string; sub?: string }) => (
   <Card className="p-4">
@@ -117,6 +117,7 @@ const AdminPayments = () => {
       <SEO title="Payments" description="Wallet top-ups and revenue." url="https://overraprepai.com/admin/payments" noindex />
       <div className="min-h-screen bg-background pb-24">
         <DashboardNav role="admin" />
+        <AdminPersistentHeader showNavStrip={true} />
         <main className="container mx-auto px-4 py-6 max-w-6xl">
           <header className="mb-5 flex items-center justify-between gap-3 flex-wrap">
             <h1 className="font-display text-2xl font-bold flex items-center gap-2">

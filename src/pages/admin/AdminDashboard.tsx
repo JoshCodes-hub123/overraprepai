@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useEffect, useState, useMemo } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import {
   LogOut,
   Users,
@@ -11,11 +11,9 @@ import {
   FileText,
   Settings,
   BarChart3,
-  Loader2,
   TrendingUp,
   Coins,
   Brain,
-  Wallet,
   Banknote,
   Shield,
   Target,
@@ -24,6 +22,10 @@ import {
   Activity,
   Megaphone,
   Upload,
+  Search,
+  Command,
+  AlignJustify,
+  Rows,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import DashboardNav from "@/components/layout/DashboardNav";
@@ -53,6 +55,19 @@ import { scopeCourseQuery, scopeEmbeddedCourseQuery } from "@/lib/environmentSco
 import { EnvironmentSwitcher } from "@/components/admin/EnvironmentSwitcher";
 import { useAdminEnvironment } from "@/hooks/useAdminEnvironment";
 import { RoleSidebarMenu } from "@/components/layout/RoleSidebarMenu";
+import { AdminPersistentHeader } from "@/components/admin/AdminPersistentHeader";
+import { AdminCommandPalette } from "@/components/admin/AdminCommandPalette";
+import { AdminActionCenter } from "@/components/admin/AdminActionCenter";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface DashboardStats {
   totalStudents: number;
@@ -68,9 +83,104 @@ interface DashboardStats {
   platformRevenue: number;
 }
 
+interface SubTabDef {
+  id: string;
+  label: string;
+  icon: any;
+  getBadge?: (stats: DashboardStats) => number | undefined;
+}
+
+interface CategoryDef {
+  id: "analytics" | "users" | "finance" | "academic";
+  label: string;
+  icon: any;
+  subTabs: SubTabDef[];
+  getBadgeCount: (stats: DashboardStats) => number;
+}
+
+const CATEGORIES: CategoryDef[] = [
+  {
+    id: "analytics",
+    label: "📊 Overview & Analytics",
+    icon: BarChart3,
+    subTabs: [
+      { id: "overview", label: "Analytics", icon: BarChart3 },
+      { id: "insights", label: "Insights", icon: TrendingUp },
+      { id: "audit", label: "Audit Logs", icon: Shield },
+      { id: "health", label: "System Health", icon: Activity },
+    ],
+    getBadgeCount: () => 0,
+  },
+  {
+    id: "users",
+    label: "👥 Users & Operations",
+    icon: Users,
+    subTabs: [
+      { id: "users", label: "Student Directory", icon: Users },
+      {
+        id: "tutors",
+        label: "Tutor Management",
+        icon: GraduationCap,
+        getBadge: (s) => (s.pendingApplications > 0 ? s.pendingApplications : undefined),
+      },
+      {
+        id: "schools",
+        label: "School Applications",
+        icon: Building2,
+        getBadge: (s) => (s.pendingSchools > 0 ? s.pendingSchools : undefined),
+      },
+      { id: "announcements", label: "Announcements", icon: Megaphone },
+    ],
+    getBadgeCount: (s) => (s.pendingApplications || 0) + (s.pendingSchools || 0),
+  },
+  {
+    id: "finance",
+    label: "💳 Finance & Monetization",
+    icon: Coins,
+    subTabs: [
+      {
+        id: "tokens",
+        label: "Token Approvals",
+        icon: Coins,
+        getBadge: (s) => (s.pendingPurchases > 0 ? s.pendingPurchases : undefined),
+      },
+      {
+        id: "withdrawals",
+        label: "Tutor Withdrawals",
+        icon: Banknote,
+        getBadge: (s) => (s.pendingWithdrawals > 0 ? s.pendingWithdrawals : undefined),
+      },
+      { id: "settings", label: "Platform Settings", icon: Settings },
+    ],
+    getBadgeCount: (s) => (s.pendingPurchases || 0) + (s.pendingWithdrawals || 0),
+  },
+  {
+    id: "academic",
+    label: "📚 Academic & Moderation",
+    icon: BookOpen,
+    subTabs: [
+      { id: "courses", label: "Course Moderation", icon: BookOpen },
+      { id: "questions", label: "Question Moderation", icon: FileText },
+      { id: "challenges", label: "Contests & Challenges", icon: Target },
+    ],
+    getBadgeCount: () => 0,
+  },
+];
+
+const getCategoryForTab = (tab: string): "analytics" | "users" | "finance" | "academic" => {
+  for (const cat of CATEGORIES) {
+    if (cat.subTabs.some((t) => t.id === tab)) {
+      return cat.id;
+    }
+  }
+  return "analytics";
+};
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, profile, isLoading: authLoading, signOut, hasRole } = useAuth();
+
   const [stats, setStats] = useState<DashboardStats>({
     totalStudents: 0,
     totalTutors: 0,
@@ -84,10 +194,62 @@ const AdminDashboard = () => {
     totalRevenue: 0,
     platformRevenue: 0,
   });
+
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("overview");
+  const initialTab = searchParams.get("tab") || "overview";
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Dynamic table density toggle: Comfortable vs Compact
+  const [density, setDensity] = useState<"comfortable" | "compact">(() => {
+    try {
+      return (localStorage.getItem("admin_table_density") as any) || "comfortable";
+    } catch {
+      return "comfortable";
+    }
+  });
+
   const adminEnv = useAdminEnvironment();
+
+  // Active Category derived automatically from activeTab
+  const currentCategory = useMemo(() => getCategoryForTab(activeTab), [activeTab]);
+  const activeCategoryDef = useMemo(
+    () => CATEGORIES.find((c) => c.id === currentCategory) || CATEGORIES[0],
+    [currentCategory]
+  );
+
+  // Sync tab with URL query params
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab);
+    setSearchParams({ tab: newTab }, { replace: true });
+  };
+
+  const handleCategoryClick = (catId: "analytics" | "users" | "finance" | "academic") => {
+    const cat = CATEGORIES.find((c) => c.id === catId);
+    if (cat && cat.subTabs.length > 0) {
+      if (!cat.subTabs.some((t) => t.id === activeTab)) {
+        handleTabChange(cat.subTabs[0].id);
+      }
+    }
+  };
+
+  const handleDensityChange = (newDensity: "comfortable" | "compact") => {
+    setDensity(newDensity);
+    try {
+      localStorage.setItem("admin_table_density", newDensity);
+    } catch {
+      // ignore
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -102,7 +264,6 @@ const AdminDashboard = () => {
       if (!user || !hasRole("admin")) return;
 
       const envScope = adminEnv.scope;
-      // Profiles carry the environment on themselves (no course relation).
       const scopeProfiles = (q: any) => {
         let out = q.eq("environment_type", envScope.environment_type);
         if (envScope.environment_type === "university" && envScope.university) {
@@ -112,7 +273,6 @@ const AdminDashboard = () => {
       };
 
       try {
-        // Fetch all counts in parallel
         const [
           studentsResult,
           tutorsResult,
@@ -175,7 +335,6 @@ const AdminDashboard = () => {
             .eq("status", "pending"),
         ]);
 
-        // Calculate revenue from premium quiz attempts
         const { data: premiumQuizzes } = await scopeEmbeddedCourseQuery(
           supabase
             .from("quizzes")
@@ -239,349 +398,383 @@ const AdminDashboard = () => {
 
   return (
     <PullToRefresh onRefresh={handleRefresh}>
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-card border-b border-border sticky top-0 z-50">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
-              <RoleSidebarMenu role="admin" />
-              <Link to="/" className="flex items-center group">
-                <img 
-                  src={logo} 
-                  alt="OverraPrep AI FUTA" 
-                  className="h-10 w-auto object-contain"
-                />
-              </Link>
-            </div>
+      <div className="min-h-screen bg-background" data-density={density}>
+        {/* Global Command Palette Modal */}
+        <AdminCommandPalette
+          open={commandPaletteOpen}
+          onOpenChange={setCommandPaletteOpen}
+          onSelectTab={handleTabChange}
+        />
 
+        {/* Glassmorphic Sticky Header */}
+        <header className="bg-card/85 backdrop-blur-md border-b border-border/80 sticky top-0 z-50 shadow-xs">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between h-16 gap-3">
+              <div className="flex items-center gap-2.5 shrink-0">
+                <RoleSidebarMenu role="admin" />
+                <Link to="/" className="flex items-center group">
+                  <img
+                    src={logo}
+                    alt="OverraPrep AI FUTA"
+                    className="h-9 w-auto object-contain"
+                  />
+                </Link>
+                <Badge variant="outline" className="hidden sm:inline-flex text-[11px] font-semibold text-amber-700 bg-amber-50/70 border-amber-200">
+                  Admin Console
+                </Badge>
+              </div>
 
-
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" onClick={() => signOut()}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <DashboardNav role="admin" />
-      <DashboardBreadcrumb role="admin" />
-
-      <main className="container mx-auto px-4 py-8">
-        {/* Academic environment — admins manage one isolated environment at a time */}
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200/70 bg-amber-50/40 px-4 py-3">
-          <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-700">
-              Managing environment
-            </p>
-            <p className="text-sm font-bold truncate">
-              {adminEnv.isJamb
-                ? "JAMB / UTME — separate from all university content"
-                : `${adminEnv.current.label} — isolated campus environment`}
-            </p>
-          </div>
-          <EnvironmentSwitcher
-            current={adminEnv.current}
-            options={adminEnv.options}
-            onSelect={adminEnv.select}
-          />
-        </div>
-
-        {/* Hero */}
-        <DashboardHero
-          role="admin"
-          fullName={profile?.full_name || "Admin"}
-          avatarUrl={profile?.avatar_url}
-          subtitle="Steward the platform — review tutors, moderate content, and watch the empire grow."
-          actions={
-            <SuggestOpportunityDialog
-              trigger={
-                <button className="inline-flex items-center gap-1.5 rounded-full bg-white text-amber-700 hover:bg-amber-50 shadow-md font-semibold text-sm px-4 py-2">
-                  + Post opportunity
+              {/* Command Palette Trigger Button */}
+              <div className="flex-1 max-w-xs md:max-w-md mx-2 hidden sm:block">
+                <button
+                  type="button"
+                  onClick={() => setCommandPaletteOpen(true)}
+                  className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl border border-border/80 bg-muted/40 hover:bg-muted/70 text-xs text-muted-foreground transition-all shadow-2xs group"
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <Search className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground shrink-0" />
+                    <span className="truncate">Search actions, users, courses…</span>
+                  </div>
+                  <kbd className="hidden md:inline-flex items-center gap-0.5 rounded border border-border bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground shadow-2xs shrink-0">
+                    <Command className="w-3 h-3" />K
+                  </kbd>
                 </button>
-              }
+              </div>
+
+              {/* Header Right Actions */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="sm:hidden h-8 w-8 rounded-lg"
+                  onClick={() => setCommandPaletteOpen(true)}
+                  title="Search & Command Palette (Cmd+K)"
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => signOut()}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <LogOut className="w-3.5 h-3.5 mr-1.5" />
+                  Sign Out
+                </Button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <DashboardNav role="admin" />
+        <DashboardBreadcrumb role="admin" />
+
+        <main className="container mx-auto px-4 py-6">
+          {/* Compact Sticky Action Center Bar (Replaces old stacked alert banners) */}
+          <AdminActionCenter
+            stats={{
+              pendingPurchases: stats.pendingPurchases,
+              pendingApplications: stats.pendingApplications,
+              pendingSchools: stats.pendingSchools,
+              pendingQuestions: 0,
+            }}
+            onSelectTab={handleTabChange}
+          />
+
+          {/* Persistent Academic Environment Bar */}
+          <AdminPersistentHeader showNavStrip={true} />
+
+          {/* Dashboard Hero */}
+          <DashboardHero
+            role="admin"
+            fullName={profile?.full_name || "Admin"}
+            avatarUrl={profile?.avatar_url}
+            subtitle="Steward the platform — review tutors, moderate content, and oversee the institutional network."
+            actions={
+              <SuggestOpportunityDialog
+                trigger={
+                  <button className="inline-flex items-center gap-1.5 rounded-full bg-white text-amber-700 hover:bg-amber-50 shadow-sm font-semibold text-sm px-4 py-2 border border-amber-200/60">
+                    + Post opportunity
+                  </button>
+                }
+              />
+            }
+            footer={
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-muted-foreground">All systems operational</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Coins className="h-4 w-4 text-amber-600" />
+                  <span className="text-muted-foreground">Platform revenue:</span>
+                  <span className="font-serif text-lg font-semibold text-foreground">{stats.platformRevenue} tokens</span>
+                </div>
+              </div>
+            }
+            className="mb-6"
+          />
+
+          <AdminKpiStrip />
+
+          {/* Premium Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+            <PremiumStatCard
+              icon={Users}
+              label="Students"
+              value={stats.totalStudents}
+              tone="sapphire"
+              delay={0}
             />
-          }
-          footer={
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-muted-foreground">All systems operational</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Coins className="h-4 w-4 text-amber-600" />
-                <span className="text-muted-foreground">Platform revenue</span>
-                <span className="font-serif text-lg font-semibold text-foreground">{stats.platformRevenue}</span>
-              </div>
-            </div>
-          }
-          className="mb-6"
-        />
-
-        <AdminKpiStrip />
-
-        {/* Premium Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
-          <PremiumStatCard
-            icon={Users}
-            label="Students"
-            value={stats.totalStudents}
-            tone="sapphire"
-            delay={0}
-          />
-          <PremiumStatCard
-            icon={GraduationCap}
-            label="Tutors"
-            value={stats.totalTutors}
-            tone="violet"
-            delay={0.05}
-          />
-          <PremiumStatCard
-            icon={Brain}
-            label="Quiz attempts"
-            value={stats.totalQuizAttempts}
-            tone="emerald"
-            delay={0.1}
-          />
-          <PremiumStatCard
-            icon={Coins}
-            label="Platform revenue"
-            value={stats.platformRevenue}
-            tone="gold"
-            hint="tokens earned"
-            delay={0.15}
-          />
-        </div>
-
-        {/* Quick Actions */}
-        <QuickActions
-          subtitle="Triage the platform from one place"
-          actions={[
-            {
-              icon: FileText,
-              label: "Review Reports",
-              description: "Inspect flagged questions & content reports",
-              onClick: () => setActiveTab("questions"),
-              tone: "rose",
-              badge: stats.pendingPurchases > 0 ? stats.pendingPurchases : undefined,
-            },
-            {
-              icon: GraduationCap,
-              label: "Approve Tutors",
-              description: "Review pending tutor applications",
-              onClick: () => setActiveTab("tutors"),
-              tone: "violet",
-              badge: stats.pendingApplications > 0 ? stats.pendingApplications : undefined,
-            },
-            {
-              icon: Building2,
-              label: "Manage Schools",
-              description: "Approve and oversee school accounts",
-              onClick: () => setActiveTab("schools"),
-              tone: "emerald",
-              badge: stats.pendingSchools > 0 ? stats.pendingSchools : undefined,
-            },
-            {
-              icon: FileText,
-              label: "Manage Courses",
-              description: "Create & edit courses",
-              to: "/admin/courses",
-              tone: "sapphire",
-            },
-            {
-              icon: Target,
-              label: "Challenge Arena",
-              description: "Create competitions & settle prizes",
-              to: "/admin/arena",
-              tone: "violet",
-            },
-            {
-              icon: Upload,
-              label: "Bulk Upload Questions",
-              description: "Import Excel / CSV / Word question banks",
-              to: "/admin/bulk-upload",
-              tone: "gold",
-            },
-            {
-              icon: Target,
-              label: "Growth Engine",
-              description: "Battles, ambassadors & analytics",
-              to: "/admin/growth",
-              tone: "violet",
-            },
-          ]}
-        />
-
-        {stats.pendingApplications > 0 && (
-          <div className="bg-accent/10 border border-accent/30 rounded-xl p-4 mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <GraduationCap className="w-6 h-6 text-accent" />
-              <div>
-                <p className="font-medium text-foreground">
-                  {stats.pendingApplications} pending tutor application{stats.pendingApplications > 1 ? "s" : ""}
-                </p>
-                <p className="text-sm text-muted-foreground">Review and approve new tutors</p>
-              </div>
-            </div>
-            <Button variant="accent" onClick={() => setActiveTab("tutors")}>
-              Review Now
-            </Button>
-          </div>
-        )}
-
-        {stats.pendingSchools > 0 && (
-          <div className="bg-primary/10 border border-primary/30 rounded-xl p-4 mb-8 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Building2 className="w-6 h-6 text-primary" />
-              <div>
-                <p className="font-medium text-foreground">
-                  {stats.pendingSchools} pending school application{stats.pendingSchools > 1 ? "s" : ""}
-                </p>
-                <p className="text-sm text-muted-foreground">Review and approve new schools</p>
-              </div>
-            </div>
-            <Button onClick={() => navigate("/admin/schools")}>
-              Review Now
-            </Button>
-          </div>
-        )}
-
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-            <TabsList className="mb-6 inline-flex w-max md:w-auto md:flex-wrap">
-              <TabsTrigger value="overview" className="flex items-center gap-2 text-xs md:text-sm">
-                <BarChart3 className="w-4 h-4" />
-                <span className="hidden sm:inline">Analytics</span>
-                <span className="sm:hidden">Stats</span>
-              </TabsTrigger>
-              <TabsTrigger value="insights" className="flex items-center gap-2 text-xs md:text-sm">
-                <TrendingUp className="w-4 h-4" />
-                <span className="hidden sm:inline">Insights</span>
-                <span className="sm:hidden">📈</span>
-              </TabsTrigger>
-              <TabsTrigger value="users" className="flex items-center gap-2 text-xs md:text-sm">
-                <Users className="w-4 h-4" />
-                Users
-              </TabsTrigger>
-              <TabsTrigger value="tutors" className="flex items-center gap-2 text-xs md:text-sm">
-                <GraduationCap className="w-4 h-4" />
-                Tutors
-              </TabsTrigger>
-              <TabsTrigger value="tokens" className="flex items-center gap-2 text-xs md:text-sm">
-                <Coins className="w-4 h-4" />
-                Tokens {stats.pendingPurchases > 0 && `(${stats.pendingPurchases})`}
-              </TabsTrigger>
-              <TabsTrigger value="withdrawals" className="flex items-center gap-2 text-xs md:text-sm">
-                <Banknote className="w-4 h-4" />
-                <span className="hidden sm:inline">Withdrawals</span>
-                <span className="sm:hidden">Payouts</span>
-                {stats.pendingWithdrawals > 0 && ` (${stats.pendingWithdrawals})`}
-              </TabsTrigger>
-              <TabsTrigger value="courses" className="flex items-center gap-2 text-xs md:text-sm">
-                <BookOpen className="w-4 h-4" />
-                Courses
-              </TabsTrigger>
-              <TabsTrigger value="questions" className="flex items-center gap-2 text-xs md:text-sm">
-                <FileText className="w-4 h-4" />
-                <span className="hidden sm:inline">Questions</span>
-                <span className="sm:hidden">Q&A</span>
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex items-center gap-2 text-xs md:text-sm">
-                <Settings className="w-4 h-4" />
-                <span className="hidden sm:inline">Settings</span>
-                <span className="sm:hidden">⚙️</span>
-              </TabsTrigger>
-              <TabsTrigger value="schools" className="flex items-center gap-2 text-xs md:text-sm">
-                <Building2 className="w-4 h-4" />
-                <span className="hidden sm:inline">Schools</span>
-                <span className="sm:hidden">Sch</span>
-                {stats.pendingSchools > 0 && ` (${stats.pendingSchools})`}
-              </TabsTrigger>
-              <TabsTrigger value="challenges" className="flex items-center gap-2 text-xs md:text-sm">
-                <Target className="w-4 h-4" />
-                <span className="hidden sm:inline">Challenges</span>
-                <span className="sm:hidden">🏆</span>
-              </TabsTrigger>
-              <TabsTrigger value="audit" className="flex items-center gap-2 text-xs md:text-sm">
-                <Shield className="w-4 h-4" />
-                <span className="hidden sm:inline">Audit Logs</span>
-                <span className="sm:hidden">Logs</span>
-              </TabsTrigger>
-              <TabsTrigger value="health" className="flex items-center gap-2 text-xs md:text-sm">
-                <Activity className="w-4 h-4" />
-                <span className="hidden sm:inline">Health</span>
-                <span className="sm:hidden">❤</span>
-              </TabsTrigger>
-              <TabsTrigger value="announcements" className="flex items-center gap-2 text-xs md:text-sm">
-                <Megaphone className="w-4 h-4" />
-                <span className="hidden sm:inline">Announce</span>
-                <span className="sm:hidden">📣</span>
-              </TabsTrigger>
-            </TabsList>
+            <PremiumStatCard
+              icon={GraduationCap}
+              label="Tutors"
+              value={stats.totalTutors}
+              tone="violet"
+              delay={0.05}
+            />
+            <PremiumStatCard
+              icon={Brain}
+              label="Quiz attempts"
+              value={stats.totalQuizAttempts}
+              tone="emerald"
+              delay={0.1}
+            />
+            <PremiumStatCard
+              icon={Coins}
+              label="Platform revenue"
+              value={stats.platformRevenue}
+              tone="gold"
+              hint="tokens earned"
+              delay={0.15}
+            />
           </div>
 
-          <TabsContent value="overview">
-            <PlatformAnalytics />
-          </TabsContent>
+          {/* Quick Actions Shortcuts */}
+          <QuickActions
+            subtitle="Triage the platform from one place"
+            actions={[
+              {
+                icon: BookOpen,
+                label: "Content & Syllabi Portal",
+                description: "Outlines, lecture notes & CBT sets",
+                to: "/admin/content",
+                tone: "gold",
+              },
+              {
+                icon: Upload,
+                label: "Bulk Upload Questions",
+                description: "Import Excel / CSV question banks",
+                to: "/admin/bulk-upload",
+                tone: "emerald",
+              },
+              {
+                icon: Target,
+                label: "Challenge Arena",
+                description: "Competitions & prizes",
+                to: "/admin/arena",
+                tone: "violet",
+              },
+              {
+                icon: TrendingUp,
+                label: "Growth Engine",
+                description: "Battles & campus cohorts",
+                to: "/admin/growth",
+                tone: "sapphire",
+              },
+            ]}
+          />
 
-          <TabsContent value="insights">
-            <AdminInsights />
-          </TabsContent>
+          {/* Grouped Category Navigation & Density Controls */}
+          <div className="mb-6 space-y-3">
+            {/* Top Bar: 4 Clean Collapsed Workspace Categories */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-1.5 rounded-2xl border border-border/80 bg-card/60 backdrop-blur-md shadow-xs">
+              {/* Category Buttons */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 flex-1">
+                {CATEGORIES.map((cat) => {
+                  const Icon = cat.icon;
+                  const isCatActive = currentCategory === cat.id;
+                  const badgeCount = cat.getBadgeCount(stats);
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => handleCategoryClick(cat.id)}
+                      className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 border ${
+                        isCatActive
+                          ? "bg-amber-500/10 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-700 shadow-xs"
+                          : "bg-transparent text-muted-foreground border-transparent hover:bg-muted/60 hover:text-foreground"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <Icon className={`w-4 h-4 shrink-0 ${isCatActive ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`} />
+                        <span className="truncate">{cat.label}</span>
+                      </div>
+                      {badgeCount > 0 && (
+                        <Badge variant="warning" className="text-[10px] px-1.5 py-0 h-4 min-w-4 ml-1.5 font-bold">
+                          {badgeCount}
+                        </Badge>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
 
-          <TabsContent value="users">
-            <UserDirectory scope={adminEnv.scope} />
-          </TabsContent>
+              {/* Controls: Table Density Toggle + Fast Tab Dropdown */}
+              <div className="flex items-center justify-between sm:justify-end gap-2 px-1">
+                {/* Density Toggle */}
+                <div className="flex items-center gap-1 p-1 bg-muted/50 rounded-xl border border-border/60 text-xs">
+                  <span className="text-[11px] font-medium text-muted-foreground px-1.5 hidden sm:inline">Density:</span>
+                  <button
+                    onClick={() => handleDensityChange("comfortable")}
+                    className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-all ${
+                      density === "comfortable"
+                        ? "bg-background text-foreground shadow-2xs font-semibold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    title="Comfortable table row height"
+                  >
+                    <AlignJustify className="w-3 h-3" />
+                    <span>Comfortable</span>
+                  </button>
+                  <button
+                    onClick={() => handleDensityChange("compact")}
+                    className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-all ${
+                      density === "compact"
+                        ? "bg-background text-foreground shadow-2xs font-semibold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    title="Compact table row height for dense lists"
+                  >
+                    <Rows className="w-3 h-3" />
+                    <span>Compact</span>
+                  </button>
+                </div>
 
-          <TabsContent value="tutors">
-            <TutorManagement />
-          </TabsContent>
+                {/* Direct Dropdown for Fast Tab Jumping */}
+                <Select value={activeTab} onValueChange={handleTabChange}>
+                  <SelectTrigger className="h-9 w-36 text-xs bg-background/90 border-border/80">
+                    <SelectValue placeholder="Jump to tab" />
+                  </SelectTrigger>
+                  <SelectContent align="end">
+                    {CATEGORIES.map((cat) => (
+                      <SelectGroup key={cat.id}>
+                        <SelectLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-2 py-1">
+                          {cat.label}
+                        </SelectLabel>
+                        {cat.subTabs.map((t) => (
+                          <SelectItem key={t.id} value={t.id} className="text-xs">
+                            {t.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-          <TabsContent value="tokens">
-            <TokenPurchaseManagement />
-          </TabsContent>
+            {/* Sub-Tabs strip for the active category */}
+            <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar">
+              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-muted/40 border border-border/60">
+                {activeCategoryDef.subTabs.map((subTab) => {
+                  const SubIcon = subTab.icon;
+                  const isActive = activeTab === subTab.id;
+                  const badgeVal = subTab.getBadge?.(stats);
+                  return (
+                    <button
+                      key={subTab.id}
+                      onClick={() => handleTabChange(subTab.id)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                        isActive
+                          ? "bg-background text-foreground font-semibold shadow-xs border border-border/80"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      }`}
+                    >
+                      <SubIcon className={`w-3.5 h-3.5 ${isActive ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`} />
+                      <span>{subTab.label}</span>
+                      {badgeVal && badgeVal > 0 ? (
+                        <Badge variant="warning" className="text-[10px] px-1 py-0 h-4">
+                          {badgeVal}
+                        </Badge>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
 
-          <TabsContent value="withdrawals">
-            <WithdrawalManagement />
-          </TabsContent>
+              <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
+                <span>Press</span>
+                <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-muted border rounded shadow-2xs">⌘K</kbd>
+                <span>for instant command palette</span>
+              </div>
+            </div>
+          </div>
 
-          <TabsContent value="courses">
-            <CourseModeration scope={adminEnv.scope} />
-          </TabsContent>
+          {/* Main Tab Contents */}
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+            {/* 1. Overview & Analytics Sub-Tabs */}
+            <TabsContent value="overview">
+              <PlatformAnalytics />
+            </TabsContent>
 
-          <TabsContent value="questions">
-            <QuestionModeration scope={adminEnv.scope} />
-          </TabsContent>
+            <TabsContent value="insights">
+              <AdminInsights />
+            </TabsContent>
 
-          <TabsContent value="settings">
-            <PlatformSettings />
-          </TabsContent>
+            <TabsContent value="audit">
+              <AuditLogs />
+            </TabsContent>
 
-          <TabsContent value="challenges">
-            <ChallengeManagement />
-          </TabsContent>
+            <TabsContent value="health">
+              <HealthDashboard />
+            </TabsContent>
 
-          <TabsContent value="schools">
-            <SchoolApplicationsTab />
-          </TabsContent>
+            {/* 2. Users & Operations Sub-Tabs */}
+            <TabsContent value="users">
+              <UserDirectory scope={adminEnv.scope} />
+            </TabsContent>
 
-          <TabsContent value="audit">
-            <AuditLogs />
-          </TabsContent>
+            <TabsContent value="tutors">
+              <TutorManagement />
+            </TabsContent>
 
-          <TabsContent value="health">
-            <HealthDashboard />
-          </TabsContent>
+            <TabsContent value="schools">
+              <SchoolApplicationsTab />
+            </TabsContent>
 
-          <TabsContent value="announcements">
-            <AnnouncementsManagement />
-          </TabsContent>
-        </Tabs>
-      </main>
-    </div>
+            <TabsContent value="announcements">
+              <AnnouncementsManagement />
+            </TabsContent>
+
+            {/* 3. Finance & Monetization Sub-Tabs */}
+            <TabsContent value="tokens">
+              <TokenPurchaseManagement />
+            </TabsContent>
+
+            <TabsContent value="withdrawals">
+              <WithdrawalManagement />
+            </TabsContent>
+
+            <TabsContent value="settings">
+              <PlatformSettings />
+            </TabsContent>
+
+            {/* 4. Academic & Moderation Sub-Tabs */}
+            <TabsContent value="courses">
+              <CourseModeration scope={adminEnv.scope} />
+            </TabsContent>
+
+            <TabsContent value="questions">
+              <QuestionModeration scope={adminEnv.scope} />
+            </TabsContent>
+
+            <TabsContent value="challenges">
+              <ChallengeManagement />
+            </TabsContent>
+          </Tabs>
+        </main>
+      </div>
     </PullToRefresh>
   );
 };

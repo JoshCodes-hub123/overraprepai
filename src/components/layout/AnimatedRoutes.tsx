@@ -5,6 +5,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import PageTransition from "./PageTransition";
 import { TutorPendingGate } from "@/components/auth/TutorPendingGate";
 import { AdminRoute } from "@/components/auth/AdminRoute";
+import { ContentAdminRoute } from "@/components/auth/ContentAdminRoute";
 import { RoleRoute } from "@/components/auth/RoleRoute";
 import RouteErrorBoundary from "@/components/system/RouteErrorBoundary";
 import { FEATURES } from "@/config/features";
@@ -17,24 +18,7 @@ const Index = lazy(() => import("@/pages/Index"));
 const MobileWelcome = lazy(() => import("@/pages/app/MobileWelcome"));
 const ReleaseNotes = lazy(() => import("@/pages/ReleaseNotes"));
 
-// School module
-const SchoolRegister = lazy(() => import("@/pages/school/Register"));
-const SchoolPending = lazy(() => import("@/pages/school/Pending"));
-const SchoolDashboard = lazy(() => import("@/pages/school/Dashboard"));
-const SchoolClasses = lazy(() => import("@/pages/school/Classes"));
-const SchoolStudents = lazy(() => import("@/pages/school/Students"));
-const SchoolAttendance = lazy(() => import("@/pages/school/Attendance"));
-const SchoolFees = lazy(() => import("@/pages/school/Fees"));
-const SchoolResults = lazy(() => import("@/pages/school/Results"));
-const SchoolAnnouncements = lazy(() => import("@/pages/school/Announcements"));
-const SchoolSettings = lazy(() => import("@/pages/school/Settings"));
-const SchoolStub = lazy(() => import("@/pages/school/Stub"));
-const AdminSchoolApplications = lazy(() => import("@/pages/admin/SchoolApplications"));
-const ParentDashboard = lazy(() => import("@/pages/parent/ParentDashboard"));
-
-const SubjectBrowser = lazy(() => import("@/pages/subjects/SubjectBrowser"));
 const Flashcards = lazy(() => import("@/pages/flashcards/Flashcards"));
-const JambIntelligence = lazy(() => import("@/pages/jamb/JambIntelligence"));
 import EnvironmentGuard from "@/components/routing/EnvironmentGuard";
 
 const SurvivalKits = lazy(() => import("@/pages/survival-kits/SurvivalKits"));
@@ -86,21 +70,16 @@ const StudyHubCourse = lazy(() => import("@/pages/study-hub/StudyHubCourse"));
 const PQIntelligence = lazy(() => import("@/pages/study-hub/PQIntelligence"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const Settings = lazy(() => import("@/pages/settings/Settings"));
+const AcademicSettings = lazy(() => import("@/pages/settings/AcademicSettings"));
 const HelpSupport = lazy(() => import("@/pages/HelpSupport"));
 
 // SEO landing shells (public, indexable)
-const SEOJambHub = lazy(() => import("@/pages/seo/JambHub"));
-const SEOJambCBTPractice = lazy(() => import("@/pages/seo/JambCBTPractice"));
-const SEOJambPastQuestions = lazy(() => import("@/pages/seo/JambPastQuestions"));
-const SEOPostUtmePage = lazy(() => import("@/pages/seo/PostUtmePage"));
 const SEOUniversityPage = lazy(() => import("@/pages/seo/UniversityPage"));
 const SEOTopicPage = lazy(() => import("@/pages/seo/TopicPage"));
 const SEOFlashcardGenerator = lazy(() => import("@/pages/seo/FlashcardGenerator"));
 const SEOQuizGenerator = lazy(() => import("@/pages/seo/QuizGenerator"));
 const SEOMockExams = lazy(() => import("@/pages/seo/MockExams"));
 const StartupChecklist = lazy(() => import("@/pages/admin/StartupChecklist"));
-const VerifyReportCard = lazy(() => import("@/pages/verify/VerifyReportCard"));
-const MyReportCard = lazy(() => import("@/pages/student/MyReportCard"));
 const Terms = lazy(() => import("@/pages/legal/Terms"));
 const Privacy = lazy(() => import("@/pages/legal/Privacy"));
 const PrivacySettings = lazy(() => import("@/pages/settings/PrivacySettings"));
@@ -119,20 +98,16 @@ const TutorCurricula = lazy(() => import("@/pages/tutor/TutorCurricula"));
 const TutorCurriculumBuilder = lazy(() => import("@/pages/tutor/TutorCurriculumBuilder"));
 const AdminCourses = lazy(() => import("@/pages/admin/AdminCourses"));
 const AdminBulkUpload = lazy(() => import("@/pages/admin/AdminBulkUpload"));
+const AdminContentManagement = lazy(() => import("@/pages/admin/AdminContentManagement"));
 const CommunityWall = lazy(() => import("@/pages/community/CommunityWall"));
 
-// "I'm New" onboarding chain
-const ChoosePersona = lazy(() => import("@/pages/onboarding/ChoosePersona"));
+// Unified 2-step University Onboarding
+const UniversityOnboarding = lazy(() => import("@/pages/onboarding/UniversityOnboarding"));
 const ChooseProduct = lazy(() => import("@/pages/onboarding/ChooseProduct"));
 const ChoosePath = lazy(() => import("@/pages/onboarding/ChoosePath"));
 const RefinePath = lazy(() => import("@/pages/onboarding/RefinePath"));
 const ChooseUniversity = lazy(() => import("@/pages/onboarding/ChooseUniversity"));
-const JambDashboard = lazy(() => import("@/pages/jamb/JambDashboard"));
-const JambSubjects = lazy(() => import("@/pages/jamb/JambSubjects"));
-const JambSubject = lazy(() => import("@/pages/jamb/JambSubject"));
-const JambTopicPractice = lazy(() => import("@/pages/jamb/JambTopicPractice"));
 const ChooseFaculty = lazy(() => import("@/pages/onboarding/ChooseFaculty"));
-const JambSetup = lazy(() => import("@/pages/onboarding/JambSetup"));
 
 const ChooseDepartment = lazy(() => import("@/pages/onboarding/ChooseDepartment"));
 const ChooseLevel = lazy(() => import("@/pages/onboarding/ChooseLevel"));
@@ -239,11 +214,11 @@ export const AnimatedRoutes = () => {
          <Routes location={location}>
           <Route path="/" element={<PageTransition><Welcome /></PageTransition>} />
 
-          {/* Public SEO landing pages */}
-          <Route path="/jamb" element={<PageTransition><SEOJambHub /></PageTransition>} />
-          <Route path="/jamb/cbt-practice" element={<PageTransition><SEOJambCBTPractice /></PageTransition>} />
-          <Route path="/jamb/past-questions" element={<PageTransition><SEOJambPastQuestions /></PageTransition>} />
-          <Route path="/post-utme/:university" element={<PageTransition><SEOPostUtmePage /></PageTransition>} />
+          {/* Public University routes */}
+          <Route path="/jamb" element={<Navigate to="/courses" replace />} />
+          <Route path="/jamb/cbt-practice" element={<Navigate to="/practice" replace />} />
+          <Route path="/jamb/past-questions" element={<Navigate to="/courses" replace />} />
+          <Route path="/post-utme/:university" element={<Navigate to="/courses" replace />} />
           <Route path="/universities/:slug" element={<PageTransition><SEOUniversityPage /></PageTransition>} />
           <Route path="/topics/:slug" element={<PageTransition><SEOTopicPage /></PageTransition>} />
           <Route path="/ai/flashcard-generator" element={<PageTransition><SEOFlashcardGenerator /></PageTransition>} />
@@ -254,20 +229,12 @@ export const AnimatedRoutes = () => {
           <Route path="/welcome-tour" element={<PageTransition><MobileWelcome /></PageTransition>} />
           <Route path="/release-notes" element={<PageTransition><ReleaseNotes /></PageTransition>} />
           <Route path="/release-notes/:version" element={<PageTransition><ReleaseNotes /></PageTransition>} />
-          {/* "I'm New" onboarding flow */}
-          <Route path="/start" element={<PageTransition><ChoosePath /></PageTransition>} />
-          <Route path="/start/product" element={<PageTransition><ChooseProduct /></PageTransition>} />
-          <Route path="/start/persona" element={<PageTransition><ChoosePersona /></PageTransition>} />
-          <Route path="/start/path" element={<PageTransition><ChoosePath /></PageTransition>} />
-          <Route path="/onboarding/path" element={<PageTransition><ChoosePath /></PageTransition>} />
-          <Route path="/onboarding/refine" element={<PageTransition><RefinePath /></PageTransition>} />
-          <Route path="/onboarding/university" element={<PageTransition><ChooseUniversity /></PageTransition>} />
-          <Route path="/onboarding/faculty" element={<PageTransition><ChooseFaculty /></PageTransition>} />
-          <Route path="/onboarding/department" element={<PageTransition><ChooseDepartment /></PageTransition>} />
-          <Route path="/onboarding/level" element={<PageTransition><ChooseLevel /></PageTransition>} />
-          <Route path="/onboarding/courses" element={<PageTransition><ChooseCourses /></PageTransition>} />
-          <Route path="/onboarding/match" element={<PageTransition><TutorMatchingOnboarding /></PageTransition>} />
-          <Route path="/onboarding/jamb" element={<PageTransition><JambSetup /></PageTransition>} />
+          {/* Streamlined Onboarding */}
+          <Route path="/onboarding/jamb" element={<Navigate to="/onboarding/university" replace />} />
+          <Route path="/onboarding/university" element={<PageTransition><UniversityOnboarding /></PageTransition>} />
+          <Route path="/onboarding" element={<PageTransition><UniversityOnboarding /></PageTransition>} />
+          <Route path="/start" element={<PageTransition><UniversityOnboarding /></PageTransition>} />
+          <Route path="/onboarding/*" element={<PageTransition><UniversityOnboarding /></PageTransition>} />
 
           <Route
             path="/auth"
@@ -295,13 +262,16 @@ export const AnimatedRoutes = () => {
             element={
               <RoleRoute allow={["student"]}>
                 <PageTransition>
-                  <Suspense fallback={<DashboardSkeleton />}>
-                    <StudentDashboard />
-                  </Suspense>
+                  <EnvironmentGuard allow="university" requireAuth>
+                    <Suspense fallback={<DashboardSkeleton />}>
+                      <StudentDashboard />
+                    </Suspense>
+                  </EnvironmentGuard>
                 </PageTransition>
               </RoleRoute>
             }
           />
+
           <Route
             path="/tutor/dashboard"
             element={
@@ -381,10 +351,13 @@ export const AnimatedRoutes = () => {
             path="/quizzes"
             element={
               <PageTransition>
-                <AllQuizzes />
+                <EnvironmentGuard allow="university" preview>
+                  <AllQuizzes />
+                </EnvironmentGuard>
               </PageTransition>
             }
           />
+
           <Route
             path="/quiz/:quizId"
             element={
@@ -404,6 +377,14 @@ export const AnimatedRoutes = () => {
           />
           <Route
             path="/quiz/:quizId/simulation"
+            element={
+              <PageTransition>
+                <CBTSimulation />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/quiz/:quizId/cbt"
             element={
               <PageTransition>
                 <CBTSimulation />
@@ -431,6 +412,22 @@ export const AnimatedRoutes = () => {
             element={
               <PageTransition>
                 <PreparationSettings />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/settings/academic"
+            element={
+              <PageTransition>
+                <AcademicSettings />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/profile/academic"
+            element={
+              <PageTransition>
+                <AcademicSettings />
               </PageTransition>
             }
           />
@@ -497,11 +494,12 @@ export const AnimatedRoutes = () => {
           <Route path="/notes" element={<Navigate to="/student/smart-summary" replace />} />
           <Route path="/cgpa" element={<PageTransition><CGPACalculator /></PageTransition>} />
           <Route path="/study-packs" element={<PageTransition><StudyPacks /></PageTransition>} />
-          <Route path="/learn" element={<PageTransition><Learn /></PageTransition>} />
+          <Route path="/learn" element={<Navigate to="/courses" replace />} />
+          <Route path="/progress" element={<RoleRoute allow={["student"]}><PageTransition><MasteryBreakdown /></PageTransition></RoleRoute>} />
           <Route path="/study" element={<RoleRoute allow={["student"]}><PageTransition><StudyHubPage /></PageTransition></RoleRoute>} />
           <Route path="/practice" element={<RoleRoute allow={["student"]}><PageTransition><PracticeHubPage /></PageTransition></RoleRoute>} />
-          <Route path="/people" element={<RoleRoute allow={["student"]}><PageTransition><PeopleHubPage /></PageTransition></RoleRoute>} />
-          <Route path="/me" element={<RoleRoute allow={["student"]}><PageTransition><MeHubPage /></PageTransition></RoleRoute>} />
+          <Route path="/exams" element={<Navigate to="/practice" replace />} />
+          <Route path="/cbt" element={<Navigate to="/practice" replace />} />
           <Route path="/library" element={<PageTransition><Library /></PageTransition>} />
           <Route path="/library/analytics" element={<PageTransition><UploadAnalytics /></PageTransition>} />
           <Route path="/library/offline-downloads" element={<PageTransition><OfflineDownloads /></PageTransition>} />
@@ -535,60 +533,39 @@ export const AnimatedRoutes = () => {
           <Route path="/growth/battles/:id" element={<PageTransition><CampusBattleDetail /></PageTransition>} />
           <Route path="/growth/ambassadors" element={<PageTransition><Ambassadors /></PageTransition>} />
           <Route path="/growth/impact" element={<PageTransition><CampusImpact /></PageTransition>} />
-          <Route path="/materials" element={<PageTransition><StudyMaterials /></PageTransition>} />
-          <Route path="/materials/:courseId" element={<PageTransition><MaterialsCourse /></PageTransition>} />
+          <Route path="/materials" element={<PageTransition><EnvironmentGuard allow="university" preview><StudyMaterials /></EnvironmentGuard></PageTransition>} />
+          <Route path="/materials/:courseId" element={<PageTransition><EnvironmentGuard allow="university" preview><MaterialsCourse /></EnvironmentGuard></PageTransition>} />
           <Route path="/admin/growth" element={<AdminRoute><PageTransition><AdminGrowth /></PageTransition></AdminRoute>} />
           <Route path="/student/weak-area-drill" element={<PageTransition><MasteryBreakdown /></PageTransition>} />
           <Route path="/intelligence" element={<PageTransition><IntelligenceCenter /></PageTransition>} />
           <Route path="/student/success" element={<PageTransition><IntelligenceCenter /></PageTransition>} />
           <Route path="/study-mode/:courseId" element={<PageTransition><StudyMode /></PageTransition>} />
           <Route path="/weak-areas" element={<PageTransition><WeakAreas /></PageTransition>} />
-          <Route path="/courses" element={<PageTransition><CoursesScreen /></PageTransition>} />
-          <Route path="/courses/browse" element={<PageTransition><CourseDirectory /></PageTransition>} />
-          <Route path="/courses/:courseId" element={<PageTransition><CourseWorkspace /></PageTransition>} />
-          <Route path="/courses/:courseId/topics/:topicId" element={<PageTransition><TopicDetail /></PageTransition>} />
-          <Route path="/courses/:courseId/topics/:topicId/practice" element={<PageTransition><TopicPractice /></PageTransition>} />
+          <Route path="/courses" element={<PageTransition><EnvironmentGuard allow="university" preview><CoursesScreen /></EnvironmentGuard></PageTransition>} />
+          <Route path="/courses/browse" element={<PageTransition><EnvironmentGuard allow="university" preview><CourseDirectory /></EnvironmentGuard></PageTransition>} />
+          <Route path="/courses/:courseId" element={<PageTransition><EnvironmentGuard allow="university" preview><CourseWorkspace /></EnvironmentGuard></PageTransition>} />
+          <Route path="/courses/:courseId/topics/:topicId" element={<PageTransition><EnvironmentGuard allow="university" preview><TopicDetail /></EnvironmentGuard></PageTransition>} />
+          <Route path="/courses/:courseId/topics/:topicId/practice" element={<PageTransition><EnvironmentGuard allow="university" requireAuth><TopicPractice /></EnvironmentGuard></PageTransition>} />
 
           <Route path="/tutor/courses/new" element={<PageTransition><TutorCourseEditor /></PageTransition>} />
           <Route path="/tutor/courses/:courseId/manage" element={<PageTransition><TutorCourseEditor /></PageTransition>} />
           <Route path="/tutor/question-cards" element={<PageTransition><TutorQuestionCards /></PageTransition>} />
-          <Route path="/study-hub" element={<PageTransition><StudyHub /></PageTransition>} />
-          <Route path="/study-hub/:courseId" element={<PageTransition><StudyHubCourse /></PageTransition>} />
-          <Route path="/pq-intelligence/:courseId" element={<PageTransition><PQIntelligence /></PageTransition>} />
-          <Route path="/jamb/dashboard" element={<PageTransition><EnvironmentGuard allow="jamb"><JambDashboard /></EnvironmentGuard></PageTransition>} />
-          <Route path="/jamb/subjects" element={<PageTransition><EnvironmentGuard allow="jamb"><JambSubjects /></EnvironmentGuard></PageTransition>} />
-          <Route path="/jamb/subjects/:subjectId" element={<PageTransition><EnvironmentGuard allow="jamb"><JambSubject /></EnvironmentGuard></PageTransition>} />
-          <Route path="/jamb/subjects/:subjectId/topics/:topicId/practice" element={<PageTransition><EnvironmentGuard allow="jamb"><JambTopicPractice /></EnvironmentGuard></PageTransition>} />
-          <Route path="/subjects" element={<PageTransition><SubjectBrowser /></PageTransition>} />
-          <Route path="/flashcards" element={<PageTransition><Flashcards /></PageTransition>} />
-          <Route
-            path="/jamb-intelligence"
-            element={
-              <PageTransition>
-                {FEATURES.jamb ? <JambIntelligence /> : <ComingSoon title="JAMB Intelligence" note="We're putting the finishing touches on the JAMB track. It'll be back soon." />}
-              </PageTransition>
-            }
-          />
+          <Route path="/study-hub" element={<PageTransition><EnvironmentGuard allow="university" preview><StudyHub /></EnvironmentGuard></PageTransition>} />
+          <Route path="/study-hub/:courseId" element={<PageTransition><EnvironmentGuard allow="university" preview><StudyHubCourse /></EnvironmentGuard></PageTransition>} />
+          <Route path="/pq-intelligence/:courseId" element={<PageTransition><EnvironmentGuard allow="university" preview><PQIntelligence /></EnvironmentGuard></PageTransition>} />
 
-          {/* School Management */}
-          <Route path="/school/register" element={<PageTransition><SchoolRegister /></PageTransition>} />
-          <Route path="/school/pending" element={<PageTransition><SchoolPending /></PageTransition>} />
-          <Route path="/school/dashboard" element={<PageTransition><SchoolDashboard /></PageTransition>} />
-          <Route path="/school/classes" element={<PageTransition><SchoolClasses /></PageTransition>} />
-          <Route path="/school/students" element={<PageTransition><SchoolStudents /></PageTransition>} />
-          <Route path="/school/teachers" element={<PageTransition><SchoolStub title="Teachers" /></PageTransition>} />
-          <Route path="/school/attendance" element={<PageTransition><SchoolAttendance /></PageTransition>} />
-          <Route path="/school/results" element={<PageTransition><SchoolResults /></PageTransition>} />
-          <Route path="/school/fees" element={<PageTransition><SchoolFees /></PageTransition>} />
-          <Route path="/school/timetable" element={<PageTransition><SchoolStub title="Timetable" /></PageTransition>} />
-          <Route path="/school/announcements" element={<PageTransition><SchoolAnnouncements /></PageTransition>} />
-          <Route path="/school/settings" element={<PageTransition><SchoolSettings /></PageTransition>} />
-          <Route path="/admin/schools" element={<AdminRoute><PageTransition><AdminSchoolApplications /></PageTransition></AdminRoute>} />
-          <Route path="/verify" element={<PageTransition><VerifyReportCard /></PageTransition>} />
-          <Route path="/verify/:id" element={<PageTransition><VerifyReportCard /></PageTransition>} />
-          <Route path="/student/report-card" element={<PageTransition><MyReportCard /></PageTransition>} />
-          <Route path="/my-report-card" element={<PageTransition><MyReportCard /></PageTransition>} />
-          <Route path="/parent/dashboard" element={<PageTransition><ParentDashboard /></PageTransition>} />
+          <Route path="/jamb/*" element={<Navigate to="/courses" replace />} />
+          <Route path="/subjects" element={<Navigate to="/courses" replace />} />
+          <Route path="/flashcards" element={<PageTransition><Flashcards /></PageTransition>} />
+          <Route path="/jamb-intelligence" element={<Navigate to="/dashboard" replace />} />
+
+          {/* Legacy School & Parent routes redirect cleanly to dashboard */}
+          <Route path="/school/*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/admin/schools" element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="/parent/*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/verify/*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/student/report-card" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/my-report-card" element={<Navigate to="/dashboard" replace />} />
           <Route path="/survival-kits" element={<PageTransition><SurvivalKits /></PageTransition>} />
           <Route path="/survival-kits/:kitId" element={<PageTransition><SurvivalKitView /></PageTransition>} />
           <Route path="/strategy" element={<PageTransition><Strategy /></PageTransition>} />
@@ -613,7 +590,8 @@ export const AnimatedRoutes = () => {
           <Route path="/exam-tomorrow" element={<PageTransition><ViralMode /></PageTransition>} />
           <Route path="/can-i-pass" element={<PageTransition><ViralMode /></PageTransition>} />
           <Route path="/two-hours-left" element={<PageTransition><ViralMode /></PageTransition>} />
-          <Route path="/my-courses" element={<PageTransition><MyCourses /></PageTransition>} />
+          <Route path="/my-courses" element={<PageTransition><EnvironmentGuard allow="university"><MyCourses /></EnvironmentGuard></PageTransition>} />
+
           <Route path="/student/tutor-courses" element={<PageTransition><StudentTutorCourses /></PageTransition>} />
           <Route path="/student/library-history" element={<PageTransition><StudentLibraryHistory /></PageTransition>} />
           <Route path="/tutor/courses" element={<PageTransition><TutorCourses /></PageTransition>} />
@@ -621,6 +599,10 @@ export const AnimatedRoutes = () => {
           <Route path="/tutor/curricula/:id" element={<PageTransition><TutorCurriculumBuilder /></PageTransition>} />
           <Route path="/admin/courses" element={<AdminRoute><PageTransition><AdminCourses /></PageTransition></AdminRoute>} />
           <Route path="/admin/bulk-upload" element={<AdminRoute><PageTransition><AdminBulkUpload /></PageTransition></AdminRoute>} />
+          <Route path="/admin/content" element={<ContentAdminRoute><PageTransition><AdminContentManagement /></PageTransition></ContentAdminRoute>} />
+          <Route path="/admin/content/syllabi" element={<ContentAdminRoute><PageTransition><AdminContentManagement /></PageTransition></ContentAdminRoute>} />
+          <Route path="/admin/content/notes" element={<ContentAdminRoute><PageTransition><AdminContentManagement /></PageTransition></ContentAdminRoute>} />
+          <Route path="/admin/content/cbt" element={<ContentAdminRoute><PageTransition><AdminContentManagement /></PageTransition></ContentAdminRoute>} />
           <Route path="/community-wall" element={<PageTransition><CommunityWall /></PageTransition>} />
           <Route path="/review" element={<PageTransition><Review /></PageTransition>} />
           <Route path="/sessions" element={<PageTransition><Sessions /></PageTransition>} />

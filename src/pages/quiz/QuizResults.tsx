@@ -1,14 +1,12 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState, useMemo } from "react";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { RateQuizDialog } from "@/components/student/RateQuizDialog";
 import { ShareResultsButton } from "@/components/quiz/ShareResultsButton";
 import { QuizCelebration } from "@/components/quiz/QuizCelebration";
-import { QuizResultShareCard } from "@/components/quiz/QuizResultShareCard";
 import { QuizReviewList } from "@/components/quiz/QuizReviewList";
-import logo from "@/assets/logo.png";
 import {
   Trophy,
   Target,
@@ -18,9 +16,13 @@ import {
   ArrowLeft,
   Loader2,
   RotateCcw,
-  Home,
-  Star
+  Sparkles,
+  BookOpen,
+  ArrowRight,
+  AlertTriangle,
+  Lightbulb,
 } from "lucide-react";
+import { SEO } from "@/components/seo/SEO";
 
 interface AttemptData {
   id: string;
@@ -32,27 +34,35 @@ interface AttemptData {
   quiz: {
     id: string;
     title: string;
+    course_id: string;
     course: {
+      id: string;
       code: string;
       name: string;
     };
   };
 }
 
-const QuizResults = () => {
+interface MissedTopic {
+  topicName: string;
+  topicId?: string;
+  missedCount: number;
+  totalCount: number;
+}
+
+export const QuizResults = () => {
   const { quizId, attemptId } = useParams<{ quizId: string; attemptId: string }>();
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
   const [attempt, setAttempt] = useState<AttemptData | null>(null);
+  const [missedTopics, setMissedTopics] = useState<MissedTopic[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showRating, setShowRating] = useState(false);
   const [hasRated, setHasRated] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/auth");
-    }
+    if (!authLoading && !user) navigate("/auth");
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
@@ -60,25 +70,135 @@ const QuizResults = () => {
       if (!attemptId || !user || !quizId) return;
 
       try {
-        const { data, error } = await supabase
+        // 1. Check if we have an offline cached attempt result first or if offline
+        const offlineRaw = localStorage.getItem(`cbt_offline_result_${attemptId}`);
+        if (offlineRaw) {
+          try {
+            const off = JSON.parse(offlineRaw);
+            setAttempt({
+              id: off.attemptId,
+              score: off.score,
+              total_questions: off.totalQuestions || off.questions?.length || 10,
+              correct_answers: off.correctCount || 0,
+              time_spent_seconds: off.timeSpent || 0,
+              mode: "simulation",
+              quiz: {
+                id: off.quizId,
+                title: off.quiz?.title || "CBT Examination",
+                course_id: off.quiz?.course?.id || "",
+                course: {
+                  id: off.quiz?.course?.id || "",
+                  code: off.quiz?.course?.code || "CBT",
+                  name: off.quiz?.course?.name || "Verified Course Examination",
+                },
+              },
+            });
+
+            // Compute missed topics from questions & answers
+            if (Array.isArray(off.questions)) {
+              const topicMap = new Map<string, { topicName: string; topicId?: string; missed: number; total: number }>();
+              off.questions.forEach((q: any) => {
+                const userAns = off.answers?.[q.id];
+                const isCorrect = userAns === q.correct_option;
+                const tName = q.topics?.name || q.topic_name || "General Course Syllabus";
+                const tId = q.topic_id;
+                const existing = topicMap.get(tName) || { topicName: tName, topicId: tId, missed: 0, total: 0 };
+                existing.total += 1;
+                if (!isCorrect) existing.missed += 1;
+                topicMap.set(tName, existing);
+              });
+
+              const sortedMissed = Array.from(topicMap.values())
+                .filter((t) => t.missed > 0)
+                .sort((a, b) => b.missed - a.missed)
+                .map((t) => ({
+                  topicName: t.topicName,
+                  topicId: t.topicId,
+                  missedCount: t.missed,
+                  totalCount: t.total,
+                }));
+
+              setMissedTopics(sortedMissed);
+            }
+
+            if (off.score >= 75) {
+              setShowCelebration(true);
+              setTimeout(() => setShowCelebration(false), 3500);
+            }
+
+            setIsLoading(false);
+            if (!navigator.onLine) return; // Stay with offline result if no connection
+          } catch (e) {
+            console.warn("Failed reading offline result cache:", e);
+          }
+        }
+
+        // 2. Fetch attempt and quiz details from Supabase
+        const { data: attemptData, error: attemptError } = await supabase
           .from("quiz_attempts")
-          .select("*, quizzes(id, title, courses(code, name))")
+          .select("*, quizzes(id, title, course_id, courses(id, code, name))")
           .eq("id", attemptId)
           .eq("user_id", user.id)
           .single();
 
-        if (error) throw error;
+        if (attemptError) {
+          if (offlineRaw) return; // Keep offline loaded attempt
+          throw attemptError;
+        }
 
         setAttempt({
-          ...data,
+          ...attemptData,
           quiz: {
-            id: data.quizzes.id,
-            title: data.quizzes.title,
-            course: data.quizzes.courses as { code: string; name: string }
-          }
+            id: attemptData.quizzes.id,
+            title: attemptData.quizzes.title,
+            course_id: attemptData.quizzes.course_id,
+            course: attemptData.quizzes.courses as { id: string; code: string; name: string },
+          },
         });
 
-        // Check if user already rated this quiz
+        // 3. Fetch questions with topics to diagnose missed concepts
+        const { data: answersData } = await supabase
+          .from("quiz_answers")
+          .select("is_correct, question_id, questions(id, topic_id, topics(id, name))")
+          .eq("attempt_id", attemptId);
+
+        if (answersData) {
+          const topicMap = new Map<string, { topicName: string; topicId?: string; missed: number; total: number }>();
+
+          for (const a of answersData) {
+            const q = (a as any).questions;
+            const topic = q?.topics;
+            const tName = topic?.name || "General Course Topics";
+            const tId = topic?.id;
+
+            const existing = topicMap.get(tName) || {
+              topicName: tName,
+              topicId: tId,
+              missed: 0,
+              total: 0,
+            };
+
+            existing.total += 1;
+            if (!a.is_correct) {
+              existing.missed += 1;
+            }
+            topicMap.set(tName, existing);
+          }
+
+          const sortedMissed = Array.from(topicMap.values())
+            .filter((t) => t.missed > 0)
+            .sort((a, b) => b.missed - a.missed)
+            .map((t) => ({
+              topicName: t.topicName,
+              topicId: t.topicId,
+              missedCount: t.missed,
+              totalCount: t.total,
+            }));
+
+          setMissedTopics(sortedMissed);
+        }
+
+        // 4. Check rating
         const { data: ratingData } = await supabase
           .from("quiz_ratings")
           .select("id")
@@ -88,20 +208,18 @@ const QuizResults = () => {
 
         setHasRated(!!ratingData);
 
-        // Show celebration for good scores
-        const scorePercent = Math.round((data.correct_answers / data.total_questions) * 100);
-        if (scorePercent >= 70) {
+        const scorePercent = Math.round((attemptData.correct_answers / attemptData.total_questions) * 100);
+        if (scorePercent >= 75) {
           setShowCelebration(true);
-          setTimeout(() => setShowCelebration(false), 4000);
-        }
-
-        // Show rating prompt after a short delay if not already rated
-        if (!ratingData) {
-          setTimeout(() => setShowRating(true), scorePercent >= 70 ? 4500 : 1500);
+          setTimeout(() => setShowCelebration(false), 3500);
         }
       } catch (error) {
         console.error("Error fetching results:", error);
-        navigate("/dashboard");
+        // Only navigate away if neither online nor offline attempt exists
+        const offlineRaw = localStorage.getItem(`cbt_offline_result_${attemptId}`);
+        if (!offlineRaw) {
+          navigate("/student/dashboard");
+        }
       } finally {
         setIsLoading(false);
       }
@@ -112,174 +230,207 @@ const QuizResults = () => {
 
   if (authLoading || isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-amber-500 mb-2" />
+        <p className="text-xs text-neutral-500 font-semibold">Calculating exam diagnostic…</p>
       </div>
     );
   }
 
   if (!attempt) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p>Results not found</p>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p className="text-sm font-semibold text-neutral-600">Results not found.</p>
       </div>
     );
   }
 
   const percentage = Math.round((attempt.correct_answers / attempt.total_questions) * 100);
-  const isPassing = percentage >= 50;
-  const isExcellent = percentage >= 80;
-  const timeMinutes = attempt.time_spent_seconds 
-    ? Math.floor(attempt.time_spent_seconds / 60) 
+  const timeMinutes = attempt.time_spent_seconds ? Math.floor(attempt.time_spent_seconds / 60) : 0;
+  const timeSeconds = attempt.time_spent_seconds ? attempt.time_spent_seconds % 60 : 0;
+  const avgSeconds = attempt.total_questions > 0
+    ? Math.round((attempt.time_spent_seconds ?? 0) / attempt.total_questions)
     : 0;
-  const timeSeconds = attempt.time_spent_seconds 
-    ? attempt.time_spent_seconds % 60 
-    : 0;
-
-  const getMessage = () => {
-    if (percentage >= 90) return "Outstanding! You're exam-ready!";
-    if (percentage >= 80) return "Excellent work! Keep it up!";
-    if (percentage >= 70) return "Good job! You're getting there!";
-    if (percentage >= 60) return "Not bad! A bit more practice will help.";
-    if (percentage >= 50) return "You passed! But there's room for improvement.";
-    return "Keep practicing! You'll get better.";
-  };
 
   return (
     <>
-      {/* Celebration Animation */}
+      <SEO
+        title={`Results: ${attempt.quiz.course.code} — OverraPrep AI`}
+        description={`Diagnostic breakdown for ${attempt.quiz.title}.`}
+        noindex
+      />
+
       <QuizCelebration score={percentage} isVisible={showCelebration} />
 
-      <div className="min-h-screen bg-gradient-hero">
-      {/* Header */}
-      <header className="bg-card/80 backdrop-blur-lg border-b border-border">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
+      <div className="min-h-screen bg-neutral-50/60 pb-20 selection:bg-amber-500 selection:text-neutral-950">
+        {/* Header */}
+        <header className="bg-white border-b border-neutral-200/90 px-4 sm:px-8 py-3.5 sticky top-0 z-20">
+          <div className="max-w-3xl mx-auto flex items-center justify-between">
             <button
-              onClick={() => navigate("/dashboard")}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+              type="button"
+              onClick={() => navigate(`/courses/${attempt.quiz.course_id}`)}
+              className="flex items-center gap-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-900 transition"
             >
-              <ArrowLeft className="w-5 h-5" />
-              Back to Dashboard
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Course</span>
             </button>
-
-            <a href="/" className="flex items-center group">
-              <img 
-                src={logo} 
-                alt="OverraPrep AI FUTA" 
-                className="h-10 w-auto object-contain"
-              />
-            </a>
+            <span className="text-xs font-bold uppercase tracking-wider text-amber-800">
+              Exam Diagnostic
+            </span>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="container mx-auto px-4 py-10 max-w-2xl">
-        <div className="relative bg-card rounded-3xl border border-amber-500/20 shadow-2xl overflow-hidden">
-          <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-amber-300 via-yellow-500 to-amber-600" />
-
-          <div className="relative px-6 pt-10 pb-8 text-center bg-gradient-to-b from-amber-50 to-transparent dark:from-amber-950/20">
-            <div className="absolute top-4 right-4 text-[10px] font-bold tracking-widest text-amber-700/70">OVERRAPREP AI</div>
-            <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-amber-300 to-yellow-600 flex items-center justify-center shadow-lg shadow-amber-500/30">
-              {isExcellent ? <Trophy className="w-12 h-12 text-white" /> : isPassing ? <Target className="w-12 h-12 text-white" /> : <XCircle className="w-12 h-12 text-white" />}
-            </div>
-            <h1 className="font-display text-6xl font-extrabold bg-gradient-to-br from-amber-600 to-yellow-700 bg-clip-text text-transparent mb-1 tracking-tight">
-              {percentage}%
-            </h1>
-            <p className="text-sm font-semibold tracking-wide uppercase text-amber-700/80 mb-1">
-              {percentage >= 90 ? "Outstanding" : percentage >= 80 ? "Excellent" : percentage >= 70 ? "Great Job" : isPassing ? "Passed" : "Keep Practicing"}
-            </p>
-            <p className="text-muted-foreground text-sm max-w-md mx-auto">{getMessage()}</p>
-          </div>
-
-          <div className="px-6 pb-8">
-            <div className="text-center mb-6">
-              <h2 className="font-display text-lg font-bold text-foreground mb-0.5">{attempt.quiz.title}</h2>
-              <p className="text-xs text-muted-foreground">{attempt.quiz.course.code} · {attempt.quiz.course.name}</p>
-              <span className="inline-block mt-2 text-[10px] font-semibold uppercase tracking-wider bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 px-2.5 py-1 rounded-full">
-                {attempt.mode === "practice" ? "Practice Mode" : "CBT Simulation"}
+        <main className="max-w-2xl mx-auto px-4 py-8">
+          {/* Main Scorecard */}
+          <div className="bg-white border border-neutral-200 rounded-3xl p-6 sm:p-8 shadow-xs mb-6">
+            <div className="text-center pb-6 border-b border-neutral-100">
+              <span className="text-xs font-bold uppercase tracking-wider text-neutral-500 block mb-1">
+                {attempt.quiz.course.code} · {attempt.quiz.course.name}
               </span>
+              <h1 className="font-display font-bold text-lg sm:text-xl text-neutral-950">
+                {attempt.quiz.title}
+              </h1>
+
+              {/* Large Score */}
+              <div className="my-5 flex flex-col items-center">
+                <span className="font-display text-5xl sm:text-6xl font-extrabold text-neutral-950 tracking-tight">
+                  {percentage}%
+                </span>
+                <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                  percentage >= 70
+                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    : percentage >= 50
+                    ? "bg-amber-50 text-amber-800 border border-amber-200"
+                    : "bg-rose-50 text-rose-800 border border-rose-200"
+                }`}>
+                  {percentage >= 75 ? "Exam Ready" : percentage >= 50 ? "Satisfactory — Revisit Weak Points" : "Needs Immediate Revision"}
+                </span>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-              <div className="text-center p-3 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/10 border border-emerald-200/50">
+            {/* Quick Metrics Grid */}
+            <div className="grid grid-cols-4 gap-2 pt-6 text-center">
+              <div className="p-3 rounded-2xl bg-neutral-50 border border-neutral-100">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 mx-auto mb-1" />
-                <p className="font-display text-xl font-bold text-foreground">{attempt.correct_answers}</p>
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Correct</p>
+                <p className="font-display font-bold text-lg text-neutral-950">{attempt.correct_answers}</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Correct</p>
               </div>
-              <div className="text-center p-3 rounded-2xl bg-gradient-to-br from-rose-50 to-rose-100/50 dark:from-rose-950/30 dark:to-rose-900/10 border border-rose-200/50">
+
+              <div className="p-3 rounded-2xl bg-neutral-50 border border-neutral-100">
                 <XCircle className="w-4 h-4 text-rose-600 mx-auto mb-1" />
-                <p className="font-display text-xl font-bold text-foreground">{attempt.total_questions - attempt.correct_answers}</p>
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Wrong</p>
-              </div>
-              <div className="text-center p-3 rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/10 border border-amber-200/50">
-                <Clock className="w-4 h-4 text-amber-600 mx-auto mb-1" />
-                <p className="font-display text-xl font-bold text-foreground">{timeMinutes}:{timeSeconds.toString().padStart(2, "0")}</p>
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Time</p>
-              </div>
-              <div className="text-center p-3 rounded-2xl bg-gradient-to-br from-violet-50 to-violet-100/50 dark:from-violet-950/30 dark:to-violet-900/10 border border-violet-200/50">
-                <Target className="w-4 h-4 text-violet-600 mx-auto mb-1" />
-                <p className="font-display text-xl font-bold text-foreground">
-                  {attempt.total_questions > 0 ? Math.round((attempt.time_spent_seconds ?? 0) / attempt.total_questions) : 0}s
+                <p className="font-display font-bold text-lg text-neutral-950">
+                  {attempt.total_questions - attempt.correct_answers}
                 </p>
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Avg / Q</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Wrong</p>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-neutral-50 border border-neutral-100">
+                <Clock className="w-4 h-4 text-neutral-600 mx-auto mb-1" />
+                <p className="font-display font-bold text-lg text-neutral-950">
+                  {timeMinutes}:{timeSeconds.toString().padStart(2, "0")}
+                </p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Time</p>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-neutral-50 border border-neutral-100">
+                <Target className="w-4 h-4 text-amber-600 mx-auto mb-1" />
+                <p className="font-display font-bold text-lg text-neutral-950">{avgSeconds}s</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">Avg / Q</p>
               </div>
             </div>
+          </div>
 
-            <div className="mb-4 p-4 rounded-2xl bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-100/60 dark:from-amber-950/20 dark:to-yellow-950/10 border border-amber-300/40">
-              <p className="text-xs font-semibold text-amber-800 dark:text-amber-300 mb-2 text-center">
-                📸 Save your branded result card
+          {/* =========================================================
+              ACTIONABLE DIAGNOSTIC: Missed Topics Breakdown
+             ========================================================= */}
+          {missedTopics.length > 0 && (
+            <div className="bg-white border border-amber-500/30 rounded-3xl p-6 sm:p-7 shadow-xs mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Lightbulb className="w-5 h-5 text-amber-700" />
+                <h3 className="font-display font-bold text-base text-neutral-950">
+                  Targeted Missed-Topic Breakdown
+                </h3>
+              </div>
+              <p className="text-xs text-neutral-600 mb-4">
+                These are the exact syllabus topics that cost you marks on this exam.
               </p>
-              <QuizResultShareCard
-                quizTitle={attempt.quiz.title}
-                courseCode={attempt.quiz.course.code}
-                score={attempt.correct_answers}
-                total={attempt.total_questions}
-                timeSeconds={attempt.time_spent_seconds ?? 0}
-                mode={attempt.mode}
-              />
-            </div>
 
-            <div className="mb-4">
-              <Button variant={hasRated ? "outline" : "secondary"} className="w-full" onClick={() => setShowRating(true)}>
-                <Star className={`w-4 h-4 mr-2 ${hasRated ? "fill-accent text-accent" : ""}`} />
-                {hasRated ? "Update Your Rating" : "Rate This Quiz"}
+              <div className="space-y-2.5 mb-5">
+                {missedTopics.map((topic) => (
+                  <div
+                    key={topic.topicName}
+                    className="p-3.5 rounded-2xl bg-amber-50/50 border border-amber-200/80 flex items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-semibold text-xs sm:text-sm text-neutral-950 truncate">
+                        {topic.topicName}
+                      </p>
+                      <p className="text-[11px] text-amber-900/80 mt-0.5">
+                        {topic.missedCount} missed out of {topic.totalCount} tested
+                      </p>
+                    </div>
+
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-200/80 text-amber-950 shrink-0">
+                      -{topic.missedCount} marks
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* 1-Tap Revise Button */}
+              <Button
+                onClick={() => {
+                  const element = document.getElementById("detailed-review");
+                  if (element) {
+                    element.scrollIntoView({ behavior: "smooth" });
+                  }
+                }}
+                className="w-full bg-amber-500 hover:bg-amber-600 text-neutral-950 font-bold text-xs sm:text-sm h-11 rounded-xl shadow-xs flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Revise Missed Topics with AI Explanations</span>
+                <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
+          )}
 
-            <div className="mb-4">
+          {/* Action Row */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-8">
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/quiz/${quizId}/cbt`)}
+              className="flex-1 rounded-xl border-neutral-300 font-semibold text-xs h-10"
+            >
+              <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+              <span>Retake CBT</span>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/courses/${attempt.quiz.course_id}`)}
+              className="flex-1 rounded-xl border-neutral-300 font-semibold text-xs h-10"
+            >
+              <BookOpen className="w-3.5 h-3.5 mr-1.5" />
+              <span>Course Outline</span>
+            </Button>
+            <div className="flex-1">
               <ShareResultsButton quizTitle={attempt.quiz.title} score={percentage} quizId={attempt.quiz.id} />
             </div>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button variant="default" className="flex-1" onClick={() => navigate(`/quiz/${quizId}/practice`)}>
-                <RotateCcw className="w-4 h-4 mr-2" /> Try Again
-              </Button>
-              <Button variant="outline" className="flex-1" onClick={() => navigate("/dashboard")}>
-                <Home className="w-4 h-4 mr-2" /> Dashboard
-              </Button>
-            </div>
           </div>
-        </div>
 
-        {/* Per-question review with AI explanations */}
-        {attemptId && quizId && (
-          <QuizReviewList attemptId={attemptId} quizId={quizId} />
-        )}
-      </main>
+          {/* Detailed Question Review */}
+          <div id="detailed-review" className="pt-2">
+            <div className="mb-4">
+              <h3 className="font-display font-bold text-lg text-neutral-950">
+                Detailed Answer Review & AI Solutions
+              </h3>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Review each question with full step-by-step solutions to fix misconceptions.
+              </p>
+            </div>
 
-      {/* Rating Dialog */}
-      {quizId && attempt && (
-        <RateQuizDialog
-          open={showRating}
-          onOpenChange={(open) => {
-            setShowRating(open);
-            if (!open) setHasRated(true);
-          }}
-          quizId={quizId}
-          quizTitle={attempt.quiz.title}
-        />
-      )}
+            <QuizReviewList attemptId={attemptId} quizId={quizId} />
+          </div>
+        </main>
       </div>
     </>
   );

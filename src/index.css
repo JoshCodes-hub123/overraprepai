@@ -530,3 +530,62 @@ html[data-lite="true"] .blur-2xl,
 html[data-lite="true"] .blur-3xl {
   filter: none !important;
 }
+
+/* =====================================================================
+   Admin Dashboard: Dynamic Table Density Toggle & Status Badges
+   ===================================================================== */
+[data-density="compact"] table th,
+[data-density="compact"] table td {
+  padding-top: 0.35rem !important;
+  padding-bottom: 0.35rem !important;
+  padding-left: 0.6rem !important;
+  padding-right: 0.6rem !important;
+  font-size: 0.75rem !important;
+}
+[data-density="compact"] .table-row-compact {
+  height: 2.25rem !important;
+}
+
+.status-pill-active,
+.status-pill-approved,
+.status-pill-published {
+  background-color: rgb(236 253 245);
+  color: rgb(4 120 87);
+  border: 1px solid rgb(167 243 208);
+}
+.dark .status-pill-active,
+.dark .status-pill-approved,
+.dark .status-pill-published {
+  background-color: rgba(6, 78, 59, 0.4);
+  color: rgb(110 231 183);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-pill-pending,
+.status-pill-draft {
+  background-color: rgb(254 243 199);
+  color: rgb(180 83 9);
+  border: 1px solid rgb(253 230 138);
+}
+.dark .status-pill-pending,
+.dark .status-pill-draft {
+  background-color: rgba(120, 53, 15, 0.4);
+  color: rgb(252 211 77);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.status-pill-flagged,
+.status-pill-rejected,
+.status-pill-banned {
+  background-color: rgb(255 241 242);
+  color: rgb(190 18 60);
+  border: 1px solid rgb(254 205 211);
+}
+.dark .status-pill-flagged,
+.dark .status-pill-rejected,
+.dark .status-pill-banned {
+  background-color: rgba(136, 19, 55, 0.4);
+  color: rgb(253 164 175);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+}
+

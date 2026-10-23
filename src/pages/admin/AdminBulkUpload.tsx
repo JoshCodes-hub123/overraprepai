@@ -9,14 +9,16 @@ import { BulkQuizImport } from "@/components/tutor/BulkQuizImport";
 import { QuizUploadTemplates } from "@/components/tutor/quiz-upload/QuizUploadTemplates";
 import { GNS106GermanTemplate } from "@/components/admin/GNS106GermanTemplate";
 import { AdminImportHistory } from "@/components/admin/AdminImportHistory";
+import { useAdminEnvironment } from "@/hooks/useAdminEnvironment";
+import { AdminPersistentHeader } from "@/components/admin/AdminPersistentHeader";
 
 /**
  * Admin-only page for bulk-uploading quiz banks (Excel / CSV / Word).
- * Reuses the tutor BulkQuizImport dialog with `adminScope` enabled so
- * existing courses created by ANY user are matched (no duplicates).
+ * Scoped to the active university campus environment (e.g. FUTA, OAU, UNILAG, UI).
  */
 const AdminBulkUpload = () => {
   const navigate = useNavigate();
+  const adminEnv = useAdminEnvironment();
   const [open, setOpen] = useState(false);
   const [historyKey, setHistoryKey] = useState(0);
 
@@ -33,6 +35,8 @@ const AdminBulkUpload = () => {
           >
             <ArrowLeft className="w-4 h-4 mr-1.5" /> Back to dashboard
           </Button>
+
+          <AdminPersistentHeader showNavStrip={true} />
 
           <div className="flex items-start gap-4 mb-6">
             <div className="grid h-12 w-12 place-items-center rounded-xl bg-amber-500 text-white shadow-md">
@@ -128,6 +132,8 @@ const AdminBulkUpload = () => {
           setHistoryKey((k) => k + 1);
         }}
         adminScope
+        targetEnvironment={adminEnv.current.env}
+        targetUniversity={adminEnv.current.institution}
       />
     </>
   );

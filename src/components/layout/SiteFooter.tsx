@@ -19,7 +19,7 @@ export const SiteFooter = () => {
               <span className="font-serif text-xl font-bold tracking-tight">OverraPrep AI</span>
             </Link>
             <p className="mt-3 text-sm text-muted-foreground max-w-md leading-relaxed">
-              AI-powered exam preparation, school management and verified academic records — built for Nigerian students, tutors and institutions.
+              AI-powered university course revision, CBT practice, and theory exam preparation — built for Nigerian tertiary students and campus tutors.
             </p>
           </div>
 
@@ -36,7 +36,6 @@ export const SiteFooter = () => {
           <div>
             <h3 className="font-serif text-sm font-semibold tracking-wide text-foreground mb-3">Trust & Legal</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link to="/verify" className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-amber-700 transition"><ShieldCheck className="h-3.5 w-3.5" />Verify a report card</Link></li>
               <li><Link to="/terms" className="text-muted-foreground hover:text-amber-700 transition">Terms of Service</Link></li>
               <li><Link to="/privacy" className="text-muted-foreground hover:text-amber-700 transition">Privacy Policy</Link></li>
               <li><Link to="/settings/privacy" className="text-muted-foreground hover:text-amber-700 transition">Manage your data</Link></li>

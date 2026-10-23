@@ -31,7 +31,8 @@ const MeHubPage = () => {
             title: "Account",
             tiles: [
               { to: "/profile/edit", label: "Edit Profile", description: "Name, photo, university", icon: User, accent: true },
-              { to: "/wallet", label: "Wallet", description: "Tokens & top-ups", icon: Wallet, accent: true },
+              { to: "/settings/academic", label: "Academic Settings", description: "Path, institution & goals", icon: GraduationCap, accent: true },
+              { to: "/wallet", label: "Wallet", description: "Tokens & top-ups", icon: Wallet },
             ],
           },
           {

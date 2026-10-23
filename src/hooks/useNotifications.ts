@@ -88,8 +88,9 @@ export const useNotifications = () => {
   useEffect(() => {
     if (!user?.id) return;
 
+    const channelName = `notifications-${user.id}-${Math.random().toString(36).slice(2, 8)}`;
     const channel = supabase
-      .channel("notifications-realtime")
+      .channel(channelName)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
@@ -125,7 +126,11 @@ export const useNotifications = () => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      try {
+        supabase.removeChannel(channel);
+      } catch {
+        /* noop */
+      }
     };
   }, [user?.id, queryClient]);
 

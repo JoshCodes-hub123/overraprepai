@@ -1,7 +1,7 @@
-// Central feature flags. Flip to true to re-enable.
+// Central feature flags.
 export const FEATURES = {
-  jamb: true,         // JAMB / UTME is now its own isolated environment
-  marketingSite: false, // Hide marketing landing; `/` becomes native app entry
-  school: false,      // School Management System — paused, focus is universities
-  liveClassrooms: false, // LiveKit live classrooms paused — show Coming soon
+  jamb: false,          // JAMB / UTME disabled — app is 100% focused on University higher education
+  marketingSite: false, // Native app entry
+  school: false,        // Secondary school management removed
+  liveClassrooms: true, // LiveKit interactive classrooms enabled
 } as const;

@@ -1,0 +1,7 @@
+{
+  "name": "OverraPrep AI",
+  "description": "AI-Powered CBT Exam Preparation, Course Notes, and Theory Drills for Nigerian University Students.",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

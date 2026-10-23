@@ -659,14 +659,14 @@ const EditProfile = () => {
             )}
           </Button>
           <Link
-            to="/profile/preparation"
+            to="/settings/academic"
             className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/40 p-4 hover:bg-amber-50 transition-colors"
           >
             <div className="min-w-0">
-              <p className="font-display font-bold text-foreground">Preparation track</p>
-              <p className="text-xs text-muted-foreground">Switch between Secondary School, JAMB or University anytime.</p>
+              <p className="font-display font-bold text-foreground">Academic Profile</p>
+              <p className="text-xs text-muted-foreground">Manage your university campus, faculty, department, and level.</p>
             </div>
-            <span className="text-amber-700 font-semibold text-sm shrink-0">Change →</span>
+            <span className="text-amber-700 font-semibold text-sm shrink-0">Configure →</span>
           </Link>
           </div>
         </div>

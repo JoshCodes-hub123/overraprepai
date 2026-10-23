@@ -21,7 +21,7 @@ interface Course {
   department: string | null; level: string | null;
 }
 
-const LEVEL_ORDER = ["100", "200", "300", "400", "500", "JAMB", "Secondary", "Other"];
+const LEVEL_ORDER = ["100", "200", "300", "400", "500", "Other"];
 const MAX_COURSES = 12;
 
 const MyCourses = () => {

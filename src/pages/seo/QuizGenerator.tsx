@@ -40,7 +40,7 @@ export default function QuizGenerator() {
         { label: "AI Flashcard Generator", href: "/ai/flashcard-generator" },
         { label: "Mock Exams", href: "/mock-exams" },
         { label: "Audio Learning", href: "/audio-learning" },
-        { label: "JAMB CBT Practice", href: "/jamb/cbt-practice" },
+        { label: "University Courses", href: "/courses" },
       ]}
       ctaPractice="/library"
     />

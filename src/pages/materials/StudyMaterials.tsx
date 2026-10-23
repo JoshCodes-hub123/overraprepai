@@ -9,7 +9,7 @@ import { useMaterialCourses } from "@/hooks/useStudyMaterials";
  * uploaded for the student's own environment. Course/Subject → Topic → Material.
  */
 const StudyMaterials = () => {
-  const { isJamb, label } = useEnvironment();
+  const { label } = useEnvironment();
   const { data: courses = [], isLoading } = useMaterialCourses();
 
   return (
@@ -33,7 +33,7 @@ const StudyMaterials = () => {
             icon={<FolderOpen className="h-5 w-5" />}
             title="No materials yet"
             description="When your tutors or OverraPrep upload notes and resources, they'll appear here automatically."
-            action={<BrandButton to={isJamb ? "/jamb/subjects" : "/courses"}>{isJamb ? "Browse subjects" : "Browse courses"}</BrandButton>}
+            action={<BrandButton to="/courses">Browse courses</BrandButton>}
           />
         ) : (
           <div className="space-y-2.5">

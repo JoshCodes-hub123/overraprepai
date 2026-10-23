@@ -160,7 +160,7 @@ const AITutor = () => {
     if (h < 18) return "Good afternoon";
     return "Good evening";
   })();
-  const modeLabel = profile?.academic_path === "secondary" ? "Secondary" : "University";
+  const modeLabel = "University";
 
   const flushStream = useCallback(() => {
     streamRafRef.current = null;

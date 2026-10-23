@@ -16,7 +16,7 @@ export default function FlashcardGenerator() {
   return (
     <SEOLandingShell
       seoTitle="AI Flashcard Generator — From PDF or Notes in Seconds"
-      seoDescription="Turn any PDF, DOCX or pasted notes into spaced-repetition flashcards in under 10 seconds. Built for Nigerian university and JAMB students."
+      seoDescription="Turn any PDF, DOCX or pasted notes into spaced-repetition flashcards in under 10 seconds. Built for Nigerian university undergraduates."
       canonicalPath="/ai/flashcard-generator"
       jsonLd={jsonLd}
       eyebrow="AI Tool"
@@ -40,7 +40,7 @@ export default function FlashcardGenerator() {
         { label: "AI Quiz Generator", href: "/ai/quiz-generator" },
         { label: "Audio Learning", href: "/audio-learning" },
         { label: "Courses", href: "/courses" },
-        { label: "JAMB Past Questions", href: "/jamb/past-questions" },
+        { label: "Mock Exams", href: "/mock-exams" },
       ]}
       ctaFlashcards="/flashcards"
     />

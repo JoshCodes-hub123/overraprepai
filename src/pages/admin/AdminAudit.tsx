@@ -5,6 +5,7 @@ import { ArrowLeft, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SEO } from "@/components/seo/SEO";
 import { Input } from "@/components/ui/input";
+import { AdminPersistentHeader } from "@/components/admin/AdminPersistentHeader";
 
 const ACTIONS = ["", "tutor_status_change", "revoke_all_sessions", "suspicious_purchase_burst", "role_switch", "role_blocked"];
 
@@ -35,7 +36,8 @@ export default function AdminAudit() {
   return (
     <>
       <SEO title="Admin · Audit logs" description="Search admin audit trail" />
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pb-16">
+        <AdminPersistentHeader showNavStrip={true} />
         <header className="bg-card border-b border-amber-100/70 sticky top-0 z-30">
           <div className="container mx-auto px-4 h-14 flex items-center gap-3">
             <Link to="/admin" className="text-muted-foreground"><ArrowLeft className="h-5 w-5" /></Link>

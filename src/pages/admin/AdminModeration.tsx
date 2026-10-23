@@ -7,8 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { Shield, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { Shield, CheckCircle2, XCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { useAuditLog } from '@/hooks/useAuditLog';
+import { AdminPersistentHeader } from '@/components/admin/AdminPersistentHeader';
+import { Link } from 'react-router-dom';
 
 export default function AdminModeration() {
   const { user } = useAuth();
@@ -98,11 +100,18 @@ export default function AdminModeration() {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-3xl space-y-4">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <h1 className="text-2xl font-bold flex items-center gap-2"><Shield className="w-6 h-6"/>Moderation Queue</h1>
-        <div className="text-xs text-muted-foreground">All decisions are audit-logged</div>
-      </div>
+    <div className="min-h-screen bg-background pb-20">
+      <AdminPersistentHeader showNavStrip={true} />
+      <div className="container mx-auto p-4 max-w-3xl space-y-4">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Link to="/admin" className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground">
+              <ArrowLeft className="w-4 h-4" />
+            </Link>
+            <h1 className="text-2xl font-bold flex items-center gap-2"><Shield className="w-6 h-6"/>Moderation Queue</h1>
+          </div>
+          <div className="text-xs text-muted-foreground">All decisions are audit-logged</div>
+        </div>
 
       {pending.length > 0 && (
         <Card>
@@ -164,6 +173,7 @@ export default function AdminModeration() {
           )}
         </Card>
       ))}
+      </div>
     </div>
   );
 }

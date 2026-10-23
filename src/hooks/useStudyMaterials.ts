@@ -35,16 +35,16 @@ export function useMaterialCourses() {
 
   return useQuery({
     queryKey: ["material-courses", user?.id, environment, institution],
-    enabled: !!user && (environment === "jamb" || !!institution),
+    enabled: !!user && !!institution,
     staleTime: 60_000,
     queryFn: async (): Promise<MaterialCourse[]> => {
       let q = (supabase as any)
         .from("courses")
         .select("id, code, name")
         .eq("is_active", true)
-        .eq("environment_type", environment)
+        .eq("environment_type", "university")
         .order("code");
-      if (environment === "university" && institution) q = q.eq("university", institution);
+      if (institution) q = q.eq("university", institution);
       const { data: courses, error } = await q;
       if (error) throw error;
 

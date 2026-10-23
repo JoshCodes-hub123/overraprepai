@@ -448,17 +448,6 @@ const BrowseTutors = () => {
         {/* Sticky Filters */}
         <div className="sticky top-16 z-40 -mx-4 px-4 py-3 bg-background/85 backdrop-blur-md border-b border-border/60 mb-5">
           <div className="flex flex-wrap gap-2">
-            <Select value={selectedSpec} onValueChange={setSelectedSpec}>
-              <SelectTrigger className="w-auto h-9 rounded-full text-xs">
-                <SelectValue placeholder="Path" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Paths</SelectItem>
-                <SelectItem value="secondary">Secondary</SelectItem>
-                <SelectItem value="jamb">JAMB</SelectItem>
-                <SelectItem value="university">University</SelectItem>
-              </SelectContent>
-            </Select>
 
             <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
               <SelectTrigger className="w-auto h-9 rounded-full text-xs">

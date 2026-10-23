@@ -20,7 +20,7 @@ import CourseDirectory from "@/pages/courses/CourseDirectory";
 /**
  * The student's Courses screen: their own academic courses first, one search
  * field, nothing else. Search is scoped by RLS to the student's own
- * university environment, so FUTA never sees OAU, UI, FUTEsIyin or JAMB.
+ * university environment, so FUTA never sees OAU, UI, or other campuses.
  */
 const CoursesScreen = () => {
   const navigate = useNavigate();

@@ -7,6 +7,7 @@ import { StatusBar, Style } from "@capacitor/status-bar";
 import App from "./App.tsx";
 import "./index.css";
 import { installEdgeRetry } from "@/lib/installEdgeRetry";
+import { logClientError } from "@/lib/analytics";
 
 // Global auto-retry for every edge-function call — saves students on 2G/3G.
 installEdgeRetry();
@@ -60,9 +61,7 @@ window.addEventListener("error", (e) => {
 window.addEventListener("error", (e) => {
   // Log uncaught runtime errors for admin observability (skip chunk-load reload path)
   if (e?.message && !isChunkLoadError(e.message)) {
-    import("@/lib/analytics").then(({ logClientError }) => {
-      void logClientError({ message: e.message, stack: e.error?.stack });
-    }).catch(() => {});
+    void logClientError({ message: e.message, stack: e.error?.stack });
   }
 });
 window.addEventListener("unhandledrejection", (e) => {
@@ -71,9 +70,7 @@ window.addEventListener("unhandledrejection", (e) => {
     if (tryChunkRecoveryReload()) return;
   }
   if (msg) {
-    import("@/lib/analytics").then(({ logClientError }) => {
-      void logClientError({ message: msg, stack: e?.reason?.stack });
-    }).catch(() => {});
+    void logClientError({ message: msg, stack: e?.reason?.stack });
   }
 });
 

@@ -424,8 +424,7 @@ export const AudioPlayerCard = ({
         </div>
 
         {/* Secondary controls (mute + captions) */}
-        {(transcript || true) && (
-          <div className="mt-3 flex items-center justify-center gap-2">
+        <div className="mt-3 flex items-center justify-center gap-2">
             <button
               type="button"
               onClick={() => setMuted((m) => !m)}
@@ -452,7 +451,6 @@ export const AudioPlayerCard = ({
               </button>
             )}
           </div>
-        )}
 
         {/* Speed selector */}
         <div className="mt-5">

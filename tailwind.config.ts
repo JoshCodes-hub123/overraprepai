@@ -1,8 +1,16 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
+import typography from "@tailwindcss/typography";
 
 export default {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+    "./index.html",
+  ],
   prefix: "",
   theme: {
     container: {
@@ -13,12 +21,6 @@ export default {
       },
     },
     extend: {
-      fontFamily: {
-        display: ['Space Grotesk', 'sans-serif'],
-        body: ['DM Sans', 'sans-serif'],
-        sans: ['DM Sans', 'Inter', 'sans-serif'],
-        serif: ['Playfair Display', 'serif'],
-      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -45,10 +47,6 @@ export default {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
-        success: {
-          DEFAULT: "hsl(var(--success))",
-          foreground: "hsl(var(--success-foreground))",
-        },
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
@@ -67,10 +65,9 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        /* Mobile rebrand palette — white · premium gold · black */
         brand: {
           surface: "hsl(var(--brand-surface))",
-          soft: "hsl(var(--brand-surface-soft))",
+          "surface-soft": "hsl(var(--brand-surface-soft))",
           ink: "hsl(var(--brand-ink))",
           "ink-soft": "hsl(var(--brand-ink-soft))",
           line: "hsl(var(--brand-line))",
@@ -79,30 +76,23 @@ export default {
           "gold-line": "hsl(var(--brand-gold-line))",
           "on-gold": "hsl(var(--brand-on-gold))",
         },
-        /* Academic environment accent — resolves per [data-env] */
         env: {
-          DEFAULT: "hsl(var(--env-accent))",
-          soft: "hsl(var(--env-accent-soft))",
-          line: "hsl(var(--env-accent-line))",
-          foreground: "hsl(var(--env-on-accent))",
+          accent: "hsl(var(--env-accent))",
+          "accent-soft": "hsl(var(--env-accent-soft))",
+          "accent-line": "hsl(var(--env-accent-line))",
+          "on-accent": "hsl(var(--env-on-accent))",
         },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
-        brand: "var(--brand-radius)",
-        "brand-sm": "var(--brand-radius-sm)",
-        "brand-lg": "var(--brand-radius-lg)",
       },
-      boxShadow: {
-        'glow': 'var(--shadow-glow)',
-        'accent-glow': 'var(--shadow-accent-glow)',
-        'brand': 'var(--brand-elev)',
-        'brand-lifted': 'var(--brand-elev-lifted)',
+      fontFamily: {
+        display: ["var(--font-display)", "Space Grotesk", "sans-serif"],
+        body: ["var(--font-body)", "DM Sans", "sans-serif"],
       },
-
-keyframes: {
+      keyframes: {
         "accordion-down": {
           from: { height: "0" },
           to: { height: "var(--radix-accordion-content-height)" },
@@ -111,79 +101,12 @@ keyframes: {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "float": {
-          "0%, 100%": { transform: "translateY(0px)" },
-          "50%": { transform: "translateY(-20px)" },
-        },
-        "pulse-subtle": {
-          "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.8" },
-        },
-        "slide-up": {
-          from: { opacity: "0", transform: "translateY(30px)" },
-          to: { opacity: "1", transform: "translateY(0)" },
-        },
-        "fade-in": {
-          from: { opacity: "0" },
-          to: { opacity: "1" },
-        },
-        "confetti": {
-          "0%": { transform: "translateY(-100vh) rotate(0deg)", opacity: "1" },
-          "100%": { transform: "translateY(100vh) rotate(720deg)", opacity: "0" },
-        },
-        "bounce-in": {
-          "0%": { transform: "scale(0)", opacity: "0" },
-          "50%": { transform: "scale(1.1)" },
-          "100%": { transform: "scale(1)", opacity: "1" },
-        },
-        "shimmer": {
-          "0%": { backgroundPosition: "-200% 0", transform: "translateX(-100%)" },
-          "100%": { backgroundPosition: "200% 0", transform: "translateX(100%)" },
-        },
-        "lift": {
-          "0%": { transform: "translateY(0)", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" },
-          "100%": { transform: "translateY(-4px)", boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" },
-        },
-        "press": {
-          "0%, 100%": { transform: "scale(1)" },
-          "50%": { transform: "scale(0.97)" },
-        },
-        "wiggle": {
-          "0%, 100%": { transform: "rotate(-1deg)" },
-          "50%": { transform: "rotate(1deg)" },
-        },
-        "glow-pulse": {
-          "0%, 100%": { boxShadow: "0 0 5px hsl(var(--primary) / 0.3)" },
-          "50%": { boxShadow: "0 0 20px hsl(var(--primary) / 0.5), 0 0 30px hsl(var(--primary) / 0.3)" },
-        },
-        "logo-breathe": {
-          "0%, 100%": { transform: "scale(1)", opacity: "0.95" },
-          "50%": { transform: "scale(1.06)", opacity: "1" },
-        },
-        "marquee": {
-          "0%": { transform: "translateX(0)" },
-          "100%": { transform: "translateX(-50%)" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "float": "float 6s ease-in-out infinite",
-        "float-delayed": "float 6s ease-in-out infinite 2s",
-        "pulse-subtle": "pulse-subtle 3s ease-in-out infinite",
-        "slide-up": "slide-up 0.6s ease-out forwards",
-        "fade-in": "fade-in 0.5s ease-out forwards",
-        "confetti": "confetti 3s ease-out forwards",
-        "bounce-in": "bounce-in 0.5s ease-out forwards",
-        "shimmer": "shimmer 2s linear infinite",
-        "lift": "lift 0.2s ease-out forwards",
-        "press": "press 0.15s ease-out",
-        "wiggle": "wiggle 0.3s ease-in-out",
-        "glow-pulse": "glow-pulse 2s ease-in-out infinite",
-        "logo-breathe": "logo-breathe 2.4s ease-in-out infinite",
-        "marquee": "marquee 40s linear infinite",
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate, typography],
 } satisfies Config;

@@ -1,7 +1,19 @@
-import { useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useState, useMemo } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ListChecks, Sparkles, ClipboardList, Clock, FileText, Download } from "lucide-react";
+import {
+  ListChecks,
+  Sparkles,
+  ClipboardList,
+  Clock,
+  FileText,
+  Download,
+  BookOpen,
+  ArrowRight,
+  GraduationCap,
+  HelpCircle,
+  PlayCircle
+} from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,18 +29,29 @@ import { useTrackCourseOpen } from "@/hooks/useRecentlyOpenedCourses";
 import { useCourseMaterials } from "@/hooks/useStudyMaterials";
 import { nextStepFor, nextStepCta } from "@/lib/nextStep";
 import { SEO } from "@/components/seo/SEO";
-import { Screen, ScreenHeader, Section, EmptyState, BrandSkeleton } from "@/components/ui-kit";
+import { Screen, ScreenHeader, EmptyState, BrandSkeleton, BrandButton } from "@/components/ui-kit";
 import NextStepHero from "@/components/dashboard/mobile/NextStepHero";
 import CourseHub from "@/pages/courses/CourseHub";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ExplainConceptSheet } from "@/components/courses/ExplainConceptSheet";
+import { Button } from "@/components/ui/button";
 
 /**
- * The student's course workspace: who am I studying, what's next, what topics
- * exist. Tutors and admins keep the full management hub untouched.
+ * Unified Course Workspace (/courses/:courseId)
+ * 3 Distinct Tabs:
+ *   1. Syllabus & Topics
+ *   2. Lecture Materials / Notes
+ *   3. Course CBT Questions
  */
 const CourseWorkspace = () => {
   const { courseId = "" } = useParams();
+  const navigate = useNavigate();
   const { primaryRole } = useAuth();
   useTrackCourseOpen(courseId);
+
+  const [activeTab, setActiveTab] = useState<"topics" | "materials" | "quizzes">("topics");
+  const [explainOpen, setExplainOpen] = useState(false);
+  const [selectedConcept, setSelectedConcept] = useState<{ title: string; notes?: string } | null>(null);
 
   const { data: course, isLoading: courseLoading } = useQuery({
     queryKey: ["course-workspace", courseId],
@@ -48,7 +71,7 @@ const CourseWorkspace = () => {
   const { data: topics = [], isLoading: topicsLoading } = useCourseTopics(courseId);
   const { data: counts = {} } = useTopicQuestionCounts(courseId);
 
-  // Every quiz published for this course — students expect the full list here.
+  // Quizzes published for this course
   const { data: quizzes = [], isLoading: quizzesLoading } = useQuery({
     queryKey: ["course-quizzes", courseId],
     enabled: !!courseId,
@@ -64,8 +87,8 @@ const CourseWorkspace = () => {
       return data ?? [];
     },
   });
+
   const studied = useLastStudiedTopic(courseId);
-  // Every document/note uploaded for this course, grouped by its real topic.
   const { data: materialData, isLoading: materialsLoading } = useCourseMaterials(courseId);
   const materialGroups = materialData?.groups ?? [];
   const materialCount = materialGroups.reduce((n, g) => n + g.items.length, 0);
@@ -87,7 +110,6 @@ const CourseWorkspace = () => {
     [studied, weakTopic, snapshot],
   );
 
-  // Where the next step actually takes you — a known topic, or the first one.
   const stepTopicId =
     step.topicId ??
     topics.find((t) => t.name.trim().toLowerCase() === (step.topicName ?? "").trim().toLowerCase())?.id ??
@@ -103,18 +125,47 @@ const CourseWorkspace = () => {
     .filter(Boolean)
     .join(" · ");
 
+  const handleExplain = (title: string, notes?: string) => {
+    setSelectedConcept({ title, notes });
+    setExplainOpen(true);
+  };
+
   return (
     <>
       <SEO
-        title={course ? `${course.code} — ${course.name}` : "Course"}
-        description="Your course workspace: topics, practice and AI help."
+        title={course ? `${course.code} — ${course.name}` : "Course Workspace"}
+        description="Your unified course workspace: topics syllabus, lecture notes, and CBT practice."
         noindex
       />
-      <Screen>
-        {courseLoading || !course ? (
-          <div className="pt-8 space-y-4">
-            <BrandSkeleton h={40} />
-            <BrandSkeleton h={170} />
+
+      {selectedConcept && (
+        <ExplainConceptSheet
+          open={explainOpen}
+          onOpenChange={setExplainOpen}
+          conceptTitle={selectedConcept.title}
+          courseCode={course?.code}
+          courseTitle={course?.name}
+          courseLevel={course?.level}
+          universityCode={course?.university_code}
+          topicTitle={selectedConcept.title}
+          contextNotes={selectedConcept.notes}
+          onRequestUploadNotes={() => setActiveTab("materials")}
+        />
+      )}
+
+      <Screen className="max-w-3xl mx-auto px-4 py-6">
+        {courseLoading ? (
+          <div className="pt-6 space-y-4">
+            <BrandSkeleton h={38} />
+            <BrandSkeleton h={150} />
+          </div>
+        ) : !course ? (
+          <div className="pt-8">
+            <EmptyState
+              title="Course not found"
+              description="This course may not exist, or it isn't part of your university curriculum."
+              action={<BrandButton to="/courses">Browse all courses</BrandButton>}
+            />
           </div>
         ) : (
           <>
@@ -123,213 +174,259 @@ const CourseWorkspace = () => {
               title={course.code}
               subtitle={course.name}
             />
+
             {identity && (
-              <p className="-mt-3 mb-6 text-[13px] font-semibold tracking-tight text-brand-ink-soft">
+              <p className="-mt-3 mb-5 text-xs font-semibold tracking-tight text-neutral-500">
                 {identity}
               </p>
             )}
 
-            {progress.studied > 0 && (
-              <p className="-mt-2 mb-5 text-[13px] leading-relaxed text-brand-ink-soft">
-                {progress.attempted > 0 && (
-                  <>
-                    {progress.attempted} question{progress.attempted === 1 ? "" : "s"} attempted ·{" "}
-                    {progress.correct} correct · {progress.incorrect} incorrect
-                    <br />
-                  </>
-                )}
-                {progress.studied} topic{progress.studied === 1 ? "" : "s"} practised
-                {progress.needsReview > 0 && (
-                  <>
-                    {" · "}
-                    <Link to="/weak-areas" className="font-semibold text-brand-ink underline underline-offset-4">
-                      {progress.needsReview} needing work
-                    </Link>
-                  </>
-                )}
-              </p>
-            )}
-
-
+            {/* Next Step Primary Card */}
             {topicsLoading ? (
-              <BrandSkeleton h={170} />
+              <BrandSkeleton h={150} />
             ) : (
               <NextStepHero
-                eyebrow="Your next step"
+                eyebrow="Next Best Action"
                 title={stepTitle}
                 context={
                   step.kind === "resume-topic"
-                    ? "Pick up where you stopped."
+                    ? "Pick up right where you left off."
                     : step.kind === "weak-topic"
-                    ? "This is the topic to strengthen next."
+                    ? "Strengthen this weak topic to boost your CBT score."
                     : undefined
                 }
                 cta={nextStepCta(step)}
-                to={stepTopicId ? `/courses/${courseId}/topics/${stepTopicId}` : `/study-hub/${courseId}`}
+                to={stepTopicId ? `/courses/${courseId}/topics/${stepTopicId}` : `/practice?course=${courseId}`}
               />
             )}
 
-            <Section title="Topics" className="mt-8">
-              {topicsLoading ? (
-                <div className="space-y-2">
-                  <BrandSkeleton h={58} />
-                  <BrandSkeleton h={58} />
-                  <BrandSkeleton h={58} />
-                </div>
-              ) : topics.length === 0 ? (
-                <EmptyState
-                  icon={<ListChecks className="h-5 w-5" />}
-                  title="No topics yet"
-                  description="We're preparing content for this course. Your study materials are still available."
-                />
-              ) : (
-                <ul className="divide-y divide-brand-line rounded-brand border border-brand-line bg-brand-surface">
-                  {topics.map((t, i) => {
-                    const n = counts[t.id] ?? 0;
-                    return (
-                      <li key={t.id}>
-                        <Link
-                          to={`/courses/${courseId}/topics/${t.id}`}
-                          className="flex min-h-[60px] items-center gap-4 px-4 py-3.5 transition-colors hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-env"
-                        >
-                          <span className="w-6 shrink-0 text-[12.5px] font-bold tabular-nums text-brand-ink-soft/70">
-                            {String(i + 1).padStart(2, "0")}
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block text-[15px] font-semibold leading-snug text-brand-ink">
-                              {t.name}
-                            </span>
-                            {n > 0 && (
-                              <span className="mt-0.5 block text-[12.5px] text-brand-ink-soft">
-                                {n} question{n === 1 ? "" : "s"}
-                              </span>
-                            )}
-                          </span>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </Section>
+            {/* 3 Distinct Tabs */}
+            <div className="mt-8">
+              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
+                <TabsList className="w-full grid grid-cols-3 bg-neutral-100 p-1 rounded-2xl h-11 border border-neutral-200">
+                  <TabsTrigger
+                    value="topics"
+                    className="rounded-xl font-semibold text-xs data-[state=active]:bg-white data-[state=active]:text-neutral-950 data-[state=active]:shadow-xs"
+                  >
+                    1. Topics ({topics.length})
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="materials"
+                    className="rounded-xl font-semibold text-xs data-[state=active]:bg-white data-[state=active]:text-neutral-950 data-[state=active]:shadow-xs"
+                  >
+                    2. Notes ({materialCount})
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="quizzes"
+                    className="rounded-xl font-semibold text-xs data-[state=active]:bg-white data-[state=active]:text-neutral-950 data-[state=active]:shadow-xs"
+                  >
+                    3. CBT Drills ({quizzes.length})
+                  </TabsTrigger>
+                </TabsList>
 
-            <Section title={`Quizzes${quizzes.length ? ` (${quizzes.length})` : ""}`}>
-              {quizzesLoading ? (
-                <div className="space-y-2">
-                  <BrandSkeleton h={58} />
-                  <BrandSkeleton h={58} />
-                </div>
-              ) : quizzes.length === 0 ? (
-                <EmptyState
-                  icon={<ClipboardList className="h-5 w-5" />}
-                  title="No quizzes yet"
-                  description="Tutors publish quizzes for this course regularly. Practise by topic meanwhile."
-                />
-              ) : (
-                <ul className="divide-y divide-brand-line rounded-brand border border-brand-line bg-brand-surface">
-                  {quizzes.map((q: any) => (
-                    <li key={q.id}>
-                      <Link
-                        to={`/quiz/${q.id}`}
-                        className="flex min-h-[60px] items-center gap-4 px-4 py-3.5 transition-colors hover:bg-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-env"
-                      >
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-env-soft text-env">
-                          <ClipboardList className="h-4.5 w-4.5" aria-hidden />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[15px] font-semibold leading-snug text-brand-ink">
-                            {q.title}
-                          </span>
-                          <span className="mt-0.5 flex items-center gap-2 text-[12.5px] text-brand-ink-soft">
-                            {q.question_count} question{q.question_count === 1 ? "" : "s"}
-                            {q.duration_minutes ? (
-                              <>
-                                <span aria-hidden>·</span>
-                                <Clock className="h-3.5 w-3.5" aria-hidden />
-                                {q.duration_minutes} min
-                              </>
-                            ) : null}
-                            {q.is_simulation ? <span aria-hidden>· CBT</span> : null}
-                          </span>
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Section>
-
-
-            <Section
-              title={`Documents & materials${materialCount ? ` (${materialCount})` : ""}`}
-            >
-              {materialsLoading ? (
-                <div className="space-y-2">
-                  <BrandSkeleton h={58} />
-                  <BrandSkeleton h={58} />
-                </div>
-              ) : materialCount === 0 ? (
-                <EmptyState
-                  icon={<FileText className="h-5 w-5" />}
-                  title="No documents yet"
-                  description="Notes, PDFs and past questions uploaded for this course will appear here."
-                />
-              ) : (
-                <div className="space-y-5">
-                  {materialGroups.map((g) => (
-                    <div key={g.topicId ?? "general"}>
-                      <p className="mb-2 text-[12.5px] font-semibold uppercase tracking-wide text-brand-ink-soft">
-                        {g.topicName}
-                      </p>
-                      <ul className="divide-y divide-brand-line rounded-brand border border-brand-line bg-brand-surface">
-                        {g.items.map((m) => (
-                          <li key={m.id}>
-                            <a
-                              href={m.file_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="flex min-h-[60px] items-center gap-4 px-4 py-3.5 transition-colors hover:bg-brand-soft"
-                            >
-                              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-env-soft text-env">
-                                <FileText className="h-4.5 w-4.5" aria-hidden />
-                              </span>
-                              <span className="min-w-0 flex-1">
-                                <span className="block truncate text-[15px] font-semibold leading-snug text-brand-ink">
-                                  {m.title}
-                                </span>
-                                <span className="mt-0.5 block truncate text-[12.5px] text-brand-ink-soft">
-                                  {(m.file_type || "file").toUpperCase()}
-                                  {m.file_size ? ` · ${Math.max(1, Math.round(m.file_size / 1024))} KB` : ""}
-                                  {m.owner_name ? ` · ${m.owner_name}` : ""}
-                                </span>
-                              </span>
-                              <Download className="h-4 w-4 shrink-0 text-brand-ink-soft/70" aria-hidden />
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
+                {/* TAB 1: Syllabus & Topics */}
+                <TabsContent value="topics" className="mt-5 space-y-3">
+                  {topicsLoading ? (
+                    <div className="space-y-2.5">
+                      <BrandSkeleton h={56} />
+                      <BrandSkeleton h={56} />
+                      <BrandSkeleton h={56} />
                     </div>
-                  ))}
-                </div>
-              )}
+                  ) : topics.length === 0 ? (
+                    <EmptyState
+                      icon={<ListChecks className="h-5 w-5" />}
+                      title="No topics listed yet"
+                      description="Lecture topics for this semester are currently being compiled."
+                    />
+                  ) : (
+                    <div className="space-y-2">
+                      {topics.map((t, idx) => {
+                        const questionCount = counts[t.id] ?? 0;
+                        return (
+                          <div
+                            key={t.id}
+                            className="p-4 rounded-2xl border border-neutral-200 bg-white hover:border-amber-400 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs"
+                          >
+                            <div className="flex items-start gap-3">
+                              <span className="w-6 text-xs font-bold text-neutral-400 pt-0.5">
+                                {String(idx + 1).padStart(2, "0")}
+                              </span>
+                              <div>
+                                <Link
+                                  to={`/courses/${courseId}/topics/${t.id}`}
+                                  className="font-semibold text-sm sm:text-base text-neutral-900 hover:text-amber-800 transition block"
+                                >
+                                  {t.name}
+                                </Link>
+                                <span className="text-xs text-neutral-500 mt-0.5 block">
+                                  {questionCount} practice question{questionCount === 1 ? "" : "s"}
+                                </span>
+                              </div>
+                            </div>
 
-              <Link
-                to={`/study-hub/${courseId}`}
-                className="mt-4 flex items-center gap-3 rounded-brand border border-brand-line bg-brand-surface px-4 py-4 transition-colors hover:bg-brand-soft"
-              >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-env-soft text-env">
-                  <Sparkles className="h-5 w-5" aria-hidden />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[15px] font-semibold text-brand-ink">
-                    {course.code} study hub
-                  </span>
-                  <span className="mt-0.5 block text-[13px] text-brand-ink-soft">
-                    Notes, summaries, flashcards and AI study packs.
-                  </span>
-                </span>
-              </Link>
-            </Section>
+                            <div className="flex items-center gap-2 self-end sm:self-auto">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleExplain(t.name)}
+                                className="h-8 px-2.5 text-xs font-semibold rounded-xl border-amber-300 text-amber-900 bg-amber-50 hover:bg-amber-100 flex items-center gap-1"
+                              >
+                                <Sparkles className="w-3.5 h-3.5 text-amber-700" />
+                                <span>Explain with AI</span>
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => navigate(`/courses/${courseId}/topics/${t.id}`)}
+                                className="h-8 px-3 text-xs font-semibold rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white flex items-center gap-1"
+                              >
+                                <span>Study</span>
+                                <ArrowRight className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* TAB 2: Lecture Materials / Notes */}
+                <TabsContent value="materials" className="mt-5 space-y-4">
+                  {materialsLoading ? (
+                    <div className="space-y-2.5">
+                      <BrandSkeleton h={70} />
+                      <BrandSkeleton h={70} />
+                    </div>
+                  ) : materialGroups.length === 0 ? (
+                    <EmptyState
+                      icon={<FileText className="h-5 w-5" />}
+                      title="No lecture notes uploaded yet"
+                      description="Your course lecture notes, slides, and handouts will appear here."
+                    />
+                  ) : (
+                    <div className="space-y-4">
+                      {materialGroups.map((group) => (
+                        <div key={group.topicName} className="space-y-2">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-600 px-1">
+                            {group.topicName}
+                          </h4>
+                          <div className="space-y-2">
+                            {group.items.map((m: any) => (
+                              <div
+                                key={m.id}
+                                className="p-4 rounded-2xl border border-neutral-200 bg-white hover:border-neutral-300 transition flex items-center justify-between gap-3 shadow-2xs"
+                              >
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="w-9 h-9 rounded-xl bg-amber-500/15 flex items-center justify-center text-amber-800 shrink-0">
+                                    <FileText className="w-4 h-4" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <h5 className="font-semibold text-sm text-neutral-900 truncate">
+                                      {m.title}
+                                    </h5>
+                                    {m.description && (
+                                      <p className="text-xs text-neutral-500 truncate mt-0.5">
+                                        {m.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleExplain(m.title, m.description)}
+                                    className="h-8 px-2.5 text-xs font-semibold rounded-xl border-amber-300 text-amber-900 bg-amber-50 hover:bg-amber-100 flex items-center gap-1"
+                                  >
+                                    <Sparkles className="w-3.5 h-3.5 text-amber-700" />
+                                    <span className="hidden sm:inline">Explain Note</span>
+                                  </Button>
+                                  {m.file_url && (
+                                    <a
+                                      href={m.file_url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="p-2 rounded-xl border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition"
+                                      title="Download / View"
+                                    >
+                                      <Download className="w-4 h-4" />
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* TAB 3: Course CBT Questions */}
+                <TabsContent value="quizzes" className="mt-5 space-y-3">
+                  {quizzesLoading ? (
+                    <div className="space-y-2.5">
+                      <BrandSkeleton h={68} />
+                      <BrandSkeleton h={68} />
+                    </div>
+                  ) : quizzes.length === 0 ? (
+                    <EmptyState
+                      icon={<ClipboardList className="h-5 w-5" />}
+                      title="No CBT sets available yet"
+                      description="Practice by topic syllabus above while mock CBT tests are being prepared."
+                    />
+                  ) : (
+                    <div className="space-y-2.5">
+                      {quizzes.map((q: any) => (
+                        <div
+                          key={q.id}
+                          className="p-4 rounded-2xl border border-neutral-200 bg-white hover:border-amber-400 transition-all flex items-center justify-between gap-3 shadow-2xs"
+                        >
+                          <div className="flex items-center gap-3.5 min-w-0">
+                            <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-800 flex items-center justify-center shrink-0">
+                              <ClipboardList className="w-5 h-5" />
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="font-semibold text-sm text-neutral-900 truncate">
+                                {q.title}
+                              </h4>
+                              <p className="text-xs text-neutral-500 mt-0.5 flex items-center gap-2">
+                                <span>{q.question_count} Questions</span>
+                                {q.duration_minutes && (
+                                  <>
+                                    <span>·</span>
+                                    <span className="flex items-center gap-1">
+                                      <Clock className="w-3 h-3" />
+                                      {q.duration_minutes} Mins
+                                    </span>
+                                  </>
+                                )}
+                                {q.is_simulation && (
+                                  <>
+                                    <span>·</span>
+                                    <span className="text-amber-800 font-semibold">CBT Mode</span>
+                                  </>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+
+                          <Button
+                            size="sm"
+                            onClick={() => navigate(`/quiz/${q.id}/cbt`)}
+                            className="bg-amber-500 hover:bg-amber-600 text-neutral-950 font-bold text-xs h-9 px-4 rounded-xl shrink-0 flex items-center gap-1.5 shadow-2xs"
+                          >
+                            <PlayCircle className="w-4 h-4" />
+                            <span>Start CBT</span>
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </div>
           </>
         )}
       </Screen>

@@ -31,7 +31,17 @@ const SchoolDashboard = () => {
         supabase.from("school_classes").select("id", { count: "exact", head: true }).eq("school_id", data.id),
         supabase.from("school_members").select("id", { count: "exact", head: true }).eq("school_id", data.id).eq("member_role", "teacher"),
       ]);
-      setStats({ students: sc || 0, classes: cc || 0, teachers: tc || 0 });
+      let teacherCount = tc || 0;
+      try {
+        const raw = localStorage.getItem(`overra_school_teachers_${data.id}`);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > teacherCount) {
+            teacherCount = parsed.length;
+          }
+        }
+      } catch {}
+      setStats({ students: sc || 0, classes: cc || 0, teachers: teacherCount });
       setLoading(false);
     })();
   }, [user, navigate]);
