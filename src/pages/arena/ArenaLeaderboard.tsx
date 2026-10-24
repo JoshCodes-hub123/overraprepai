@@ -1,8 +1,9 @@
-import { useParams } from "react-router-dom";
-import { Crown, Medal, Trophy } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Crown, Medal, Trophy, ArrowLeft, Home } from "lucide-react";
 import { SEO } from "@/components/seo/SEO";
 import { PremiumPageHero } from "@/components/shell/PremiumPageHero";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   useArenaChallenge,
   useArenaLeaderboard,
@@ -16,6 +17,7 @@ import { GrowthShareCard } from "@/components/growth/GrowthShareCard";
 
 export default function ArenaLeaderboard() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { data: ch } = useArenaChallenge(id);
   useArenaRealtime(id);
@@ -145,6 +147,22 @@ export default function ArenaLeaderboard() {
                 </Card>
               );
             })}
+          </div>
+
+          <div className="mt-8 pt-4 border-t border-amber-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <Button
+              variant="outline"
+              onClick={() => navigate("/arena")}
+              className="w-full sm:w-auto"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1.5" /> Back to Arena
+            </Button>
+            <Button
+              onClick={() => navigate("/student/dashboard")}
+              className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white font-semibold"
+            >
+              <Home className="w-4 h-4 mr-1.5" /> Student Dashboard
+            </Button>
           </div>
         </main>
       </div>

@@ -17,7 +17,8 @@
 }
 
 @layer base {
-  :root {
+  :root,
+  [data-theme="light"] {
     /* Navy + Gold premium system (light mode = clean white surfaces, navy text) */
     --background: 0 0% 100%;
     --foreground: 220 45% 12%;
@@ -87,7 +88,8 @@
     --sidebar-ring: 43 78% 52%;
   }
 
-  .dark {
+  .dark,
+  [data-theme="dark"] {
     /* Deep navy dark mode */
     --background: 220 50% 7%;
     --foreground: 0 0% 96%;
@@ -149,7 +151,8 @@
    rendering exactly as they do today while screens migrate progressively.
    ========================================================================== */
 @layer base {
-  :root {
+  :root,
+  [data-theme="light"] {
     /* Core rebrand surfaces */
     --brand-surface: 0 0% 100%;
     --brand-surface-soft: 40 33% 98%;
@@ -176,6 +179,23 @@
     --brand-section-gap: 2rem;
     --brand-elev: 0 1px 2px hsl(0 0% 7% / 0.04);
     --brand-elev-lifted: 0 12px 30px -18px hsl(0 0% 7% / 0.24);
+  }
+
+  .dark,
+  [data-theme="dark"] {
+    /* Rebrand tokens dark mode */
+    --brand-surface: 220 50% 7%;
+    --brand-surface-soft: 220 45% 10%;
+    --brand-ink: 0 0% 96%;
+    --brand-ink-soft: 220 15% 65%;
+    --brand-line: 220 35% 18%;
+    --brand-gold: 43 82% 58%;
+    --brand-gold-soft: 220 40% 16%;
+    --brand-gold-line: 43 70% 30%;
+    --brand-on-gold: 220 50% 8%;
+
+    --brand-elev: 0 1px 3px hsl(0 0% 0% / 0.5);
+    --brand-elev-lifted: 0 12px 30px -10px hsl(0 0% 0% / 0.6);
   }
 
   /* University world — gold. */

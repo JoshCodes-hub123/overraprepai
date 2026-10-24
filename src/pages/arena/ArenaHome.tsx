@@ -1,14 +1,17 @@
 import { useMemo, useState } from "react";
-import { Trophy } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Trophy, Coins, Flame, ArrowRight } from "lucide-react";
 import { SEO } from "@/components/seo/SEO";
 import { PremiumPageHero } from "@/components/shell/PremiumPageHero";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { useArenaChallenges } from "@/hooks/useArena";
+import useTokenBalance from "@/hooks/useTokenBalance";
 import ArenaChallengeCard from "@/components/arena/ArenaChallengeCard";
 
 export default function ArenaHome() {
   const { data: challenges = [], isLoading } = useArenaChallenges();
+  const { balance } = useTokenBalance();
   const [tab, setTab] = useState<"live" | "upcoming" | "past">("live");
 
   const buckets = useMemo(() => {
@@ -32,10 +35,38 @@ export default function ArenaHome() {
             <PremiumPageHero
               eyebrow="CHALLENGE ARENA"
               title="Compete. Learn. Earn your spot."
-              subtitle="Daily and weekly academic competitions. Top finishers take the prize pool."
+              subtitle="Daily and weekly university academic competitions. Top finishers take the prize pool."
               icon={Trophy}
               back="/student/dashboard"
+              right={
+                <Link
+                  to="/wallet"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-300 text-amber-900 font-bold text-xs hover:bg-amber-500/20 transition active:scale-95"
+                  title="View tokens in wallet"
+                >
+                  <Coins className="w-3.5 h-3.5 text-amber-600" />
+                  <span>{balance} Tokens</span>
+                </Link>
+              }
             />
+          </div>
+
+          <div className="mb-5 flex items-center justify-between gap-2 px-1">
+            <div className="flex items-center gap-2">
+              <Link
+                to="/leaderboard"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800 bg-white border border-amber-200/80 hover:bg-amber-50 px-3 py-1.5 rounded-full shadow-2xs transition"
+              >
+                <Trophy className="w-3.5 h-3.5 text-amber-600" />
+                <span>Global Rankings</span>
+              </Link>
+            </div>
+            <Link
+              to="/courses"
+              className="text-xs font-semibold text-neutral-600 hover:text-amber-800 flex items-center gap-1"
+            >
+              Study Courses <ArrowRight className="w-3 h-3" />
+            </Link>
           </div>
 
           {featured && (

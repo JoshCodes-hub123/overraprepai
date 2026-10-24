@@ -17,6 +17,26 @@ export default defineConfig(() => ({
       manifest: false, // already provided in public/manifest.webmanifest
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) =>
+              url.pathname.endsWith(".pdf") ||
+              url.search.includes(".pdf") ||
+              url.pathname.includes("/user-resources/") ||
+              (url.hostname.includes("unpkg.com") && url.pathname.includes("pdfjs-dist")),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "offline-pdf-cache-v1",
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
       },
     }),
   ].filter(Boolean),

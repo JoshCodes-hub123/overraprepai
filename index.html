@@ -46,12 +46,29 @@
 
     <!-- Performance: DNS prefetch and preconnect -->
     <link rel="dns-prefetch" href="//fonts.googleapis.com" />
-    <link rel="dns-prefetch" href="//hrzpnvnpzhryffhsjeuo.supabase.co" />
+    <link rel="dns-prefetch" href="//vfbxyldwtjwwecpbgezu.supabase.co" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preconnect" href="https://hrzpnvnpzhryffhsjeuo.supabase.co" />
+    <link rel="preconnect" href="https://vfbxyldwtjwwecpbgezu.supabase.co" />
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet" />
     
+    <!-- Early Theme Detection to prevent FOUC -->
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem('overraprep-theme') || localStorage.getItem('theme');
+          var d = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var theme = t === 'dark' || (t !== 'light' && d) ? 'dark' : 'light';
+          document.documentElement.setAttribute('data-theme', theme);
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
+
     <!-- Splash screens for iOS -->
     <style>
       /* Prevent pull-to-refresh on iOS */

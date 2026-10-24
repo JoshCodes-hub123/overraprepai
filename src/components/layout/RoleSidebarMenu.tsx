@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
 } from "@/components/ui/sheet";
@@ -6,10 +6,11 @@ import {
   Menu, Home, Users, GraduationCap, FileText, BookOpen, Coins, Banknote,
   Settings, Shield, Megaphone, Target, TrendingUp,
   Bell, HelpCircle, Sparkles, Store, Calendar,
-  Image as ImageIcon, User, Layers,
+  Image as ImageIcon, User, Layers, LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
+import { useAuth } from "@/hooks/useAuth";
 import { useAdminEnvironment } from "@/hooks/useAdminEnvironment";
 import { EnvironmentSwitcher } from "@/components/admin/EnvironmentSwitcher";
 
@@ -51,7 +52,8 @@ const TUTOR_NAV = [
 
 const STUDENT_NAV = [
   { label: "Dashboard",        to: "/dashboard",               icon: Home },
-  { label: "My Courses",       to: "/my-courses",              icon: BookOpen },
+  { label: "My Courses",       to: "/courses",                 icon: BookOpen },
+  { label: "Challenge Arena",  to: "/arena",                   icon: Target },
   { label: "Practice CBT",     to: "/practice",                icon: Sparkles },
   { label: "Study Hub",        to: "/study",                   icon: FileText },
   { label: "Flashcards",       to: "/flashcards",              icon: Layers },
@@ -79,6 +81,8 @@ interface Props {
 }
 
 export function RoleSidebarMenu({ role, className }: Props) {
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const adminEnv = useAdminEnvironment();
   const validRole: Role = role === "admin" ? "admin" : role === "tutor" ? "tutor" : "student";
   const items = NAV_BY_ROLE[validRole] || STUDENT_NAV;
@@ -154,6 +158,26 @@ export function RoleSidebarMenu({ role, className }: Props) {
             })}
           </div>
         </nav>
+
+        {user && (
+          <div className="p-3 border-t border-amber-100 bg-neutral-50/70">
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await signOut();
+                  navigate("/auth", { replace: true });
+                } catch {
+                  /* ignore */
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100/80 border border-rose-200/70 transition"
+            >
+              <LogOut className="w-3.5 h-3.5 text-rose-600" />
+              <span>Sign Out</span>
+            </button>
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );

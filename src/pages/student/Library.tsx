@@ -10,351 +10,578 @@ import { SEO } from "@/components/seo/SEO";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  Library as LibraryIcon, Search, Folder, Trash2, ExternalLink, Loader2,
-  Image as ImageIcon, FileText, Headphones, Upload, BarChart3,
-  CloudDownload, History, GraduationCap, MoreVertical,
+  Library as LibraryIcon,
+  Search,
+  Folder,
+  Trash2,
+  Loader2,
+  FileText,
+  Headphones,
+  Upload,
+  CloudDownload,
+  Check,
+  Bookmark,
+  BookOpen,
+  ArrowRight,
+  Sparkles,
+  WifiOff,
+  GraduationCap,
+  Plus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import UploadResourceDialog from "@/components/student/library/UploadResourceDialog";
 import OutlineActionsMenu from "@/components/student/library/OutlineActionsMenu";
 import FlashcardStudyDialog, { type Flashcard } from "@/components/student/library/FlashcardStudyDialog";
-import { listCachedMaterialIds } from "@/lib/offlineLibraryCache";
+import { LibraryPdfViewer } from "@/components/library/LibraryPdfViewer";
+import {
+  listCachedMaterialIds,
+  cacheMaterialOffline,
+  removeCachedMaterial,
+} from "@/lib/offlineLibraryCache";
 import { PageHeader, LevelChip } from "@/components/shell/PageHeader";
-import { FilterRail, type FilterChip } from "@/components/shell/FilterRail";
 import { EmptyState } from "@/components/shell/EmptyState";
+import { cn } from "@/lib/utils";
+import { Haptics, ImpactStyle } from "@capacitor/haptics";
 
-const KIND_FILTERS: { id: string; label: string; kinds: ResourceKind[]; emoji: string }[] = [
-  { id: "all", label: "All", kinds: [], emoji: "✨" },
-  { id: "pdf", label: "PDFs", kinds: ["pdf"], emoji: "📄" },
-  { id: "note", label: "Notes", kinds: ["note"], emoji: "📝" },
-  { id: "audio", label: "Audio", kinds: ["audio"], emoji: "🎧" },
-  { id: "flashcard", label: "Flashcards", kinds: ["flashcard"], emoji: "🃏" },
-  { id: "image", label: "Images", kinds: ["image"], emoji: "🖼️" },
-  { id: "study_pack", label: "AI Packs", kinds: ["study_pack"], emoji: "✨" },
-];
+const READ_LATER_KEY = "overra_library_read_later_ids";
 
-const PreviewIcon = ({ kind }: { kind: ResourceKind }) => {
-  if (kind === "image") return <ImageIcon className="w-6 h-6" />;
-  if (kind === "audio") return <Headphones className="w-6 h-6" />;
-  return <FileText className="w-6 h-6" />;
-};
-
-const Library = () => {
-  const { primaryRole } = useAuth();
-  const { level: studentLevel, label: scopeLabel, hasScope } = useStudentScope();
+export const Library = () => {
+  const { primaryRole, user } = useAuth();
+  const { level: studentLevel, label: scopeLabel } = useStudentScope();
   const [searchParams, setSearchParams] = useSearchParams();
   const navRole = (primaryRole === "admin" || primaryRole === "tutor" ? primaryRole : "student") as
-    "admin" | "tutor" | "student";
+    | "admin"
+    | "tutor"
+    | "student";
 
   const { data: resources = [], isLoading, remove } = useUserResources();
   const [search, setSearch] = useState("");
-  const [activeFolder, setActiveFolder] = useState<string | null>(null);
-  const [activeKindFilter, setActiveKindFilter] = useState<string>("all");
-  const [outlinesOnly, setOutlinesOnly] = useState(false);
+  const [activeTab, setActiveTab] = useState<"all" | "read_later" | "offline" | "pdf" | "note">("all");
   const [uploadOpen, setUploadOpen] = useState(false);
   const [cachedIds, setCachedIds] = useState<Set<string>>(new Set());
+  const [readLaterIds, setReadLaterIds] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem(READ_LATER_KEY);
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  // Built-in Reader State
+  const [readerResource, setReaderResource] = useState<UserResource | null>(null);
+  const [readerUrl, setReaderUrl] = useState<string | null>(null);
+  const [isDownloadingOffline, setIsDownloadingOffline] = useState<string | null>(null);
+
+  // Flashcards state
+  const [studyCards, setStudyCards] = useState<Flashcard[] | null>(null);
+  const [studyTitle, setStudyTitle] = useState("");
+
+  // Sync cached IndexedDB IDs
+  const refreshCachedIds = () => {
+    listCachedMaterialIds()
+      .then((ids) => setCachedIds(new Set(ids)))
+      .catch(() => {});
+  };
 
   useEffect(() => {
-    listCachedMaterialIds().then((ids) => setCachedIds(new Set(ids))).catch(() => {});
+    refreshCachedIds();
   }, []);
 
+  // Sync upload param
   useEffect(() => {
     if (searchParams.get("upload") === "1") {
       setUploadOpen(true);
-      // Clean the URL so refresh / back doesn't reopen forever
       const next = new URLSearchParams(searchParams);
       next.delete("upload");
       setSearchParams(next, { replace: true });
     }
   }, [searchParams, setSearchParams]);
-  const [studyCards, setStudyCards] = useState<Flashcard[] | null>(null);
-  const [studyTitle, setStudyTitle] = useState("");
-  const [previewing, setPreviewing] = useState<UserResource | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
 
-  const folders = useMemo(() => {
-    const s = new Set<string>();
-    resources.forEach((r) => s.add(r.folder || "General"));
-    return Array.from(s).sort();
-  }, [resources]);
+  // Persist Read Later IDs to localStorage
+  const toggleReadLater = (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    try {
+      Haptics.impact({ style: ImpactStyle.Light }).catch(() => {});
+    } catch {
+      // noop
+    }
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const active = KIND_FILTERS.find((k) => k.id === activeKindFilter);
-    const kinds = active?.kinds ?? [];
-    return resources.filter((r) => {
-      if (activeFolder && r.folder !== activeFolder) return false;
-      if (kinds.length && !kinds.includes(r.kind)) return false;
-      if (outlinesOnly && (r.meta as any)?.material_type !== "outline") return false;
-      if (q && !r.title.toLowerCase().includes(q) && !r.folder.toLowerCase().includes(q)) return false;
-      return true;
-    });
-  }, [resources, search, activeFolder, activeKindFilter, outlinesOnly]);
-
-  const counts = useMemo(() => {
-    const c: Record<string, number> = { all: resources.length };
-    KIND_FILTERS.forEach((kf) => {
-      if (kf.kinds.length) c[kf.id] = resources.filter((r) => kf.kinds.includes(r.kind)).length;
-    });
-    return c;
-  }, [resources]);
-
-  const chips: FilterChip[] = KIND_FILTERS.map((k) => ({
-    id: k.id,
-    label: (
-      <span className="inline-flex items-center gap-1.5">
-        <span aria-hidden>{k.emoji}</span> {k.label}
-      </span>
-    ),
-    count: counts[k.id] ?? 0,
-  }));
-
-  const openPreview = async (r: UserResource) => {
-    setPreviewing(r);
-    setPreviewUrl(null);
-    setPreviewLoading(true);
-    const url = await getResourceSignedUrl(r.storage_path, 600);
-    setPreviewUrl(url);
-    setPreviewLoading(false);
-    if (!url) toast.error("Could not open file");
-    // If this is a saved flashcard JSON, parse and open the study dialog
-    if (r.kind === "flashcard" && url) {
+    setReadLaterIds((prev) => {
+      const next = new Set(prev);
+      const isAdded = !next.has(id);
+      if (isAdded) {
+        next.add(id);
+        toast.success("Saved to your Read Later queue");
+      } else {
+        next.delete(id);
+        toast.info("Removed from Read Later");
+      }
       try {
-        const json = await (await fetch(url)).json();
-        if (Array.isArray(json?.cards) && json.cards.length) {
-          setStudyTitle(r.title);
-          setStudyCards(json.cards);
-          setPreviewing(null);
-        }
-      } catch { /* fall through to default preview */ }
+        localStorage.setItem(READ_LATER_KEY, JSON.stringify(Array.from(next)));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
+  // 1-Tap Save for Offline Reading
+  const handleSaveOffline = async (r: UserResource, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    try {
+      setIsDownloadingOffline(r.id);
+      await Haptics.impact({ style: ImpactStyle.Light }).catch(() => {});
+
+      const signedUrl = await getResourceSignedUrl(r.storage_path, 3600);
+      if (!signedUrl) throw new Error("Could not retrieve file download URL");
+
+      const res = await fetch(signedUrl);
+      if (!res.ok) throw new Error("Download failed");
+      const blob = await res.blob();
+
+      await cacheMaterialOffline({
+        id: r.id,
+        title: r.title,
+        mime: r.mime || blob.type || "application/pdf",
+        ext: "pdf",
+        blob,
+        cached_at: Date.now(),
+        course_code: r.folder !== "General" ? r.folder : undefined,
+      });
+
+      refreshCachedIds();
+      toast.success(`"${r.title}" is now available offline!`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save offline");
+    } finally {
+      setIsDownloadingOffline(null);
     }
   };
 
-  const closePreview = () => {
-    setPreviewing(null);
-    setPreviewUrl(null);
+  // Open Document in Built-in PDF Reader
+  const handleOpenReader = async (r: UserResource) => {
+    // If flashcard JSON, open study dialog
+    if (r.kind === "flashcard") {
+      const url = await getResourceSignedUrl(r.storage_path, 600);
+      if (url) {
+        try {
+          const json = await (await fetch(url)).json();
+          if (Array.isArray(json?.cards) && json.cards.length) {
+            setStudyTitle(r.title);
+            setStudyCards(json.cards);
+            return;
+          }
+        } catch {
+          // fall through
+        }
+      }
+    }
+
+    setReaderResource(r);
+    // Get signed URL if online, or reader will automatically read from IndexedDB if offline
+    if (navigator.onLine) {
+      getResourceSignedUrl(r.storage_path, 7200).then((url) => {
+        setReaderUrl(url);
+      });
+    } else {
+      setReaderUrl(null);
+    }
   };
 
-  const handleDelete = async (r: UserResource) => {
+  const folders = useMemo(() => {
+    const s = new Set<string>();
+    resources.forEach((r) => {
+      if (r.folder && r.folder !== "General") s.add(r.folder);
+    });
+    return Array.from(s);
+  }, [resources]);
+
+  const handleDelete = async (r: UserResource, e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!confirm(`Delete "${r.title}" from your Library?`)) return;
     try {
       await remove.mutateAsync(r);
-      toast.success("Deleted");
+      await removeCachedMaterial(r.id).catch(() => {});
+      refreshCachedIds();
+      toast.success("Document deleted");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Delete failed");
     }
   };
 
+  // Filtered List
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return resources.filter((r) => {
+      // Search filter
+      if (q && !r.title.toLowerCase().includes(q) && !r.folder.toLowerCase().includes(q)) {
+        return false;
+      }
+
+      // Tab filter
+      if (activeTab === "read_later" && !readLaterIds.has(r.id)) return false;
+      if (activeTab === "offline" && !cachedIds.has(r.id)) return false;
+      if (activeTab === "pdf" && r.kind !== "pdf") return false;
+      if (activeTab === "note" && r.kind !== "note") return false;
+
+      return true;
+    });
+  }, [resources, search, activeTab, readLaterIds, cachedIds]);
+
+  const readLaterCount = useMemo(() => {
+    return resources.filter((r) => readLaterIds.has(r.id)).length;
+  }, [resources, readLaterIds]);
+
+  const offlineCount = useMemo(() => {
+    return resources.filter((r) => cachedIds.has(r.id)).length;
+  }, [resources, cachedIds]);
+
   return (
     <>
-      <SEO title="My Library" description="Your private study resources — PDFs, notes, audio, flashcards." url="https://overraprep.com/library" />
-      <div className="min-h-screen bg-background pb-24">
+      <SEO
+        title="My Library — Offline Course Reader & Document Vault"
+        description="Upload course materials, save lecture documents to read later, and open built-in PDFs offline."
+      />
+
+      <div className="min-h-screen bg-background pb-28">
         <DashboardNav role={navRole} />
         <DashboardBreadcrumb role={navRole} />
 
-        <main className="container mx-auto px-4 py-6 max-w-6xl">
-          <PageHeader
-            eyebrow={
-              scopeLabel ? (
-                <LevelChip label={`Library · ${scopeLabel}`} />
-              ) : (
-                <Link to="/profile/edit" className="inline-flex items-center gap-1 text-xs text-amber-700 underline">
-                  <GraduationCap className="w-3.5 h-3.5" /> Set your level
-                </Link>
-              )
-            }
-            title="My Library"
-            subtitle="Upload outlines, lecture notes, audio and past questions — then turn them into flashcards, summaries and quizzes with AI."
-            actions={
-              <>
-                <Button asChild variant="outline" size="icon" title="Upload analytics">
-                  <Link to="/library/analytics"><BarChart3 className="w-4 h-4" /></Link>
-                </Button>
-                <Button asChild variant="outline" size="icon" title="Offline downloads">
-                  <Link to="/library/offline-downloads"><CloudDownload className="w-4 h-4" /></Link>
-                </Button>
-                <Button asChild variant="outline" size="icon" title="AI history">
-                  <Link to="/ai-history"><History className="w-4 h-4" /></Link>
-                </Button>
-                <Button
-                  onClick={() => setUploadOpen(true)}
-                  className="gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-md"
-                >
-                  <Upload className="w-4 h-4" /> <span className="hidden sm:inline">Upload</span>
-                </Button>
-              </>
-            }
-          />
+        <main className="container mx-auto px-4 py-6 max-w-4xl space-y-6">
+          {/* =========================================================
+              CLEAN, PEACEFUL HEADER (Anti-clutter)
+             ========================================================= */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/80 pb-5">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <LibraryIcon className="w-4 h-4" />
+                </span>
+                <span className="text-[11px] font-bold tracking-[0.16em] uppercase text-primary">
+                  Study Vault & Reader
+                </span>
+              </div>
+              <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
+                My Library
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 max-w-xl">
+                Upload your course outlines, textbooks, and lecture handouts. Read them in the built-in PDF viewer offline.
+              </p>
+            </div>
 
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search your library…"
-              className="pl-9 bg-white/80 backdrop-blur"
-            />
+            <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+              <Button
+                onClick={() => setUploadOpen(true)}
+                className="gap-2 bg-primary text-slate-950 font-bold shadow-sm hover:brightness-105 rounded-xl px-4 h-10"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Upload Material</span>
+              </Button>
+            </div>
           </div>
 
-          <FilterRail
-            chips={chips}
-            active={activeKindFilter}
-            onChange={setActiveKindFilter}
-            trailing={
-              <button
-                onClick={() => setOutlinesOnly((v) => !v)}
-                className={`shrink-0 inline-flex items-center gap-1 h-8 px-3 rounded-full border text-xs font-semibold transition-all ${
-                  outlinesOnly
-                    ? "bg-amber-500 text-white border-amber-500"
-                    : "bg-background text-foreground border-border hover:border-amber-400"
-                }`}
-              >
-                📑 Outlines only
-              </button>
-            }
-          />
+          {/* =========================================================
+              SEARCH & QUICK TABS
+             ========================================================= */}
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search course materials, topics, or notes…"
+                className="pl-10 h-11 bg-card/80 border-border/80 rounded-2xl shadow-xs text-sm"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-6">
-            {/* Folder sidebar */}
-            <aside className="space-y-1 md:sticky md:top-[140px] md:self-start">
-              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground mb-2 px-1">
-                Folders
-              </p>
+            {/* Simple Segmented Filter Bar (Not too busy) */}
+            <div className="flex items-center gap-1.5 overflow-x-auto py-1 no-scrollbar">
               <button
-                onClick={() => setActiveFolder(null)}
-                className={`w-full flex items-center gap-2 px-3 h-9 rounded-lg text-sm transition-colors ${
-                  activeFolder === null ? "bg-amber-500/10 text-amber-700 font-semibold border border-amber-300/60" : "hover:bg-muted border border-transparent"
-                }`}
+                type="button"
+                onClick={() => setActiveTab("all")}
+                className={cn(
+                  "px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border",
+                  activeTab === "all"
+                    ? "bg-primary text-slate-950 border-primary font-bold shadow-xs"
+                    : "bg-card border-border text-muted-foreground hover:text-foreground"
+                )}
               >
-                <Folder className="w-4 h-4" /> All
-                <span className="ml-auto text-xs text-muted-foreground">{resources.length}</span>
+                All Documents ({resources.length})
               </button>
-              {folders.map((f) => {
-                const count = resources.filter((r) => r.folder === f).length;
-                return (
-                  <button
-                    key={f}
-                    onClick={() => setActiveFolder(f)}
-                    className={`w-full flex items-center gap-2 px-3 h-9 rounded-lg text-sm transition-colors ${
-                      activeFolder === f ? "bg-amber-500/10 text-amber-700 font-semibold border border-amber-300/60" : "hover:bg-muted border border-transparent"
-                    }`}
-                  >
-                    <Folder className="w-4 h-4" /> <span className="truncate">{f}</span>
-                    <span className="ml-auto text-xs text-muted-foreground">{count}</span>
-                  </button>
-                );
-              })}
-            </aside>
 
-            {/* Grid */}
-            <section>
-              {isLoading ? (
-                <div className="grid place-items-center py-16 text-muted-foreground">
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                </div>
-              ) : filtered.length === 0 ? (
-                <EmptyState
-                  icon={<LibraryIcon className="w-6 h-6" />}
-                  title={resources.length === 0 ? "Your library is empty" : "Nothing matches this filter"}
-                  description={
-                    resources.length === 0
-                      ? "Upload your course outlines, lecture notes or past questions to get started."
-                      : "Try clearing filters or switching folders."
-                  }
-                  action={
-                    resources.length === 0 ? (
-                      <Button
-                        onClick={() => setUploadOpen(true)}
-                        className="gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
-                      >
-                        <Upload className="w-4 h-4" /> Upload your first file
-                      </Button>
-                    ) : (
-                      <Button variant="outline" onClick={() => { setActiveKindFilter("all"); setOutlinesOnly(false); setActiveFolder(null); }}>
-                        Clear filters
-                      </Button>
-                    )
-                  }
-                />
-              ) : (
-                <div className="space-y-2">
-                  {filtered.map((r) => {
-                    const isOutline = (r.meta as any)?.material_type === "outline";
-                    const matId = (r.meta as any)?.material_id as string | undefined;
-                    const isOffline = !!matId && cachedIds.has(matId);
-                    return (
-                    <button
-                      key={r.id}
-                      onClick={() => openPreview(r)}
-                      className={`w-full text-left flex items-center gap-3 p-3 pr-2 rounded-xl border bg-white hover:shadow-sm transition-all group ${
-                        isOutline
-                          ? "border-amber-300/80 bg-gradient-to-r from-amber-50/60 to-white"
-                          : "border-border hover:border-amber-300"
-                      }`}
+              <button
+                type="button"
+                onClick={() => setActiveTab("read_later")}
+                className={cn(
+                  "px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border flex items-center gap-1.5",
+                  activeTab === "read_later"
+                    ? "bg-primary text-slate-950 border-primary font-bold shadow-xs"
+                    : "bg-card border-border text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Bookmark className="w-3 h-3" />
+                Read Later ({readLaterCount})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("offline")}
+                className={cn(
+                  "px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border flex items-center gap-1.5",
+                  activeTab === "offline"
+                    ? "bg-emerald-500 text-white border-emerald-500 font-bold shadow-xs"
+                    : "bg-card border-border text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Check className="w-3 h-3" />
+                Offline Ready ({offlineCount})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("pdf")}
+                className={cn(
+                  "px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border",
+                  activeTab === "pdf"
+                    ? "bg-primary text-slate-950 border-primary font-bold shadow-xs"
+                    : "bg-card border-border text-muted-foreground hover:text-foreground"
+                )}
+              >
+                PDFs
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("note")}
+                className={cn(
+                  "px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border",
+                  activeTab === "note"
+                    ? "bg-primary text-slate-950 border-primary font-bold shadow-xs"
+                    : "bg-card border-border text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Notes
+              </button>
+            </div>
+          </div>
+
+          {/* =========================================================
+              DOCUMENT VAULT LIST (Clean, spacious, uncluttered)
+             ========================================================= */}
+          <section className="space-y-3">
+            {isLoading ? (
+              <div className="py-20 flex flex-col items-center justify-center gap-3 text-muted-foreground">
+                <Loader2 className="w-7 h-7 animate-spin text-primary" />
+                <p className="text-xs font-medium">Loading your library…</p>
+              </div>
+            ) : filtered.length === 0 ? (
+              <EmptyState
+                icon={<LibraryIcon className="w-7 h-7 text-primary" />}
+                title={
+                  activeTab === "read_later"
+                    ? "Your Read Later queue is empty"
+                    : activeTab === "offline"
+                    ? "No documents saved offline yet"
+                    : resources.length === 0
+                    ? "Your Library is clean and empty"
+                    : "No documents match this filter"
+                }
+                description={
+                  activeTab === "read_later"
+                    ? "Click the bookmark icon on any course material to save it for reading later."
+                    : activeTab === "offline"
+                    ? "Tap 'Save Offline' on any document to download and open it without internet."
+                    : resources.length === 0
+                    ? "Upload your lecture notes, syllabus, or past questions to start reading."
+                    : "Try clearing your search or switching to another tab."
+                }
+                action={
+                  resources.length === 0 ? (
+                    <Button
+                      onClick={() => setUploadOpen(true)}
+                      className="gap-2 bg-primary text-slate-950 font-bold"
                     >
-                      <div
-                        className={`w-11 h-11 rounded-xl grid place-items-center shrink-0 ${
-                          isOutline ? "bg-amber-500/15 text-amber-700" : "bg-amber-500/10 text-amber-600"
-                        }`}
-                      >
-                        <PreviewIcon kind={r.kind} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          {isOutline && (
-                            <Badge className="text-[10px] h-4 px-1.5 bg-amber-500 hover:bg-amber-500 text-white">Outline</Badge>
+                      <Upload className="w-4 h-4" /> Upload Course Material
+                    </Button>
+                  ) : (
+                    <Button variant="outline" size="sm" onClick={() => { setActiveTab("all"); setSearch(""); }}>
+                      Show All Materials
+                    </Button>
+                  )
+                }
+              />
+            ) : (
+              <div className="grid grid-cols-1 gap-2.5">
+                {filtered.map((r) => {
+                  const isReadLater = readLaterIds.has(r.id);
+                  const isOffline = cachedIds.has(r.id);
+                  const isOutline = (r.meta as any)?.material_type === "outline";
+                  const sizeFormatted = r.size_bytes
+                    ? r.size_bytes > 1024 * 1024
+                      ? `${(r.size_bytes / (1024 * 1024)).toFixed(1)} MB`
+                      : `${Math.round(r.size_bytes / 1024)} KB`
+                    : null;
+
+                  return (
+                    <div
+                      key={r.id}
+                      onClick={() => handleOpenReader(r)}
+                      className={cn(
+                        "group p-3.5 sm:p-4 rounded-2xl border bg-card hover:bg-muted/30 transition-all cursor-pointer shadow-xs",
+                        "flex items-center justify-between gap-3 border-border/80 hover:border-primary/50"
+                      )}
+                    >
+                      {/* Left: Type Icon */}
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div
+                          className={cn(
+                            "w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border transition-transform duration-200 group-hover:scale-105",
+                            r.kind === "pdf"
+                              ? "bg-amber-500/10 border-amber-300/40 text-amber-700 dark:text-amber-400"
+                              : "bg-muted border-border text-muted-foreground"
                           )}
-                          {isOffline && (
-                            <Badge className="text-[10px] h-4 px-1.5 bg-emerald-500 hover:bg-emerald-500 text-white gap-0.5">
-                              <CloudDownload className="w-2.5 h-2.5" /> Offline
-                            </Badge>
+                        >
+                          {r.kind === "pdf" ? (
+                            <FileText className="w-5 h-5 text-primary" />
+                          ) : r.kind === "audio" ? (
+                            <Headphones className="w-5 h-5 text-primary" />
+                          ) : (
+                            <BookOpen className="w-5 h-5 text-primary" />
                           )}
-                          <Badge variant="outline" className="text-[10px] h-4 px-1.5 capitalize">
-                            {KIND_META[r.kind].emoji} {r.kind.replace("_", " ")}
-                          </Badge>
                         </div>
-                        <p className="font-semibold text-sm leading-snug line-clamp-1 mt-1">{r.title}</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1.5">
-                          <Folder className="w-3 h-3" /> {r.folder}
-                          <span aria-hidden>·</span>
-                          {format(new Date(r.created_at), "MMM d, yyyy")}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        {(r.kind === "pdf" || r.kind === "note" || r.kind === "study_pack" || isOutline) && (
-                          <div onClick={(e) => e.stopPropagation()}>
-                            <OutlineActionsMenu resource={r} />
+
+                        {/* Title & Metadata */}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                            {r.folder && r.folder !== "General" && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] font-bold uppercase h-4 px-1.5 border-primary/30 text-primary bg-primary/5"
+                              >
+                                {r.folder}
+                              </Badge>
+                            )}
+
+                            {isOffline && (
+                              <Badge className="text-[10px] font-bold h-4 px-1.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 gap-0.5">
+                                <Check className="w-2.5 h-2.5" /> Offline
+                              </Badge>
+                            )}
+
+                            {isReadLater && (
+                              <Badge className="text-[10px] font-bold h-4 px-1.5 bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 gap-0.5">
+                                <Bookmark className="w-2.5 h-2.5 fill-current" /> Read Later
+                              </Badge>
+                            )}
                           </div>
+
+                          <h3 className="font-semibold text-sm sm:text-base text-foreground leading-snug truncate">
+                            {r.title}
+                          </h3>
+
+                          <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                            <span>{format(new Date(r.created_at), "MMM d, yyyy")}</span>
+                            {sizeFormatted && (
+                              <>
+                                <span>·</span>
+                                <span>{sizeFormatted}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Actions */}
+                      <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        {/* Bookmark / Read Later */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => toggleReadLater(r.id, e)}
+                          className={cn(
+                            "h-8 w-8 rounded-full hover:bg-muted text-muted-foreground",
+                            isReadLater && "text-amber-500 hover:text-amber-600"
+                          )}
+                          title={isReadLater ? "Remove from Read Later" : "Save to Read Later"}
+                        >
+                          <Bookmark className={cn("w-4 h-4", isReadLater && "fill-current")} />
+                        </Button>
+
+                        {/* Save Offline button if not already cached */}
+                        {!isOffline && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => handleSaveOffline(r, e)}
+                            disabled={isDownloadingOffline === r.id}
+                            className="h-8 w-8 rounded-full hover:bg-muted text-muted-foreground"
+                            title="Save for offline reading"
+                          >
+                            {isDownloadingOffline === r.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                            ) : (
+                              <CloudDownload className="w-4 h-4" />
+                            )}
+                          </Button>
                         )}
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleDelete(r); }}
-                          className="opacity-60 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity p-2 rounded-md hover:bg-destructive/10 text-destructive"
-                          aria-label="Delete"
+
+                        {/* Read Now Primary CTA */}
+                        <Button
+                          size="sm"
+                          onClick={() => handleOpenReader(r)}
+                          className="h-8 px-3 rounded-xl text-xs font-bold gap-1 bg-primary/10 text-primary hover:bg-primary hover:text-slate-950 transition-colors hidden sm:inline-flex"
+                        >
+                          <span>Read</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Button>
+
+                        {/* AI Options menu */}
+                        {(r.kind === "pdf" || r.kind === "note" || isOutline) && (
+                          <OutlineActionsMenu resource={r} />
+                        )}
+
+                        {/* Delete button */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => handleDelete(r, e)}
+                          className="h-8 w-8 rounded-full hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500"
+                          title="Delete document"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        </Button>
                       </div>
-                    </button>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-          </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
         </main>
       </div>
 
+      {/* Upload Course Material Dialog */}
       <UploadResourceDialog
         open={uploadOpen}
-        onOpenChange={setUploadOpen}
+        onOpenChange={(open) => {
+          setUploadOpen(open);
+          if (!open) refreshCachedIds();
+        }}
         existingFolders={folders}
       />
 
+      {/* Flashcard Study Dialog */}
       <FlashcardStudyDialog
         open={!!studyCards}
         onOpenChange={(o) => { if (!o) setStudyCards(null); }}
@@ -362,57 +589,25 @@ const Library = () => {
         title={studyTitle}
       />
 
-      {/* Preview dialog */}
-      <Dialog open={!!previewing} onOpenChange={(o) => !o && closePreview()}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {previewing && <PreviewIcon kind={previewing.kind} />}
-              <span className="truncate">{previewing?.title}</span>
-            </DialogTitle>
-          </DialogHeader>
-          {previewLoading && (
-            <div className="grid place-items-center py-10 text-muted-foreground">
-              <Loader2 className="w-6 h-6 animate-spin" />
-            </div>
-          )}
-          {previewing && previewUrl && (
-            <div className="space-y-3">
-              {previewing.kind === "image" ? (
-                <img src={previewUrl} alt={previewing.title} className="w-full max-h-[70vh] object-contain rounded-lg" />
-              ) : previewing.kind === "audio" ? (
-                <audio src={previewUrl} controls className="w-full" />
-              ) : previewing.kind === "pdf" ? (
-                <iframe src={previewUrl} className="w-full h-[70vh] rounded-lg border border-border" title={previewing.title} />
-              ) : previewing.mime?.startsWith("text/") ? (
-                <TextPreview url={previewUrl} />
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-sm text-muted-foreground mb-3">In-app preview not available for this file type.</p>
-                  <Button variant="outline" asChild>
-                    <a href={previewUrl} target="_blank" rel="noreferrer">
-                      <ExternalLink className="w-4 h-4 mr-1.5" /> Open in new tab
-                    </a>
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* BUILT-IN DISTRACTION-FREE OFFLINE REACT-PDF READER */}
+      {readerResource && (
+        <LibraryPdfViewer
+          isOpen={!!readerResource}
+          onClose={() => {
+            setReaderResource(null);
+            setReaderUrl(null);
+            refreshCachedIds();
+          }}
+          documentId={readerResource.id}
+          title={readerResource.title}
+          sourceUrl={readerUrl}
+          mime={readerResource.mime}
+          courseCode={readerResource.folder !== "General" ? readerResource.folder : undefined}
+          isReadLater={readLaterIds.has(readerResource.id)}
+          onToggleReadLater={() => toggleReadLater(readerResource.id)}
+        />
+      )}
     </>
-  );
-};
-
-const TextPreview = ({ url }: { url: string }) => {
-  const [text, setText] = useState<string | null>(null);
-  useMemo(() => {
-    fetch(url).then((r) => r.text()).then(setText).catch(() => setText("(unable to load)"));
-  }, [url]);
-  return (
-    <pre className="whitespace-pre-wrap text-sm leading-relaxed bg-muted/30 p-4 rounded-lg max-h-[70vh] overflow-y-auto">
-      {text ?? "Loading…"}
-    </pre>
   );
 };
 

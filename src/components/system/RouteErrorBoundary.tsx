@@ -44,6 +44,18 @@ export class RouteErrorBoundary extends React.Component<
       stack: error.stack,
       component_stack: info.componentStack ?? undefined,
     });
+
+    if (isChunkLoadError(error)) {
+      const KEY = "last_chunk_autoreload";
+      const last = Number(sessionStorage.getItem(KEY) || 0);
+      // Auto-reload immediately if not already reloaded within the last 15 seconds
+      if (Date.now() - last > 15_000) {
+        sessionStorage.setItem(KEY, String(Date.now()));
+        setTimeout(() => {
+          this.reload();
+        }, 100);
+      }
+    }
   }
 
   reset = () => this.setState({ hasError: false, error: null, isChunkError: false });

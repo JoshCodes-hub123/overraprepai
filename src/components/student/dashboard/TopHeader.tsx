@@ -1,11 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Bell, Flame, GraduationCap, Cake } from "lucide-react";
+import { Bell, Flame, GraduationCap, Cake, LogOut, User, Settings as SettingsIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveAvatarUrl } from "@/lib/avatar";
+import { toast } from "sonner";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 const greeting = () => {
   const h = new Date().getHours();
@@ -20,9 +30,19 @@ const greeting = () => {
  */
 export const TopHeader = () => {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const [streak, setStreak] = useState<number>(0);
   const [unread, setUnread] = useState<number>(0);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut?.();
+      toast.success("Signed out successfully");
+      navigate("/auth", { replace: true });
+    } catch {
+      toast.error("Failed to sign out. Please try again.");
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -136,18 +156,62 @@ export const TopHeader = () => {
             </span>
           )}
         </button>
-        <Link
-          to="/profile/edit"
-          aria-label="Profile"
-          className="h-11 w-11 rounded-2xl flex items-center justify-center hover:bg-amber-50/50 transition-colors"
-        >
-          <Avatar className="h-10 w-10 ring-1 ring-amber-200/70 shadow-sm">
-            <AvatarImage src={resolveAvatarUrl(profile)} alt={profile?.full_name || "Profile"} />
-            <AvatarFallback className="bg-gradient-to-br from-amber-100 to-amber-200 text-amber-800 text-sm font-bold">
-              {firstName.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-        </Link>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label="User account menu"
+              className="h-11 w-11 rounded-2xl flex items-center justify-center hover:bg-amber-50/50 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-400"
+            >
+              <Avatar className="h-10 w-10 ring-1 ring-amber-200/70 shadow-sm cursor-pointer">
+                <AvatarImage src={resolveAvatarUrl(profile)} alt={profile?.full_name || "Profile"} />
+                <AvatarFallback className="bg-gradient-to-br from-amber-100 to-amber-200 text-amber-800 text-sm font-bold">
+                  {firstName.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56 p-1.5 shadow-lg border-amber-100">
+            <DropdownMenuLabel className="font-normal p-2">
+              <div className="flex flex-col space-y-0.5">
+                <p className="text-sm font-bold text-foreground truncate">{profile?.full_name || firstName}</p>
+                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate("/settings/profile")} className="cursor-pointer gap-2 py-2">
+              <User className="w-4 h-4 text-amber-600" />
+              <span>Profile & Account</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/profile/edit")} className="cursor-pointer gap-2 py-2">
+              <User className="w-4 h-4 text-neutral-500" />
+              <span>Edit Public Bio</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/settings/academic")} className="cursor-pointer gap-2 py-2">
+              <GraduationCap className="w-4 h-4 text-amber-600" />
+              <span>Academic Settings</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer gap-2 py-2">
+              <SettingsIcon className="w-4 h-4 text-neutral-500" />
+              <span>Settings</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <div className="px-2 py-2">
+              <span className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+                Theme
+              </span>
+              <ThemeToggle variant="segmented" className="w-full" />
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleSignOut}
+              className="cursor-pointer gap-2 py-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 focus:text-rose-700 focus:bg-rose-50"
+            >
+              <LogOut className="w-4 h-4 text-rose-600" />
+              <span className="font-semibold">Log Out</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </motion.header>
   );

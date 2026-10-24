@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -71,6 +72,7 @@ const PQIntelligence = lazy(() => import("@/pages/study-hub/PQIntelligence"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const Settings = lazy(() => import("@/pages/settings/Settings"));
 const AcademicSettings = lazy(() => import("@/pages/settings/AcademicSettings"));
+const ProfileSettings = lazyWithRetry(() => import("@/pages/settings/ProfileSettings"));
 const HelpSupport = lazy(() => import("@/pages/HelpSupport"));
 
 // SEO landing shells (public, indexable)
@@ -183,15 +185,15 @@ const ActivityFeed = lazy(() => import("@/pages/student/ActivityFeed"));
 const Challenges = lazy(() => import("@/pages/student/Challenges"));
 const AdminChallenges = lazy(() => import("@/pages/admin/AdminChallenges"));
 const AdminArena = lazy(() => import("@/pages/admin/AdminArena"));
-const ArenaHome = lazy(() => import("@/pages/arena/ArenaHome"));
-const ArenaDetail = lazy(() => import("@/pages/arena/ArenaDetail"));
-const ArenaPlay = lazy(() => import("@/pages/arena/ArenaPlay"));
-const ArenaLeaderboard = lazy(() => import("@/pages/arena/ArenaLeaderboard"));
+const ArenaHome = lazyWithRetry(() => import("@/pages/arena/ArenaHome"));
+const ArenaDetail = lazyWithRetry(() => import("@/pages/arena/ArenaDetail"));
+const ArenaPlay = lazyWithRetry(() => import("@/pages/arena/ArenaPlay"));
+const ArenaLeaderboard = lazyWithRetry(() => import("@/pages/arena/ArenaLeaderboard"));
 const StudyMode = lazy(() => import("@/pages/student/StudyMode"));
-const StudyHubPage = lazy(() => import("@/pages/hubs/StudyHubPage"));
-const PracticeHubPage = lazy(() => import("@/pages/hubs/PracticeHubPage"));
-const PeopleHubPage = lazy(() => import("@/pages/hubs/PeopleHubPage"));
-const MeHubPage = lazy(() => import("@/pages/hubs/MeHubPage"));
+const StudyHubPage = lazyWithRetry(() => import("@/pages/hubs/StudyHubPage"));
+const PracticeHubPage = lazyWithRetry(() => import("@/pages/hubs/PracticeHubPage"));
+const PeopleHubPage = lazyWithRetry(() => import("@/pages/hubs/PeopleHubPage"));
+const MeHubPage = lazyWithRetry(() => import("@/pages/hubs/MeHubPage"));
 const IntelligenceCenter = lazy(() => import("@/pages/intelligence/IntelligenceCenter"));
 const GrowthHome = lazy(() => import("@/pages/growth/GrowthHome"));
 const CampusBattles = lazy(() => import("@/pages/growth/CampusBattles"));
@@ -579,6 +581,8 @@ export const AnimatedRoutes = () => {
           <Route path="/settings/privacy" element={<PageTransition><PrivacySettings /></PageTransition>} />
           <Route path="/settings/notifications" element={<PageTransition><NotificationSettings /></PageTransition>} />
           <Route path="/settings/devices" element={<PageTransition><DeviceSessions /></PageTransition>} />
+          <Route path="/settings/profile" element={<PageTransition><ProfileSettings /></PageTransition>} />
+          <Route path="/profile/settings" element={<PageTransition><ProfileSettings /></PageTransition>} />
           <Route path="/lecture-notes" element={<PageTransition><LectureNotes /></PageTransition>} />
           <Route path="/messages" element={<PageTransition><Inbox /></PageTransition>} />
           <Route path="/chat" element={<PageTransition><ChatInbox /></PageTransition>} />

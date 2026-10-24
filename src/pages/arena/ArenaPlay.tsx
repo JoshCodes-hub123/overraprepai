@@ -1,11 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, Trophy, ChevronRight, CheckCircle2 } from "lucide-react";
+import { Clock, Trophy, ChevronRight, CheckCircle2, ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 import { SEO } from "@/components/seo/SEO";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   useArenaChallenge,
   useArenaPlayQuestions,
@@ -32,6 +40,7 @@ export default function ArenaPlay() {
   const questionShownAt = useRef<number>(Date.now());
   const [timeLeft, setTimeLeft] = useState<number>(ch?.time_limit_seconds ?? 600);
   const submittedRef = useRef(false);
+  const [exitDialogOpen, setExitDialogOpen] = useState(false);
 
   // Redirect away if not eligible
   useEffect(() => {
@@ -141,17 +150,66 @@ export default function ArenaPlay() {
 
   if (qError) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 text-center">
-        <div>
-          <p className="text-sm text-red-600">Could not load questions for this challenge.</p>
-          <Button className="mt-3" onClick={() => navigate(`/arena/${id}`)}>Back</Button>
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-background">
+        <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center mx-auto mb-3 text-red-600">
+          <AlertCircle className="w-6 h-6" />
+        </div>
+        <h2 className="font-display text-xl font-bold mb-1 text-foreground">Could Not Load Questions</h2>
+        <p className="text-sm text-muted-foreground max-w-sm mb-6">
+          We encountered an issue preparing the questions for this competition. Please try again.
+        </p>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={() => navigate(`/arena/${id}`)}>
+            <ArrowLeft className="w-4 h-4 mr-1.5" /> Back to challenge
+          </Button>
+          <Button onClick={() => window.location.reload()} className="bg-amber-500 hover:bg-amber-600 text-white">
+            Retry
+          </Button>
         </div>
       </div>
     );
   }
 
-  if (qLoading || !ch || !current) {
-    return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">Preparing your challenge…</div>;
+  if (qLoading || entryLoading || !ch) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-background">
+        <Loader2 className="w-9 h-9 animate-spin text-amber-500 mb-3" />
+        <h2 className="font-display text-lg font-bold text-foreground">Preparing your challenge…</h2>
+        <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+          Loading question bank, initializing timer and securing session.
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-6 rounded-full"
+          onClick={() => navigate(`/arena/${id}`)}
+        >
+          <ArrowLeft className="w-3.5 h-3.5 mr-1.5" /> Cancel & Return
+        </Button>
+      </div>
+    );
+  }
+
+  if (!questions || questions.length === 0 || !current) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-background">
+        <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto mb-3.5 text-amber-700 shadow-sm">
+          <Trophy className="w-7 h-7" />
+        </div>
+        <h2 className="font-display text-xl font-bold text-foreground mb-1.5">No Questions Available Yet</h2>
+        <p className="text-sm text-muted-foreground max-w-md mb-6 leading-relaxed">
+          Questions for this arena competition have not been assigned yet. Your token balance has not been lost.
+        </p>
+        <div className="flex flex-col sm:flex-row items-center gap-2.5">
+          <Button variant="outline" onClick={() => navigate(`/arena/${id}`)}>
+            <ArrowLeft className="w-4 h-4 mr-1.5" /> Challenge details
+          </Button>
+          <Button onClick={() => navigate("/arena")} className="bg-amber-500 hover:bg-amber-600 text-white">
+            Return to Arena Home
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   const mm = Math.floor(timeLeft / 60).toString().padStart(2, "0");
@@ -167,13 +225,23 @@ export default function ArenaPlay() {
           {/* Top bar */}
           <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-neutral-100 -mx-4 px-4 py-3 mb-4">
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-[12px] font-bold text-neutral-700">
-                <Trophy className="h-3.5 w-3.5 text-amber-600" />
-                <span className="truncate max-w-[180px]">{ch.title}</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setExitDialogOpen(true)}
+                  aria-label="Exit challenge"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-amber-50 transition border border-transparent hover:border-amber-200 shrink-0"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" /> Exit
+                </button>
+                <div className="flex items-center gap-1.5 text-[12px] font-bold text-neutral-800 truncate">
+                  <Trophy className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                  <span className="truncate max-w-[140px] sm:max-w-[220px]">{ch.title}</span>
+                </div>
               </div>
               <div
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-extrabold text-[12.5px] tabular-nums",
+                  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-extrabold text-[12.5px] tabular-nums shrink-0",
                   lowTime ? "bg-red-50 text-red-700 border border-red-200 animate-pulse" : "bg-amber-50 text-amber-800 border border-amber-200",
                 )}
               >
@@ -196,7 +264,7 @@ export default function ArenaPlay() {
               exit={{ opacity: 0, x: -16 }}
               transition={{ duration: 0.2 }}
             >
-              <Card className="p-5 border-amber-200/60">
+              <Card className="p-5 border-amber-200/60 shadow-xs">
                 {current.image_url && (
                   <img src={current.image_url} alt="" className="rounded-xl mb-3 max-h-64 object-contain w-full" />
                 )}
@@ -212,9 +280,9 @@ export default function ArenaPlay() {
                         key={opt}
                         onClick={() => handleSelect(opt)}
                         className={cn(
-                          "w-full text-left p-3 rounded-xl border transition flex items-start gap-3",
+                          "w-full text-left p-3.5 rounded-xl border transition flex items-start gap-3",
                           isSel
-                            ? "border-amber-500 bg-amber-50/80 ring-2 ring-amber-300/40"
+                            ? "border-amber-500 bg-amber-50/90 ring-2 ring-amber-300/40 shadow-xs"
                             : "border-neutral-200 bg-white hover:border-amber-300 hover:bg-amber-50/40",
                         )}
                       >
@@ -226,7 +294,7 @@ export default function ArenaPlay() {
                         >
                           {opt}
                         </span>
-                        <span className="text-[14px] text-neutral-800 leading-snug">{text}</span>
+                        <span className="text-[14px] text-neutral-800 leading-snug pt-0.5">{text}</span>
                       </button>
                     );
                   })}
@@ -251,11 +319,11 @@ export default function ArenaPlay() {
               <Button
                 onClick={() => finalize(false)}
                 disabled={submit.isPending}
-                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
+                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold"
               >
                 {submit.isPending ? "Submitting…" : (
                   <>
-                    <CheckCircle2 className="h-4 w-4 mr-1.5" /> Submit
+                    <CheckCircle2 className="h-4 w-4 mr-1.5" /> Submit Challenge
                   </>
                 )}
               </Button>
@@ -263,6 +331,41 @@ export default function ArenaPlay() {
           </div>
         </main>
       </div>
+
+      {/* Exit Confirmation Dialog */}
+      <Dialog open={exitDialogOpen} onOpenChange={setExitDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display">Exit Challenge?</DialogTitle>
+            <DialogDescription>
+              You have answered {answered} of {questions.length} questions. You can submit your current answers now or return later before time expires.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2 mt-2">
+            <Button variant="outline" onClick={() => setExitDialogOpen(false)}>
+              Keep Playing
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setExitDialogOpen(false);
+                navigate(`/arena/${id}`);
+              }}
+            >
+              Exit to Arena
+            </Button>
+            <Button
+              onClick={() => {
+                setExitDialogOpen(false);
+                finalize(false);
+              }}
+              className="bg-amber-500 hover:bg-amber-600 text-white"
+            >
+              Submit & Exit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

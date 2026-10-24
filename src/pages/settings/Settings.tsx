@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import {
   User, Bell, Shield, Smartphone, CreditCard, Wallet, Gift,
   Palette, Globe, Download, LogOut, ChevronRight, HelpCircle,
-  FileText, Lock, Sparkles, Trash2, Zap,
+  FileText, Lock, Sparkles, Trash2, Zap, GraduationCap,
 } from "lucide-react";
 import AppScreen from "@/components/app-shell/AppScreen";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { SEO } from "@/components/seo/SEO";
 import { Switch } from "@/components/ui/switch";
 import { useLiteMode } from "@/lib/liteMode";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 type Row = { icon: any; label: string; hint?: string; to?: string; onClick?: () => void; danger?: boolean };
 type Group = { title: string; rows: Row[] };
@@ -34,7 +35,8 @@ const Settings = () => {
     {
       title: "Account",
       rows: [
-        { icon: User, label: "Edit profile", hint: "Name, photo, bio", to: "/profile/edit" },
+        { icon: User, label: "Profile & Account", hint: "Identity, theme & credentials", to: "/settings/profile" },
+        { icon: User, label: "Edit Public Bio", hint: "Photo, bio & socials", to: "/profile/edit" },
         { icon: GraduationCap, label: "Academic settings", hint: "University campus & department", to: "/settings/academic" },
         { icon: Sparkles, label: "Study preferences", hint: "Goals & schedule", to: "/profile/preparation" },
         { icon: Wallet, label: "Wallet & tokens", hint: "Top up and history", to: "/wallet" },
@@ -72,19 +74,40 @@ const Settings = () => {
     <AppScreen title="Settings" subtitle={user?.email ?? ""} back>
       <SEO title="Settings — OverraPrep AI" description="Manage your account, preferences and privacy." />
       <div className="max-w-2xl mx-auto pb-28 space-y-6">
+        {/* Appearance & Theme Toggle */}
+        <section>
+          <h2 className="px-1 text-[11px] font-bold tracking-[0.18em] uppercase text-primary/80 mb-2">
+            Appearance
+          </h2>
+          <div className="rounded-2xl border border-border/80 bg-card p-4 space-y-3.5 shadow-xs">
+            <div className="flex items-center gap-3">
+              <span className="h-9 w-9 rounded-xl inline-flex items-center justify-center shrink-0 bg-primary/10 text-primary">
+                <Palette className="w-[18px] h-[18px]" strokeWidth={1.8} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <span className="block text-[14.5px] font-semibold leading-tight text-foreground">Theme Mode</span>
+                <span className="block text-[12px] text-muted-foreground mt-0.5">
+                  Select clean Light, deep navy Dark, or match your device System
+                </span>
+              </div>
+            </div>
+            <ThemeToggle variant="segmented" className="w-full" />
+          </div>
+        </section>
+
         {/* Data saver / Lite mode — placed up top for low-network students */}
         <section>
-          <h2 className="px-1 text-[11px] font-bold tracking-[0.18em] uppercase text-amber-700/70 mb-2">
+          <h2 className="px-1 text-[11px] font-bold tracking-[0.18em] uppercase text-primary/80 mb-2">
             Network
           </h2>
-          <div className="rounded-2xl border border-amber-100 bg-white overflow-hidden">
+          <div className="rounded-2xl border border-border/80 bg-card overflow-hidden shadow-xs">
             <div className="w-full flex items-center gap-3 px-4 py-3.5">
-              <span className="h-9 w-9 rounded-xl inline-flex items-center justify-center shrink-0 bg-amber-50 text-amber-700">
+              <span className="h-9 w-9 rounded-xl inline-flex items-center justify-center shrink-0 bg-primary/10 text-primary">
                 <Zap className="w-[18px] h-[18px]" strokeWidth={1.8} />
               </span>
               <span className="flex-1 min-w-0">
-                <span className="block text-[14.5px] font-semibold leading-tight">Data saver (Lite mode)</span>
-                <span className="block text-[12px] text-neutral-500 mt-0.5">
+                <span className="block text-[14.5px] font-semibold leading-tight text-foreground">Data saver (Lite mode)</span>
+                <span className="block text-[12px] text-muted-foreground mt-0.5">
                   Skip splash video & heavy effects. Best on 2G/3G.
                 </span>
               </span>
@@ -101,10 +124,10 @@ const Settings = () => {
 
         {groups.map((g) => (
           <section key={g.title}>
-            <h2 className="px-1 text-[11px] font-bold tracking-[0.18em] uppercase text-amber-700/70 mb-2">
+            <h2 className="px-1 text-[11px] font-bold tracking-[0.18em] uppercase text-primary/80 mb-2">
               {g.title}
             </h2>
-            <div className="rounded-2xl border border-amber-100 bg-white overflow-hidden">
+            <div className="rounded-2xl border border-border/80 bg-card overflow-hidden shadow-xs">
               {g.rows.map((r, i) => {
                 const Icon = r.icon;
                 return (
@@ -113,15 +136,15 @@ const Settings = () => {
                     onClick={() => (r.onClick ? r.onClick() : r.to && navigate(r.to))}
                     className={cn(
                       "w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors",
-                      "hover:bg-amber-50/60 active:bg-amber-50",
-                      i !== g.rows.length - 1 && "border-b border-amber-50",
-                      r.danger && "text-red-600",
+                      "hover:bg-muted/50 active:bg-muted",
+                      i !== g.rows.length - 1 && "border-b border-border/50",
+                      r.danger ? "text-red-500" : "text-foreground",
                     )}
                   >
                     <span
                       className={cn(
                         "h-9 w-9 rounded-xl inline-flex items-center justify-center shrink-0",
-                        r.danger ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-700",
+                        r.danger ? "bg-red-500/10 text-red-500" : "bg-primary/10 text-primary",
                       )}
                     >
                       <Icon className="w-[18px] h-[18px]" strokeWidth={1.8} />
@@ -129,12 +152,12 @@ const Settings = () => {
                     <span className="flex-1 min-w-0">
                       <span className="block text-[14.5px] font-semibold leading-tight">{r.label}</span>
                       {r.hint && (
-                        <span className="block text-[12px] text-neutral-500 mt-0.5 truncate">
+                        <span className="block text-[12px] text-muted-foreground mt-0.5 truncate">
                           {r.hint}
                         </span>
                       )}
                     </span>
-                    {!r.onClick && <ChevronRight className="w-4 h-4 text-neutral-400" />}
+                    {!r.onClick && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                   </button>
                 );
               })}

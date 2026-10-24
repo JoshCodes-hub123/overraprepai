@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { saveResource } from "@/lib/userResources";
+import { cacheMaterialOffline } from "@/lib/offlineLibraryCache";
 import { kindFromFile } from "@/lib/extractText";
 import { track } from "@/lib/analytics";
 import { runLibraryAI, suggestedActionForMaterial } from "@/lib/libraryAI";
@@ -116,7 +117,7 @@ const FileStageRow = ({ status }: { status: FileStatus }) => {
 interface Props {
   open: boolean;
   onOpenChange: (o: boolean) => void;
-  existingFolders: string[];
+  existingFolders?: string[];
 }
 
 const fileIcon = (f: File) => {
@@ -126,7 +127,7 @@ const fileIcon = (f: File) => {
   return <FileIcon className="w-4 h-4" />;
 };
 
-export const UploadResourceDialog = ({ open, onOpenChange, existingFolders }: Props) => {
+export const UploadResourceDialog = ({ open, onOpenChange, existingFolders = [] }: Props) => {
   const { user } = useAuth();
   const qc = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -213,6 +214,21 @@ export const UploadResourceDialog = ({ open, onOpenChange, existingFolders }: Pr
           ext,
           meta: { material_type: materialType, original_name: f.name },
         });
+
+        // Immediately cache locally in IndexedDB so the student can read it offline right away
+        try {
+          await cacheMaterialOffline({
+            id: saved.id,
+            title,
+            mime: f.type || "application/pdf",
+            ext,
+            blob: f,
+            cached_at: Date.now(),
+          });
+        } catch {
+          // best-effort offline caching
+        }
+
         savedResources.push({ idx: i, resource: saved });
         okCount++;
         setStatus(i, { stage: "ready" });
@@ -439,7 +455,7 @@ export const UploadResourceDialog = ({ open, onOpenChange, existingFolders }: Pr
               className="h-10"
             />
             <datalist id="library-folders">
-              {existingFolders.map((f) => <option key={f} value={f} />)}
+              {(existingFolders || []).map((f) => <option key={f} value={f} />)}
             </datalist>
           </div>
         </div>

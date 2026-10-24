@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { NativeSettings } from "@/components/native/NativeSettings";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -631,6 +632,20 @@ const EditProfile = () => {
               <p className="text-xs text-muted-foreground">
                 Email cannot be changed
               </p>
+            </div>
+          </div>
+
+          {/* Appearance & Theme Preference */}
+          <div className="space-y-3 pt-2">
+            <h3 className="font-display text-base font-semibold">Appearance</h3>
+            <div className="rounded-2xl border border-border/80 bg-card p-4 space-y-3 shadow-xs">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Theme Mode</p>
+                  <p className="text-xs text-muted-foreground">Choose clean Light, deep navy Dark, or match your device System</p>
+                </div>
+              </div>
+              <ThemeToggle variant="segmented" className="w-full" />
             </div>
           </div>
 

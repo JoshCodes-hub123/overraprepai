@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 interface Tab {
   to: string;
@@ -19,7 +20,7 @@ const TABS: Tab[] = [
   { to: "/student/dashboard", label: "Home",     icon: Home },
   { to: "/courses",           label: "Courses",  icon: BookOpen },
   { to: "/practice",          label: "CBT",      icon: Target },
-  { to: "/leaderboard",       label: "Arena",    icon: Trophy },
+  { to: "/arena",             label: "Arena",    icon: Trophy },
   { to: "/profile/edit",      label: "Me",       icon: User },
 ];
 
@@ -56,6 +57,14 @@ export const BottomTabBar = () => {
       className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-card/90 dark:bg-neutral-950/90 backdrop-blur-2xl border-t border-border/80 shadow-[0_-8px_30px_rgba(0,0,0,0.08)]"
       style={{ paddingBottom: "max(env(safe-area-inset-bottom), 6px)" }}
     >
+      {/* Quick Theme Switcher capsule docked above bottom navigation */}
+      <div className="absolute -top-9 right-3 z-50 pointer-events-auto">
+        <ThemeToggle
+          variant="dropdown"
+          className="h-7 px-2.5 text-[11px] font-semibold rounded-full shadow-sm bg-card/95 border border-border/80 backdrop-blur-md text-foreground"
+        />
+      </div>
+
       <ul className="grid grid-cols-5 relative px-1">
         {TABS.map(({ to, label, icon: Icon }) => {
           const path = to.split("?")[0];

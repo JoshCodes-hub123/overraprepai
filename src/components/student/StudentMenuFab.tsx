@@ -14,7 +14,7 @@ const STUDENT_PREFIXES = [
   "/community", "/opportunities", "/leaderboard", "/settings", "/help",
   "/copilot", "/referrals", "/spotlight", "/challenges", "/cgpa",
   "/mock-exams", "/exam-readiness", "/strategy", "/sessions",
-  "/theory", "/survival-kits", "/posts", "/feed",
+  "/theory", "/survival-kits", "/posts", "/feed", "/arena",
 ];
 
 /**

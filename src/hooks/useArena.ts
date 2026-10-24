@@ -255,20 +255,82 @@ export function useArenaPlayQuestions(challengeId?: string, enabled = true) {
     enabled: !!challengeId && enabled,
     staleTime: Infinity,
     queryFn: async () => {
-      const { data, error } = await sb.rpc("arena_get_play_questions", {
-        _challenge_id: challengeId,
-      });
-      if (error) throw error;
-      return (data ?? []) as Array<{
-        ord: number;
-        question_id: string;
-        question_text: string;
-        option_a: string;
-        option_b: string;
-        option_c: string;
-        option_d: string;
-        image_url: string | null;
-      }>;
+      // 1. Try primary RPC
+      try {
+        const { data, error } = await sb.rpc("arena_get_play_questions", {
+          _challenge_id: challengeId,
+        });
+        if (!error && Array.isArray(data) && data.length > 0) {
+          return data as Array<{
+            ord: number;
+            question_id: string;
+            question_text: string;
+            option_a: string;
+            option_b: string;
+            option_c: string;
+            option_d: string;
+            image_url: string | null;
+          }>;
+        }
+      } catch (err) {
+        console.warn("arena_get_play_questions RPC issue, attempting fallback:", err);
+      }
+
+      // 2. Fallback: query from questions table by course or active university questions
+      try {
+        const { data: challenge } = await sb
+          .from("arena_challenges")
+          .select("course_id, num_questions")
+          .eq("id", challengeId)
+          .maybeSingle();
+
+        const limit = challenge?.num_questions || 10;
+        let qQuery = sb
+          .from("questions")
+          .select("id, question_text, option_a, option_b, option_c, option_d, image_url")
+          .limit(limit);
+
+        if (challenge?.course_id) {
+          qQuery = qQuery.eq("course_id", challenge.course_id);
+        }
+
+        const { data: qData } = await qQuery;
+        if (qData && qData.length > 0) {
+          return qData.map((q: any, i: number) => ({
+            ord: i + 1,
+            question_id: q.id,
+            question_text: q.question_text,
+            option_a: q.option_a,
+            option_b: q.option_b,
+            option_c: q.option_c,
+            option_d: q.option_d,
+            image_url: q.image_url,
+          }));
+        }
+
+        // Secondary fallback to any university questions
+        const { data: anyQuestions } = await sb
+          .from("questions")
+          .select("id, question_text, option_a, option_b, option_c, option_d, image_url")
+          .limit(limit);
+
+        if (anyQuestions && anyQuestions.length > 0) {
+          return anyQuestions.map((q: any, i: number) => ({
+            ord: i + 1,
+            question_id: q.id,
+            question_text: q.question_text,
+            option_a: q.option_a,
+            option_b: q.option_b,
+            option_c: q.option_c,
+            option_d: q.option_d,
+            image_url: q.image_url,
+          }));
+        }
+      } catch (err) {
+        console.error("Fallback question retrieval failed:", err);
+      }
+
+      return [];
     },
   });
 }

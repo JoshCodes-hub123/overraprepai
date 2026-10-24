@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { ThemeProvider } from "@/hooks/useTheme";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import InstallNudge from "@/components/system/InstallNudge";
 import GlobalPaywall from "@/components/system/GlobalPaywall";
@@ -14,6 +15,7 @@ import AnimatedRoutes from "@/components/layout/AnimatedRoutes";
 import BiometricUnlock from "@/components/native/BiometricUnlock";
 import OfflineBanner from "@/components/native/OfflineBanner";
 import BottomTabBar from "@/components/app-shell/BottomTabBar";
+import ConsistentBackButton from "@/components/navigation/ConsistentBackButton";
 import MiniPlayerBar from "@/components/audio/MiniPlayerBar";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import EmailVerificationBanner from "@/components/auth/EmailVerificationBanner";
@@ -223,44 +225,47 @@ const App = () => {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <InstallPrompt />
-          <OfflineBanner />
-          <NetworkStatus />
-          <LiteModeApplier />
+        <ThemeProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <InstallPrompt />
+            <OfflineBanner />
+            <NetworkStatus />
+            <LiteModeApplier />
             <UpdatePrompt />
-          <BrowserRouter>
-            <ScrollToTop />
-            <PageViewTracker />
-            <AuthProvider>
-              <AccountQueryCacheBoundary>
-                <PushBootstrap />
-                <EnvironmentThemeApplier />
+            <BrowserRouter>
+              <ScrollToTop />
+              <PageViewTracker />
+              <AuthProvider>
+                <AccountQueryCacheBoundary>
+                  <PushBootstrap />
+                  <EnvironmentThemeApplier />
 
-                <OfflineAttemptSyncBanner />
-                <DeviceTracker />
-                <DashboardWarmup />
-                <LastRouteTracker />
-                <BiometricUnlock>
-                  <PaymentTestModeBanner />
-                  <EmailVerificationBanner />
-                  <InstallNudge />
-                  <GlobalPaywall />
+                  <OfflineAttemptSyncBanner />
+                  <DeviceTracker />
+                  <DashboardWarmup />
+                  <LastRouteTracker />
+                  <BiometricUnlock>
+                    <PaymentTestModeBanner />
+                    <EmailVerificationBanner />
+                    <InstallNudge />
+                    <GlobalPaywall />
 
-                  <main id="main-content" className="pb-16 md:pb-0">
-                    <AnimatedRoutes />
-                  </main>
-                  <BottomTabBar />
-                  <ReportProblemFab />
-                  <MiniPlayerBar />
-                  <RoleBadge />
-                </BiometricUnlock>
-              </AccountQueryCacheBoundary>
-            </AuthProvider>
-          </BrowserRouter>
-        </TooltipProvider>
+                    <main id="main-content" className="pb-16 md:pb-0">
+                      <AnimatedRoutes />
+                    </main>
+                    <ConsistentBackButton />
+                    <BottomTabBar />
+                    <ReportProblemFab />
+                    <MiniPlayerBar />
+                    <RoleBadge />
+                  </BiometricUnlock>
+                </AccountQueryCacheBoundary>
+              </AuthProvider>
+            </BrowserRouter>
+          </TooltipProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

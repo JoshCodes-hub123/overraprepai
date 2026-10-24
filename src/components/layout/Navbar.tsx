@@ -1,12 +1,21 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, GraduationCap, ChevronRight, Smartphone } from "lucide-react";
+import { Menu, X, GraduationCap, ChevronRight, Smartphone, User, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import TutorApplicationDialog from "@/components/landing/TutorApplicationDialog";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { InstallAppModal } from "@/components/pwa/InstallAppModal";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import logo from "@/assets/logo.png";
 
 const Navbar = () => {
@@ -16,7 +25,7 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, profile, isLoading, hasRole } = useAuth();
+  const { user, profile, isLoading, hasRole, signOut } = useAuth();
   const initials = (profile?.full_name || user?.email || "U").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
   const avatar = (profile as any)?.avatar_url || (profile as any)?.profile_image_url || null;
 
@@ -127,6 +136,7 @@ const Navbar = () => {
               {!isLoading && (
                 user ? (
                   <>
+                    <ThemeToggle variant="compact" />
                     <NotificationCenter />
                     <Button 
                       variant="hero" 
@@ -137,16 +147,50 @@ const Navbar = () => {
                       Dashboard
                       <ChevronRight className="w-3.5 h-3.5 ml-1" />
                     </Button>
-                    <button
-                      onClick={() => navigate("/profile/edit")}
-                      aria-label="Edit profile"
-                      className="rounded-full ring-2 ring-primary/20 hover:ring-primary/50 transition-all"
-                    >
-                      <Avatar className="w-9 h-9">
-                        <AvatarImage src={avatar || undefined} />
-                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{initials}</AvatarFallback>
-                      </Avatar>
-                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label="User account menu"
+                          className="rounded-full ring-2 ring-primary/20 hover:ring-primary/50 transition-all focus:outline-none"
+                        >
+                          <Avatar className="w-9 h-9 cursor-pointer">
+                            <AvatarImage src={avatar || undefined} />
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{initials}</AvatarFallback>
+                          </Avatar>
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-52 p-1.5 shadow-lg border-amber-100">
+                        <DropdownMenuLabel className="font-normal p-2">
+                          <p className="text-sm font-bold text-foreground truncate">{profile?.full_name || initials}</p>
+                          <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => navigate("/dashboard")} className="cursor-pointer gap-2 py-2">
+                          <ChevronRight className="w-4 h-4 text-amber-600" />
+                          <span>Dashboard</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate("/profile/edit")} className="cursor-pointer gap-2 py-2">
+                          <User className="w-4 h-4 text-neutral-500" />
+                          <span>Edit Profile</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate("/settings/academic")} className="cursor-pointer gap-2 py-2">
+                          <GraduationCap className="w-4 h-4 text-amber-600" />
+                          <span>Academic Settings</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={async () => {
+                            await signOut();
+                            navigate("/auth", { replace: true });
+                          }}
+                          className="cursor-pointer gap-2 py-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 focus:text-rose-700 focus:bg-rose-50"
+                        >
+                          <LogOut className="w-4 h-4 text-rose-600" />
+                          <span className="font-semibold">Log Out</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </>
                 ) : (
                   <>
@@ -236,26 +280,44 @@ const Navbar = () => {
                       Become a Tutor
                     </Button>
                   )}
+                  <div className="py-2">
+                    <ThemeToggle variant="segmented" className="w-full" />
+                  </div>
+
                   {user ? (
-                    <div className="flex items-center gap-2">
-                      <NotificationCenter />
-                      <Button 
-                        variant="hero" 
-                        className="flex-1 justify-center" 
-                        onClick={() => { setIsMenuOpen(false); navigate("/dashboard"); }}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <NotificationCenter />
+                        <Button 
+                          variant="hero" 
+                          className="flex-1 justify-center" 
+                          onClick={() => { setIsMenuOpen(false); navigate("/dashboard"); }}
+                        >
+                          Go to Dashboard
+                        </Button>
+                        <button
+                          onClick={() => { setIsMenuOpen(false); navigate("/profile/edit"); }}
+                          aria-label="Edit profile"
+                          className="rounded-full ring-2 ring-primary/20"
+                        >
+                          <Avatar className="w-9 h-9">
+                            <AvatarImage src={avatar || undefined} />
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{initials}</AvatarFallback>
+                          </Avatar>
+                        </button>
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-center gap-2 border-rose-200 text-rose-600 hover:bg-rose-50"
+                        onClick={async () => {
+                          setIsMenuOpen(false);
+                          await signOut();
+                          navigate("/auth", { replace: true });
+                        }}
                       >
-                        Go to Dashboard
+                        <LogOut className="w-4 h-4 text-rose-600" />
+                        <span>Log Out</span>
                       </Button>
-                      <button
-                        onClick={() => { setIsMenuOpen(false); navigate("/profile/edit"); }}
-                        aria-label="Edit profile"
-                        className="rounded-full ring-2 ring-primary/20"
-                      >
-                        <Avatar className="w-9 h-9">
-                          <AvatarImage src={avatar || undefined} />
-                          <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">{initials}</AvatarFallback>
-                        </Avatar>
-                      </button>
                     </div>
                   ) : (
                     <>
