@@ -39,6 +39,7 @@ const StudentDashboard = lazy(() => import("@/pages/student/StudentDashboard"));
 const ExamReadiness = lazy(() => import("@/pages/student/ExamReadiness"));
 const WeakAreaDrill = lazy(() => import("@/pages/student/WeakAreaDrill"));
 const MasteryBreakdown = lazy(() => import("@/pages/student/MasteryBreakdown"));
+const StudyAnalytics = lazyWithRetry(() => import("@/pages/student/StudyAnalytics"));
 const OfflinePractice = lazy(() => import("@/pages/student/OfflinePractice"));
 const OfflineRunner = lazy(() => import("@/pages/student/OfflineRunner"));
 const AudioLearning = lazy(() => import("@/pages/student/AudioLearning"));
@@ -401,6 +402,7 @@ export const AnimatedRoutes = () => {
               </PageTransition>
             }
           />
+          <Route path="/profile" element={<Navigate to="/profile/edit" replace />} />
           <Route
             path="/profile/edit"
             element={
@@ -466,6 +468,22 @@ export const AnimatedRoutes = () => {
             }
           />
           <Route
+            path="/rankings"
+            element={
+              <PageTransition>
+                <LeaderboardPage />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/student/rankings"
+            element={
+              <PageTransition>
+                <LeaderboardPage />
+              </PageTransition>
+            }
+          />
+          <Route
             path="/team/stats"
             element={
               <PageTransition>
@@ -487,6 +505,8 @@ export const AnimatedRoutes = () => {
           <Route path="/student/readiness" element={<PageTransition><ExamReadiness /></PageTransition>} />
           <Route path="/student/weak/:courseId" element={<PageTransition><WeakAreaDrill /></PageTransition>} />
           <Route path="/student/mastery" element={<PageTransition><MasteryBreakdown /></PageTransition>} />
+          <Route path="/student/analytics" element={<PageTransition><StudyAnalytics /></PageTransition>} />
+          <Route path="/analytics" element={<PageTransition><StudyAnalytics /></PageTransition>} />
           <Route path="/student/offline" element={<PageTransition><OfflinePractice /></PageTransition>} />
           <Route path="/student/offline/:setId" element={<PageTransition><OfflineRunner /></PageTransition>} />
           <Route path="/audio-learning" element={<PageTransition><AudioLearning /></PageTransition>} />

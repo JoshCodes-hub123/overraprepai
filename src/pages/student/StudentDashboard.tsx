@@ -36,9 +36,15 @@ import { useStudentScope } from "@/hooks/useStudentScope";
 import { useTodayMission, useWeeklyReport, useReadinessAll, useSuccessScore } from "@/hooks/useIntelligence";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
 import { useStudyStreak } from "@/hooks/useLearningProgress";
+import { DailyCheckIn } from "@/components/student/dashboard/DailyCheckIn";
+import { useDashboardPreferences } from "@/hooks/useDashboardPreferences";
+import { DashboardPreferencesDialog } from "@/components/student/dashboard/DashboardPreferencesMenu";
+import { useStudyAnalytics } from "@/hooks/useStudyAnalytics";
+import { StudyActivityHeatmap } from "@/components/student/analytics/StudyActivityHeatmap";
 import useEnvironment from "@/hooks/useEnvironment";
 import { INSTITUTIONS, isInstitutionCode } from "@/config/environments";
 import { courseActionLabel as courseAction } from "@/lib/nextStep";
+import { SlidersHorizontal } from "lucide-react";
 
 if (typeof window !== "undefined") prefetchDashboardNeighbors();
 
@@ -63,7 +69,11 @@ const StudentDashboard = () => {
   const navigate = useNavigate();
   const { user, profile, isLoading: authLoading } = useAuth();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [prefsOpen, setPrefsOpen] = useState(false);
   useCommandPaletteHotkey(setPaletteOpen);
+  const { preferences, visibleCount, totalCount } = useDashboardPreferences();
+  const { dailyMap, full90DaySeries, summary: analyticsSummary, logStudySession } =
+    useStudyAnalytics("14d");
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth", { replace: true });
@@ -165,6 +175,7 @@ const StudentDashboard = () => {
         noindex
       />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+      <DashboardPreferencesDialog open={prefsOpen} onOpenChange={setPrefsOpen} />
       <PullToRefresh onRefresh={onRefresh}>
         <Screen className="max-w-4xl mx-auto px-4 sm:px-6 pb-24">
           <BrandTopBar />
@@ -208,10 +219,24 @@ const StudentDashboard = () => {
                 )}
               </div>
 
-              {/* Motivational Quote / Exam Date Tag */}
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-300/40 text-amber-900 dark:text-amber-200 text-xs font-semibold">
-                <GraduationCap className="w-4 h-4 text-amber-600" />
-                <span>Semester CBT Mode Active</span>
+              {/* Dashboard Preferences Quick Trigger & CBT Status */}
+              <div className="flex items-center gap-2 self-start sm:self-center">
+                <button
+                  type="button"
+                  onClick={() => setPrefsOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/80 bg-card hover:bg-muted/60 text-xs font-semibold text-foreground transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                  title="Customize Dashboard Widgets"
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Dashboard Preferences</span>
+                  <span className="font-mono text-[10px] text-muted-foreground tabular-nums">
+                    ({visibleCount}/{totalCount})
+                  </span>
+                </button>
+                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-300/40 text-amber-900 dark:text-amber-200 text-xs font-semibold">
+                  <GraduationCap className="w-4 h-4 text-amber-600" />
+                  <span>CBT Mode</span>
+                </div>
               </div>
             </div>
 
@@ -220,23 +245,27 @@ const StudentDashboard = () => {
                ========================================================= */}
             <div className="mt-5 grid grid-cols-3 gap-2.5 sm:gap-4">
               {/* Streak Card */}
-              <div className="flex flex-col justify-between p-3 sm:p-4 rounded-2xl border border-border/80 bg-card shadow-xs hover:border-amber-400/60 transition-all">
+              <Link
+                to="/student/analytics"
+                className="group flex flex-col justify-between p-3 sm:p-4 rounded-2xl border border-border/80 bg-card shadow-xs hover:border-amber-400/80 transition-all cursor-pointer"
+                title="View Daily Study Streaks & Study Analytics"
+              >
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                     Streak
                   </span>
-                  <Flame className="w-4 h-4 text-amber-600 dark:text-amber-500" />
+                  <Flame className="w-4 h-4 text-amber-600 dark:text-amber-500 group-hover:scale-110 transition-transform" />
                 </div>
                 <div className="mt-2">
-                  <div className="font-mono text-lg sm:text-2xl font-black text-foreground">
+                  <div className="font-mono text-lg sm:text-2xl font-black text-foreground tabular-nums">
                     {currentStreak}
                     <span className="text-xs font-semibold text-muted-foreground ml-1">d</span>
                   </div>
                   <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate hidden sm:block">
-                    {currentStreak > 1 ? "Active streak · On fire" : "Study today to start"}
+                    {currentStreak > 1 ? "Active streak · View analytics" : "Tap to view study analytics"}
                   </p>
                 </div>
-              </div>
+              </Link>
 
               {/* Token Wallet Card */}
               <Link
@@ -284,6 +313,11 @@ const StudentDashboard = () => {
                 </div>
               </Link>
             </div>
+
+            {/* Consecutive Daily Login Check-in Banner (Toggled via Dashboard Preferences) */}
+            {preferences.showDailyCheckIn && (
+              <DailyCheckIn variant="card" className="mt-3.5" />
+            )}
           </div>
 
           {/* =========================================================
@@ -299,7 +333,13 @@ const StudentDashboard = () => {
               TIER 4: 1-Tap Speed Launchpad (Fast Action Grid)
              ========================================================= */}
           <div className="mb-7">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div
+              className={
+                preferences.showGlobalRankings
+                  ? "grid grid-cols-2 sm:grid-cols-4 gap-2.5"
+                  : "grid grid-cols-1 sm:grid-cols-3 gap-2.5"
+              }
+            >
               <button
                 type="button"
                 onClick={() => navigate("/practice")}
@@ -354,23 +394,25 @@ const StudentDashboard = () => {
                 </div>
               </button>
 
-              <button
-                type="button"
-                onClick={() => navigate("/leaderboard")}
-                className="group flex items-center gap-3 p-3 rounded-2xl border border-border/80 bg-card hover:bg-muted/40 active:scale-95 text-left transition-all shadow-2xs"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-500/15 text-rose-700 dark:text-rose-300 font-bold group-hover:scale-105 transition-transform">
-                  <Trophy className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <span className="block font-bold text-xs sm:text-sm text-foreground truncate">
-                    Arena Ranking
-                  </span>
-                  <span className="block text-[11px] text-muted-foreground truncate">
-                    Campus showdowns
-                  </span>
-                </div>
-              </button>
+              {preferences.showGlobalRankings && (
+                <button
+                  type="button"
+                  onClick={() => navigate("/leaderboard")}
+                  className="group flex items-center gap-3 p-3 rounded-2xl border border-border/80 bg-card hover:bg-muted/40 active:scale-95 text-left transition-all shadow-2xs"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-500/15 text-rose-700 dark:text-rose-300 font-bold group-hover:scale-105 transition-transform">
+                    <Trophy className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="block font-bold text-xs sm:text-sm text-foreground truncate">
+                      Global Rankings
+                    </span>
+                    <span className="block text-[11px] text-muted-foreground truncate">
+                      Compare streaks & quizzes
+                    </span>
+                  </div>
+                </button>
+              )}
             </div>
           </div>
 
@@ -439,43 +481,73 @@ const StudentDashboard = () => {
           </Section>
 
           {/* =========================================================
-              TIER 7: Daily Practice Target & Weekly Pulse
+              TIER 7: Daily Practice Target & Weekly Pulse (Toggled via Dashboard Preferences)
              ========================================================= */}
-          <Section title="Daily Practice Target" className="mt-8">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <MissionBlock
-                title="Today's Academic Target"
-                subtitle="Consistent practice guarantees 1st-class CBT exam readiness"
-                missions={
-                  missionTasks.length > 0
-                    ? missionTasks
-                    : [
-                        {
-                          label: current
-                            ? `Complete 1 CBT practice set in ${current.code}`
-                            : "Complete 1 CBT practice set",
-                          done: false,
-                          link: current ? `/practice?course=${current.id}` : "/practice",
-                        },
-                      ]
-                }
-                completed={completedMissions}
-                total={missionTasks.length || 1}
-              />
-              <WeeklyPulse
-                quizzesCompleted={weekly?.quizzes_completed ?? 0}
-                accuracy={weekly?.accuracy_pct ?? 0}
-              />
-            </div>
-          </Section>
+          {preferences.showPracticeTarget && (
+            <Section title="Daily Practice Target" className="mt-8">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <MissionBlock
+                  title="Today's Academic Target"
+                  subtitle="Consistent practice guarantees 1st-class CBT exam readiness"
+                  missions={
+                    missionTasks.length > 0
+                      ? missionTasks
+                      : [
+                          {
+                            label: current
+                              ? `Complete 1 CBT practice set in ${current.code}`
+                              : "Complete 1 CBT practice set",
+                            done: false,
+                            link: current ? `/practice?course=${current.id}` : "/practice",
+                          },
+                        ]
+                  }
+                  completed={completedMissions}
+                  total={missionTasks.length || 1}
+                />
+                <WeeklyPulse
+                  quizzesCompleted={weekly?.quizzes_completed ?? 0}
+                  accuracy={weekly?.accuracy_pct ?? 0}
+                />
+              </div>
+            </Section>
+          )}
 
           {/* =========================================================
-              TIER 8: Diagnostic Intelligence & Progress Summary
+              TIER 8: Study Activity Heatmap (Toggled via Dashboard Preferences)
+             ========================================================= */}
+          {preferences.showHeatmap && (
+            <Section
+              title="Monthly Study Consistency"
+              to="/student/analytics"
+              linkLabel="Full Analytics"
+              className="mt-8"
+            >
+              <StudyActivityHeatmap
+                dailyMap={dailyMap}
+                full90DaySeries={full90DaySeries}
+                currentStreak={analyticsSummary.currentStreak}
+                longestStreak={analyticsSummary.longestStreak}
+                onRequestLogForDate={(dateKey) =>
+                  logStudySession({
+                    courseCode: current?.code || "PHY 102",
+                    minutes: 30,
+                    questions: 20,
+                    accuracy: 85,
+                    dateKey,
+                  })
+                }
+              />
+            </Section>
+          )}
+
+          {/* =========================================================
+              TIER 9: Study Analytics & Progress Summary
              ========================================================= */}
           <Section
-            title="Recent Diagnostic Summary"
-            to="/progress"
-            linkLabel="Full Breakdown"
+            title="Study Analytics & Progress"
+            to="/student/analytics"
+            linkLabel="Open Charts & Trends"
             className="mt-8 pb-10"
           >
             <ProgressCards />

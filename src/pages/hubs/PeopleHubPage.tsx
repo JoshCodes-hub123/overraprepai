@@ -29,7 +29,7 @@ const PeopleHubPage = () => (
       {
         title: "Discover",
         tiles: [
-          { to: "/leaderboard", label: "Leaderboard", description: "Top students", icon: Trophy },
+          { to: "/leaderboard", label: "Global Rankings", description: "Compare streaks & quiz progress", icon: Trophy, accent: true },
           { to: "/spotlight", label: "Student Spotlight", description: "Stories worth sharing", icon: Star },
           { to: "/announcements", label: "Announcements", description: "Platform news", icon: Megaphone },
           { to: "/opportunities", label: "Opportunities", description: "Scholarships & internships", icon: Sparkles },

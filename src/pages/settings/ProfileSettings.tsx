@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLiteMode } from "@/lib/liteMode";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveAvatarUrl } from "@/lib/avatar";
+import { DashboardPreferencesPanel } from "@/components/student/dashboard/DashboardPreferencesMenu";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -258,6 +259,25 @@ export const ProfileSettings = () => {
                 <span className="block text-[9px] text-muted-foreground">Auto device sync</span>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* =========================================================
+            2B. DASHBOARD PREFERENCES MENU (WIDGET VISIBILITY TOGGLES)
+           ========================================================= */}
+        <section id="dashboard-preferences" className="space-y-2">
+          <h3 className="px-1 text-[11px] font-bold tracking-[0.18em] uppercase text-primary/80">
+            Dashboard Preferences
+          </h3>
+          <div className="rounded-3xl border border-border/80 bg-card p-5 sm:p-6 shadow-xs space-y-4">
+            <div>
+              <h4 className="text-sm font-bold text-foreground">Widget Visibility</h4>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Toggle specific dashboard and analytics widgets such as Global Rankings or the
+                Study Activity Heatmap for a cleaner UI
+              </p>
+            </div>
+            <DashboardPreferencesPanel />
           </div>
         </section>
 

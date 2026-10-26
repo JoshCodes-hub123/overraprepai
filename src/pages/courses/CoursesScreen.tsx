@@ -141,6 +141,12 @@ const CoursesScreen = () => {
     });
   }, [fullCatalogue, term, levelFilter]);
 
+  // Automatically show Explore tab if student has no enrolled courses yet once loaded
+  const effectiveTab =
+    activeTab === "mine" && !isLoadingEnrolled && enrolled.length === 0 && fullCatalogue.length > 0
+      ? "explore"
+      : activeTab;
+
   // Tutors and admins use the administration directory
   if (primaryRole === "admin" || primaryRole === "tutor") {
     return <CourseDirectory />;
@@ -241,7 +247,7 @@ const CoursesScreen = () => {
                 type="button"
                 onClick={() => setActiveTab("mine")}
                 className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === "mine"
+                  effectiveTab === "mine"
                     ? "bg-card text-foreground shadow-xs border border-border/50"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
@@ -249,7 +255,7 @@ const CoursesScreen = () => {
                 <span>My Courses</span>
                 <span
                   className={`text-[10px] px-1.5 py-0.5 rounded-md font-extrabold ${
-                    activeTab === "mine"
+                    effectiveTab === "mine"
                       ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
                       : "bg-muted text-muted-foreground"
                   }`}
@@ -262,7 +268,7 @@ const CoursesScreen = () => {
                 type="button"
                 onClick={() => setActiveTab("explore")}
                 className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === "explore"
+                  effectiveTab === "explore"
                     ? "bg-card text-foreground shadow-xs border border-border/50"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
@@ -271,7 +277,7 @@ const CoursesScreen = () => {
                 <span>Explore Curriculum</span>
                 <span
                   className={`text-[10px] px-1.5 py-0.5 rounded-md font-extrabold ${
-                    activeTab === "explore"
+                    effectiveTab === "explore"
                       ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
                       : "bg-muted text-muted-foreground"
                   }`}
@@ -305,7 +311,7 @@ const CoursesScreen = () => {
           </div>
 
           {/* Tab 1: My Courses Grid */}
-          {activeTab === "mine" && (
+          {effectiveTab === "mine" && (
             <div>
               {isLoadingEnrolled ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
@@ -416,7 +422,7 @@ const CoursesScreen = () => {
           )}
 
           {/* Tab 2: Explore Curriculum & Add Courses */}
-          {activeTab === "explore" && (
+          {effectiveTab === "explore" && (
             <div className="space-y-4">
               <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
                 <span>

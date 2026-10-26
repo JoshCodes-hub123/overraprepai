@@ -2,12 +2,13 @@ import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { getLocalCheckInState } from "@/hooks/useDailyCheckIn";
 
 /**
  * Live token wallet balance for the current user.
  *
- * Source of truth = secure `get_my_wallet()` RPC. Wallet/free-quota columns
- * are protected on `profiles`, so direct table reads can show 0 in the app.
+ * Source of truth = secure `get_my_wallet()` RPC + any claimed Daily Check-in
+ * streak bonus tokens stored on the client when RPC write permissions are restricted.
  */
 export function useTokenBalance() {
   const { user } = useAuth();
@@ -59,7 +60,8 @@ export function useTokenBalance() {
     };
   }, [user?.id, qc]);
 
-  const balance = query.data?.ai_token_balance ?? 0;
+  const checkInBonus = getLocalCheckInState(user?.id).totalBonusTokens ?? 0;
+  const balance = (query.data?.ai_token_balance ?? 0) + checkInBonus;
   const dailyFreeUsed = query.data?.daily_free_used ?? 0;
 
   return {
@@ -68,7 +70,7 @@ export function useTokenBalance() {
       ? {
           id: user?.id ?? "",
           balance,
-          total_earned: 0,
+          total_earned: checkInBonus,
           total_spent: 0,
         }
       : null,

@@ -196,145 +196,156 @@ export function PlatformAnalytics() {
     <div className="space-y-6">
       {/* User Stats */}
       <div>
-        <h3 className="font-display font-semibold text-foreground mb-4">Users</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-display text-sm font-bold uppercase tracking-wider text-muted-foreground">
+            User Base &amp; Engagement
+          </h3>
+          <span className="text-xs text-muted-foreground">Aggregated across all faculties</span>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <StatCard
-            icon={<Users className="w-5 h-5 text-primary" />}
-            value={data.totalStudents}
-            label="Students"
-            bgColor="bg-primary/10"
+            icon={<Users className="w-4 h-4 text-muted-foreground" />}
+            value={data.totalStudents.toLocaleString()}
+            label="Enrolled Students"
           />
           <StatCard
-            icon={<GraduationCap className="w-5 h-5 text-accent" />}
-            value={data.totalTutors}
-            label="Tutors"
-            bgColor="bg-accent/10"
+            icon={<GraduationCap className="w-4 h-4 text-muted-foreground" />}
+            value={data.totalTutors.toLocaleString()}
+            label="Faculty Tutors"
           />
           <StatCard
-            icon={<TrendingUp className="w-5 h-5 text-success" />}
-            value={data.completedAttempts}
+            icon={<TrendingUp className="w-4 h-4 text-muted-foreground" />}
+            value={data.completedAttempts.toLocaleString()}
             label="Quizzes Completed"
-            bgColor="bg-success/10"
           />
           <StatCard
-            icon={<Target className="w-5 h-5 text-destructive" />}
+            icon={<Target className="w-4 h-4 text-muted-foreground" />}
             value={`${data.averageScore}%`}
-            label="Avg. Score"
-            bgColor="bg-destructive/10"
+            label="Mean Accuracy Rate"
           />
         </div>
       </div>
 
       {/* Content Stats */}
       <div>
-        <h3 className="font-display font-semibold text-foreground mb-4">Content</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-display text-sm font-bold uppercase tracking-wider text-muted-foreground">
+            Curriculum &amp; Question Repository
+          </h3>
+          <span className="text-xs text-muted-foreground">Verified CBT past question items</span>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <StatCard
-            icon={<BookOpen className="w-5 h-5 text-primary" />}
-            value={data.totalCourses}
-            label="Courses"
-            bgColor="bg-primary/10"
+            icon={<BookOpen className="w-4 h-4 text-muted-foreground" />}
+            value={data.totalCourses.toLocaleString()}
+            label="Active Courses"
           />
           <StatCard
-            icon={<FileText className="w-5 h-5 text-accent" />}
-            value={data.totalTopics}
-            label="Topics"
-            bgColor="bg-accent/10"
+            icon={<FileText className="w-4 h-4 text-muted-foreground" />}
+            value={data.totalTopics.toLocaleString()}
+            label="Syllabus Topics"
           />
           <StatCard
-            icon={<Brain className="w-5 h-5 text-success" />}
-            value={`${data.approvedQuestions}/${data.totalQuestions}`}
-            label="Questions (Approved)"
-            bgColor="bg-success/10"
+            icon={<Brain className="w-4 h-4 text-muted-foreground" />}
+            value={`${data.approvedQuestions.toLocaleString()} / ${data.totalQuestions.toLocaleString()}`}
+            label="Approved Questions"
           />
           <StatCard
-            icon={<Target className="w-5 h-5 text-muted-foreground" />}
-            value={data.totalQuizzes}
-            label="Quizzes"
-            bgColor="bg-muted"
+            icon={<Target className="w-4 h-4 text-muted-foreground" />}
+            value={data.totalQuizzes.toLocaleString()}
+            label="CBT Mock Sets"
           />
         </div>
       </div>
 
       {/* Revenue Stats */}
       <div>
-        <h3 className="font-display font-semibold text-foreground mb-4">Revenue</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-card rounded-xl border border-border p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
-                <Coins className="w-6 h-6 text-accent" />
-              </div>
-              <div>
-                <p className="text-3xl font-display font-bold text-foreground">
-                  {data.totalTokensSpent}
-                </p>
-                <p className="text-muted-foreground">Total Tokens Spent</p>
-              </div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-display text-sm font-bold uppercase tracking-wider text-muted-foreground">
+            Token Economy &amp; Platform Revenue
+          </h3>
+          <span className="text-xs text-muted-foreground">Settlement ledger</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div className="bg-card rounded-xl border border-border/70 p-5 shadow-2xs">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-muted-foreground">Total Tokens Spent by Students</span>
+              <Coins className="w-4 h-4 text-amber-500" />
             </div>
+            <p className="text-2xl font-bold font-mono tabular-nums text-foreground">
+              {data.totalTokensSpent.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">tokens</span>
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">Quiz attempts and premium unlocks</p>
           </div>
 
-          <div className="bg-card rounded-xl border border-border p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-success" />
-              </div>
-              <div>
-                <p className="text-3xl font-display font-bold text-foreground">
-                  {data.platformRevenue}
-                </p>
-                <p className="text-muted-foreground">Platform Revenue (tokens)</p>
-              </div>
+          <div className="bg-card rounded-xl border border-border/70 p-5 shadow-2xs">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-muted-foreground">Net Platform Earnings</span>
+              <TrendingUp className="w-4 h-4 text-emerald-500" />
             </div>
+            <p className="text-2xl font-bold font-mono tabular-nums text-foreground">
+              {data.platformRevenue.toLocaleString()} <span className="text-xs font-normal text-muted-foreground">tokens</span>
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">Retained after tutor commission splits</p>
           </div>
         </div>
       </div>
 
       {/* Top Courses & Recent Activity */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <div className="bg-card rounded-xl border border-border p-6">
-          <h3 className="font-display font-semibold text-foreground mb-4">Top Courses</h3>
+      <div className="grid lg:grid-cols-2 gap-4">
+        {/* Top Courses */}
+        <div className="bg-card rounded-xl border border-border/70 p-5 shadow-2xs">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-display text-sm font-bold text-foreground">Most Practiced Courses</h3>
+            <span className="text-xs text-muted-foreground">By student attempts</span>
+          </div>
           {data.topCourses.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No course activity yet</p>
+            <p className="text-muted-foreground text-xs py-4 text-center">No course activity recorded yet</p>
           ) : (
-            <div className="space-y-3">
+            <div className="divide-y divide-border/60">
               {data.topCourses.map((course, index) => (
                 <div
                   key={course.code}
-                  className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
+                  className="flex items-center justify-between py-2.5 px-1 hover:bg-muted/30 transition-colors rounded-md"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-muted-foreground font-medium">{index + 1}.</span>
-                    <div>
-                      <p className="font-medium text-foreground">{course.code}</p>
-                      <p className="text-sm text-muted-foreground">{course.name}</p>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="font-mono text-xs text-muted-foreground w-4 text-right">{index + 1}.</span>
+                    <div className="truncate">
+                      <p className="font-semibold text-xs text-foreground font-mono">{course.code}</p>
+                      <p className="text-xs text-muted-foreground truncate">{course.name}</p>
                     </div>
                   </div>
-                  <span className="text-accent font-semibold">{course.attempts} attempts</span>
+                  <span className="font-mono text-xs font-semibold tabular-nums text-foreground ml-3 shrink-0">
+                    {course.attempts.toLocaleString()} <span className="text-[10px] text-muted-foreground font-normal">attempts</span>
+                  </span>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <div className="bg-card rounded-xl border border-border p-6">
-          <h3 className="font-display font-semibold text-foreground mb-4">Recent Activity</h3>
+        {/* Recent Operational Activity */}
+        <div className="bg-card rounded-xl border border-border/70 p-5 shadow-2xs">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-display text-sm font-bold text-foreground">Audit &amp; Activity Stream</h3>
+            <span className="text-xs text-muted-foreground">Live operations</span>
+          </div>
           {data.recentActivity.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No recent activity</p>
+            <p className="text-muted-foreground text-xs py-4 text-center">No recent activity detected</p>
           ) : (
-            <div className="space-y-3">
+            <div className="divide-y divide-border/60">
               {data.recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
+                <div key={index} className="flex items-start gap-3 py-2.5 px-1 hover:bg-muted/30 transition-colors rounded-md">
                   <div
-                    className={`w-2 h-2 rounded-full mt-2 ${
-                      activity.type === "application" ? "bg-accent" : "bg-primary"
+                    className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${
+                      activity.type === "application" ? "bg-amber-500" : "bg-blue-500"
                     }`}
                   />
-                  <div className="flex-1">
-                    <p className="text-foreground text-sm">{activity.description}</p>
-                    <p className="text-xs text-muted-foreground">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-foreground text-xs font-medium truncate">{activity.description}</p>
+                    <p className="text-[10px] font-mono tabular-nums text-muted-foreground mt-0.5">
                       {new Date(activity.date).toLocaleDateString()} at{" "}
-                      {new Date(activity.date).toLocaleTimeString()}
+                      {new Date(activity.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </p>
                   </div>
                 </div>
@@ -351,22 +362,18 @@ function StatCard({
   icon,
   value,
   label,
-  bgColor,
 }: {
   icon: React.ReactNode;
   value: string | number;
   label: string;
-  bgColor: string;
 }) {
   return (
-    <div className="bg-card rounded-xl border border-border p-5">
-      <div className="flex items-center gap-3 mb-2">
-        <div className={`w-10 h-10 ${bgColor} rounded-lg flex items-center justify-center`}>
-          {icon}
-        </div>
+    <div className="bg-card rounded-xl border border-border/70 p-4 shadow-2xs">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-xs font-medium text-muted-foreground truncate">{label}</span>
+        {icon}
       </div>
-      <p className="font-display text-2xl font-bold text-foreground">{value}</p>
-      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="font-mono text-xl sm:text-2xl font-bold tabular-nums tracking-tight text-foreground">{value}</p>
     </div>
   );
 }

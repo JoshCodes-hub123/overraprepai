@@ -78,16 +78,6 @@ async function startServer() {
   const app = express();
   app.use(express.json({ limit: "10mb" }));
 
-  // Initialize Gemini client with aistudio-build telemetry header
-  const ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY,
-    httpOptions: {
-      headers: {
-        "User-Agent": "aistudio-build",
-      },
-    },
-  });
-
   // Health check endpoint
   app.get("/api/health", (_req: Request, res: Response) => {
     res.json({ ok: true, status: "healthy", timestamp: new Date().toISOString() });
@@ -132,8 +122,17 @@ Please explain this concept following the 4-part pedagogical structure.`;
 
       if (process.env.GEMINI_API_KEY) {
         try {
+          const ai = new GoogleGenAI({
+            apiKey: process.env.GEMINI_API_KEY,
+            httpOptions: {
+              headers: {
+                "User-Agent": "aistudio-build",
+              },
+            },
+          });
+
           const response = await ai.models.generateContent({
-            model: "gemini-3.8-flash",
+            model: "gemini-3-flash-preview",
             contents: userPrompt,
             config: {
               systemInstruction: GROUNDED_SYSTEM_PROMPT,
@@ -208,7 +207,7 @@ Please explain this concept following the 4-part pedagogical structure.`;
   } else {
     // Serve static client assets in production
     app.use(express.static(path.resolve(__dirname, "dist")));
-    app.get("*", (_req: Request, res: Response) => {
+    app.use((_req: Request, res: Response) => {
       res.sendFile(path.resolve(__dirname, "dist", "index.html"));
     });
   }

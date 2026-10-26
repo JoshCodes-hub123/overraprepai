@@ -16,6 +16,7 @@ import {
 } from "@/hooks/useMasteryBreakdown";
 import { TargetedDrillModal } from "@/components/progress/TargetedDrillModal";
 import { CircularProgressGauge } from "@/components/progress/CircularProgressGauge";
+import { StudyAnalyticsDashboard } from "@/components/student/analytics/StudyAnalyticsDashboard";
 import {
   AlertTriangle,
   ArrowRight,
@@ -120,8 +121,8 @@ export default function MasteryBreakdown() {
 
       <AppScreen
         back
-        title="Academic Progress"
-        subtitle="Data-driven course mastery & weak-area diagnostics"
+        title="Study Analytics & Academic Progress"
+        subtitle="Performance progress over time, quiz accuracy trends, daily streaks & weak-area diagnostics"
         right={
           !isColdStart ? (
             <Button
@@ -137,7 +138,9 @@ export default function MasteryBreakdown() {
           ) : undefined
         }
       >
-        <div className="max-w-4xl mx-auto space-y-6 pb-12">
+        <div className="max-w-5xl mx-auto space-y-8 pb-12">
+          {/* Interactive Recharts Study Analytics Dashboard */}
+          <StudyAnalyticsDashboard />
           {/* ==================== ZERO-CLS SHIMMER LOADING STATE ==================== */}
           {loading && (
             <div className="space-y-6">

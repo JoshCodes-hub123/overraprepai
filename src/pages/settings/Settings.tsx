@@ -12,6 +12,7 @@ import { SEO } from "@/components/seo/SEO";
 import { Switch } from "@/components/ui/switch";
 import { useLiteMode } from "@/lib/liteMode";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { DashboardPreferencesPanel } from "@/components/student/dashboard/DashboardPreferencesMenu";
 
 type Row = { icon: any; label: string; hint?: string; to?: string; onClick?: () => void; danger?: boolean };
 type Group = { title: string; rows: Row[] };
@@ -35,7 +36,7 @@ const Settings = () => {
     {
       title: "Account",
       rows: [
-        { icon: User, label: "Profile & Account", hint: "Identity, theme & credentials", to: "/settings/profile" },
+        { icon: User, label: "Profile & Account", hint: "Identity, theme & dashboard preferences", to: "/settings/profile" },
         { icon: User, label: "Edit Public Bio", hint: "Photo, bio & socials", to: "/profile/edit" },
         { icon: GraduationCap, label: "Academic settings", hint: "University campus & department", to: "/settings/academic" },
         { icon: Sparkles, label: "Study preferences", hint: "Goals & schedule", to: "/profile/preparation" },
@@ -92,6 +93,24 @@ const Settings = () => {
               </div>
             </div>
             <ThemeToggle variant="segmented" className="w-full" />
+          </div>
+        </section>
+
+        {/* Dashboard Preferences Widget Toggles */}
+        <section>
+          <h2 className="px-1 text-[11px] font-bold tracking-[0.18em] uppercase text-primary/80 mb-2">
+            Dashboard Preferences
+          </h2>
+          <div className="rounded-2xl border border-border/80 bg-card p-4 space-y-3 shadow-xs">
+            <div>
+              <span className="block text-[14.5px] font-semibold leading-tight text-foreground">
+                Widget Visibility
+              </span>
+              <span className="block text-[12px] text-muted-foreground mt-0.5">
+                Show or hide Global Rankings, Study Activity Heatmap, and other dashboard widgets
+              </span>
+            </div>
+            <DashboardPreferencesPanel compact />
           </div>
         </section>
 

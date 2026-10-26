@@ -14,10 +14,12 @@ import {
   User,
   Save,
   Image as ImageIcon,
+  LogOut,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { NativeSettings } from "@/components/native/NativeSettings";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { DashboardPreferencesPanel } from "@/components/student/dashboard/DashboardPreferencesMenu";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -67,7 +69,7 @@ const DEPARTMENTS = [
 
 const EditProfile = () => {
   const navigate = useNavigate();
-  const { user, profile, isLoading: authLoading, refreshProfile } = useAuth();
+  const { user, profile, isLoading: authLoading, refreshProfile, signOut } = useAuth();
   const { setLevel: persistLevel } = useStudentLevel();
   const [fullName, setFullName] = useState("");
   const [department, setDepartment] = useState("");
@@ -362,10 +364,34 @@ const EditProfile = () => {
               />
             </Link>
 
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  if (window.history.state && window.history.state.idx > 0) {
+                    navigate(-1);
+                  } else {
+                    navigate("/student/dashboard");
+                  }
+                }}
+              >
+                <ArrowLeft className="w-4 h-4 mr-1.5" />
+                Back
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  await signOut();
+                  navigate("/", { replace: true });
+                }}
+                className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:text-rose-700 font-semibold"
+              >
+                <LogOut className="w-3.5 h-3.5 mr-1.5" />
+                Sign Out
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -649,6 +675,19 @@ const EditProfile = () => {
             </div>
           </div>
 
+          {/* Dashboard Preferences Menu */}
+          <div className="space-y-3 pt-2">
+            <div>
+              <h3 className="font-display text-base font-semibold">Dashboard Preferences</h3>
+              <p className="text-xs text-muted-foreground">
+                Toggle the visibility of specific dashboard widgets like Global Rankings or the Study Activity Heatmap
+              </p>
+            </div>
+            <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-xs">
+              <DashboardPreferencesPanel compact />
+            </div>
+          </div>
+
           {/* Native mobile features */}
           <div className="space-y-3 pt-2">
             <h3 className="font-display text-base font-semibold">Mobile app</h3>
@@ -683,6 +722,26 @@ const EditProfile = () => {
             </div>
             <span className="text-amber-700 font-semibold text-sm shrink-0">Configure →</span>
           </Link>
+
+          {/* Account Session & Sign Out */}
+          <div className="pt-4 mt-4 border-t border-border flex items-center justify-between gap-3">
+            <div>
+              <p className="font-display font-bold text-sm text-foreground">Account Session</p>
+              <p className="text-xs text-muted-foreground">Signed in as {user?.email}</p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={async () => {
+                await signOut();
+                navigate("/", { replace: true });
+              }}
+              className="border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 font-bold rounded-xl"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
           </div>
         </div>
       </main>

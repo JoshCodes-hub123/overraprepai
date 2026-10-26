@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useTopicActivity } from "@/hooks/useCourseLearning";
+import { getLocalCheckInState } from "@/hooks/useDailyCheckIn";
 
 export interface StreakInfo {
   current: number;
@@ -9,7 +10,7 @@ export interface StreakInfo {
   lastActivity: string | null;
 }
 
-/** The student's real study streak, straight from `study_streaks`. */
+/** The student's real study streak, straight from `study_streaks` + Daily Check-in state. */
 export function useStudyStreak() {
   const { user } = useAuth();
   return useQuery({
@@ -17,16 +18,25 @@ export function useStudyStreak() {
     enabled: !!user,
     staleTime: 60_000,
     queryFn: async (): Promise<StreakInfo> => {
+      const localCheckIn = getLocalCheckInState(user!.id);
       const { data, error } = await supabase
         .from("study_streaks")
         .select("current_streak, longest_streak, last_activity_date")
         .eq("user_id", user!.id)
         .maybeSingle();
-      if (error) throw error;
+      if (error) {
+        return {
+          current: localCheckIn.currentStreak || 0,
+          longest: localCheckIn.longestStreak || 0,
+          lastActivity: localCheckIn.lastClaimDate,
+        };
+      }
+      const dbCurrent = Number((data as any)?.current_streak) || 0;
+      const dbLongest = Number((data as any)?.longest_streak) || 0;
       return {
-        current: Number((data as any)?.current_streak) || 0,
-        longest: Number((data as any)?.longest_streak) || 0,
-        lastActivity: (data as any)?.last_activity_date ?? null,
+        current: Math.max(dbCurrent, localCheckIn.currentStreak),
+        longest: Math.max(dbLongest, localCheckIn.longestStreak, localCheckIn.currentStreak),
+        lastActivity: (data as any)?.last_activity_date ?? localCheckIn.lastClaimDate ?? null,
       };
     },
   });
