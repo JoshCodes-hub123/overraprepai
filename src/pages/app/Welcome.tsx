@@ -1,11 +1,18 @@
 import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { GraduationCap, ArrowRight, BookOpen, Target, CheckCircle2, ShieldCheck, Sparkles, LogIn } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowRight, LogIn, Bot, Target, BookOpen } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import useEnvironment from "@/hooks/useEnvironment";
 import { getValidResumeRoute } from "@/lib/environmentScope";
 import { SEO } from "@/components/seo/SEO";
-import { UNIVERSITIES } from "@/config/universities";
+import lockup from "@/assets/overraprep-lockup.png.asset.json";
+import teamPhoto from "@/assets/team-photo.jpg.asset.json";
+
+const fadeUp = {
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0 },
+};
 
 export const Welcome = () => {
   const navigate = useNavigate();
@@ -19,7 +26,6 @@ export const Welcome = () => {
     }
   }, [user, authLoading, envLoading, environment, navigate]);
 
-
   return (
     <>
       <SEO
@@ -28,140 +34,161 @@ export const Welcome = () => {
         url="https://overraprepai.com/"
       />
 
-      <div className="min-h-screen bg-neutral-50/60 text-neutral-900 flex flex-col selection:bg-amber-500 selection:text-neutral-950">
-        {/* Top Navbar */}
-        <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-neutral-200/80 px-4 sm:px-8 py-3.5 flex items-center justify-between max-w-6xl mx-auto w-full">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center font-display font-bold text-neutral-950 text-lg shadow-sm">
-              O
-            </div>
-            <div>
-              <span className="font-display font-bold text-lg tracking-tight text-neutral-950">OverraPrep</span>
-              <span className="ml-1 text-[11px] font-bold uppercase tracking-wider text-amber-700 bg-amber-500/15 px-1.5 py-0.5 rounded-md">
-                AI
-              </span>
-            </div>
-          </div>
+      <div
+        className="relative min-h-screen bg-background text-foreground flex flex-col overflow-hidden selection:bg-primary selection:text-primary-foreground"
+        style={{
+          paddingTop: "env(safe-area-inset-top)",
+          paddingBottom: "env(safe-area-inset-bottom)",
+        }}
+      >
+        {/* Soft ambient gold halos — calm, never busy */}
+        <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+          <div className="absolute -top-36 -right-28 w-[24rem] h-[24rem] rounded-full bg-primary/10 blur-3xl" />
+          <div className="absolute top-1/2 -left-28 w-[20rem] h-[20rem] rounded-full bg-primary/[0.07] blur-3xl" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(43_78%_52%/0.07),transparent_55%)]" />
+        </div>
 
-          <div className="flex items-center gap-2.5">
-            <Link
-              to="/auth"
-              className="text-xs sm:text-sm font-semibold text-neutral-700 hover:text-neutral-950 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5"
-            >
-              <LogIn className="w-4 h-4" />
-              <span>Sign In</span>
-            </Link>
-            <Link
-              to="/onboarding"
-              className="bg-amber-500 hover:bg-amber-600 text-neutral-950 text-xs sm:text-sm font-bold px-4 py-2 rounded-xl transition shadow-sm inline-flex items-center gap-1.5"
-            >
-              <span>Get Started</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+        {/* Top bar — logo lockup + sign in */}
+        <header className="relative z-10 mx-auto w-full max-w-md lg:max-w-3xl px-5 pt-5 flex items-center justify-between">
+          <img
+            src={lockup.url}
+            alt="OverraPrep AI — Study Smarter. Succeed Faster."
+            className="h-9 w-auto object-contain"
+            width={132}
+            height={36}
+          />
+          <Link
+            to="/auth"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-3 py-2 rounded-full hover:bg-muted/60"
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            Sign in
+          </Link>
         </header>
 
-        {/* Hero Section */}
-        <main className="flex-1 flex flex-col justify-center max-w-4xl mx-auto w-full px-4 sm:px-6 py-12 sm:py-20 text-center">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/25 px-3.5 py-1.5 rounded-full text-xs font-semibold text-amber-900 mx-auto mb-6">
-            <GraduationCap className="w-4 h-4 text-amber-700" />
-            <span>Built Exclusively for Nigerian University Students</span>
-          </div>
+        <main className="relative z-10 flex-1 mx-auto w-full max-w-md lg:max-w-3xl px-5 pt-10 pb-10 flex flex-col justify-center">
+          {/* Hero */}
+          <motion.section
+            {...fadeUp}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="text-center"
+          >
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/25 mb-5">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              <span className="text-[10px] font-semibold tracking-[0.14em] uppercase text-primary">
+                For Nigerian university students
+              </span>
+            </span>
 
-          {/* Headline */}
-          <h1 className="font-display text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-neutral-950 leading-[1.15] max-w-3xl mx-auto">
-            Know what to study. <br className="hidden sm:inline" />
-            Understand what you read. <br className="hidden sm:inline" />
-            <span className="text-amber-800 underline decoration-amber-500/40 underline-offset-4">Ace your CBT exams.</span>
-          </h1>
+            <h1 className="font-display text-[2.1rem] sm:text-5xl leading-[1.08] font-bold tracking-tight text-foreground">
+              Your next academic
+              <br />
+              chapter{" "}
+              <span className="bg-gradient-to-r from-primary to-[hsl(38_75%_45%)] bg-clip-text text-transparent">
+                starts here.
+              </span>
+            </h1>
 
-          {/* Subtitle */}
-          <p className="mt-5 text-base sm:text-lg text-neutral-600 max-w-2xl mx-auto leading-relaxed">
-            Turn your examination anxiety into confidence. Practice verified past questions, understand difficult concepts with instant AI explanations, and eliminate your weak topics before test day.
-          </p>
-
-          {/* Primary 2 CTAs */}
-          <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-md mx-auto w-full">
-            <Link
-              to="/onboarding"
-              className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-neutral-950 font-bold text-base px-8 py-3.5 rounded-xl shadow-sm hover:shadow transition flex items-center justify-center gap-2"
-            >
-              <span>Get Started</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              to="/auth"
-              className="w-full sm:w-auto bg-white hover:bg-neutral-50 text-neutral-800 font-semibold text-base px-8 py-3.5 rounded-xl border border-neutral-300 transition flex items-center justify-center gap-2"
-            >
-              <span>Sign In</span>
-            </Link>
-          </div>
-
-          {/* Supported Universities Strip */}
-          <div className="mt-12 pt-8 border-t border-neutral-200/80">
-            <p className="text-xs font-bold uppercase tracking-widest text-neutral-600 mb-3">
-              Curriculum isolated by institution
+            <p className="mt-4 text-[14px] sm:text-base leading-relaxed text-muted-foreground max-w-sm sm:max-w-md mx-auto">
+              Prepare for your courses, practise questions, and build confidence
+              throughout the semester.
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {Object.values(UNIVERSITIES).map((u) => (
-                <span
-                  key={u.code}
-                  className="bg-white border border-neutral-200 px-3 py-1 rounded-lg text-xs font-semibold text-neutral-700 shadow-2xs"
-                >
-                  {u.code} · {u.name}
-                </span>
-              ))}
-            </div>
-          </div>
 
-          {/* 3 Value Pillars */}
-          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-            <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 shadow-sm hover:border-amber-500/50 transition">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center text-amber-800 mb-4">
-                <BookOpen className="w-5 h-5" />
-              </div>
-              <h3 className="font-display font-bold text-lg text-neutral-900 mb-1.5">
-                Departmental Outlines
-              </h3>
-              <p className="text-sm text-neutral-600 leading-relaxed">
-                Study directly from lecture materials, past outlines, and summaries mapped to your university, faculty, and academic level.
+            <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-2.5 max-w-xs sm:max-w-none mx-auto">
+              <Link
+                to="/onboarding"
+                className="w-full sm:w-auto h-12 px-8 rounded-full inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5"
+              >
+                Get Started
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                to="/auth"
+                className="w-full sm:w-auto h-12 px-8 rounded-full inline-flex items-center justify-center gap-2 bg-card hover:bg-muted/50 text-foreground font-semibold border border-border transition-colors"
+              >
+                I already have an account
+              </Link>
+            </div>
+          </motion.section>
+
+          {/* Team photo — one warm, quiet image */}
+          <motion.section
+            {...fadeUp}
+            transition={{ delay: 0.12, duration: 0.55, ease: "easeOut" }}
+            className="mt-10 max-w-sm mx-auto w-full"
+          >
+            <div className="relative rounded-[1.75rem] overflow-hidden border border-primary/15 shadow-xl shadow-primary/10">
+              <img
+                src={teamPhoto.url}
+                alt="The OverraPrep team in branded shirts"
+                className="w-full aspect-[4/3] object-cover"
+                loading="lazy"
+              />
+              <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/55 to-transparent" />
+              <p className="absolute bottom-3.5 inset-x-0 text-center text-[11px] font-semibold tracking-wide text-white/95">
+                Study smarter. Succeed faster.
               </p>
             </div>
+          </motion.section>
 
-            <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 shadow-sm hover:border-amber-500/50 transition">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center text-amber-800 mb-4">
-                <Target className="w-5 h-5" />
-              </div>
-              <h3 className="font-display font-bold text-lg text-neutral-900 mb-1.5">
-                Realistic CBT Simulation
-              </h3>
-              <p className="text-sm text-neutral-600 leading-relaxed">
-                Practise timed past questions with the exact feel of your university CBT centre, with step-by-step solutions for every question.
-              </p>
+          {/* Three quiet value tiles */}
+          <motion.section
+            {...fadeUp}
+            transition={{ delay: 0.2, duration: 0.55, ease: "easeOut" }}
+            className="mt-10"
+          >
+            <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
+              <ValueTile icon={Target} title="CBT Practice" desc="Real exam feel" />
+              <ValueTile icon={Bot} title="AI Explanations" desc="Instant clarity" accent />
+              <ValueTile icon={BookOpen} title="Weak-Area Drills" desc="Fix gaps fast" />
             </div>
+          </motion.section>
 
-            <div className="bg-white border border-neutral-200/90 rounded-2xl p-6 shadow-sm hover:border-amber-500/50 transition">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center text-amber-800 mb-4">
-                <Sparkles className="w-5 h-5" />
-              </div>
-              <h3 className="font-display font-bold text-lg text-neutral-900 mb-1.5">
-                Targeted Weak-Area AI
-              </h3>
-              <p className="text-sm text-neutral-600 leading-relaxed">
-                OverraPrep AI pinpoints exactly where you lose marks and recommends high-yield 5-minute revision drills before your test.
-              </p>
-            </div>
-          </div>
+          {/* Universities strip */}
+          <motion.p
+            {...fadeUp}
+            transition={{ delay: 0.28, duration: 0.55 }}
+            className="mt-10 text-center text-[11px] text-muted-foreground tracking-wide"
+          >
+            Curriculum isolated by institution · FUTA, OAU, UI, UNILAG & more
+          </motion.p>
         </main>
 
-        {/* Minimal Footer */}
-        <footer className="border-t border-neutral-200 bg-white py-6 px-4 text-center text-xs text-neutral-600">
-          <p>© {new Date().getFullYear()} OverraPrep AI. University CBT & Exam Preparation.</p>
+        <footer className="relative z-10 pb-6 text-center text-[11px] text-muted-foreground">
+          © {new Date().getFullYear()} OverraPrep AI
         </footer>
       </div>
     </>
   );
 };
+
+const ValueTile = ({
+  icon: Icon,
+  title,
+  desc,
+  accent,
+}: {
+  icon: any;
+  title: string;
+  desc: string;
+  accent?: boolean;
+}) => (
+  <div
+    className={
+      "rounded-2xl border p-3 sm:p-4 text-center transition-colors " +
+      (accent
+        ? "border-primary/40 bg-primary/[0.06]"
+        : "border-border/70 bg-card/60")
+    }
+  >
+    <div className="w-8 h-8 sm:w-9 sm:h-9 mx-auto rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-2">
+      <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
+    </div>
+    <p className="font-display font-semibold text-[11px] sm:text-[13px] leading-tight text-foreground">
+      {title}
+    </p>
+    <p className="mt-0.5 text-[9px] sm:text-[11px] text-muted-foreground">{desc}</p>
+  </div>
+);
 
 export default Welcome;
