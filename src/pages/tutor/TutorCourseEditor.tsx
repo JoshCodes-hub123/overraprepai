@@ -68,7 +68,9 @@ const NewCourseForm = ({ userId, onCreated }: { userId?: string; onCreated: (id:
         level: level.trim() || null,
         description: description.trim() || null,
         created_by: userId,
-      })
+        environment_type: "university",
+        path_type: "university",
+      } as any)
       .select("id")
       .maybeSingle();
     setSaving(false);

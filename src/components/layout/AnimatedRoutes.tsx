@@ -1,5 +1,5 @@
-import { lazy, Suspense } from "react";
-import { lazyWithRetry } from "@/lib/lazyWithRetry";
+import { Suspense } from "react";
+import { lazyWithRetry as lazy, lazyWithRetry } from "@/lib/lazyWithRetry";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";

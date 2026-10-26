@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -76,11 +77,114 @@ function extractComprehensionQuiz(rawText: string) {
 
 async function startServer() {
   const app = express();
-  app.use(express.json({ limit: "10mb" }));
+  app.use(express.json({ limit: "50mb" }));
+  app.use("/uploads", express.static(path.resolve(__dirname, "public", "uploads")));
 
   // Health check endpoint
   app.get("/api/health", (_req: Request, res: Response) => {
     res.json({ ok: true, status: "healthy", timestamp: new Date().toISOString() });
+  });
+
+  // Persistent Course Materials Storage
+  const MATERIALS_FILE = path.resolve(__dirname, "data", "course_materials.json");
+  const UPLOADS_DIR = path.resolve(__dirname, "public", "uploads", "materials");
+
+  function readCourseMaterials(): any[] {
+    try {
+      if (fs.existsSync(MATERIALS_FILE)) {
+        const raw = fs.readFileSync(MATERIALS_FILE, "utf-8");
+        return JSON.parse(raw);
+      }
+    } catch (e) {
+      console.warn("Could not read course materials file:", e);
+    }
+    return [];
+  }
+
+  function writeCourseMaterials(items: any[]) {
+    try {
+      fs.mkdirSync(path.dirname(MATERIALS_FILE), { recursive: true });
+      fs.writeFileSync(MATERIALS_FILE, JSON.stringify(items, null, 2), "utf-8");
+    } catch (e) {
+      console.warn("Could not write course materials file:", e);
+    }
+  }
+
+  // File upload endpoint for PDF and document lecture notes
+  app.post("/api/upload-file", (req: Request, res: Response) => {
+    try {
+      const { filename, base64, contentType } = req.body;
+      if (!filename || !base64) {
+        return res.status(400).json({ ok: false, error: "filename and base64 content are required" });
+      }
+
+      fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+      const safeName = `${Date.now()}_${filename.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+      const filePath = path.join(UPLOADS_DIR, safeName);
+
+      // Strip data URI prefix if present
+      const cleanBase64 = base64.replace(/^data:[^;]+;base64,/, "");
+      const buffer = Buffer.from(cleanBase64, "base64");
+      fs.writeFileSync(filePath, buffer);
+
+      const publicUrl = `/uploads/materials/${safeName}`;
+      return res.json({
+        ok: true,
+        url: publicUrl,
+        filename: safeName,
+        size: buffer.length,
+        contentType: contentType || "application/pdf",
+      });
+    } catch (err: any) {
+      console.error("Upload file error:", err);
+      return res.status(500).json({ ok: false, error: err.message || "Failed to save file" });
+    }
+  });
+
+  // Get materials for course
+  app.get("/api/courses/:courseId/materials", (req: Request, res: Response) => {
+    const { courseId } = req.params;
+    const all = readCourseMaterials();
+    const courseMats = all.filter((m) => m.course_id === courseId || m.courseCode === courseId);
+    return res.json({ ok: true, materials: courseMats });
+  });
+
+  // Save new material for course
+  app.post("/api/courses/:courseId/materials", (req: Request, res: Response) => {
+    const { courseId } = req.params;
+    const material = req.body;
+    if (!material || !material.title) {
+      return res.status(400).json({ ok: false, error: "Title is required" });
+    }
+
+    const all = readCourseMaterials();
+    const newEntry = {
+      id: material.id || `mat_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      course_id: courseId,
+      topic_id: material.topic_id || null,
+      title: material.title,
+      description: material.description || null,
+      file_url: material.file_url,
+      file_type: material.file_type || "pdf",
+      file_size: material.file_size || 0,
+      created_at: material.created_at || new Date().toISOString(),
+      owner_name: material.owner_name || "Course Administrator",
+      tags: material.tags || [],
+      visibility: material.visibility || "published",
+    };
+
+    all.unshift(newEntry);
+    writeCourseMaterials(all);
+    return res.json({ ok: true, material: newEntry });
+  });
+
+  // Delete material
+  app.delete("/api/materials/:materialId", (req: Request, res: Response) => {
+    const { materialId } = req.params;
+    const all = readCourseMaterials();
+    const filtered = all.filter((m) => m.id !== materialId);
+    writeCourseMaterials(filtered);
+    return res.json({ ok: true });
   });
 
   // AI Concept Explanation Proxy with Strict Anti-Hallucination Guardrails

@@ -28,6 +28,7 @@ import { LectureNotesModule } from "@/components/admin/content/LectureNotesModul
 import { CbtIngestionModule } from "@/components/admin/content/CbtIngestionModule";
 import { UNIVERSITIES, UniversityCode } from "@/config/universities";
 import { AdminPersistentHeader } from "@/components/admin/AdminPersistentHeader";
+import { AdminCommandPalette } from "@/components/admin/AdminCommandPalette";
 
 const STORAGE_KEY = "overra_content_admin_cascade";
 

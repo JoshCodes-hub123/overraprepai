@@ -75,49 +75,152 @@ export interface MaterialsByTopic {
 }
 
 /** All materials for one course, grouped by their real topic. */
+/** All materials for one course, grouped by their real topic. */
 export function useCourseMaterials(courseId?: string) {
   const { user } = useAuth();
   return useQuery({
-    queryKey: ["course-materials", user?.id, courseId],
-    enabled: !!user && !!courseId,
-    staleTime: 60_000,
+    queryKey: ["course-materials", user?.id ?? "guest", courseId],
+    enabled: !!courseId,
+    staleTime: 30_000,
     queryFn: async (): Promise<{ course: { code: string; name: string } | null; groups: MaterialsByTopic[] }> => {
-      const [{ data: course }, { data: mats }, { data: topics }] = await Promise.all([
+      // 1. Fetch course metadata and syllabus topics
+      const [courseRes, topicsRes] = await Promise.all([
         supabase.from("courses").select("code, name").eq("id", courseId!).maybeSingle(),
-        supabase
-          .from("study_materials")
-          .select("id, title, description, file_type, file_size, file_url, topic_id, created_at, owner_id")
-          .eq("course_id", courseId!)
-          .order("created_at", { ascending: false }),
         supabase.from("topics").select("id, name").eq("course_id", courseId!),
       ]);
 
-      const ownerIds = Array.from(new Set((mats ?? []).map((m: any) => m.owner_id).filter(Boolean)));
-      let owners: Record<string, string> = {};
-      if (ownerIds.length) {
-        const { data: profs } = await supabase
-          .from("profiles")
-          .select("id, full_name")
-          .in("id", ownerIds);
-        owners = Object.fromEntries((profs ?? []).map((p: any) => [p.id, p.full_name]));
+      const course = (courseRes.data as any) ?? null;
+      const topics = topicsRes.data ?? [];
+
+      // 2. Fetch materials from local server store (always available & reliable for admin uploads)
+      let serverMaterials: any[] = [];
+      try {
+        const sRes = await fetch(`/api/courses/${encodeURIComponent(courseId!)}/materials`);
+        if (sRes.ok) {
+          const sJson = await sRes.json();
+          if (sJson.ok && Array.isArray(sJson.materials)) {
+            serverMaterials = sJson.materials;
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch server materials:", err);
       }
 
+      // 3. Fetch from study_materials table
+      let dbStudyMaterials: any[] = [];
+      try {
+        const { data, error } = await supabase
+          .from("study_materials")
+          .select("id, title, description, file_type, file_size, file_url, topic_id, created_at, owner_id")
+          .eq("course_id", courseId!)
+          .order("created_at", { ascending: false });
+        if (!error && Array.isArray(data)) {
+          dbStudyMaterials = data;
+        }
+      } catch (err) {
+        console.warn("study_materials fetch notice:", err);
+      }
+
+      // 4. Fetch from lecture_notes table
+      let dbLectureNotes: any[] = [];
+      try {
+        const { data, error } = await supabase
+          .from("lecture_notes")
+          .select("id, title, description, file_type, file_size_bytes, file_url, topic_id, created_at, tutor_id")
+          .eq("course_id", courseId!)
+          .order("created_at", { ascending: false });
+        if (!error && Array.isArray(data)) {
+          dbLectureNotes = data.map((ln) => ({
+            id: ln.id,
+            title: ln.title,
+            description: ln.description,
+            file_type: ln.file_type || "pdf",
+            file_size: ln.file_size_bytes || 0,
+            file_url: ln.file_url,
+            topic_id: ln.topic_id,
+            created_at: ln.created_at,
+            owner_id: ln.tutor_id,
+          }));
+        }
+      } catch (err) {
+        console.warn("lecture_notes fetch notice:", err);
+      }
+
+      // 5. Merge and deduplicate all items by URL or ID
+      const mergedMap = new Map<string, StudyMaterial>();
+
+      // Add server materials first
+      for (const m of serverMaterials) {
+        const key = m.file_url || m.id;
+        mergedMap.set(key, {
+          id: m.id,
+          title: m.title,
+          description: m.description ?? null,
+          file_type: m.file_type || "pdf",
+          file_size: m.file_size || 0,
+          file_url: m.file_url,
+          topic_id: m.topic_id ?? null,
+          created_at: m.created_at || new Date().toISOString(),
+          owner_name: m.owner_name || "Course Administrator",
+        });
+      }
+
+      // Add database study materials
+      for (const m of dbStudyMaterials) {
+        const key = m.file_url || m.id;
+        if (!mergedMap.has(key)) {
+          mergedMap.set(key, {
+            id: m.id,
+            title: m.title,
+            description: m.description ?? null,
+            file_type: m.file_type || "pdf",
+            file_size: m.file_size || 0,
+            file_url: m.file_url,
+            topic_id: m.topic_id ?? null,
+            created_at: m.created_at,
+            owner_name: "Course Instructor",
+          });
+        }
+      }
+
+      // Add database lecture notes
+      for (const m of dbLectureNotes) {
+        const key = m.file_url || m.id;
+        if (!mergedMap.has(key)) {
+          mergedMap.set(key, {
+            id: m.id,
+            title: m.title,
+            description: m.description ?? null,
+            file_type: m.file_type || "pdf",
+            file_size: m.file_size || 0,
+            file_url: m.file_url,
+            topic_id: m.topic_id ?? null,
+            created_at: m.created_at,
+            owner_name: "Course Instructor",
+          });
+        }
+      }
+
+      const allMaterials = Array.from(mergedMap.values());
+
+      // 6. Group materials by topic
       const topicName = new Map((topics ?? []).map((t: any) => [t.id, t.name]));
       const grouped = new Map<string, MaterialsByTopic>();
-      for (const m of (mats ?? []) as any[]) {
-        const key = m.topic_id ?? "__none";
+
+      for (const m of allMaterials) {
+        const key = m.topic_id ?? "__general";
         if (!grouped.has(key)) {
           grouped.set(key, {
             topicId: m.topic_id ?? null,
-            topicName: (m.topic_id && topicName.get(m.topic_id)) || "General",
+            topicName: (m.topic_id && topicName.get(m.topic_id)) || "General Course Notes & Syllabi",
             items: [],
           });
         }
-        grouped.get(key)!.items.push({ ...m, owner_name: owners[m.owner_id] ?? null });
+        grouped.get(key)!.items.push(m);
       }
 
       return {
-        course: (course as any) ?? null,
+        course,
         groups: Array.from(grouped.values()),
       };
     },

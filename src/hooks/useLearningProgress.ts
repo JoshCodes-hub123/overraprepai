@@ -28,7 +28,7 @@ export function useStudyStreak() {
         return {
           current: localCheckIn.currentStreak || 0,
           longest: localCheckIn.longestStreak || 0,
-          lastActivity: localCheckIn.lastClaimDate,
+          lastActivity: localCheckIn.lastCheckInDate,
         };
       }
       const dbCurrent = Number((data as any)?.current_streak) || 0;
@@ -36,7 +36,7 @@ export function useStudyStreak() {
       return {
         current: Math.max(dbCurrent, localCheckIn.currentStreak),
         longest: Math.max(dbLongest, localCheckIn.longestStreak, localCheckIn.currentStreak),
-        lastActivity: (data as any)?.last_activity_date ?? localCheckIn.lastClaimDate ?? null,
+        lastActivity: (data as any)?.last_activity_date ?? localCheckIn.lastCheckInDate ?? null,
       };
     },
   });

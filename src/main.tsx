@@ -4,7 +4,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { Capacitor } from "@capacitor/core";
 import { SplashScreen } from "@capacitor/splash-screen";
 import { StatusBar, Style } from "@capacitor/status-bar";
-import App from "./App.tsx";
+import App from "./App";
 import "./index.css";
 import { installEdgeRetry } from "@/lib/installEdgeRetry";
 import { logClientError } from "@/lib/analytics";

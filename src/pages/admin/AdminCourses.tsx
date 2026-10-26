@@ -1,5 +1,6 @@
-import { useEffect, useState, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/layout/Navbar";
@@ -38,10 +39,8 @@ const empty = { id: "", code: "", name: "", department: "", level: "", descripti
 
 const AdminCourses = () => {
   const { user, isLoading: authLoading } = useAuth();
-  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const adminEnv = useAdminEnvironment();
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<typeof empty>(empty);
@@ -49,32 +48,32 @@ const AdminCourses = () => {
   const [saving, setSaving] = useState(false);
   const newEnvironment = ADMIN_ENVIRONMENTS.find((option) => option.id === newEnvironmentId);
 
-  useEffect(() => {
-    if (!authLoading && !user) navigate("/auth");
-  }, [user, authLoading, navigate]);
+  const envType = adminEnv.scope.environment_type;
+  const envUniversity = adminEnv.scope.university;
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const envScope = adminEnv.scope;
-    let query = supabase
-      .from("courses")
-      .select("id, code, name, department, level, description, is_active, environment_type, university")
-      .order("code");
+  const { data: courses = [], isLoading: coursesLoading } = useQuery<Course[]>({
+    queryKey: ["admin-courses", envType, envUniversity],
+    queryFn: async () => {
+      let query = supabase
+        .from("courses")
+        .select("id, code, name, department, level, description, is_active, environment_type, university")
+        .order("code");
 
-    if (envScope.environment_type === "university" && envScope.university) {
-      query = query.eq("university", envScope.university);
-    } else {
-      query = query.eq("environment_type", envScope.environment_type);
-    }
+      if (envType === "university" && envUniversity) {
+        query = query.eq("university", envUniversity);
+      } else {
+        query = query.eq("environment_type", envType);
+      }
 
-    const { data } = await query;
-    setCourses((data as any) ?? []);
-    setLoading(false);
-  }, [adminEnv.scope]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+      const { data, error } = await query;
+      if (error) {
+        console.error("Error loading courses:", error);
+        return [];
+      }
+      return (data as any) ?? [];
+    },
+    staleTime: 1000 * 60,
+  });
 
   const openNew = () => {
     setEditing(empty);
@@ -124,7 +123,7 @@ const AdminCourses = () => {
     if (error) { toast.error(error.message); return; }
     toast.success(editing.id ? "Course updated" : "Course created");
     setOpen(false);
-    load();
+    queryClient.invalidateQueries({ queryKey: ["admin-courses"] });
   };
 
   const remove = async (c: Course) => {
@@ -132,7 +131,7 @@ const AdminCourses = () => {
     const { error } = await supabase.from("courses").delete().eq("id", c.id);
     if (error) { toast.error(error.message); return; }
     toast.success("Deleted");
-    load();
+    queryClient.invalidateQueries({ queryKey: ["admin-courses"] });
   };
 
   const filtered = courses.filter((c) => {
@@ -141,7 +140,7 @@ const AdminCourses = () => {
     return c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q) || (c.department || "").toLowerCase().includes(q);
   });
 
-  if (authLoading || loading) {
+  if (authLoading || coursesLoading) {
     return <div className="min-h-screen bg-background"><Navbar /><div className="flex justify-center pt-32"><LoadingSpinner /></div></div>;
   }
 

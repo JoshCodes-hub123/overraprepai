@@ -1,6 +1,6 @@
 import {
   User, Wallet, Bell, Shield, Smartphone, CreditCard,
-  Gift, FolderOpen, LogOut, Settings, BookMarked, FileText,
+  Gift, FolderOpen, LogOut, Settings, BookMarked, FileText, GraduationCap,
 } from "lucide-react";
 import HubPage from "@/components/hub/HubPage";
 import { Button } from "@/components/ui/button";

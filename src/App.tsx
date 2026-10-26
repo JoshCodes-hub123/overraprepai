@@ -126,7 +126,7 @@ function AccountQueryCacheBoundary({ children }: { children: ReactNode }) {
           throttleTime: 1500,
         });
         const [unsubscribe, restored] = persistQueryClient({
-          queryClient: client,
+          queryClient: client as any,
           persister,
           maxAge: 1000 * 60 * 60 * 24,
           buster: "v3",

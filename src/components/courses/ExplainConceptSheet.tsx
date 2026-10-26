@@ -72,18 +72,18 @@ export const ExplainConceptSheet: React.FC<ExplainConceptProps> = ({
   // Derive contextual profile values
   const studentUniversityName = useMemo(() => {
     if (universityName) return universityName;
-    const code = (profile?.university || "FUTA") as UniversityCode;
-    return UNIVERSITIES[code]?.name || profile?.university || "Federal University of Technology, Akure";
-  }, [universityName, profile?.university]);
+    const code = ((profile as any)?.university || "FUTA") as UniversityCode;
+    return UNIVERSITIES[code]?.name || (profile as any)?.university || "Federal University of Technology, Akure";
+  }, [universityName, (profile as any)?.university]);
 
   const studentUniversityCode = useMemo(() => {
-    return universityCode || profile?.university || "FUTA";
-  }, [universityCode, profile?.university]);
+    return universityCode || (profile as any)?.university || "FUTA";
+  }, [universityCode, (profile as any)?.university]);
 
   const studentLevel = useMemo(() => {
-    const raw = courseLevel || profile?.level || "200";
+    const raw = courseLevel || (profile as any)?.level || "200";
     return String(raw).toUpperCase().includes("L") ? String(raw) : `${raw}L`;
-  }, [courseLevel, profile?.level]);
+  }, [courseLevel, (profile as any)?.level]);
 
   const activeTopic = topicTitle || conceptTitle || "Core Curriculum Topic";
   const targetConcept = selectedText || conceptTitle || "Academic Concept";
@@ -159,7 +159,7 @@ export const ExplainConceptSheet: React.FC<ExplainConceptProps> = ({
           if (edgeErr) throw edgeErr;
           resultData = {
             ok: true,
-            explanation: edgeData?.explanation || edgeData?.message || "",
+            explanation: (edgeData as any)?.explanation || (edgeData as any)?.message || "",
             quiz_question: null,
             missing_context: !contextNotes,
           };

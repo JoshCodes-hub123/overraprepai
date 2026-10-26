@@ -60,7 +60,7 @@ const CoursesScreen = () => {
       if (r.course_id) {
         map[r.course_id] = {
           weakTopic: r.weak_topics?.[0]?.topic,
-          score: r.overall_score ?? undefined,
+          score: (r as any).overall_score ?? r.readiness ?? undefined,
         };
       }
     }

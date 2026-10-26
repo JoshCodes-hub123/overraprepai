@@ -159,8 +159,7 @@ function drawWatermark(doc: JsPDFInstance, school: ReportSchool) {
   const H = doc.internal.pageSize.getHeight();
   const txt = school.name.toUpperCase();
   doc.saveGraphicsState();
-  // @ts-expect-error — jsPDF typings miss GState
-  doc.setGState(new (doc as any).GState({ opacity: 0.06 }));
+  (doc as any).setGState(new (doc as any).GState({ opacity: 0.06 }));
   doc.setFont("times", "bold");
   doc.setFontSize(70);
   doc.setTextColor(0, 0, 0);
@@ -243,7 +242,6 @@ async function drawFooter(doc: JsPDFInstance, school: ReportSchool, term: Report
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
   const M = 14;
-  // @ts-expect-error
   const lastY = (doc as any).lastAutoTable?.finalY || 180;
   let y = Math.min(lastY + 8, H - 70);
 

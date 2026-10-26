@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ADMIN_ENVIRONMENTS,
   AdminEnvironmentOption,
@@ -36,8 +36,10 @@ export function useAdminEnvironment() {
     return () => window.removeEventListener(EVENT_NAME, handleSync);
   }, [id]);
 
-  const current: AdminEnvironmentOption =
-    ADMIN_ENVIRONMENTS.find((e) => e.id === id) ?? ADMIN_ENVIRONMENTS[0];
+  const current: AdminEnvironmentOption = useMemo(
+    () => ADMIN_ENVIRONMENTS.find((e) => e.id === id) ?? ADMIN_ENVIRONMENTS[0],
+    [id]
+  );
 
   const select = useCallback((next: string) => {
     setId(next);
@@ -49,6 +51,14 @@ export function useAdminEnvironment() {
     }
   }, []);
 
+  const scope = useMemo(
+    () => ({
+      environment_type: "university" as const,
+      university: current.institution as InstitutionCode | null,
+    }),
+    [current.institution]
+  );
+
   return {
     current,
     options: ADMIN_ENVIRONMENTS,
@@ -57,7 +67,7 @@ export function useAdminEnvironment() {
     isUniversity: true,
     institution: current.institution as InstitutionCode | null,
     /** Filter to apply to any university-scoped query. */
-    scope: { environment_type: "university" as const, university: current.institution },
+    scope,
     /** Concise title e.g. "Managing FUTA" */
     managingTitle: `Managing ${current.label}`,
   };

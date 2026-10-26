@@ -273,7 +273,9 @@ export function UnifiedQuizCreator({
             code: courseCode.trim().toUpperCase(),
             created_by: user.id,
             level: levelToDb(level),
-          })
+            environment_type: "university",
+            path_type: "university",
+          } as any)
           .select()
           .single();
 

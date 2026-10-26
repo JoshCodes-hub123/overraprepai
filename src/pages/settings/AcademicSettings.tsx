@@ -63,7 +63,7 @@ export default function AcademicSettings() {
 
       const { error } = await supabase
         .from("profiles")
-        .update(updates)
+        .update(updates as any)
         .eq("id", user.id);
 
       if (error) throw error;
@@ -204,7 +204,7 @@ export default function AcademicSettings() {
             <div className="pt-2">
               <BrandButton
                 variant="primary"
-                size="sm"
+                size="md"
                 onClick={handleSaveAcademicProfile}
                 disabled={savingDetails}
                 className="w-full sm:w-auto"

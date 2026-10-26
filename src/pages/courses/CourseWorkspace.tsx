@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   ListChecks,
@@ -12,7 +12,10 @@ import {
   ArrowRight,
   GraduationCap,
   HelpCircle,
-  PlayCircle
+  PlayCircle,
+  Eye,
+  FileCode,
+  ExternalLink,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +37,7 @@ import NextStepHero from "@/components/dashboard/mobile/NextStepHero";
 import CourseHub from "@/pages/courses/CourseHub";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ExplainConceptSheet } from "@/components/courses/ExplainConceptSheet";
+import { InAppDocViewer } from "@/components/viewer/InAppDocViewer";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -49,9 +53,15 @@ const CourseWorkspace = () => {
   const { primaryRole } = useAuth();
   useTrackCourseOpen(courseId);
 
-  const [activeTab, setActiveTab] = useState<"topics" | "materials" | "quizzes">("topics");
+  const [searchParams] = useSearchParams();
+  const initialTabParam = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState<"topics" | "materials" | "quizzes">(
+    initialTabParam === "notes" || initialTabParam === "materials" ? "materials" :
+    initialTabParam === "quizzes" || initialTabParam === "cbt" ? "quizzes" : "topics"
+  );
   const [explainOpen, setExplainOpen] = useState(false);
   const [selectedConcept, setSelectedConcept] = useState<{ title: string; notes?: string } | null>(null);
+  const [viewerDoc, setViewerDoc] = useState<{ url: string; title: string; fileType?: string } | null>(null);
 
   const { data: course, isLoading: courseLoading } = useQuery({
     queryKey: ["course-workspace", courseId],
@@ -90,8 +100,19 @@ const CourseWorkspace = () => {
 
   const studied = useLastStudiedTopic(courseId);
   const { data: materialData, isLoading: materialsLoading } = useCourseMaterials(courseId);
-  const materialGroups = materialData?.groups ?? [];
+  const materialGroups = useMemo(() => materialData?.groups ?? [], [materialData?.groups]);
   const materialCount = materialGroups.reduce((n, g) => n + g.items.length, 0);
+
+  const topicNoteCounts = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const group of materialGroups) {
+      if (group.topicId) {
+        map[group.topicId] = (map[group.topicId] ?? 0) + group.items.length;
+      }
+    }
+    return map;
+  }, [materialGroups]);
+
   const progress = useCourseProgress(courseId);
   const { data: snapshots = [] } = useCourseSnapshots();
   const { data: readiness = [] } = useReadinessAll();
@@ -125,6 +146,24 @@ const CourseWorkspace = () => {
     .filter(Boolean)
     .join(" · ");
 
+  const formatFileSize = (bytes?: number): string | null => {
+    if (!bytes || bytes <= 0) return null;
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const formatDate = (iso?: string): string | null => {
+    if (!iso) return null;
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return null;
+      return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+    } catch {
+      return null;
+    }
+  };
+
   const handleExplain = (title: string, notes?: string) => {
     setSelectedConcept({ title, notes });
     setExplainOpen(true);
@@ -150,6 +189,16 @@ const CourseWorkspace = () => {
           topicTitle={selectedConcept.title}
           contextNotes={selectedConcept.notes}
           onRequestUploadNotes={() => setActiveTab("materials")}
+        />
+      )}
+
+      {viewerDoc && (
+        <InAppDocViewer
+          open={!!viewerDoc}
+          onOpenChange={(open) => !open && setViewerDoc(null)}
+          url={viewerDoc.url}
+          title={viewerDoc.title}
+          fileType={viewerDoc.fileType}
         />
       )}
 
@@ -242,6 +291,7 @@ const CourseWorkspace = () => {
                     <div className="space-y-2">
                       {topics.map((t, idx) => {
                         const questionCount = counts[t.id] ?? 0;
+                        const noteCount = topicNoteCounts[t.id] ?? 0;
                         return (
                           <div
                             key={t.id}
@@ -258,9 +308,24 @@ const CourseWorkspace = () => {
                                 >
                                   {t.name}
                                 </Link>
-                                <span className="text-xs text-neutral-500 mt-0.5 block">
-                                  {questionCount} practice question{questionCount === 1 ? "" : "s"}
-                                </span>
+                                <div className="flex flex-wrap items-center gap-2 mt-1">
+                                  <span className="text-xs text-neutral-500">
+                                    {questionCount} practice question{questionCount === 1 ? "" : "s"}
+                                  </span>
+                                  {noteCount > 0 && (
+                                    <>
+                                      <span className="text-xs text-neutral-300">·</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => setActiveTab("materials")}
+                                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-0.5 rounded-md transition"
+                                      >
+                                        <FileText className="w-3 h-3 text-amber-700" />
+                                        <span>{noteCount} Note{noteCount === 1 ? "" : "s"} (PDF)</span>
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
                               </div>
                             </div>
 
@@ -292,6 +357,35 @@ const CourseWorkspace = () => {
 
                 {/* TAB 2: Lecture Materials / Notes */}
                 <TabsContent value="materials" className="mt-5 space-y-4">
+                  {/* Notes Header Callout */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500 text-neutral-950 flex items-center justify-center shrink-0 shadow-2xs font-bold">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-sm text-neutral-900">
+                          Course Lecture Notes & PDF Documents
+                        </h3>
+                        <p className="text-xs text-neutral-600">
+                          {materialCount === 0
+                            ? "Course lecture notes and slides are being uploaded by your lecturers and tutors."
+                            : `${materialCount} official lecture note${materialCount === 1 ? "" : "s"} and reading document${materialCount === 1 ? "" : "s"} ready for reading.`}
+                        </p>
+                      </div>
+                    </div>
+                    {(primaryRole === "admin" || primaryRole === "tutor") && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => navigate(`/admin/content?tab=notes&courseId=${courseId}`)}
+                        className="text-xs font-semibold rounded-xl border-amber-300 text-amber-900 bg-white hover:bg-amber-50 shrink-0 self-start sm:self-auto"
+                      >
+                        Upload New Note
+                      </Button>
+                    )}
+                  </div>
+
                   {materialsLoading ? (
                     <div className="space-y-2.5">
                       <BrandSkeleton h={70} />
@@ -301,61 +395,125 @@ const CourseWorkspace = () => {
                     <EmptyState
                       icon={<FileText className="h-5 w-5" />}
                       title="No lecture notes uploaded yet"
-                      description="Your course lecture notes, slides, and handouts will appear here."
+                      description="Your course lecture notes, slides, and handouts uploaded by administrators will appear here."
                     />
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-5">
                       {materialGroups.map((group) => (
-                        <div key={group.topicName} className="space-y-2">
-                          <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-600 px-1">
-                            {group.topicName}
-                          </h4>
-                          <div className="space-y-2">
-                            {group.items.map((m: any) => (
-                              <div
-                                key={m.id}
-                                className="p-4 rounded-2xl border border-neutral-200 bg-white hover:border-neutral-300 transition flex items-center justify-between gap-3 shadow-2xs"
-                              >
-                                <div className="flex items-center gap-3 min-w-0">
-                                  <div className="w-9 h-9 rounded-xl bg-amber-500/15 flex items-center justify-center text-amber-800 shrink-0">
-                                    <FileText className="w-4 h-4" />
+                        <div key={group.topicName} className="space-y-2.5">
+                          <div className="flex items-center justify-between px-1">
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-600">
+                              {group.topicName}
+                            </h4>
+                            <span className="text-[11px] font-medium text-neutral-500">
+                              {group.items.length} file{group.items.length === 1 ? "" : "s"}
+                            </span>
+                          </div>
+                          <div className="space-y-2.5">
+                            {group.items.map((m: any) => {
+                              const isPdf =
+                                m.file_type?.toLowerCase().includes("pdf") ||
+                                m.file_url?.toLowerCase().endsWith(".pdf");
+                              const sizeStr = formatFileSize(m.file_size);
+                              const dateStr = formatDate(m.created_at);
+
+                              return (
+                                <div
+                                  key={m.id}
+                                  className="p-4 rounded-2xl border border-neutral-200 bg-white hover:border-amber-400 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs"
+                                >
+                                  <div className="flex items-start gap-3.5 min-w-0">
+                                    <div
+                                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                                        isPdf
+                                          ? "bg-red-500/10 text-red-600 border border-red-500/20"
+                                          : "bg-amber-500/15 text-amber-800"
+                                      }`}
+                                    >
+                                      <FileText className="w-5 h-5" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                                        {isPdf && (
+                                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-700">
+                                            PDF
+                                          </span>
+                                        )}
+                                        {sizeStr && (
+                                          <span className="text-[11px] font-medium text-neutral-500">
+                                            {sizeStr}
+                                          </span>
+                                        )}
+                                        {dateStr && (
+                                          <>
+                                            <span className="text-neutral-300">·</span>
+                                            <span className="text-[11px] text-neutral-500">
+                                              {dateStr}
+                                            </span>
+                                          </>
+                                        )}
+                                        {m.owner_name && (
+                                          <>
+                                            <span className="text-neutral-300">·</span>
+                                            <span className="text-[11px] text-amber-800 font-medium">
+                                              {m.owner_name}
+                                            </span>
+                                          </>
+                                        )}
+                                      </div>
+                                      <h5 className="font-semibold text-sm sm:text-base text-neutral-900 leading-snug">
+                                        {m.title}
+                                      </h5>
+                                      {m.description && (
+                                        <p className="text-xs text-neutral-600 mt-1 line-clamp-2">
+                                          {m.description}
+                                        </p>
+                                      )}
+                                    </div>
                                   </div>
-                                  <div className="min-w-0">
-                                    <h5 className="font-semibold text-sm text-neutral-900 truncate">
-                                      {m.title}
-                                    </h5>
-                                    {m.description && (
-                                      <p className="text-xs text-neutral-500 truncate mt-0.5">
-                                        {m.description}
-                                      </p>
+
+                                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto pt-2 sm:pt-0">
+                                    <Button
+                                      size="sm"
+                                      onClick={() =>
+                                        setViewerDoc({
+                                          url: m.file_url,
+                                          title: m.title,
+                                          fileType: m.file_type || (isPdf ? "application/pdf" : undefined),
+                                        })
+                                      }
+                                      className="h-8 px-3 text-xs font-semibold rounded-xl bg-amber-500 hover:bg-amber-600 text-neutral-950 flex items-center gap-1.5 shadow-2xs"
+                                    >
+                                      <Eye className="w-3.5 h-3.5" />
+                                      <span>Read Note</span>
+                                    </Button>
+
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleExplain(m.title, m.description)}
+                                      className="h-8 px-2.5 text-xs font-semibold rounded-xl border-amber-300 text-amber-900 bg-amber-50 hover:bg-amber-100 flex items-center gap-1"
+                                    >
+                                      <Sparkles className="w-3.5 h-3.5 text-amber-700" />
+                                      <span className="hidden sm:inline">AI Explain</span>
+                                    </Button>
+
+                                    {m.file_url && (
+                                      <a
+                                        href={m.file_url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        download
+                                        className="p-2 rounded-xl border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition"
+                                        title="Download Document"
+                                      >
+                                        <Download className="w-4 h-4" />
+                                      </a>
                                     )}
                                   </div>
                                 </div>
-
-                                <div className="flex items-center gap-2 shrink-0">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleExplain(m.title, m.description)}
-                                    className="h-8 px-2.5 text-xs font-semibold rounded-xl border-amber-300 text-amber-900 bg-amber-50 hover:bg-amber-100 flex items-center gap-1"
-                                  >
-                                    <Sparkles className="w-3.5 h-3.5 text-amber-700" />
-                                    <span className="hidden sm:inline">Explain Note</span>
-                                  </Button>
-                                  {m.file_url && (
-                                    <a
-                                      href={m.file_url}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="p-2 rounded-xl border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition"
-                                      title="Download / View"
-                                    >
-                                      <Download className="w-4 h-4" />
-                                    </a>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       ))}

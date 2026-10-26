@@ -29,6 +29,8 @@ interface SearchCourseResult {
   university?: string | null;
 }
 
+const EMPTY_COURSES: SearchCourseResult[] = [];
+
 interface DashboardSearchProps {
   onOpen?: () => void;
   className?: string;
@@ -42,13 +44,20 @@ export function DashboardSearch({
 }: DashboardSearchProps) {
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const { data: enrolledCourses = [] } = useCourseSnapshots();
+  const { data: rawEnrolled } = useCourseSnapshots();
+  const enrolledCourses = useMemo(() => rawEnrolled ?? EMPTY_COURSES, [rawEnrolled]);
+
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
-  const [courses, setCourses] = useState<SearchCourseResult[]>([]);
+  const [courses, setCourses] = useState<SearchCourseResult[]>(EMPTY_COURSES);
   const [isSearching, setIsSearching] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const onOpenRef = useRef(onOpen);
+  useEffect(() => {
+    onOpenRef.current = onOpen;
+  }, [onOpen]);
 
   // Close results panel on click outside
   useEffect(() => {
@@ -68,7 +77,7 @@ export function DashboardSearch({
         e.preventDefault();
         inputRef.current?.focus();
         setIsOpen(true);
-        onOpen?.();
+        onOpenRef.current?.();
       }
       if (e.key === "Escape") {
         setIsOpen(false);
@@ -77,26 +86,35 @@ export function DashboardSearch({
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onOpen]);
+  }, []);
 
-  // Instant local filtering of enrolled courses + debounced Supabase database search
+  // Instant local filtering of enrolled courses
   const localMatches = useMemo(() => {
-    if (!query.trim() || query.length < 2) return [];
-    const q = query.toLowerCase().trim();
+    const trimmed = query.toLowerCase().trim();
+    if (trimmed.length < 2) return EMPTY_COURSES;
     return enrolledCourses
       .filter(
         (c) =>
-          c.code.toLowerCase().includes(q) ||
-          c.name.toLowerCase().includes(q) ||
-          (c.department && c.department.toLowerCase().includes(q))
+          c.code.toLowerCase().includes(trimmed) ||
+          c.name.toLowerCase().includes(trimmed) ||
+          (c.department && c.department.toLowerCase().includes(trimmed))
       )
       .slice(0, 4);
   }, [query, enrolledCourses]);
 
+  const localMatchesRef = useRef(localMatches);
   useEffect(() => {
-    if (!query.trim() || query.length < 2) {
-      setCourses([]);
-      setIsSearching(false);
+    localMatchesRef.current = localMatches;
+  }, [localMatches]);
+
+  const userUni = (profile as any)?.university || "FUTA";
+
+  // Debounced remote catalog search
+  useEffect(() => {
+    const cleanQ = query.trim();
+    if (cleanQ.length < 2) {
+      setCourses((prev) => (prev.length === 0 ? prev : EMPTY_COURSES));
+      setIsSearching((prev) => (prev ? false : prev));
       return;
     }
 
@@ -104,9 +122,6 @@ export function DashboardSearch({
     setIsSearching(true);
     const timer = setTimeout(async () => {
       try {
-        const cleanQ = query.trim();
-        const userUni = (profile as any)?.university || "FUTA";
-
         let q = supabase
           .from("courses")
           .select("id, code, name, department, level, university")
@@ -127,7 +142,7 @@ export function DashboardSearch({
           const seen = new Set<string>();
           const combined: SearchCourseResult[] = [];
 
-          for (const item of localMatches) {
+          for (const item of localMatchesRef.current) {
             seen.add(item.id);
             combined.push(item);
           }
@@ -151,7 +166,7 @@ export function DashboardSearch({
       active = false;
       clearTimeout(timer);
     };
-  }, [query, profile, localMatches]);
+  }, [query, userUni]);
 
   const handleSelectCourse = (courseId: string) => {
     setIsOpen(false);

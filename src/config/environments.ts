@@ -5,7 +5,7 @@
  * Each campus has its own scoped course outlines, past questions, and departmental curricula.
  */
 
-export type EnvironmentType = "university";
+export type EnvironmentType = "university" | "jamb";
 
 export type InstitutionCode = "FUTA" | "OAU" | "UI" | "FUTESIYIN";
 

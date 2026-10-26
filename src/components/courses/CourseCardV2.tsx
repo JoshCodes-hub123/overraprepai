@@ -23,6 +23,7 @@ export interface CourseCardV2Props {
   busy?: boolean;
   studentLevel?: string | null;
   readinessScore?: number | null;
+  progressPercent?: number | null;
   weakTopic?: string | null;
   unreadUpdates?: number;
   onAdd?: () => void;
@@ -38,6 +39,7 @@ export function CourseCardV2({
   busy,
   studentLevel,
   readinessScore,
+  progressPercent,
   weakTopic,
   unreadUpdates = 0,
   onAdd,
@@ -184,7 +186,45 @@ export function CourseCardV2({
               </div>
             )}
 
-            {readinessScore !== undefined && readinessScore !== null && !weakTopic && (
+            {enrolled && (
+              <div className="mt-2.5 space-y-1">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-muted-foreground font-medium">Syllabus Progress</span>
+                  <span
+                    className={cn(
+                      "font-mono font-bold tabular-nums",
+                      (progressPercent ?? readinessScore ?? 0) >= 80
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : (progressPercent ?? readinessScore ?? 0) > 0
+                        ? "text-amber-700 dark:text-amber-400"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    {Math.round(progressPercent ?? readinessScore ?? 0)}%
+                  </span>
+                </div>
+                <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted border border-border/40">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all duration-700 ease-out",
+                      (progressPercent ?? readinessScore ?? 0) >= 80
+                        ? "bg-gradient-to-r from-emerald-500 to-teal-400 shadow-xs shadow-emerald-500/30"
+                        : (progressPercent ?? readinessScore ?? 0) > 0
+                        ? "bg-gradient-to-r from-amber-600 to-amber-400 shadow-xs shadow-amber-500/30"
+                        : "bg-transparent"
+                    )}
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        Math.max(0, Math.round(progressPercent ?? readinessScore ?? 0))
+                      )}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {!enrolled && readinessScore !== undefined && readinessScore !== null && !weakTopic && (
               <div className="mt-2.5 flex items-center justify-between text-xs text-muted-foreground">
                 <span>Exam Readiness</span>
                 <span className="font-bold text-amber-700 dark:text-amber-400 tabular-nums">

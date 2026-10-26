@@ -250,7 +250,7 @@ export default function SchoolTeachers() {
       Status: t.status,
       "Date Joined": t.joined_date,
     }));
-    exportToCsv(`${school?.name || "School"}_Staff_Directory`, rows);
+    exportToCsv(rows, `${school?.name || "School"}_Staff_Directory.csv`);
     toast.success("Staff directory exported to CSV");
   };
 

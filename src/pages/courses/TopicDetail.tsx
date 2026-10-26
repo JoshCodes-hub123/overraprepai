@@ -1,18 +1,22 @@
+import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Sparkles, FileText, Target } from "lucide-react";
+import { Sparkles, FileText, Target, Eye, Download, BookOpen } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useCourseTopics, useTopicQuestionCounts, useTopicActivity } from "@/hooks/useCourseLearning";
+import { useCourseMaterials, StudyMaterial } from "@/hooks/useStudyMaterials";
 import { SEO } from "@/components/seo/SEO";
 import { Screen, ScreenHeader, Section, EmptyState, BrandSkeleton, BrandButton } from "@/components/ui-kit";
+import { InAppDocViewer } from "@/components/viewer/InAppDocViewer";
 import { coachHref } from "@/lib/coachLink";
 
 /** One topic: what you'll learn, what you can practise, and where to get help. */
 const TopicDetail = () => {
   const { courseId = "", topicId = "" } = useParams();
   const { user } = useAuth();
+  const [viewerDoc, setViewerDoc] = useState<{ url: string; title: string; fileType?: string } | null>(null);
 
   const { data: course } = useQuery({
     queryKey: ["course-workspace", user?.id, courseId],
@@ -38,20 +42,26 @@ const TopicDetail = () => {
     ? activity.find((a) => (a.topic ?? "").trim().toLowerCase() === topic.name.trim().toLowerCase())
     : null;
 
-  const { data: materials = [] } = useQuery({
-    queryKey: ["topic-materials", user?.id, topicId],
-    enabled: !!user && !!topicId,
-    staleTime: 60_000,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("lecture_notes")
-        .select("id, title, file_url")
-        .eq("topic_id", topicId)
-        .eq("is_published", true)
-        .limit(10);
-      return data ?? [];
-    },
-  });
+  const { data: materialsData } = useCourseMaterials(courseId);
+
+  const totalCourseNotes = useMemo(() => {
+    if (!materialsData?.groups) return 0;
+    return materialsData.groups.reduce((acc, g) => acc + g.items.length, 0);
+  }, [materialsData]);
+
+  const materials = useMemo<StudyMaterial[]>(() => {
+    if (!materialsData?.groups) return [];
+    const matched: StudyMaterial[] = [];
+    for (const g of materialsData.groups) {
+      if (
+        g.topicId === topicId ||
+        (topic && g.topicName.trim().toLowerCase() === topic.name.trim().toLowerCase())
+      ) {
+        matched.push(...g.items);
+      }
+    }
+    return matched;
+  }, [materialsData, topicId, topic]);
 
   const askHref = topic
     ? coachHref({
@@ -131,27 +141,102 @@ const TopicDetail = () => {
               )}
             </Section>
 
-            {materials.length > 0 && (
-              <Section title="Study material">
-                <ul className="divide-y divide-brand-line rounded-brand border border-brand-line bg-brand-surface">
-                  {materials.map((m: any) => (
-                    <li key={m.id}>
-                      <a
-                        href={m.file_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex min-h-[56px] items-center gap-3 px-4 py-3.5 transition-colors hover:bg-brand-soft"
+            {materials.length > 0 ? (
+              <Section title="Study Material & Notes">
+                <div className="space-y-2.5">
+                  {materials.map((m: any) => {
+                    const isPdf =
+                      m.file_type?.toLowerCase().includes("pdf") ||
+                      m.file_url?.toLowerCase().endsWith(".pdf");
+
+                    return (
+                      <div
+                        key={m.id}
+                        className="p-3.5 rounded-2xl border border-neutral-200 bg-white hover:border-amber-400 transition flex items-center justify-between gap-3 shadow-2xs"
                       >
-                        <FileText className="h-4.5 w-4.5 shrink-0 text-brand-ink-soft" aria-hidden />
-                        <span className="min-w-0 flex-1 truncate text-[14.5px] font-medium text-brand-ink">
-                          {m.title}
-                        </span>
-                      </a>
-                    </li>
-                  ))}
-                </ul>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                              isPdf
+                                ? "bg-red-500/10 text-red-600 border border-red-500/20"
+                                : "bg-amber-500/15 text-amber-800"
+                            }`}
+                          >
+                            <FileText className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              {isPdf && (
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-red-100 text-red-700">
+                                  PDF
+                                </span>
+                              )}
+                              <h5 className="font-semibold text-sm text-neutral-900 truncate">
+                                {m.title}
+                              </h5>
+                            </div>
+                            {m.description && (
+                              <p className="text-xs text-neutral-500 truncate">{m.description}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setViewerDoc({
+                                url: m.file_url,
+                                title: m.title,
+                                fileType: m.file_type || (isPdf ? "application/pdf" : undefined),
+                              })
+                            }
+                            className="h-8 px-3 text-xs font-semibold rounded-xl bg-amber-500 hover:bg-amber-600 text-neutral-950 flex items-center gap-1.5 shadow-2xs transition"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Read</span>
+                          </button>
+                          {m.file_url && (
+                            <a
+                              href={m.file_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              download
+                              className="p-2 rounded-xl border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition"
+                              title="Download"
+                            >
+                              <Download className="w-4 h-4" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </Section>
-            )}
+            ) : totalCourseNotes > 0 ? (
+              <Section title="Study Material & Notes">
+                <div className="p-4 rounded-2xl border border-amber-200 bg-amber-50/60 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-5 h-5 text-amber-800 shrink-0" />
+                    <div>
+                      <p className="text-xs font-semibold text-neutral-900">
+                        {totalCourseNotes} lecture note{totalCourseNotes === 1 ? "" : "s"} uploaded for this course
+                      </p>
+                      <p className="text-[11px] text-neutral-600">
+                        Syllabi and general reading materials are under the course notes tab.
+                      </p>
+                    </div>
+                  </div>
+                  <Link
+                    to={`/courses/${courseId}?tab=notes`}
+                    className="text-xs font-bold text-amber-900 bg-white hover:bg-amber-100 border border-amber-300 px-3 py-1.5 rounded-xl shrink-0 transition"
+                  >
+                    View Notes
+                  </Link>
+                </div>
+              </Section>
+            ) : null}
 
             <Section title="Ask Overra">
               <Link
@@ -169,6 +254,16 @@ const TopicDetail = () => {
           </>
         )}
       </Screen>
+
+      {viewerDoc && (
+        <InAppDocViewer
+          open={!!viewerDoc}
+          onOpenChange={(open) => !open && setViewerDoc(null)}
+          url={viewerDoc.url}
+          title={viewerDoc.title}
+          fileType={viewerDoc.fileType}
+        />
+      )}
     </>
   );
 };

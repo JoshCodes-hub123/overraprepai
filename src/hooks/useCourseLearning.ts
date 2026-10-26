@@ -248,5 +248,70 @@ export function useCourseProgress(courseId?: string): CourseProgress {
       correct: Math.max(0, attempted - incorrect),
     };
   }, [topics, activity]);
-
 }
+
+export interface CourseProgressSummary {
+  studied: number;
+  total: number;
+  percent: number;
+}
+
+/**
+ * Batch progress calculation for all enrolled courses on the dashboard in a single query.
+ * Matches course topics with topic_mastery rows to return real studied/total counts.
+ */
+export function useEnrolledCoursesProgress(courseIds: string[]) {
+  const { user } = useAuth();
+  const { data: activity = [] } = useTopicActivity();
+  const stableIdsKey = courseIds.filter(Boolean).slice().sort().join(",");
+
+  return useQuery({
+    queryKey: ["enrolled-courses-progress", user?.id, stableIdsKey],
+    enabled: !!user && courseIds.length > 0,
+    staleTime: 60_000,
+    queryFn: async (): Promise<Record<string, CourseProgressSummary>> => {
+      const validIds = courseIds.filter(Boolean);
+      if (validIds.length === 0) return {};
+
+      const { data: topics, error } = await supabase
+        .from("topics")
+        .select("id, name, course_id")
+        .in("course_id", validIds);
+
+      if (error) {
+        console.warn("Could not batch load course topics for progress:", error);
+        return {};
+      }
+
+      const activityMap = new Set(
+        activity.map((a) => (a.topic ?? "").trim().toLowerCase())
+      );
+
+      const result: Record<string, CourseProgressSummary> = {};
+
+      for (const cid of validIds) {
+        result[cid] = { studied: 0, total: 0, percent: 0 };
+      }
+
+      for (const t of topics ?? []) {
+        if (!result[t.course_id]) {
+          result[t.course_id] = { studied: 0, total: 0, percent: 0 };
+        }
+        result[t.course_id].total += 1;
+        if (activityMap.has(t.name.trim().toLowerCase())) {
+          result[t.course_id].studied += 1;
+        }
+      }
+
+      for (const cid of validIds) {
+        const item = result[cid];
+        if (item.total > 0) {
+          item.percent = Math.round((item.studied / item.total) * 100);
+        }
+      }
+
+      return result;
+    },
+  });
+}
+

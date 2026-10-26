@@ -80,7 +80,7 @@ export function SidebarMenu() {
               </div>
               {profile?.full_name && (
                 <p className="text-xs text-neutral-500 text-left truncate pt-0.5">
-                  {profile.full_name} · <span className="text-amber-700 font-semibold">{profile.university || "University"}</span>
+                  {profile.full_name} · <span className="text-amber-700 font-semibold">{(profile as any)?.university || "University"}</span>
                 </p>
               )}
               <div className="pt-1 flex items-center gap-2">

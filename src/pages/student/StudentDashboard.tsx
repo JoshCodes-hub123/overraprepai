@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   BookOpen,
@@ -25,13 +25,14 @@ import { prefetchDashboardNeighbors } from "@/lib/routePrefetch";
 import { Screen, Section, EmptyState, BrandSkeleton, BrandButton } from "@/components/ui-kit";
 import BrandTopBar from "@/components/dashboard/mobile/BrandTopBar";
 import NextStepHero from "@/components/dashboard/mobile/NextStepHero";
-import CourseRow, { EmptyCourses } from "@/components/dashboard/mobile/CourseRow";
+import CourseRow, { EmptyCourses, CourseRowSkeleton } from "@/components/dashboard/mobile/CourseRow";
 import MissionBlock from "@/components/dashboard/mobile/MissionBlock";
 import WeeklyPulse from "@/components/dashboard/mobile/WeeklyPulse";
 import ProgressCards from "@/components/dashboard/mobile/ProgressCards";
 import DashboardSearch from "@/components/dashboard/mobile/DashboardSearch";
 
 import { useCourseSnapshots } from "@/hooks/useCourseSnapshots";
+import { useEnrolledCoursesProgress } from "@/hooks/useCourseLearning";
 import { useStudentScope } from "@/hooks/useStudentScope";
 import { useTodayMission, useWeeklyReport, useReadinessAll, useSuccessScore } from "@/hooks/useIntelligence";
 import { useTokenBalance } from "@/hooks/useTokenBalance";
@@ -70,6 +71,7 @@ const StudentDashboard = () => {
   const { user, profile, isLoading: authLoading } = useAuth();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [prefsOpen, setPrefsOpen] = useState(false);
+  const handleOpenSearch = useCallback(() => setPaletteOpen(true), []);
   useCommandPaletteHotkey(setPaletteOpen);
   const { preferences, visibleCount, totalCount } = useDashboardPreferences();
   const { dailyMap, full90DaySeries, summary: analyticsSummary, logStudySession } =
@@ -88,6 +90,8 @@ const StudentDashboard = () => {
   const { institution } = useEnvironment();
   const { level, department } = useStudentScope();
   const { data: courses = [], isLoading: coursesLoading } = useCourseSnapshots();
+  const courseIds = useMemo(() => courses.map((c) => c.id), [courses]);
+  const { data: progressMap = {} } = useEnrolledCoursesProgress(courseIds);
   const { data: mission } = useTodayMission();
   const { data: weekly } = useWeeklyReport();
   const { data: readiness = [] } = useReadinessAll();
@@ -324,7 +328,7 @@ const StudentDashboard = () => {
               TIER 3: Responsive Real-Time Course & Topic Search
              ========================================================= */}
           <div className="mb-6">
-            <DashboardSearch onOpen={() => setPaletteOpen(true)} />
+            <DashboardSearch onOpen={handleOpenSearch} />
           </div>
 
           <DashboardOfflineBanner onReattempt={onRefresh} />
@@ -455,25 +459,31 @@ const StudentDashboard = () => {
           >
             {coursesLoading ? (
               <div className="space-y-3">
-                <BrandSkeleton h={74} />
-                <BrandSkeleton h={74} />
-                <BrandSkeleton h={74} />
+                <CourseRowSkeleton />
+                <CourseRowSkeleton />
+                <CourseRowSkeleton />
               </div>
             ) : recent.length > 0 ? (
               <div className="space-y-3">
-                {recent.slice(0, 6).map((c) => (
-                  <CourseRow
-                    key={c.id}
-                    id={c.id}
-                    code={c.code}
-                    name={c.name}
-                    department={c.department}
-                    level={c.level}
-                    unreadUpdates={c.unread_updates ?? 0}
-                    readinessScore={readinessByCourse[c.id]}
-                    actionLabel={courseAction(weakTopicByCourse[c.id] ?? null, c.last_opened_at)}
-                  />
-                ))}
+                {recent.slice(0, 6).map((c) => {
+                  const prog = progressMap[c.id];
+                  return (
+                    <CourseRow
+                      key={c.id}
+                      id={c.id}
+                      code={c.code}
+                      name={c.name}
+                      department={c.department}
+                      level={c.level}
+                      unreadUpdates={c.unread_updates ?? 0}
+                      readinessScore={readinessByCourse[c.id]}
+                      progressPercent={prog?.percent ?? readinessByCourse[c.id] ?? 0}
+                      completedTopics={prog?.studied ?? 0}
+                      totalTopics={prog?.total ?? 0}
+                      actionLabel={courseAction(weakTopicByCourse[c.id] ?? null, c.last_opened_at)}
+                    />
+                  );
+                })}
               </div>
             ) : (
               <EmptyCourses />
