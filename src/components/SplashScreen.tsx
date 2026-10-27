@@ -57,7 +57,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
     return () => v.removeEventListener("canplay", tryPlay);
   }, []);
 
-  const tagline = "Academic Operating System";
+  const tagline = "Strategic preparation leads to better performance";
 
   return (
     <AnimatePresence>
