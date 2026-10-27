@@ -50,7 +50,7 @@ import { Button } from "@/components/ui/button";
 const CourseWorkspace = () => {
   const { courseId = "" } = useParams();
   const navigate = useNavigate();
-  const { primaryRole } = useAuth();
+  const { primaryRole, hasRole } = useAuth();
   useTrackCourseOpen(courseId);
 
   const [searchParams] = useSearchParams();
@@ -374,7 +374,7 @@ const CourseWorkspace = () => {
                         </p>
                       </div>
                     </div>
-                    {(primaryRole === "admin" || primaryRole === "tutor") && (
+                    {(hasRole("admin") || hasRole("tutor")) && (
                       <Button
                         size="sm"
                         variant="outline"
