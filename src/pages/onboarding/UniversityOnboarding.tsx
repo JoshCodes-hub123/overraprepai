@@ -294,33 +294,64 @@ export const UniversityOnboarding: React.FC = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                     {Object.values(UNIVERSITIES).map((uni) => {
                       const isSelected = selectedUni === uni.code;
+                      const gateImg = {
+                        FUTA: "/assets/aistudio/image_1cdb46ce.png",
+                        OAU: "/assets/aistudio/image_7a396a45.png",
+                        UI: "/assets/aistudio/image_34f037cc.png",
+                        UNILAG: "/assets/aistudio/image_a987426b.png",
+                      }[uni.code];
+
                       return (
                         <button
                           key={uni.code}
                           type="button"
                           onClick={() => handleUniChange(uni.code)}
-                          className={`text-left p-4 rounded-xl border transition-all relative ${
+                          className={`text-left rounded-xl border transition-all overflow-hidden relative group ${
                             isSelected
                               ? "bg-amber-500/10 border-amber-500 ring-2 ring-amber-500/20 shadow-xs"
                               : "bg-background border-border hover:border-amber-400 hover:bg-muted/40"
                           }`}
                         >
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-extrabold text-base text-foreground tracking-tight">
-                              {uni.code}
-                            </span>
-                            {isSelected ? (
-                              <CheckCircle2 className="w-4 h-4 text-amber-600" />
-                            ) : (
-                              <div className="w-4 h-4 rounded-full border border-border" />
+                          {gateImg && (
+                            <div className="relative h-24 w-full overflow-hidden bg-muted">
+                              <img
+                                src={gateImg}
+                                alt={uni.name}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                loading="lazy"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                              <span className="absolute bottom-2 left-3 font-extrabold text-base text-white tracking-tight drop-shadow-sm">
+                                {uni.code}
+                              </span>
+                              {isSelected && (
+                                <span className="absolute top-2 right-2 p-1 rounded-full bg-amber-500 text-white shadow-sm">
+                                  <CheckCircle2 className="w-4 h-4" />
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="p-3.5">
+                            {!gateImg && (
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-extrabold text-base text-foreground tracking-tight">
+                                  {uni.code}
+                                </span>
+                                {isSelected ? (
+                                  <CheckCircle2 className="w-4 h-4 text-amber-600" />
+                                ) : (
+                                  <div className="w-4 h-4 rounded-full border border-border" />
+                                )}
+                              </div>
                             )}
+                            <p className="text-xs font-semibold text-foreground line-clamp-1">
+                              {uni.name}
+                            </p>
+                            <span className="text-[11px] text-muted-foreground mt-0.5 block">
+                              {uni.city} · Verified Curriculum
+                            </span>
                           </div>
-                          <p className="text-xs font-medium text-foreground line-clamp-1">
-                            {uni.name}
-                          </p>
-                          <span className="text-[11px] text-muted-foreground mt-0.5 block">
-                            {uni.city} · Accredited Campus
-                          </span>
                         </button>
                       );
                     })}

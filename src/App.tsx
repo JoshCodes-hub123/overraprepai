@@ -20,6 +20,7 @@ import MiniPlayerBar from "@/components/audio/MiniPlayerBar";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 import EmailVerificationBanner from "@/components/auth/EmailVerificationBanner";
 import RoleBadge from "@/components/auth/RoleBadge";
+import SplashScreen from "@/components/SplashScreen";
 
 import { NetworkStatus } from "@/components/system/NetworkStatus";
 import LiteModeApplier from "@/components/system/LiteModeApplier";
@@ -238,6 +239,7 @@ const App = () => {
               <ScrollToTop />
               <PageViewTracker />
               <AuthProvider>
+                <SplashScreen />
                 <AccountQueryCacheBoundary>
                   <PushBootstrap />
                   <EnvironmentThemeApplier />

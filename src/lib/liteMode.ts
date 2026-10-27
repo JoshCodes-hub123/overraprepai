@@ -21,10 +21,13 @@ const listeners = new Set<Listener>();
 
 function detectAuto(): boolean {
   if (typeof navigator === "undefined") return false;
-  const c: any = (navigator as any).connection;
+  const c: any = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
   if (c?.saveData) return true;
-  if (c?.effectiveType && /^(slow-2g|2g)$/.test(c.effectiveType)) return true;
+  if (c?.effectiveType && /^(slow-2g|2g|3g)$/.test(c.effectiveType)) return true;
+  if (typeof c?.downlink === "number" && c.downlink < 1.8) return true;
+  if (typeof c?.rtt === "number" && c.rtt > 400) return true;
   if (typeof (navigator as any).deviceMemory === "number" && (navigator as any).deviceMemory <= 2) return true;
+  if (typeof (navigator as any).hardwareConcurrency === "number" && (navigator as any).hardwareConcurrency <= 2) return true;
   return false;
 }
 

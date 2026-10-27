@@ -1,234 +1,235 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import logo from "@/assets/logo.png";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Volume2, VolumeX, Zap } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import useEnvironment from "@/hooks/useEnvironment";
+import { getValidResumeRoute } from "@/lib/environmentScope";
 import { isLiteMode } from "@/lib/liteMode";
+import { OverraLoader } from "@/components/ui/OverraLoader";
+import logo from "@/assets/logo.png";
 
-// Lovable CDN URL of the cinematic splash background (immutable asset).
-// Vertical 9:16 real-footage clip — source pointer: public/auth-bg.mp4.asset.json
-const SPLASH_VIDEO_URL = "/__l5e/assets-v1/5b198689-3af2-4d21-b7f6-2cf2962ff353/auth-bg.mp4";
+const SPLASH_VIDEO_SRC =
+  "/assets/aistudio/App_splash_screen_animation_intro_1080p_20261027105250_752db00a.mp4";
 
-/**
- * Splash screen — Phase 7A redesign.
- *
- * Direction: "Minimal sculptural" prototype, refined per user direction.
- *   - Cinematic full-bleed background video of African university students
- *     studying with laptops + phones (warm, golden, calm — premium fintech feel).
- *   - Cream wash + radial gradient over the video so it never overpowers the mark.
- *   - The real OverraPrep logo, animated in with scale + spring + a slow rotating
- *     gold ring orbit and a single shimmer sweep. Subtle floating idle motion.
- *   - Tagline: "Academic Operating System" with masked letter-reveal.
- *   - Tiny gold hairline progress indicator at the bottom (Wema-style).
- *   - Graceful fallback to a static cream gradient if the video fails to load
- *     (slow networks, blocked autoplay, etc.) so the splash never looks broken.
- */
 interface SplashScreenProps {
-  onComplete: () => void;
+  onComplete?: () => void;
+  forceShow?: boolean;
 }
 
-const SPLASH_DURATION_MS = 4800;
-const EXIT_DURATION_MS = 500;
+/**
+ * OverraPrep AI - Premium Animated Splash Screen with Adaptive Lite Mode
+ *
+ * Capabilities:
+ *  - High-speed / 4G / Wi-Fi: Streams the official 1080p 6-second video intro.
+ *  - Slow network / 2G / 3G / Low memory: Instantly switches to the lightweight
+ *    vector OverraPrep orbit animation with "Lite Mode · Fast Load" indicator
+ *    to eliminate buffering and reduce perceived wait time on lower-end devices.
+ *  - Auto-advance on video end (or failsafe timeout)
+ *  - Tap anywhere or click "Skip" for immediate entry
+ *  - Startup-only gating via sessionStorage
+ */
+export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, forceShow = false }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+  const { environment } = useEnvironment();
 
-const SplashScreen = ({ onComplete }: SplashScreenProps) => {
-  const [exiting, setExiting] = useState(false);
-  const [videoReady, setVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const lite = isLiteMode();
-  // In lite mode, get out of the way faster (no video to wait for).
-  const duration = lite ? 2200 : SPLASH_DURATION_MS;
+  const hasFinishedRef = useRef<boolean>(false);
 
+  // Check if user already saw splash in this browser session
+  const [isVisible, setIsVisible] = useState<boolean>(() => {
+    if (forceShow) return true;
+    try {
+      return !sessionStorage.getItem("overra_splash_seen_v2");
+    } catch {
+      return true;
+    }
+  });
+
+  const [isFadingOut, setIsFadingOut] = useState<boolean>(false);
+  const [isMuted, setIsMuted] = useState<boolean>(true);
+  const [isVideoLoaded, setIsVideoLoaded] = useState<boolean>(false);
+  const [lite] = useState<boolean>(() => isLiteMode());
+
+  // Smooth finish and exit handler
+  const handleFinish = useCallback(() => {
+    if (hasFinishedRef.current) return;
+    hasFinishedRef.current = true;
+
+    try {
+      sessionStorage.setItem("overra_splash_seen_v2", "1");
+    } catch {
+      // sessionStorage unavailable in strict private mode
+    }
+
+    setIsFadingOut(true);
+
+    setTimeout(() => {
+      setIsVisible(false);
+      if (onComplete) {
+        onComplete();
+      }
+
+      // If user is authenticated and currently at the root landing page,
+      // navigate smoothly to their valid dashboard route
+      if (user && location.pathname === "/") {
+        const resumeRoute = getValidResumeRoute(user.id, environment);
+        navigate(resumeRoute, { replace: true });
+      }
+    }, 350);
+  }, [user, environment, location.pathname, navigate, onComplete]);
+
+  // Attempt video autoplay on mount (only in normal mode)
   useEffect(() => {
-    const exitTimer = setTimeout(() => setExiting(true), duration);
-    const doneTimer = setTimeout(() => onComplete(), duration + EXIT_DURATION_MS);
-    return () => {
-      clearTimeout(exitTimer);
-      clearTimeout(doneTimer);
-    };
-  }, [onComplete, duration]);
+    if (!isVisible) return;
 
-  // Best-effort autoplay; muted+playsInline is required on iOS Safari.
-  useEffect(() => {
-    if (lite) return; // no video in lite mode
-    const v = videoRef.current;
-    if (!v) return;
-    v.muted = true;
-    const tryPlay = () => v.play().catch(() => { /* autoplay blocked — keep static bg */ });
-    if (v.readyState >= 2) tryPlay();
-    v.addEventListener("canplay", tryPlay, { once: true });
-    return () => v.removeEventListener("canplay", tryPlay);
-  }, []);
+    if (lite) {
+      // In Lite mode, run a brisk 1.8s transition to reduce wait time on slow networks
+      const liteTimer = setTimeout(() => {
+        handleFinish();
+      }, 1800);
+      return () => clearTimeout(liteTimer);
+    }
 
-  const tagline = "Strategic preparation leads to better performance";
+    const videoEl = videoRef.current;
+    if (videoEl) {
+      videoEl.muted = isMuted;
+      videoEl
+        .play()
+        .then(() => setIsVideoLoaded(true))
+        .catch(() => {
+          // Autoplay blocked: try muted
+          videoEl.muted = true;
+          videoEl.play().catch(() => {});
+        });
+    }
+
+    // Failsafe timer (6.8s maximum) to guarantee splash never gets stuck
+    const failsafe = setTimeout(() => {
+      handleFinish();
+    }, 6800);
+
+    return () => clearTimeout(failsafe);
+  }, [isVisible, isMuted, lite, handleFinish]);
+
+  const toggleSound = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!videoRef.current) return;
+    const nextMuted = !isMuted;
+    videoRef.current.muted = nextMuted;
+    setIsMuted(nextMuted);
+  };
+
+  if (!isVisible) return null;
 
   return (
     <AnimatePresence>
-      {!exiting && (
-        <motion.div
-          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden bg-[#FCFBF4]"
-          style={{
-            paddingTop: "env(safe-area-inset-top)",
-            paddingBottom: "env(safe-area-inset-bottom)",
-            paddingLeft: "env(safe-area-inset-left)",
-            paddingRight: "env(safe-area-inset-right)",
-          }}
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: EXIT_DURATION_MS / 1000, ease: "easeInOut" }}
-        >
-          {/* Cinematic background video — full-bleed cover. Skipped in lite mode. */}
-          {!lite && (
-            <video
-              ref={videoRef}
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
-                videoReady ? "opacity-60" : "opacity-0"
-              }`}
-              src={SPLASH_VIDEO_URL}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
-              onCanPlay={() => setVideoReady(true)}
-              aria-hidden="true"
+      <motion.div
+        className="fixed inset-0 z-[999999] flex flex-col items-center justify-center select-none overflow-hidden bg-black text-[#F5F5F7] font-sans"
+        style={{
+          paddingTop: "env(safe-area-inset-top)",
+          paddingBottom: "env(safe-area-inset-bottom)",
+          paddingLeft: "env(safe-area-inset-left)",
+          paddingRight: "env(safe-area-inset-right)",
+        }}
+        initial={{ opacity: 1 }}
+        animate={{ opacity: isFadingOut ? 0 : 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.35, ease: "easeInOut" }}
+        onClick={handleFinish}
+        role="dialog"
+        aria-label="OverraPrep Animated Splash Screen"
+      >
+        {/* Branch A: Lite Mode (Slow network detected / Data Saver enabled) */}
+        {lite ? (
+          <div className="relative z-10 flex flex-col items-center justify-center px-6 text-center animate-in fade-in duration-300">
+            {/* Ambient gold glow */}
+            <div
+              className="absolute w-64 h-64 rounded-full pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(212, 175, 55, 0.16) 0%, transparent 70%)",
+              }}
             />
-          )}
 
-          {/* Warm cream wash + vignette so the mark never fights the footage */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background:
-                "radial-gradient(120% 80% at 50% 40%, rgba(252,251,244,0.55) 0%, rgba(252,251,244,0.85) 60%, rgba(252,251,244,0.96) 100%)",
-            }}
-            aria-hidden="true"
-          />
-          {/* Subtle gold light from above */}
-          <div
-            className="absolute inset-0 pointer-events-none mix-blend-soft-light opacity-60"
-            style={{
-              background:
-                "radial-gradient(60% 40% at 50% 0%, rgba(197,160,89,0.45) 0%, transparent 70%)",
-            }}
-            aria-hidden="true"
-          />
+            {/* Authentic OverraPrep Emblem with Orbit */}
+            <div className="relative mb-5">
+              <OverraLoader size="xl" hideOrbit={false} />
+            </div>
 
-          {/* Centerpiece */}
-          <div className="relative z-10 flex flex-col items-center px-8 w-full max-w-xs">
-            {/* Logo with orbiting gold ring, spring entrance, idle float, single shimmer */}
-            <motion.div
-              initial={{ scale: 0.6, opacity: 0, y: 12 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              transition={{ type: "spring", stiffness: 130, damping: 16, mass: 0.9 }}
-              className="relative"
-            >
-              {/* Outer slow-spinning gold ring */}
-              <motion.div
-                className="absolute -inset-5 rounded-full border border-[#C5A059]/45"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
-              >
-                {/* Single gold dot on the ring — orbiting accent */}
-                <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[#C5A059] shadow-[0_0_10px_rgba(197,160,89,0.8)]" />
-              </motion.div>
+            {/* Wordmark */}
+            <h1 className="font-display text-2xl font-bold tracking-[0.08em] text-[#F5F5F7]">
+              Overra
+              <span className="bg-gradient-to-r from-[#F5D77F] via-[#D4AF37] to-[#C9941F] bg-clip-text text-transparent font-extrabold">
+                Prep
+              </span>
+            </h1>
 
-              {/* Soft golden halo behind logo */}
-              <motion.div
-                className="absolute inset-0 -m-6 rounded-full"
-                style={{
-                  background:
-                    "radial-gradient(circle, rgba(197,160,89,0.35) 0%, rgba(197,160,89,0) 70%)",
-                }}
-                animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0.85, 0.6] }}
-                transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
-              />
+            {/* Tagline */}
+            <p className="mt-2 text-xs tracking-[0.22em] uppercase text-[#D4AF37]/90 font-medium">
+              Rise Beyond Limits.
+            </p>
 
-              {/* The mark itself — gentle float */}
-              <motion.div
-                animate={{ y: [0, -5, 0] }}
-                transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
-                className="relative"
-              >
-                <motion.img
-                  src={logo}
-                  alt="OverraPrep AI"
-                  className="relative w-28 h-28 md:w-32 md:h-32 object-contain"
-                  style={{ filter: "drop-shadow(0 18px 36px rgba(120,90,20,0.28))" }}
-                  initial={{ rotate: -8 }}
-                  animate={{ rotate: 0 }}
-                  transition={{ type: "spring", stiffness: 80, damping: 12, delay: 0.05 }}
-                />
-
-                {/* Single shimmer sweep over the mark */}
-                <motion.div
-                  className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl"
-                  style={{
-                    background:
-                      "linear-gradient(110deg, transparent 35%, rgba(255,255,255,0.55) 50%, transparent 65%)",
-                    mixBlendMode: "overlay",
-                  }}
-                  initial={{ x: "-130%" }}
-                  animate={{ x: "130%" }}
-                  transition={{ delay: 0.9, duration: 1.4, ease: "easeInOut" }}
-                />
-              </motion.div>
-            </motion.div>
-
-            {/* Tagline — masked letter reveal */}
-            <motion.p
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.55, duration: 0.6, ease: "easeOut" }}
-              className="mt-10 text-[11px] md:text-xs font-semibold tracking-[0.32em] uppercase text-[#1A1A1A] text-center"
-              style={{ fontFamily: "Inter, sans-serif" }}
-            >
-              {tagline.split(" ").map((word, wi) => (
-                <span key={wi} className="inline-block whitespace-nowrap mr-[0.5em]">
-                  {word.split("").map((ch, ci) => (
-                    <motion.span
-                      key={ci}
-                      className="inline-block"
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.7 + (wi * 0.15) + (ci * 0.025), duration: 0.4, ease: "easeOut" }}
-                    >
-                      {ch}
-                    </motion.span>
-                  ))}
-                </span>
-              ))}
-            </motion.p>
-
-            {/* Sub-line */}
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.6, duration: 0.6 }}
-              className="mt-3 text-[11px] text-[#8E8A7E] text-center tracking-wide"
-              style={{ fontFamily: "Inter, sans-serif" }}
-            >
-              Built for African university students.
-            </motion.p>
-
-            {/* Hairline progress — Wema-style quiet loader */}
-            <div className="mt-12 w-32 h-[1.5px] rounded-full bg-[#EBE6D8] relative overflow-hidden">
-              <motion.div
-                className="absolute top-0 bottom-0 w-1/3 rounded-full bg-gradient-to-r from-[#C5A059]/30 via-[#C5A059] to-[#C5A059]/30"
-                animate={{ x: ["-100%", "300%"] }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-              />
+            {/* Lite indicator badge */}
+            <div className="mt-6 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/30 text-[10px] font-semibold tracking-wider uppercase text-[#F5D77F]">
+              <Zap className="w-3 h-3 text-[#D4AF37]" />
+              <span>Lite Mode · Instant Campus Load</span>
             </div>
           </div>
-
-          {/* Bottom footnote */}
-          <div className="absolute bottom-8 left-0 right-0 flex justify-center">
-            <p
-              className="text-[9px] font-semibold tracking-[0.32em] uppercase text-[#C5A059]/60"
-              style={{ fontFamily: "Inter, sans-serif" }}
-            >
-              OverraPrep · Academic OS
-            </p>
+        ) : (
+          /* Branch B: High-res video intro (Normal fast network) */
+          <div className="relative w-full h-full flex items-center justify-center bg-black">
+            <video
+              ref={videoRef}
+              src={SPLASH_VIDEO_SRC}
+              autoPlay
+              playsInline
+              muted={isMuted}
+              preload="auto"
+              onEnded={handleFinish}
+              onError={handleFinish}
+              onLoadedData={() => setIsVideoLoaded(true)}
+              className={`w-full h-full object-contain max-w-[540px] max-h-screen transition-opacity duration-300 ${
+                isVideoLoaded ? "opacity-100" : "opacity-0"
+              }`}
+            />
           </div>
-        </motion.div>
-      )}
+        )}
+
+        {/* Top bar controls */}
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-50 flex items-center gap-2">
+          {!lite && (
+            <button
+              type="button"
+              onClick={toggleSound}
+              aria-label={isMuted ? "Unmute intro video" : "Mute intro video"}
+              className="p-2 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md text-[#D4AF37]/80 hover:text-[#D4AF37] border border-[#D4AF37]/20 transition-all active:scale-95"
+            >
+              {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleFinish();
+            }}
+            className="px-3 py-1.5 rounded-full text-[11px] font-semibold tracking-wider uppercase bg-black/60 hover:bg-black/80 backdrop-blur-md text-[#D4AF37] border border-[#D4AF37]/25 transition-all hover:border-[#D4AF37]/60 active:scale-95"
+          >
+            Skip
+          </button>
+        </div>
+
+        {/* Discreet bottom tap hint for mobile */}
+        <div className="absolute bottom-5 inset-x-0 flex justify-center pointer-events-none">
+          <p className="text-[10px] tracking-[0.2em] uppercase text-[#D4AF37]/40 font-medium">
+            Tap anywhere to enter
+          </p>
+        </div>
+      </motion.div>
     </AnimatePresence>
   );
 };

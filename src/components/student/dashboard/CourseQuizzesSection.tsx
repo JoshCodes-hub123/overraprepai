@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { BookOpen, ArrowRight, Sparkles, Loader2 } from "lucide-react";
+import { BookOpen, ArrowRight, Sparkles } from "lucide-react";
+import { OverraLoader } from "@/components/ui/OverraLoader";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { QuizCard, type QuizCardData } from "@/components/quiz/QuizCard";
@@ -126,8 +127,8 @@ export const CourseQuizzesSection = () => {
       </div>
 
       {loading ? (
-        <div className="rounded-2xl border border-amber-100 bg-white p-8 flex items-center justify-center">
-          <Loader2 className="w-5 h-5 animate-spin text-amber-600" />
+        <div className="rounded-2xl border border-border/80 bg-card p-8 flex items-center justify-center">
+          <OverraLoader size="sm" variant="inline" label="Loading quizzes…" />
         </div>
       ) : !hasCourses ? (
         <Link

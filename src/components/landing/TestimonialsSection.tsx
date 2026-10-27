@@ -16,7 +16,7 @@ const cardVariants = { hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 
 
 const TestimonialsSection = () => {
   return (
-    <section className="py-20 lg:py-28 relative overflow-hidden">
+    <section id="testimonials" className="py-20 lg:py-28 relative overflow-hidden scroll-mt-20">
       <div className="absolute inset-0 bg-background" />
       <div className="absolute inset-0 bg-gradient-mesh opacity-20" />
       

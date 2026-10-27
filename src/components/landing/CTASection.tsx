@@ -15,7 +15,7 @@ const CTASection = () => {
   const [showTutorDialog, setShowTutorDialog] = useState(false);
 
   return (
-    <section className="py-20 lg:py-28 relative overflow-hidden">
+    <section id="pricing" className="py-20 lg:py-28 relative overflow-hidden scroll-mt-20">
       <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/20 to-background" />
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-80 h-80 bg-primary/8 rounded-full blur-3xl animate-blob" />

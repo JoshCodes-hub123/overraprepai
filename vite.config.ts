@@ -17,6 +17,8 @@ export default defineConfig(() => ({
       manifest: false, // already provided in public/manifest.webmanifest
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        globIgnores: ["**/*.mp4"],
+        maximumFileSizeToCacheInBytes: 15 * 1024 * 1024,
         runtimeCaching: [
           {
             urlPattern: ({ url }) =>

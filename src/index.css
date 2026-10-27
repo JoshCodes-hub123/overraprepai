@@ -618,3 +618,53 @@ html[data-lite="true"] .blur-3xl {
   animation: shimmer 1.8s infinite ease-in-out;
 }
 
+/* Custom OverraPrep Loader Keyframes & Smooth Orbit */
+@keyframes overra-spin-smooth {
+  from { transform: rotate(-90deg); }
+  to { transform: rotate(270deg); }
+}
+
+@keyframes overra-breathe {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.95;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+@keyframes overra-pulse-subtle {
+  0%, 100% {
+    opacity: 0.25;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.1);
+  }
+}
+
+.overra-spin-smooth {
+  animation: overra-spin-smooth 1.3s linear infinite;
+  transform-origin: center center;
+}
+
+.overra-breathe {
+  animation: overra-breathe 2.2s ease-in-out infinite;
+  transform-origin: center center;
+}
+
+.overra-pulse-subtle {
+  animation: overra-pulse-subtle 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overra-spin-smooth,
+  .overra-breathe,
+  .overra-pulse-subtle {
+    animation: none !important;
+  }
+}
+

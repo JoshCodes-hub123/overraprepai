@@ -216,6 +216,7 @@ export const AnimatedRoutes = () => {
         <TutorPendingGate>
          <Routes location={location}>
           <Route path="/" element={<PageTransition><Welcome /></PageTransition>} />
+          <Route path="/demo" element={<Navigate to="/#demo" replace />} />
 
           {/* Public University routes */}
           <Route path="/jamb" element={<Navigate to="/courses" replace />} />

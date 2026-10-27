@@ -75,51 +75,75 @@
       html, body {
         overscroll-behavior-y: none;
       }
-      /* ===== Pre-React boot splash (white + gold) =====
-         Visible immediately on first paint and stays up until React mounts.
-         If chunks fail or WebGL crashes the app, the #boot-fallback message
-         is revealed so the user never sees a blank white screen. */
+      /* ===== Pre-React boot splash (Deep charcoal + warm metallic gold) =====
+         Visible immediately on first paint and stays up until React mounts. */
       #boot-splash {
         position: fixed; inset: 0; z-index: 2147483646;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        background: linear-gradient(160deg, #fff8e1 0%, #f5c042 55%, #c9941f 100%);
+        background: radial-gradient(circle at 50% 45%, rgba(212, 175, 55, 0.14) 0%, #08080a 75%);
         font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
-        color: #1a1407;
-        transition: opacity .45s ease;
+        color: #f5f5f7;
+        transition: opacity .35s ease;
       }
       #boot-splash.is-hidden { opacity: 0; pointer-events: none; }
       #boot-splash .boot-orb {
-        width: 96px; height: 96px; border-radius: 50%;
-        background: radial-gradient(circle at 32% 28%, #fffbe6, #f5c042 45%, #8a5a00 95%);
-        box-shadow: 0 0 60px rgba(255,210,90,.7), 0 18px 40px rgba(80,50,0,.35);
+        width: 84px; height: 84px; border-radius: 50%;
+        background: radial-gradient(circle at 35% 30%, #fff6d6, #d4af37 55%, #5a4208 95%);
+        box-shadow: 0 0 50px rgba(212, 175, 55, 0.4), 0 10px 30px rgba(0, 0, 0, 0.9);
         animation: bootFloat 2.4s ease-in-out infinite;
       }
       #boot-splash .boot-title {
-        margin-top: 26px; font-weight: 700; font-size: 18px; letter-spacing: .12em; text-transform: uppercase;
+        margin-top: 24px; font-weight: 700; font-size: 19px; letter-spacing: .12em; text-transform: uppercase;
+        color: #f5f5f7;
       }
       #boot-splash .boot-sub {
-        margin-top: 6px; font-size: 12px; opacity: .75; max-width: 300px; line-height: 1.45;
+        margin-top: 6px; font-size: 11px; color: #d4af37; letter-spacing: .22em; text-transform: uppercase; opacity: .88;
       }
       #boot-splash .boot-spinner {
-        margin-top: 22px; width: 26px; height: 26px; border-radius: 50%;
-        border: 2.5px solid rgba(26,20,7,.18); border-top-color: #1a1407;
+        margin-top: 22px; width: 22px; height: 22px; border-radius: 50%;
+        border: 2px solid rgba(212, 175, 55, 0.2); border-top-color: #d4af37;
         animation: bootSpin .9s linear infinite;
       }
       #boot-fallback {
         display: none; max-width: 360px; margin-top: 26px; text-align: center;
         padding: 18px 20px; border-radius: 16px;
-        background: rgba(255,255,255,.78); backdrop-filter: blur(8px);
-        box-shadow: 0 12px 40px rgba(80,50,0,.18);
+        background: rgba(18,18,22,.85); backdrop-filter: blur(12px);
+        border: 1px solid rgba(212, 175, 55, 0.25);
+        box-shadow: 0 12px 40px rgba(0,0,0,.6);
       }
-      #boot-fallback h2 { margin: 0 0 6px; font-size: 16px; font-weight: 700; }
-      #boot-fallback p { margin: 0 0 14px; font-size: 13px; line-height: 1.45; opacity: .8; }
+      #boot-fallback h2 { margin: 0 0 6px; font-size: 16px; font-weight: 700; color: #f5f5f7; }
+      #boot-fallback p { margin: 0 0 14px; font-size: 13px; line-height: 1.45; opacity: .8; color: #d1d5db; }
       #boot-fallback button {
         appearance: none; border: 0; cursor: pointer;
-        background: #1a1407; color: #fff8e1;
+        background: #d4af37; color: #08080a;
         padding: 10px 18px; border-radius: 999px; font-weight: 600; font-size: 13px;
         letter-spacing: .04em;
       }
-      #boot-fallback button:hover { background: #2a2110; }
+      #boot-fallback button:hover { background: #e5c158; }
+      #boot-splash.is-lite .boot-orb {
+        animation: none;
+        box-shadow: 0 0 24px rgba(212, 175, 55, 0.3);
+      }
+      .boot-lite-badge {
+        display: none;
+        align-items: center;
+        gap: 6px;
+        margin-top: 14px;
+        padding: 4px 11px;
+        border-radius: 999px;
+        background: rgba(212, 175, 55, 0.12);
+        border: 1px solid rgba(212, 175, 55, 0.35);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #f5d77f;
+      }
+      .boot-lite-dot {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: #d4af37;
+        box-shadow: 0 0 6px #d4af37;
+      }
       @keyframes bootFloat {
         0%, 100% { transform: translateY(0) scale(1); }
         50%      { transform: translateY(-8px) scale(1.03); }
@@ -215,8 +239,12 @@
     <!-- Pre-React splash. Removed by main.tsx once React mounts. -->
     <div id="boot-splash" role="status" aria-live="polite" aria-label="Loading OverraPrep AI">
       <div class="boot-orb" aria-hidden="true"></div>
-      <div class="boot-title">OverraPrep AI</div>
-      <div class="boot-sub">Strategic preparation leads to better performance.</div>
+      <div class="boot-title">OverraPrep</div>
+      <div class="boot-sub">Rise Beyond Limits.</div>
+      <div id="boot-lite-badge" class="boot-lite-badge" aria-hidden="true">
+        <span class="boot-lite-dot"></span>
+        <span>Lite Mode · Fast Load</span>
+      </div>
       <div class="boot-spinner" aria-hidden="true"></div>
       <div id="boot-fallback">
         <h2>Hmm, that took a while.</h2>
@@ -225,6 +253,31 @@
       </div>
     </div>
     <script>
+      (function detectConnection() {
+        try {
+          var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+          var isSlow = false;
+          if (conn) {
+            if (conn.saveData) isSlow = true;
+            var t = conn.effectiveType;
+            if (t === 'slow-2g' || t === '2g' || t === '3g') isSlow = true;
+            if (typeof conn.downlink === 'number' && conn.downlink < 1.8) isSlow = true;
+            if (typeof conn.rtt === 'number' && conn.rtt > 400) isSlow = true;
+          }
+          if ((navigator.deviceMemory && navigator.deviceMemory <= 2) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2)) {
+            isSlow = true;
+          }
+          var stored = localStorage.getItem("overra:lite-mode");
+          if (stored === "1" || (stored === null && isSlow)) {
+            document.documentElement.classList.add("lite-mode");
+            var splash = document.getElementById("boot-splash");
+            if (splash) splash.classList.add("is-lite");
+            var badge = document.getElementById("boot-lite-badge");
+            if (badge) badge.style.display = "inline-flex";
+            localStorage.setItem("overra:lite-mode:detected", "1");
+          }
+        } catch (e) {}
+      })();
       (function () {
         // Reveal the fallback CTA if the app hasn't mounted within 25s,
         // or if a chunk fails to load. Prevents blank-screen lock-up.

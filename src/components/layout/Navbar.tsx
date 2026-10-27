@@ -38,12 +38,11 @@ const Navbar = () => {
   }, []);
 
   const navLinks = [
+    { name: "Home", href: "/" },
     { name: "Features", href: "#features" },
     { name: "How It Works", href: "#how-it-works" },
-    { name: "Tutors", href: "/tutors", isRoute: true },
-    { name: "Theory Prep", href: "/theory", isRoute: true },
-    { name: "Study Hub", href: "/study-hub", isRoute: true },
-    { name: "FAQ", href: "#faq" },
+    { name: "Pricing", href: "#pricing" },
+    { name: "Testimonials", href: "#testimonials" },
   ];
 
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -78,12 +77,18 @@ const Navbar = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16 md:h-18">
             {/* Logo */}
-            <Link to="/" className="flex items-center group">
+            <Link to="/" className="flex items-center gap-2.5 group">
               <img 
                 src={logo} 
-                alt="OverraPrep AI FUTA" 
+                alt="OverraPrep AI" 
                 className="h-9 md:h-10 w-auto object-contain transition-transform group-hover:scale-105"
               />
+              <span className="font-bold tracking-tight text-base sm:text-lg flex items-center gap-1.5 text-foreground">
+                OverraPrep
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/20 text-primary uppercase">
+                  AI
+                </span>
+              </span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -194,14 +199,13 @@ const Navbar = () => {
                   </>
                 ) : (
                   <>
-                    <Button variant="ghost" size="sm" onClick={() => navigate("/auth")} className="text-xs">
-                      Sign In
+                    <Button variant="ghost" size="sm" onClick={() => navigate("/auth")} className="text-xs sm:text-sm font-medium hover:text-foreground">
+                      Sign in
                     </Button>
                     <Button 
-                      variant="hero" 
                       size="sm" 
-                      onClick={() => navigate("/start")}
-                      className="shadow-md shadow-primary/20 text-xs font-semibold rounded-full px-4"
+                      onClick={() => navigate("/auth?mode=signup")}
+                      className="bg-gradient-to-r from-[#D4AF37] via-[#DFBE57] to-[#C5A059] hover:from-[#C5A059] hover:to-[#B8860B] text-[#18181B] font-bold text-xs sm:text-sm rounded-full px-4 sm:px-5 shadow-xs transition-all active:scale-95"
                     >
                       Get Started
                       <ChevronRight className="w-3.5 h-3.5 ml-1" />

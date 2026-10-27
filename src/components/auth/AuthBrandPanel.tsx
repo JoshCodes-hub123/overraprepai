@@ -1,195 +1,182 @@
+import React from "react";
 import { motion } from "framer-motion";
-import { Sparkles, ShieldCheck, GraduationCap, Star, Trophy, Users } from "lucide-react";
+import { Sparkles, ShieldCheck, GraduationCap, Star, Trophy, Users, CheckCircle2 } from "lucide-react";
 import logo from "@/assets/logo.png";
-import authBg from "@/assets/auth-bg.jpg";
 
-/**
- * Premium brand showcase panel that sits next to the auth form on large
- * screens. White + gold aesthetic, glassmorphic cards, animated ambassador
- * stack, and rotating student testimonials. Hidden on mobile so the form
- * gets full width.
- */
-
-import bgsFutaAvatar from "@/assets/bgs-futa-ambassador.jpg.asset.json";
-
-const AMBASSADORS: { name: string; seed: string; dept: string; cgpa: string; photo?: string }[] = [
-  { name: "BGS FUTA", seed: "BGS", dept: "Lead Ambassador · FUTA", cgpa: "4.95", photo: bgsFutaAvatar.url },
-];
-
-const avatarFor = (seed: string) =>
-  `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}&backgroundType=gradientLinear&backgroundColor=fff8e1,f5c042`;
+const AMBASSADORS_PHOTO = "/assets/aistudio/image_6c6bd5ed.png";
 
 const TESTIMONIALS = [
   {
-    quote:
-      "OverraPrep turned my CBT panic into confidence. I went from 52% mocks to a 78% real exam in 6 weeks.",
+    quote: "OverraPrep turned my CBT panic into confidence. I went from 52% mocks to a 78% real exam in 6 weeks.",
     name: "Ada O.",
     role: "Computer Science · FUTA",
+    grade: "First Class Track",
   },
   {
-    quote:
-      "The AI explanations are sharper than my tutorials. I finally understand why I get questions wrong.",
+    quote: "The instant AI explanations break down complex engineering math faster than tutorial centers.",
     name: "Tunde A.",
     role: "Mechanical Engineering · FUTA",
-  },
-  {
-    quote:
-      "Daily streaks + leaderboards keep my class group accountable. We all moved up a grade band.",
-    name: "Zainab K.",
-    role: "Biochemistry · FUTA",
+    grade: "4.82 CGPA",
   },
 ];
 
 const STATS = [
-  { icon: Users,    value: "12,400+", label: "Active students" },
-  { icon: Trophy,   value: "78%",     label: "Avg. score lift" },
-  { icon: Star,     value: "4.9/5",   label: "Student rating" },
+  { icon: Users, value: "12,400+", label: "Active Scholars" },
+  { icon: Trophy, value: "78%", label: "Avg. Score Lift" },
+  { icon: Star, value: "4.9/5", label: "Student Rating" },
 ];
 
-const AuthBrandPanel = () => {
+const UNIVERSITIES = ["FUTA", "OAU", "UI", "UNILAG", "FUTESIYIN"];
+
+export const AuthBrandPanel: React.FC = () => {
   return (
     <aside
-      className="hidden lg:flex relative overflow-hidden flex-col justify-between p-10 xl:p-14 text-white"
-      aria-label="Why students choose OverraPrep"
+      className="hidden lg:flex relative overflow-hidden flex-col justify-between p-10 xl:p-14 text-white min-h-screen select-none"
+      aria-label="OverraPrep AI Academic Excellence"
     >
-      {/* Static editorial photo backdrop */}
-      <img
-        src={authBg}
-        alt=""
-        aria-hidden
-        className="absolute inset-0 -z-10 h-full w-full object-cover"
-      />
-      {/* Readability scrim */}
-      <div
-        className="absolute inset-0 -z-10 bg-gradient-to-br from-[hsl(35_55%_12%/0.55)] via-[hsl(30_50%_15%/0.45)] to-[hsl(25_60%_10%/0.65)]"
-        aria-hidden
-      />
-
-      {/* === Top: brand + headline === */}
-      <div>
-        <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-2xl bg-white/80 backdrop-blur flex items-center justify-center shadow-[0_10px_30px_-12px_rgba(80,50,0,0.45)]">
-            <img src={logo} alt="OverraPrep AI" className="h-9 w-9 object-contain" />
-          </div>
-          <div>
-            <p className="text-xs font-bold tracking-[0.3em] uppercase opacity-70">OverraPrep AI</p>
-            <p className="text-sm font-semibold">Study Smart · Not Hard</p>
-          </div>
-        </div>
-
-        <h1 className="mt-10 text-4xl xl:text-5xl font-bold leading-[1.05] tracking-tight drop-shadow-md">
-          Where Nigeria's<br />
-          <span className="bg-gradient-to-r from-[hsl(45_95%_75%)] via-[hsl(40_100%_85%)] to-[hsl(45_95%_75%)] bg-clip-text text-transparent">
-            top students prep
-          </span>
-        </h1>
-        <p className="mt-4 max-w-md text-base leading-relaxed text-white/85">
-          AI-graded mocks, instant explanations, and the largest FUTA past-question bank — built with our student ambassadors.
-        </p>
-
-        {/* Trust pills */}
-        <div className="mt-6 flex flex-wrap gap-2">
-          {[
-            { icon: ShieldCheck, label: "Bank-grade security" },
-            { icon: Sparkles,    label: "AI-powered explanations" },
-            { icon: GraduationCap, label: "Tutor-vetted content" },
-          ].map(({ icon: Icon, label }) => (
-            <span
-              key={label}
-              className="inline-flex items-center gap-1.5 rounded-full bg-white/65 backdrop-blur px-3 py-1.5 text-[11px] font-semibold border border-white/70 shadow-sm"
-            >
-              <Icon className="w-3.5 h-3.5 text-[hsl(30_80%_30%)]" />
-              {label}
-            </span>
-          ))}
-        </div>
+      {/* 1. Authentic Photography Background with Elegant Vignette */}
+      <div className="absolute inset-0 -z-20 overflow-hidden">
+        <img
+          src={AMBASSADORS_PHOTO}
+          alt="OverraPrep student ambassadors"
+          className="h-full w-full object-cover object-center scale-[1.02] transform transition-transform duration-1000 hover:scale-105"
+          loading="eager"
+        />
+        {/* Editorial multi-stop luxury gradient scrim for pristine contrast */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0F0E0D] via-[#1A1713]/85 to-[#0F0E0D]/60" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0F0E0D]/90 via-[#1A1713]/50 to-transparent" />
+        {/* Subtle warm gold ambient light */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#D4AF37]/15 rounded-full blur-[120px] pointer-events-none" />
       </div>
 
-      {/* === Middle: ambassador stack + rotating testimonial === */}
-      <div className="my-10 space-y-6">
-        <div className="rounded-3xl bg-white/65 backdrop-blur-xl border border-white/70 p-6 shadow-[0_30px_60px_-30px_rgba(80,50,0,0.45)]">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] opacity-70">
-              Student Ambassadors
-            </p>
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[hsl(30_80%_28%)]">
-              <Sparkles className="w-3 h-3" /> Verified scholars
-            </span>
-          </div>
-
-          {/* Avatar stack */}
-          <div className="mt-4 flex items-center">
-            <div className="flex -space-x-3">
-              {AMBASSADORS.map((a, i) => (
-                <motion.img
-                  key={a.seed}
-                  src={a.photo || avatarFor(a.seed)}
-                  alt={a.name}
-                  loading="lazy"
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 + i * 0.07, duration: 0.4 }}
-                  className="h-12 w-12 rounded-full border-2 border-white object-cover bg-white shadow-md hover:translate-y-[-3px] transition-transform"
-                  style={{ zIndex: AMBASSADORS.length - i }}
-                />
-              ))}
+      {/* 2. Top Bar: Authentic Logo Lockup & Ambition Badge */}
+      <div className="relative z-10">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-2xl bg-white/95 backdrop-blur-md p-1.5 flex items-center justify-center shadow-[0_8px_25px_rgba(0,0,0,0.3)] border border-[#D4AF37]/30">
+              <img src={logo} alt="OverraPrep AI Logo" className="h-full w-full object-contain" />
             </div>
-            <div className="ml-4 flex flex-col">
-              <span className="text-sm font-semibold">+ 240 ambassadors</span>
-              <span className="text-[11px] opacity-70">across 18 Nigerian universities</span>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-bold tracking-[0.22em] uppercase text-white/95">
+                  OverraPrep
+                </span>
+                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-[#D4AF37] text-[#18181B] tracking-wider uppercase">
+                  AI
+                </span>
+              </div>
+              <p className="text-[11px] font-medium tracking-wider text-[#E5D7B5]">
+                Rise Beyond Limits
+              </p>
             </div>
           </div>
 
-          {/* Rotating testimonial cards */}
-          <div className="mt-5 space-y-3">
-            {TESTIMONIALS.map((t, i) => (
-              <motion.div
-                key={t.name}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 + i * 0.12, duration: 0.5, ease: "easeOut" }}
-                className="rounded-2xl bg-white/80 border border-white/80 p-4 shadow-sm"
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/15 text-[11px] font-medium text-[#F5D77F]">
+            <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+            <span>2026/2027 Syllabus Updated</span>
+          </div>
+        </div>
+
+        {/* Hero Narrative */}
+        <div className="mt-12 xl:mt-16 max-w-lg">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-xs font-semibold text-[#F5D77F] mb-4">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            Official University Ambassador Community
+          </div>
+
+          <h1 className="text-3xl xl:text-5xl font-extrabold tracking-tight text-white leading-[1.12]">
+            Where Nigeria's{" "}
+            <span className="bg-gradient-to-r from-[#F5D77F] via-[#D4AF37] to-[#F3C044] bg-clip-text text-transparent">
+              brightest minds
+            </span>{" "}
+            master every exam.
+          </h1>
+
+          <p className="mt-4 text-base xl:text-lg text-white/80 leading-relaxed font-normal">
+            Past questions curated by top scholars, step-by-step AI guidance, and real CBT simulation designed for first-class ambition.
+          </p>
+
+          {/* Trust Value Props */}
+          <div className="mt-6 flex flex-wrap gap-2.5">
+            {[
+              { icon: ShieldCheck, label: "Verified Past Questions" },
+              { icon: Sparkles, label: "Instant AI Explanations" },
+              { icon: GraduationCap, label: "Targeted Grade Tracking" },
+            ].map(({ icon: Icon, label }) => (
+              <span
+                key={label}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white/90 font-medium"
               >
-                <div className="flex gap-0.5 mb-1.5">
-                  {Array.from({ length: 5 }).map((_, s) => (
-                    <Star key={s} className="w-3 h-3 fill-[hsl(40_95%_50%)] text-[hsl(40_95%_50%)]" />
-                  ))}
-                </div>
-                <p className="text-[13px] leading-relaxed text-[hsl(28_45%_15%)]">
-                  &ldquo;{t.quote}&rdquo;
-                </p>
-                <div className="mt-2 flex items-center gap-2">
-                  <img
-                    src={avatarFor(t.name)}
-                    alt={t.name}
-                    className="h-7 w-7 rounded-full border border-white shadow-sm"
-                  />
-                  <div className="leading-tight">
-                    <p className="text-[12px] font-semibold">{t.name}</p>
-                    <p className="text-[10px] opacity-70">{t.role}</p>
-                  </div>
-                </div>
-              </motion.div>
+                <Icon className="w-3.5 h-3.5 text-[#F5D77F]" />
+                {label}
+              </span>
             ))}
           </div>
         </div>
       </div>
 
-      {/* === Bottom: stats strip === */}
-      <div className="grid grid-cols-3 gap-3">
-        {STATS.map(({ icon: Icon, value, label }, i) => (
-          <motion.div
-            key={label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 + i * 0.08, duration: 0.5 }}
-            className="rounded-2xl bg-white/70 backdrop-blur border border-white/80 p-4 text-center shadow-sm"
-          >
-            <Icon className="w-4 h-4 mx-auto text-[hsl(30_80%_30%)]" />
-            <p className="mt-1.5 text-lg font-bold leading-none">{value}</p>
-            <p className="mt-1 text-[10px] uppercase tracking-wider opacity-70 font-semibold">{label}</p>
-          </motion.div>
-        ))}
+      {/* 3. Middle / Bottom: Editorial Testimonial Card & Live Metrics */}
+      <div className="relative z-10 space-y-6 pt-8">
+        {/* Real Student Showcase Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.4)]"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex gap-1 text-[#F5D77F]">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-3.5 h-3.5 fill-[#F5D77F]" />
+              ))}
+            </div>
+            <span className="text-[11px] font-semibold tracking-wider uppercase text-white/60">
+              Verified Student Result
+            </span>
+          </div>
+
+          <p className="text-sm xl:text-base text-white/95 italic leading-relaxed font-light">
+            &ldquo;{TESTIMONIALS[0].quote}&rdquo;
+          </p>
+
+          <div className="mt-4 flex items-center justify-between pt-3 border-t border-white/10 text-xs">
+            <div>
+              <p className="font-semibold text-white">{TESTIMONIALS[0].name}</p>
+              <p className="text-white/70 text-[11px]">{TESTIMONIALS[0].role}</p>
+            </div>
+            <span className="px-2.5 py-1 rounded-md bg-[#D4AF37]/20 border border-[#D4AF37]/30 text-[11px] font-semibold text-[#F5D77F]">
+              {TESTIMONIALS[0].grade}
+            </span>
+          </div>
+        </motion.div>
+
+        {/* Stats Strip */}
+        <div className="grid grid-cols-3 gap-3">
+          {STATS.map(({ icon: Icon, value, label }) => (
+            <div
+              key={label}
+              className="rounded-2xl bg-black/40 backdrop-blur-md border border-white/10 p-3.5 text-center"
+            >
+              <Icon className="w-4 h-4 mx-auto text-[#F5D77F] mb-1.5" />
+              <p className="text-lg xl:text-xl font-bold text-white tracking-tight">{value}</p>
+              <p className="text-[10px] xl:text-[11px] text-white/65 uppercase tracking-wider font-medium mt-0.5">
+                {label}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* University Logos / Badges strip */}
+        <div className="flex items-center justify-between px-2 pt-2 text-[11px] text-white/60">
+          <span className="font-medium tracking-wide">Supported campuses:</span>
+          <div className="flex items-center gap-3 font-semibold text-white/80">
+            {UNIVERSITIES.map((uni) => (
+              <span key={uni} className="hover:text-[#F5D77F] transition-colors">
+                {uni}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
     </aside>
   );

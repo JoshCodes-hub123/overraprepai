@@ -1,52 +1,81 @@
+import React from "react";
 import { motion } from "framer-motion";
-import { Brain, ShieldCheck, Gauge, Sparkles, GraduationCap } from "lucide-react";
+import { BookCheck, GraduationCap, Sparkles, TrendingUp } from "lucide-react";
 
-const items = [
-  { icon: Gauge, label: "Exam-Readiness Score", detail: "Live mastery tracking" },
-  { icon: Brain, label: "AI Step-by-Step Explanations", detail: "Every question, every line" },
-  { icon: ShieldCheck, label: "Admin-Verified Tutors", detail: "Vetted before they teach" },
-  { icon: Sparkles, label: "Theory Rubric Grading", detail: "Beyond multiple choice" },
-  { icon: GraduationCap, label: "Built for FUTA & beyond", detail: "JAMB, WAEC, NECO ready" },
+interface StatItem {
+  icon: React.ComponentType<{ className?: string }>;
+  metric: string;
+  label: string;
+}
+
+const STAT_ITEMS: StatItem[] = [
+  {
+    icon: BookCheck,
+    metric: "14,000+",
+    label: "Verified Past Questions",
+  },
+  {
+    icon: GraduationCap,
+    metric: "All Major",
+    label: "Nigerian Universities",
+  },
+  {
+    icon: Sparkles,
+    metric: "Syllabus-Aligned",
+    label: "Practice & Explanations",
+  },
+  {
+    icon: TrendingUp,
+    metric: "Better Results",
+    label: "Track, Improve, Succeed",
+  },
 ];
 
-const TrustStrip = () => {
+export const TrustStrip: React.FC = () => {
   return (
     <section
-      className="relative border-y border-primary/15 bg-gradient-to-b from-background via-background to-muted/20"
-      aria-label="Why students trust OverraPrep"
+      className="relative -mt-6 sm:-mt-8 lg:-mt-10 pb-10 sm:pb-14 z-20"
+      aria-label="Verified Academic Metrics"
     >
-      {/* Faint gold divider above */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-3.5 md:gap-6">
-          {items.map((item, i) => (
-            <motion.div
-              key={item.label}
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ delay: i * 0.08, duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-              className="group flex items-center gap-3 min-w-0"
-            >
-              <div className="shrink-0 w-10 h-10 md:w-11 md:h-11 rounded-xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/25 flex items-center justify-center group-hover:border-primary/50 transition-colors">
-                <item.icon className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[12.5px] md:text-[13px] font-semibold text-foreground leading-tight">
-                  {item.label}
-                </p>
-                <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
-                  {item.detail}
-                </p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+      <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="rounded-2xl sm:rounded-3xl bg-[#FCFBF8] border border-[#EAE4D9] shadow-[0_12px_35px_-10px_rgba(28,25,23,0.06),0_1px_3px_rgba(28,25,23,0.03)] p-4 sm:p-6 lg:p-7"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[#EAE4D9]/80">
+            {STAT_ITEMS.map((item, index) => {
+              const Icon = item.icon;
+              return (
+                <div
+                  key={item.metric}
+                  className={`flex items-center gap-3.5 sm:gap-4 py-3 sm:py-2 ${
+                    index === 0
+                      ? "sm:pr-4 lg:pr-6"
+                      : index === STAT_ITEMS.length - 1
+                      ? "sm:pl-4 lg:pl-6"
+                      : "sm:px-4 lg:px-6"
+                  }`}
+                >
+                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[#FAF2DF] border border-[#E5D7B5] flex items-center justify-center shrink-0">
+                    <Icon className="w-5 h-5 text-[#8C6B10]" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-base sm:text-lg lg:text-xl font-bold tracking-tight text-[#18181B] leading-none">
+                      {item.metric}
+                    </p>
+                    <p className="text-xs sm:text-[13px] text-[#71717A] font-medium leading-snug mt-1">
+                      {item.label}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
       </div>
-
-      {/* Faint gold divider below */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
     </section>
   );
 };
