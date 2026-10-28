@@ -68,7 +68,6 @@ export default defineConfig(() => ({
       "react-helmet-async",
       "jspdf",
       "jspdf-autotable",
-      "papaparse",
     ],
   },
 }));

@@ -1,31 +1,22 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
   GraduationCap,
   Sparkles,
   CheckCircle2,
-  Headphones,
-  Brain,
-  Layers,
-  Users,
-  ClipboardCheck,
-  Award,
-  Play,
-  Pause,
   FileText,
   Landmark,
   Target,
   Trophy,
-  BookOpen,
-  ChevronRight,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { HeroContainer } from "./HeroContainer";
 
-// Image Assets
-const SLIDE1_STUDENTS_IMAGE = "/assets/aistudio/IMG-20260818-WA0024_1__92e6cff2.jpg";
-const SLIDE2_STUDENT_IMAGE = "/assets/aistudio/slide2_student_female_clean.png";
+// High-Resolution Pristine Assets
+const SLIDE1_IMAGE = "/assets/aistudio/slide1_students_master.png";
+const SLIDE2_IMAGE = "/assets/aistudio/image_9b227ed4.png";
 
 export interface HeroSectionProps {
   onScrollToDemo?: (e?: React.MouseEvent) => void;
@@ -33,7 +24,7 @@ export interface HeroSectionProps {
 }
 
 const SLIDE_DURATIONS = [6000, 5000]; // 6s for Slide 1, 5s for Slide 2
-const TRANSITION_DURATION = 0.9;
+const TRANSITION_DURATION = 0.85;
 const TRANSITION_EASE = [0.22, 1, 0.36, 1];
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
@@ -112,6 +103,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     startTimeRef.current = Date.now();
   }, []);
 
+  const togglePlay = useCallback(() => {
+    setIsPlaying((prev) => !prev);
+  }, []);
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -136,7 +131,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     const currentDuration = SLIDE_DURATIONS[currentSlide];
     startTimeRef.current = Date.now();
 
-    // Progress bar updater (runs every 50ms)
+    // Progress bar updater
     progressIntervalRef.current = setInterval(() => {
       const elapsed = Date.now() - startTimeRef.current;
       const pct = Math.min((elapsed / currentDuration) * 100, 100);
@@ -171,7 +166,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const slideVariants = {
     initial: {
       opacity: 0,
-      scale: shouldReduceMotion ? 1 : 1.025,
+      scale: shouldReduceMotion ? 1 : 1.015,
       y: shouldReduceMotion ? 0 : 8,
     },
     animate: {
@@ -185,65 +180,43 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     },
     exit: {
       opacity: 0,
-      scale: shouldReduceMotion ? 1 : 0.99,
+      scale: shouldReduceMotion ? 1 : 0.985,
       y: shouldReduceMotion ? 0 : -8,
       transition: {
-        duration: TRANSITION_DURATION * 0.75,
+        duration: TRANSITION_DURATION * 0.7,
         ease: TRANSITION_EASE,
       },
     },
   };
 
   const textFadeUp = {
-    initial: { opacity: 0, y: shouldReduceMotion ? 0 : 16 },
+    initial: { opacity: 0, y: shouldReduceMotion ? 0 : 14 },
     animate: (custom: number) => ({
       opacity: 1,
       y: 0,
       transition: {
-        delay: shouldReduceMotion ? 0 : custom * 0.08,
-        duration: 0.5,
+        delay: shouldReduceMotion ? 0 : custom * 0.05,
+        duration: 0.45,
         ease: TRANSITION_EASE,
       },
     }),
   };
 
   return (
-    <section
-      className="relative min-h-[680px] sm:min-h-[760px] lg:min-h-[820px] flex flex-col justify-between pt-6 sm:pt-10 lg:pt-12 pb-8 sm:pb-12 px-4 sm:px-6 lg:px-8 overflow-hidden bg-[#FAF8F5] text-neutral-900 border-b border-[#D4AF37]/20 select-none"
-      aria-label="OverraPrep AI Animated Hero"
+    <div
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      className="w-full"
     >
-      {/* ============================================================== */}
-      {/* 1. WARM GOLD & IVORY AMBIENCE LAYER                            */}
-      {/* ============================================================== */}
-      <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden z-0">
-        <div className="absolute inset-0 bg-[#FAF8F5]" />
-
-        {/* Ambient Warm Golden Halos */}
-        <motion.div
-          animate={{
-            opacity: [0.15, 0.25, 0.15],
-            scale: [1, 1.05, 1],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          className="absolute top-[8%] right-[8%] w-[420px] sm:w-[680px] h-[420px] sm:h-[680px] bg-gradient-to-br from-[#D4AF37]/25 via-[#F5D77F]/15 to-transparent rounded-full blur-[110px]"
-          aria-hidden="true"
-        />
-        <div
-          className="absolute -bottom-24 -left-20 w-[360px] sm:w-[500px] h-[360px] sm:h-[500px] bg-[#C5A059]/12 rounded-full blur-[130px]"
-          aria-hidden="true"
-        />
-      </div>
-
-      {/* ============================================================== */}
-      {/* 2. DUAL ANIMATED SLIDES CONTAINER                              */}
-      {/* ============================================================== */}
-      <div className="relative z-10 mx-auto w-full max-w-7xl flex-1 flex flex-col justify-center">
+      <HeroContainer
+        activeSlide={currentSlide}
+        totalSlides={2}
+        slideProgress={slideProgress}
+        isPlaying={isPlaying}
+        onTogglePlay={togglePlay}
+        onSelectSlide={goToSlide}
+        onScrollToDemo={onScrollToDemo}
+      >
         <AnimatePresence mode="wait">
           {currentSlide === 0 ? (
             /* ============================================================ */
@@ -266,9 +239,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     variants={textFadeUp}
                     initial="initial"
                     animate="animate"
-                    className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-[#D4AF37]/45 text-[#996515] text-xs font-extrabold tracking-wider uppercase mb-4 shadow-[0_2px_12px_rgba(212,175,55,0.16)]"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/95 backdrop-blur-md border border-[#D4AF37]/50 text-[#996515] text-[11px] sm:text-xs font-black tracking-wider uppercase mb-3 shadow-[0_2px_8px_rgba(212,175,55,0.15)]"
                   >
-                    <GraduationCap className="w-4 h-4 text-[#D4AF37]" />
+                    <GraduationCap className="w-3.5 h-3.5 text-[#D4AF37]" />
                     <span>NEXT-GEN CBT PREP FOR NIGERIAN UNIVERSITIES</span>
                   </motion.div>
 
@@ -278,7 +251,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     variants={textFadeUp}
                     initial="initial"
                     animate="animate"
-                    className="text-3xl sm:text-5xl lg:text-[3.55rem] font-black tracking-tight text-[#1A1813] leading-[1.12]"
+                    className="text-2xl sm:text-4xl lg:text-[3.35rem] font-black tracking-tight text-[#1A1813] leading-[1.14]"
                   >
                     Master every university exam with{" "}
                     <span className="bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#996515] bg-clip-text text-transparent">
@@ -292,7 +265,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     variants={textFadeUp}
                     initial="initial"
                     animate="animate"
-                    className="mt-4 sm:mt-5 text-sm sm:text-lg text-neutral-600 max-w-xl leading-relaxed font-normal"
+                    className="mt-3 sm:mt-4 text-xs sm:text-base text-[#4A443A] max-w-xl leading-relaxed font-normal"
                   >
                     Syllabus-aligned CBT simulations, instant AI step-by-step derivations,
                     and targeted weak-area drills designed for students striving for a
@@ -305,12 +278,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     variants={textFadeUp}
                     initial="initial"
                     animate="animate"
-                    className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 w-full sm:w-auto"
+                    className="mt-5 sm:mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-3.5 w-full sm:w-auto"
                   >
                     <button
                       type="button"
                       onClick={handleStartPractice}
-                      className="inline-flex items-center justify-center gap-2.5 h-[52px] px-8 rounded-full bg-gradient-to-r from-[#F5D77F] via-[#D4AF37] to-[#C5A059] hover:brightness-105 text-[#1A1813] font-black text-sm sm:text-base tracking-wide shadow-[0_10px_25px_-5px_rgba(212,175,55,0.4)] active:scale-[0.98] transition-all cursor-pointer group"
+                      className="inline-flex items-center justify-center gap-2 h-[48px] sm:h-[52px] px-6 sm:px-8 rounded-full bg-gradient-to-r from-[#F5D77F] via-[#D4AF37] to-[#C5A059] hover:brightness-105 text-[#1A1813] font-black text-sm sm:text-base tracking-wide shadow-[0_8px_20px_-4px_rgba(212,175,55,0.35)] active:scale-[0.98] transition-all cursor-pointer group"
                     >
                       <span>Start Free Practice</span>
                       <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -319,9 +292,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     <a
                       href="#demo"
                       onClick={handleDemoClick}
-                      className="inline-flex items-center justify-center gap-2.5 h-[52px] px-7 rounded-full border border-[#D4AF37]/50 bg-white/95 hover:bg-white text-sm font-bold text-[#1A1813] shadow-sm hover:border-[#D4AF37] active:scale-[0.98] transition-all cursor-pointer"
+                      className="inline-flex items-center justify-center gap-2 h-[48px] sm:h-[52px] px-5 sm:px-7 rounded-full border border-[#D4AF37]/50 bg-white hover:bg-neutral-50 text-xs sm:text-sm font-bold text-[#1A1813] shadow-xs hover:border-[#D4AF37] active:scale-[0.98] transition-all cursor-pointer"
                     >
-                      <span className="w-6 h-6 rounded-full bg-[#FAF0D6] flex items-center justify-center text-[#996515] text-xs font-black">
+                      <span className="w-5 h-5 rounded-full bg-[#FAF0D6] flex items-center justify-center text-[#996515] text-[10px] font-black">
                         ▶
                       </span>
                       <span>Try Live CBT Demo</span>
@@ -334,185 +307,88 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     variants={textFadeUp}
                     initial="initial"
                     animate="animate"
-                    className="mt-5 flex items-center gap-2 text-xs sm:text-sm font-semibold text-neutral-600"
+                    className="mt-3.5 flex items-center gap-1.5 text-xs font-semibold text-[#5C5346]"
                   >
                     <div className="w-4 h-4 rounded-full bg-emerald-100 border border-emerald-500/30 flex items-center justify-center shrink-0">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                     </div>
                     <span>14,000+ Verified Past Questions</span>
                   </motion.div>
                 </div>
 
-                {/* Right Column: Visual Composition with Students & Floating Badges */}
+                {/* Right Column: Visual Composition with Integrated Badges */}
                 <div className="lg:col-span-6 relative mt-4 lg:mt-0 flex justify-center">
-                  <div className="relative w-full max-w-[500px] lg:max-w-[540px]">
-                    {/* Glowing Golden Ambient Rings */}
+                  <div className="relative w-full max-w-[480px] lg:max-w-[560px]">
+                    {/* Glowing Golden Ring Backing */}
                     <div
-                      className="absolute -inset-4 sm:-inset-6 rounded-full border border-[#D4AF37]/35 blur-xs pointer-events-none animate-pulse"
-                      aria-hidden="true"
-                    />
-                    <div
-                      className="absolute inset-0 rounded-full border-2 border-[#D4AF37]/20 pointer-events-none"
+                      className="absolute -inset-2 sm:-inset-4 rounded-3xl sm:rounded-[2.5rem] bg-gradient-to-tr from-[#D4AF37]/25 via-[#F5D77F]/15 to-transparent blur-md pointer-events-none"
                       aria-hidden="true"
                     />
 
-                    {/* Main Students Picture Card */}
-                    <div className="relative rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(212,175,55,0.2)] border-2 border-white/80 bg-white">
+                    {/* High-Resolution Students Master Card */}
+                    <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_16px_40px_rgba(212,175,55,0.22)] border border-[#D4AF37]/40 bg-white">
                       <img
-                        src={SLIDE1_STUDENTS_IMAGE}
-                        alt="Nigerian university students preparing for exams with OverraPrep AI"
-                        className="w-full h-auto object-cover max-h-[380px] sm:max-h-[440px] select-none"
+                        src={SLIDE1_IMAGE}
+                        alt="Nigerian university students preparing with OverraPrep AI"
+                        className="w-full h-auto object-cover select-none"
                         loading="eager"
+                        width={1402}
+                        height={1122}
                       />
-
-                      {/* Handwritten Accent Badge: Study Smarter Not Harder */}
-                      <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 px-3 py-1.5 rounded-xl bg-black/75 backdrop-blur-md border border-[#D4AF37]/50 text-white text-[11px] sm:text-xs font-bold shadow-lg">
-                        <span className="text-[#F5D77F]">Study Smarter</span>
-                        <span className="block text-[10px] text-neutral-300">Not Harder</span>
-                      </div>
                     </div>
-
-                    {/* Floating Feature Badges (Around the Students) */}
-                    {/* 1. Audio Learning (Top Left) */}
-                    <motion.div
-                      animate={shouldReduceMotion ? {} : { y: [0, -6, 0] }}
-                      transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-                      className="absolute -top-3 -left-2 sm:-top-5 sm:-left-4 p-2 sm:p-2.5 rounded-2xl bg-white/95 backdrop-blur-md border border-[#D4AF37]/40 shadow-lg flex flex-col items-center gap-1 z-20 text-center min-w-[70px] sm:min-w-[85px]"
-                    >
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#FAF0D6] flex items-center justify-center text-[#996515]">
-                        <Headphones className="w-4 h-4" />
-                      </div>
-                      <span className="text-[10px] sm:text-[11px] font-extrabold text-neutral-800 leading-tight">
-                        Audio<br />Learning
-                      </span>
-                    </motion.div>
-
-                    {/* 2. Embedded AI (Top Center) */}
-                    <motion.div
-                      animate={shouldReduceMotion ? {} : { y: [0, 6, 0] }}
-                      transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                      className="absolute -top-6 left-1/2 -translate-x-1/2 p-2 sm:p-2.5 rounded-2xl bg-white/95 backdrop-blur-md border border-[#D4AF37]/40 shadow-lg flex flex-col items-center gap-1 z-20 text-center min-w-[75px] sm:min-w-[90px]"
-                    >
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#FAF0D6] flex items-center justify-center text-[#996515]">
-                        <Brain className="w-4 h-4" />
-                      </div>
-                      <span className="text-[10px] sm:text-[11px] font-extrabold text-neutral-800 leading-tight">
-                        Embedded<br />AI
-                      </span>
-                    </motion.div>
-
-                    {/* 3. Flashcards (Top Right) */}
-                    <motion.div
-                      animate={shouldReduceMotion ? {} : { y: [0, -5, 0] }}
-                      transition={{ duration: 4.8, repeat: Infinity, ease: "easeInOut" }}
-                      className="absolute -top-3 -right-2 sm:-top-5 sm:-right-4 p-2 sm:p-2.5 rounded-2xl bg-white/95 backdrop-blur-md border border-[#D4AF37]/40 shadow-lg flex flex-col items-center gap-1 z-20 text-center min-w-[70px] sm:min-w-[85px]"
-                    >
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#FAF0D6] flex items-center justify-center text-[#996515]">
-                        <Layers className="w-4 h-4" />
-                      </div>
-                      <span className="text-[10px] sm:text-[11px] font-extrabold text-neutral-800 leading-tight">
-                        Flashcards
-                      </span>
-                    </motion.div>
-
-                    {/* 4. Community (Mid Left) */}
-                    <motion.div
-                      animate={shouldReduceMotion ? {} : { y: [0, 5, 0] }}
-                      transition={{ duration: 5.2, repeat: Infinity, ease: "easeInOut" }}
-                      className="absolute top-1/2 -translate-y-1/2 -left-3 sm:-left-6 p-2 sm:p-2.5 rounded-2xl bg-white/95 backdrop-blur-md border border-[#D4AF37]/40 shadow-lg flex flex-col items-center gap-1 z-20 text-center min-w-[70px] sm:min-w-[85px]"
-                    >
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#FAF0D6] flex items-center justify-center text-[#996515]">
-                        <Users className="w-4 h-4" />
-                      </div>
-                      <span className="text-[10px] sm:text-[11px] font-extrabold text-neutral-800 leading-tight">
-                        Community
-                      </span>
-                    </motion.div>
-
-                    {/* 5. Test Quizzes (Mid Right) */}
-                    <motion.div
-                      animate={shouldReduceMotion ? {} : { y: [0, -6, 0] }}
-                      transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
-                      className="absolute top-1/2 -translate-y-1/2 -right-3 sm:-right-6 p-2 sm:p-2.5 rounded-2xl bg-white/95 backdrop-blur-md border border-[#D4AF37]/40 shadow-lg flex flex-col items-center gap-1 z-20 text-center min-w-[70px] sm:min-w-[85px]"
-                    >
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#FAF0D6] flex items-center justify-center text-[#996515]">
-                        <ClipboardCheck className="w-4 h-4" />
-                      </div>
-                      <span className="text-[10px] sm:text-[11px] font-extrabold text-neutral-800 leading-tight">
-                        Test Quizzes
-                      </span>
-                    </motion.div>
-
-                    {/* 6. Scholarship Opportunities (Bottom Right) */}
-                    <motion.div
-                      animate={shouldReduceMotion ? {} : { y: [0, 5, 0] }}
-                      transition={{ duration: 4.6, repeat: Infinity, ease: "easeInOut" }}
-                      className="absolute -bottom-4 -right-2 sm:-bottom-5 sm:-right-4 p-2 sm:p-2.5 rounded-2xl bg-white/95 backdrop-blur-md border border-[#D4AF37]/40 shadow-lg flex flex-col items-center gap-1 z-20 text-center min-w-[85px] sm:min-w-[100px]"
-                    >
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#FAF0D6] flex items-center justify-center text-[#996515]">
-                        <GraduationCap className="w-4 h-4" />
-                      </div>
-                      <span className="text-[10px] sm:text-[11px] font-extrabold text-neutral-800 leading-tight">
-                        Scholarship<br />Opportunities
-                      </span>
-                    </motion.div>
                   </div>
                 </div>
               </div>
 
-              {/* Bottom 4-Column Statistics Strip (Directly From Reference 1) */}
+              {/* Bottom 4-Column Statistics Strip */}
               <motion.div
                 custom={6}
                 variants={textFadeUp}
                 initial="initial"
                 animate="animate"
-                className="mt-10 sm:mt-12 rounded-2xl sm:rounded-3xl bg-white/95 backdrop-blur-md border border-[#D4AF37]/35 shadow-xl p-4 sm:p-6"
+                className="mt-8 rounded-2xl sm:rounded-3xl bg-white/95 backdrop-blur-md border border-[#D4AF37]/35 shadow-lg p-3 sm:p-5"
               >
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 text-center">
-                  {/* Stat 1 */}
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-xl bg-[#FAF0D6] flex items-center justify-center text-[#996515] mb-2">
-                      <FileText className="w-4 h-4" />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 text-center">
+                  <div className="flex flex-col items-center p-1.5">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#FAF0D6] flex items-center justify-center text-[#996515] mb-1.5">
+                      <FileText className="w-3.5 h-3.5" />
                     </div>
-                    <span className="text-base sm:text-lg font-black text-[#1A1813]">14,000+</span>
-                    <span className="text-[11px] sm:text-xs font-semibold text-neutral-600">
+                    <span className="text-sm sm:text-base font-black text-[#1A1813]">14,000+</span>
+                    <span className="text-[10px] sm:text-xs font-semibold text-[#5C5346]">
                       Verified Past Questions
                     </span>
                   </div>
 
-                  {/* Stat 2 */}
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-xl bg-[#FAF0D6] flex items-center justify-center text-[#996515] mb-2">
-                      <Landmark className="w-4 h-4" />
+                  <div className="flex flex-col items-center p-1.5">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#FAF0D6] flex items-center justify-center text-[#996515] mb-1.5">
+                      <Landmark className="w-3.5 h-3.5" />
                     </div>
-                    <span className="text-base sm:text-lg font-black text-[#1A1813]">All Major</span>
-                    <span className="text-[11px] sm:text-xs font-semibold text-neutral-600">
+                    <span className="text-sm sm:text-base font-black text-[#1A1813]">All Major</span>
+                    <span className="text-[10px] sm:text-xs font-semibold text-[#5C5346]">
                       Nigerian Universities
                     </span>
                   </div>
 
-                  {/* Stat 3 */}
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-xl bg-[#FAF0D6] flex items-center justify-center text-[#996515] mb-2">
-                      <Target className="w-4 h-4" />
+                  <div className="flex flex-col items-center p-1.5">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#FAF0D6] flex items-center justify-center text-[#996515] mb-1.5">
+                      <Target className="w-3.5 h-3.5" />
                     </div>
-                    <span className="text-base sm:text-lg font-black text-[#1A1813]">
+                    <span className="text-sm sm:text-base font-black text-[#1A1813]">
                       Syllabus-Aligned
                     </span>
-                    <span className="text-[11px] sm:text-xs font-semibold text-neutral-600">
+                    <span className="text-[10px] sm:text-xs font-semibold text-[#5C5346]">
                       Practice & Explanations
                     </span>
                   </div>
 
-                  {/* Stat 4 */}
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-xl bg-[#FAF0D6] flex items-center justify-center text-[#996515] mb-2">
-                      <Trophy className="w-4 h-4" />
+                  <div className="flex flex-col items-center p-1.5">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-[#FAF0D6] flex items-center justify-center text-[#996515] mb-1.5">
+                      <Trophy className="w-3.5 h-3.5" />
                     </div>
-                    <span className="text-base sm:text-lg font-black text-[#1A1813]">
+                    <span className="text-sm sm:text-base font-black text-[#1A1813]">
                       Better Results
                     </span>
-                    <span className="text-[11px] sm:text-xs font-semibold text-neutral-600">
+                    <span className="text-[10px] sm:text-xs font-semibold text-[#5C5346]">
                       Track, Improve, Succeed
                     </span>
                   </div>
@@ -540,19 +416,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     variants={textFadeUp}
                     initial="initial"
                     animate="animate"
-                    className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-[#D4AF37]/45 text-[#996515] text-xs font-extrabold tracking-wider uppercase mb-4 shadow-[0_2px_12px_rgba(212,175,55,0.16)]"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/95 backdrop-blur-md border border-[#D4AF37]/50 text-[#996515] text-[11px] sm:text-xs font-black tracking-wider uppercase mb-3 shadow-[0_2px_8px_rgba(212,175,55,0.15)]"
                   >
-                    <Sparkles className="w-4 h-4 text-[#D4AF37]" />
+                    <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
                     <span>STUDENT EMPOWERMENT & SUCCESS</span>
                   </motion.div>
 
-                  {/* Main Headline (Directly From Reference 2) */}
+                  {/* Main Headline */}
                   <motion.h1
                     custom={2}
                     variants={textFadeUp}
                     initial="initial"
                     animate="animate"
-                    className="text-4xl sm:text-6xl lg:text-[4rem] font-black tracking-tight text-[#1A1813] leading-[1.08]"
+                    className="text-3xl sm:text-5xl lg:text-[3.8rem] font-black tracking-tight text-[#1A1813] leading-[1.1]"
                   >
                     Your goals.<br />
                     <span className="bg-gradient-to-r from-[#B8860B] via-[#D4AF37] to-[#996515] bg-clip-text text-transparent">
@@ -560,29 +436,29 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     </span>
                   </motion.h1>
 
-                  {/* Supporting Copy (Directly From Reference 2) */}
+                  {/* Supporting Copy */}
                   <motion.p
                     custom={3}
                     variants={textFadeUp}
                     initial="initial"
                     animate="animate"
-                    className="mt-4 sm:mt-6 text-base sm:text-xl text-neutral-600 max-w-lg leading-relaxed font-normal"
+                    className="mt-3 sm:mt-4 text-xs sm:text-lg text-[#4A443A] max-w-lg leading-relaxed font-normal"
                   >
                     Join thousands of Nigerian students already achieving more with OverraPrep AI.
                   </motion.p>
 
-                  {/* CTA Buttons (Directly From Reference 2) */}
+                  {/* CTA Buttons */}
                   <motion.div
                     custom={4}
                     variants={textFadeUp}
                     initial="initial"
                     animate="animate"
-                    className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 w-full sm:w-auto"
+                    className="mt-5 sm:mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-3.5 w-full sm:w-auto"
                   >
                     <button
                       type="button"
                       onClick={handleStartPractice}
-                      className="inline-flex items-center justify-center gap-2.5 h-[52px] px-8 rounded-full bg-gradient-to-r from-[#F5D77F] via-[#D4AF37] to-[#C5A059] hover:brightness-105 text-[#1A1813] font-black text-sm sm:text-base tracking-wide shadow-[0_10px_25px_-5px_rgba(212,175,55,0.4)] active:scale-[0.98] transition-all cursor-pointer group"
+                      className="inline-flex items-center justify-center gap-2 h-[48px] sm:h-[52px] px-6 sm:px-8 rounded-full bg-gradient-to-r from-[#F5D77F] via-[#D4AF37] to-[#C5A059] hover:brightness-105 text-[#1A1813] font-black text-sm sm:text-base tracking-wide shadow-[0_8px_20px_-4px_rgba(212,175,55,0.35)] active:scale-[0.98] transition-all cursor-pointer group"
                     >
                       <span>Get Started</span>
                       <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -591,9 +467,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     <a
                       href="#innovations"
                       onClick={handleLearnMoreClick}
-                      className="inline-flex items-center justify-center gap-2.5 h-[52px] px-7 rounded-full border border-[#D4AF37]/50 bg-white/95 hover:bg-white text-sm font-bold text-[#1A1813] shadow-sm hover:border-[#D4AF37] active:scale-[0.98] transition-all cursor-pointer"
+                      className="inline-flex items-center justify-center gap-2 h-[48px] sm:h-[52px] px-5 sm:px-7 rounded-full border border-[#D4AF37]/50 bg-white hover:bg-neutral-50 text-xs sm:text-sm font-bold text-[#1A1813] shadow-xs hover:border-[#D4AF37] active:scale-[0.98] transition-all cursor-pointer"
                     >
-                      <span className="w-6 h-6 rounded-full bg-[#FAF0D6] flex items-center justify-center text-[#996515] text-xs font-black">
+                      <span className="w-5 h-5 rounded-full bg-[#FAF0D6] flex items-center justify-center text-[#996515] text-[10px] font-black">
                         ▶
                       </span>
                       <span>Learn More</span>
@@ -606,16 +482,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     variants={textFadeUp}
                     initial="initial"
                     animate="animate"
-                    className="mt-6 flex items-center gap-3 text-xs sm:text-sm font-semibold text-neutral-600"
+                    className="mt-4 flex items-center gap-2.5 text-xs font-semibold text-[#5C5346]"
                   >
-                    <div className="flex -space-x-2">
-                      <div className="w-8 h-8 rounded-full bg-amber-500 text-white font-bold text-xs flex items-center justify-center border-2 border-white">
+                    <div className="flex -space-x-1.5">
+                      <div className="w-6 h-6 rounded-full bg-amber-500 text-white font-bold text-[10px] flex items-center justify-center border-2 border-white shadow-xs">
                         TA
                       </div>
-                      <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center border-2 border-white">
+                      <div className="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold text-[10px] flex items-center justify-center border-2 border-white shadow-xs">
                         CO
                       </div>
-                      <div className="w-8 h-8 rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center border-2 border-white">
+                      <div className="w-6 h-6 rounded-full bg-emerald-600 text-white font-bold text-[10px] flex items-center justify-center border-2 border-white shadow-xs">
                         BK
                       </div>
                     </div>
@@ -623,186 +499,51 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   </motion.div>
                 </div>
 
-                {/* Right Column: Welcoming Female Student Visual Composition */}
+                {/* Right Column: Clean Golden Aura Card for Students Welcome */}
                 <div className="lg:col-span-6 relative mt-4 lg:mt-0 flex justify-center">
-                  <div className="relative w-full max-w-[420px] sm:max-w-[480px]">
-                    {/* Golden Circular Aura (From Reference 2) */}
-                    <motion.div
-                      animate={shouldReduceMotion ? {} : { scale: [1, 1.04, 1] }}
-                      transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                      className="absolute inset-0 m-auto w-[300px] sm:w-[380px] h-[300px] sm:h-[380px] rounded-full border-4 border-[#F5D77F]/60 bg-gradient-to-tr from-[#D4AF37]/20 via-[#FAF0D6]/30 to-transparent pointer-events-none"
+                  <div className="relative w-full max-w-[360px] sm:max-w-[440px]">
+                    {/* Glowing Golden Circle Ambient Background */}
+                    <div
+                      className="absolute inset-0 m-auto w-[260px] sm:w-[340px] h-[260px] sm:h-[340px] rounded-full border-4 border-[#F5D77F]/60 bg-gradient-to-tr from-[#D4AF37]/25 via-[#FAF0D6]/40 to-transparent pointer-events-none"
                       aria-hidden="true"
                     />
 
-                    {/* Clean Female Student Visual Card */}
-                    <div className="relative rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(212,175,55,0.22)] border-2 border-white bg-white/90">
+                    {/* Crisp High-Res Student Visual Card */}
+                    <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-[0_16px_40px_rgba(212,175,55,0.22)] border border-[#D4AF37]/45 bg-white">
                       <img
-                        src={SLIDE2_STUDENT_IMAGE}
-                        alt="Happy student holding books ready to achieve with OverraPrep AI"
-                        className="w-full h-auto object-cover max-h-[380px] sm:max-h-[440px] select-none mx-auto"
+                        src={SLIDE2_IMAGE}
+                        alt="OverraPrep AI students studying with tablet and AI learning engine"
+                        className="w-full h-auto object-cover select-none mx-auto"
                         loading="eager"
+                        width={958}
+                        height={1642}
                       />
                     </div>
 
-                    {/* Floating Encouragement Badge */}
-                    <motion.div
-                      animate={shouldReduceMotion ? {} : { y: [0, -6, 0] }}
-                      transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-                      className="absolute -bottom-4 left-4 sm:left-6 px-4 py-2.5 rounded-2xl bg-white/95 backdrop-blur-md border border-[#D4AF37]/45 shadow-lg flex items-center gap-2.5 z-20"
-                    >
-                      <div className="w-7 h-7 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
-                        <CheckCircle2 className="w-4 h-4" />
+                    {/* Floating Metric Card (Balanced Position) */}
+                    <div className="absolute -bottom-3.5 left-4 px-3.5 py-2 rounded-xl bg-white/95 backdrop-blur-md border border-[#D4AF37]/45 shadow-md flex items-center gap-2.5 z-20">
+                      <div className="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
                       </div>
                       <div className="text-left">
-                        <span className="block text-xs font-black text-[#1A1813]">
+                        <span className="block text-[11px] font-black text-[#1A1813]">
                           98.4% Pass Rate
                         </span>
-                        <span className="block text-[10px] text-neutral-500">
-                          Students scoring 70%+ in CBTs
+                        <span className="block text-[9px] font-medium text-[#7A6E5D]">
+                          Scoring 70%+ in Exam Hall
                         </span>
                       </div>
-                    </motion.div>
+                    </div>
                   </div>
                 </div>
               </div>
-
-              {/* Bottom Highlights Card (For Slide 2) */}
-              <motion.div
-                custom={6}
-                variants={textFadeUp}
-                initial="initial"
-                animate="animate"
-                className="mt-10 sm:mt-12 rounded-2xl sm:rounded-3xl bg-white/95 backdrop-blur-md border border-[#D4AF37]/35 shadow-xl p-4 sm:p-6"
-              >
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 text-center">
-                  <div className="flex items-center gap-3 text-left p-2">
-                    <div className="w-9 h-9 rounded-xl bg-[#FAF0D6] flex items-center justify-center text-[#996515] shrink-0">
-                      <Brain className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <span className="text-xs sm:text-sm font-bold text-[#1A1813] block">
-                        Adaptive AI Explanations
-                      </span>
-                      <span className="text-[11px] text-neutral-500 block">
-                        Every formula, calculation & derivation broken down
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 text-left p-2">
-                    <div className="w-9 h-9 rounded-xl bg-[#FAF0D6] flex items-center justify-center text-[#996515] shrink-0">
-                      <Target className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <span className="text-xs sm:text-sm font-bold text-[#1A1813] block">
-                        Targeted Weak-Area Drills
-                      </span>
-                      <span className="text-[11px] text-neutral-500 block">
-                        Pinpoint low-scoring topics before your actual exams
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 text-left p-2">
-                    <div className="w-9 h-9 rounded-xl bg-[#FAF0D6] flex items-center justify-center text-[#996515] shrink-0">
-                      <Award className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <span className="text-xs sm:text-sm font-bold text-[#1A1813] block">
-                        First-Class CGPA Blueprint
-                      </span>
-                      <span className="text-[11px] text-neutral-500 block">
-                        Trusted by federal & state university high-achievers
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-
-      {/* ============================================================== */}
-      {/* 3. DUAL CAROUSEL CONTROLS & TIMED INDICATORS                   */}
-      {/* ============================================================== */}
-      <div className="relative z-20 mt-8 mx-auto w-full max-w-7xl flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[#D4AF37]/25">
-        {/* Slide Indicators with Animated Progress Bars */}
-        <div className="flex items-center gap-2 sm:gap-3" role="tablist" aria-label="Hero Carousel Slides">
-          {/* Slide 1 Tab Button */}
-          <button
-            type="button"
-            role="tab"
-            aria-selected={currentSlide === 0}
-            onClick={() => goToSlide(0)}
-            className={`relative flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
-              currentSlide === 0
-                ? "bg-white text-[#996515] border border-[#D4AF37] shadow-sm"
-                : "bg-white/60 hover:bg-white text-neutral-600 border border-transparent"
-            }`}
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
-            <span>01 · Exam Preparation</span>
-            {currentSlide === 0 && isPlaying && !isHovered && (
-              <span
-                className="absolute bottom-0 left-3 right-3 h-[2px] bg-[#D4AF37] rounded-full overflow-hidden"
-                style={{ width: `${slideProgress}%` }}
-              />
-            )}
-          </button>
-
-          {/* Slide 2 Tab Button */}
-          <button
-            type="button"
-            role="tab"
-            aria-selected={currentSlide === 1}
-            onClick={() => goToSlide(1)}
-            className={`relative flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
-              currentSlide === 1
-                ? "bg-white text-[#996515] border border-[#D4AF37] shadow-sm"
-                : "bg-white/60 hover:bg-white text-neutral-600 border border-transparent"
-            }`}
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37]" />
-            <span>02 · Student Welcome</span>
-            {currentSlide === 1 && isPlaying && !isHovered && (
-              <span
-                className="absolute bottom-0 left-3 right-3 h-[2px] bg-[#D4AF37] rounded-full overflow-hidden"
-                style={{ width: `${slideProgress}%` }}
-              />
-            )}
-          </button>
-        </div>
-
-        {/* Play / Pause Toggle Control */}
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setIsPlaying((p) => !p)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 hover:bg-white border border-[#D4AF37]/35 text-neutral-700 text-xs font-semibold shadow-xs transition-all cursor-pointer"
-            title={isPlaying ? "Pause automatic slide animation" : "Resume automatic slide animation"}
-            aria-label={isPlaying ? "Pause automatic slide animation" : "Resume automatic slide animation"}
-          >
-            {isPlaying ? (
-              <>
-                <Pause className="w-3 h-3 text-[#996515]" />
-                <span className="text-[11px]">Pause Loop</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-3 h-3 fill-[#996515] text-[#996515]" />
-                <span className="text-[11px]">Play Loop</span>
-              </>
-            )}
-          </button>
-
-          <span className="text-[11px] text-neutral-500 hidden sm:inline">
-            Auto-advancing (6s · 5s)
-          </span>
-        </div>
-      </div>
-    </section>
+      </HeroContainer>
+    </div>
   );
 };
 
 export default HeroSection;
+

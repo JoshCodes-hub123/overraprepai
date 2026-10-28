@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { TrendingUp, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -56,9 +57,17 @@ export function WeeklyPulse({ quizzesCompleted, accuracy, className }: WeeklyPul
         ))}
       </div>
 
-      <div className="mt-4 flex items-center gap-1.5 text-[12px] font-medium text-env">
-        <TrendingUp className="h-3.5 w-3.5" aria-hidden />
-        <span>{quizzesCompleted} quiz{quizzesCompleted === 1 ? "" : "zes"} completed</span>
+      <div className="mt-4 flex items-center justify-between text-[12px] font-medium text-env">
+        <div className="flex items-center gap-1.5">
+          <TrendingUp className="h-3.5 w-3.5" aria-hidden />
+          <span>{quizzesCompleted} quiz{quizzesCompleted === 1 ? "" : "zes"} completed</span>
+        </div>
+        <Link
+          to="/student/analytics"
+          className="font-bold text-[11px] text-amber-700 dark:text-amber-400 hover:underline flex items-center gap-1"
+        >
+          <span>Full Analytics &rarr;</span>
+        </Link>
       </div>
     </div>
   );

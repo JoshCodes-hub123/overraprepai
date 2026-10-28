@@ -682,6 +682,28 @@ export const AnimatedRoutes = () => {
           <Route path="/index" element={<Navigate to="/" replace />} />
           <Route path="/index.html" element={<Navigate to="/" replace />} />
           <Route path="/home" element={<Navigate to="/" replace />} />
+
+          {/* Study Rhythm & Target aliases to prevent 404 */}
+          <Route path="/targets" element={<Navigate to="/student/dashboard" replace />} />
+          <Route path="/student/targets" element={<Navigate to="/student/dashboard" replace />} />
+          <Route path="/daily-target" element={<Navigate to="/student/dashboard" replace />} />
+          <Route path="/student/daily-target" element={<Navigate to="/student/dashboard" replace />} />
+          <Route path="/missions" element={<Navigate to="/student/dashboard" replace />} />
+          <Route path="/student/missions" element={<Navigate to="/student/dashboard" replace />} />
+          <Route path="/study-targets" element={<Navigate to="/student/dashboard" replace />} />
+          <Route path="/study-rhythm" element={<Navigate to="/student/dashboard" replace />} />
+          <Route path="/rhythm" element={<Navigate to="/student/dashboard" replace />} />
+          <Route path="/weekly-pulse" element={<Navigate to="/student/analytics" replace />} />
+          <Route path="/pulse" element={<Navigate to="/student/analytics" replace />} />
+          <Route path="/consistency" element={<Navigate to="/student/analytics" replace />} />
+          <Route path="/cbt-practice" element={<Navigate to="/practice" replace />} />
+          <Route path="/cbt-drills" element={<Navigate to="/practice" replace />} />
+          <Route path="/cbt-drills/:courseId" element={<Navigate to="/practice" replace />} />
+          <Route path="/exam-readiness" element={<Navigate to="/student/readiness" replace />} />
+          <Route path="/readiness" element={<Navigate to="/student/readiness" replace />} />
+          <Route path="/weak-areas" element={<Navigate to="/student/mastery" replace />} />
+          <Route path="/weak-area-drills" element={<Navigate to="/student/mastery" replace />} />
+          <Route path="/study-streak" element={<Navigate to="/student/analytics" replace />} />
           <Route
             path="*"
             element={

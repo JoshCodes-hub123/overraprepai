@@ -302,70 +302,6 @@ export const Welcome = () => {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,hsl(43_78%_52%/0.08),transparent_70%)]" />
         </div>
 
-        {/* ── Strict 3-Zone Top Navigation Bar ── */}
-        <header className="sticky top-0 z-50 w-full backdrop-blur-md bg-background/90 border-b border-border/70 transition-colors">
-          <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between">
-            {/* Zone 1: Authentic OverraPrep Logo Lockup */}
-            <Link to="/" className="flex items-center gap-2.5 group focus:outline-none">
-              <img
-                src={logo}
-                alt="OverraPrep AI Logo"
-                className="h-9 sm:h-10 w-auto object-contain transition-transform group-hover:scale-105 shrink-0 drop-shadow-xs"
-                width={40}
-                height={40}
-              />
-              <div className="flex flex-col">
-                <span className="font-extrabold tracking-tight text-base sm:text-lg flex items-center gap-1.5 text-[#18181B] dark:text-white leading-none">
-                  OverraPrep
-                  <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#C5A059] text-neutral-900 uppercase tracking-wider">
-                    AI
-                  </span>
-                </span>
-                <span className="text-[9px] font-semibold text-[#71717A] dark:text-neutral-400 tracking-wider uppercase mt-1 hidden xs:inline">
-                  Study Smarter. Succeed Faster.
-                </span>
-              </div>
-            </Link>
-
-            {/* Zone 2: Editorial Navigation Links (Desktop) */}
-            <nav className="hidden md:flex items-center gap-7 text-[13px] font-medium text-muted-foreground">
-              <a href="#demo" className="hover:text-foreground transition-colors">
-                Interactive CBT
-              </a>
-              <a href="#preview-video" className="hover:text-foreground transition-colors">
-                Experience
-              </a>
-              <a href="#innovations" className="hover:text-foreground transition-colors">
-                Core Features
-              </a>
-              <a href="#universities" className="hover:text-foreground transition-colors">
-                Universities
-              </a>
-              <a href="#trust" className="hover:text-foreground transition-colors">
-                Team & Results
-              </a>
-            </nav>
-
-            {/* Zone 3: Direct User Action */}
-            <div className="flex items-center gap-3">
-              <Link
-                to="/auth"
-                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors px-3 sm:px-3.5 py-2 rounded-lg hover:bg-muted/70"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                Sign in
-              </Link>
-              <Link
-                to="/onboarding"
-                className="inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm shadow-primary/25 transition-all hover:shadow-md"
-              >
-                <span>Get Started</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-        </header>
-
         {/* ── Main Showcase Body ── */}
         <main className="relative z-10 flex-1 flex flex-col">
           {/* ── Premium Dark Layered HeroSection with Subtle Gold Glow ── */}
@@ -610,6 +546,17 @@ export const Welcome = () => {
                     </button>
                   </div>
                 </div>
+              </div>
+
+              <div className="mt-5 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent("overra:play-intro"))}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#D4AF37]/15 hover:bg-[#D4AF37]/25 border border-[#D4AF37]/35 text-[#996515] dark:text-amber-400 font-bold text-xs transition active:scale-95 shadow-2xs"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  <span>Replay Fullscreen Logo Transition</span>
+                </button>
               </div>
             </div>
           </section>
