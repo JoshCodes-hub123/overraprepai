@@ -14,9 +14,8 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { HeroContainer } from "./HeroContainer";
 
-// High-Resolution Pristine Assets
 const SLIDE1_IMAGE = "/assets/aistudio/slide1_students_master.png";
-const SLIDE2_IMAGE = "/assets/aistudio/image_9b227ed4.png";
+const SLIDE2_IMAGE = "/assets/aistudio/image_603fcbad.png";
 
 export interface HeroSectionProps {
   onScrollToDemo?: (e?: React.MouseEvent) => void;
@@ -515,8 +514,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                         alt="OverraPrep AI students studying with tablet and AI learning engine"
                         className="w-full h-auto object-cover select-none mx-auto"
                         loading="eager"
-                        width={958}
-                        height={1642}
+                        width={715}
+                        height={882}
                       />
                     </div>
 

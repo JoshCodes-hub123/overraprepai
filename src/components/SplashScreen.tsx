@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Volume2, VolumeX, Sparkles, ArrowRight, Zap, Play } from "lucide-react";
+import { Volume2, VolumeX, Sparkles, ArrowRight, Zap, RefreshCw } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import useEnvironment from "@/hooks/useEnvironment";
 import { getValidResumeRoute } from "@/lib/environmentScope";
 import { isLiteMode } from "@/lib/liteMode";
-import { OverraLoader } from "@/components/ui/OverraLoader";
+import logo from "@/assets/logo.png";
 
 // Two official high-definition OverraPrep intro transitions
 export const INTRO_VIDEOS = {
@@ -22,7 +22,8 @@ interface SplashScreenProps {
 /**
  * OverraPrep AI - Logo Transition Intro Splash
  * When students click our link or open the app, this logo transition plays first,
- * then smoothly crossfades into the Welcome page.
+ * featuring the iconic Golden Bird emblem (both as a still high-res beacon and
+ * the cinematic animated bird video transition) before smoothly crossfading into the Welcome page.
  */
 export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, forceShow = false }) => {
   const navigate = useNavigate();
@@ -41,7 +42,6 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, forceSho
   const [isVisible, setIsVisible] = useState<boolean>(() => {
     if (forceShow) return true;
     try {
-      // If landing directly on the homepage link "/", always display the logo transition
       if (typeof window !== "undefined" && window.location.pathname === "/") {
         return true;
       }
@@ -104,17 +104,9 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, forceSho
     }, 450);
   }, [user, environment, location.pathname, navigate, onComplete]);
 
-  // Attempt video autoplay on mount (only in normal mode)
+  // Video autoplay & fallback timer for both standard and lite mode
   useEffect(() => {
     if (!isVisible) return;
-
-    if (lite) {
-      // In Lite mode, run a brisk 1.8s transition to reduce wait time on slow networks
-      const liteTimer = setTimeout(() => {
-        handleFinish();
-      }, 1800);
-      return () => clearTimeout(liteTimer);
-    }
 
     const videoEl = videoRef.current;
     if (videoEl) {
@@ -123,16 +115,18 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, forceSho
         .play()
         .then(() => setIsVideoLoaded(true))
         .catch(() => {
-          // Autoplay blocked: try muted
+          // Autoplay blocked: force muted and retry
           videoEl.muted = true;
           videoEl.play().catch(() => {});
         });
     }
 
-    // Failsafe timer (6.5s maximum) to guarantee splash never gets stuck
+    // Safety timeout: guarantees splash never locks the user out
+    // 6.5s in normal mode, 4.8s in lite mode
+    const maxWaitTime = lite ? 4800 : 6500;
     const failsafe = setTimeout(() => {
       handleFinish();
-    }, 6500);
+    }, maxWaitTime);
 
     return () => clearTimeout(failsafe);
   }, [isVisible, isMuted, lite, selectedVideoKey, handleFinish]);
@@ -160,7 +154,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, forceSho
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-[999999] flex flex-col items-center justify-center select-none overflow-hidden bg-black text-[#F5F5F7] font-sans"
+        className="fixed inset-0 z-[999999] flex flex-col items-center justify-center select-none overflow-hidden bg-[#0A0907] text-[#F5F5F7] font-sans"
         style={{
           paddingTop: "env(safe-area-inset-top)",
           paddingBottom: "env(safe-area-inset-bottom)",
@@ -170,7 +164,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, forceSho
         initial={{ opacity: 1 }}
         animate={{
           opacity: isFadingOut ? 0 : 1,
-          scale: isFadingOut ? 1.03 : 1,
+          scale: isFadingOut ? 1.025 : 1,
           filter: isFadingOut ? "blur(8px)" : "blur(0px)",
         }}
         exit={{ opacity: 0 }}
@@ -179,42 +173,81 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, forceSho
         role="dialog"
         aria-label="OverraPrep Logo Transition"
       >
-        {/* Background ambient gold aura */}
+        {/* Dynamic Golden Ambient Glow Background */}
         <div
-          aria-hidden
-          className="absolute w-[36rem] h-[36rem] rounded-full pointer-events-none opacity-20"
+          aria-hidden="true"
+          className="absolute w-[36rem] h-[36rem] sm:w-[48rem] sm:h-[48rem] rounded-full pointer-events-none opacity-30 animate-pulse duration-[4000ms]"
           style={{
             background:
-              "radial-gradient(circle, rgba(212, 175, 55, 0.4) 0%, rgba(212, 175, 55, 0.08) 50%, transparent 75%)",
+              "radial-gradient(circle, rgba(212, 175, 55, 0.45) 0%, rgba(212, 175, 55, 0.12) 45%, transparent 70%)",
           }}
         />
 
-        {/* Branch A: Lite Mode (Slow network detected / Data Saver enabled) */}
-        {lite ? (
-          <div className="relative z-10 flex flex-col items-center justify-center px-6 text-center animate-in fade-in duration-300">
-            <div className="relative mb-5">
-              <OverraLoader size="xl" hideOrbit={false} />
+        {/* Ambient Top & Bottom Gold Vignette */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-black/40 to-black/90"
+        />
+
+        {/* ================================================================= */}
+        {/* HERO CONTAINER: STILL GOLDEN BIRD EMBLEM + CINEMATIC VIDEO        */}
+        {/* Always displays the still golden bird immediately on mount,       */}
+        {/* smoothly overlaying the video transition (even in Lite Mode).      */}
+        {/* ================================================================= */}
+        <div className="relative z-10 w-full max-w-[540px] sm:max-w-[640px] px-4 flex flex-col items-center justify-center">
+          {/* Main Visual Display Frame */}
+          <div className="relative w-full aspect-[4/3] sm:aspect-[16/10] max-h-[58vh] flex items-center justify-center rounded-3xl overflow-hidden bg-black/60 border border-[#D4AF37]/25 shadow-[0_0_60px_rgba(212,175,55,0.2)] backdrop-blur-xs">
+            {/* 1. STILL GOLDEN BIRD EMBLEM (Always renders instantly) */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center select-none pointer-events-none">
+              {/* Outer Radiant Orbit Glow */}
+              <div className="relative flex items-center justify-center mb-4">
+                <div
+                  className="absolute w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-gradient-to-tr from-[#D4AF37]/30 to-[#F5D77F]/10 blur-xl animate-pulse"
+                  aria-hidden="true"
+                />
+                <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-b from-white/10 to-black/40 border border-[#D4AF37]/40 p-2 shadow-[0_8px_32px_rgba(212,175,55,0.35)] flex items-center justify-center backdrop-blur-md">
+                  <img
+                    src={logo}
+                    alt="OverraPrep AI Golden Bird"
+                    className="w-full h-full object-contain filter drop-shadow-[0_4px_16px_rgba(212,175,55,0.7)]"
+                    loading="eager"
+                  />
+                </div>
+              </div>
+
+              {/* Brand Typography */}
+              <h1 className="font-display text-2xl sm:text-3xl font-black tracking-[0.06em] text-white flex items-center justify-center gap-1.5">
+                <span>Overra</span>
+                <span className="bg-gradient-to-r from-[#FFE58F] via-[#D4AF37] to-[#B38728] bg-clip-text text-transparent">
+                  Prep
+                </span>
+                <span className="ml-1 text-[11px] font-black tracking-widest px-1.5 py-0.5 rounded-sm bg-[#D4AF37] text-neutral-950 shadow-xs">
+                  AI
+                </span>
+              </h1>
+
+              <p className="mt-1 text-[11px] sm:text-xs tracking-[0.2em] uppercase text-[#D4AF37]/90 font-bold">
+                Study Smarter · Succeed Faster
+              </p>
+
+              {/* Status / Lite Mode Pill Indicator */}
+              <div className="mt-3.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 border border-[#D4AF37]/35 text-[10px] font-semibold tracking-wider text-[#F5D77F] shadow-xs">
+                {lite ? (
+                  <>
+                    <Zap className="w-3 h-3 text-amber-400" />
+                    <span>Lite Mode · Fast Stream</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3 h-3 text-amber-400" />
+                    <span>Next-Gen CBT Prep Engine</span>
+                  </>
+                )}
+              </div>
             </div>
 
-            <h1 className="font-display text-2xl font-bold tracking-[0.08em] text-[#F5F5F7]">
-              Overra
-              <span className="bg-gradient-to-r from-[#F5D77F] via-[#D4AF37] to-[#C9941F] bg-clip-text text-transparent font-extrabold">
-                Prep
-              </span>
-            </h1>
-
-            <p className="mt-2 text-xs tracking-[0.22em] uppercase text-[#D4AF37]/90 font-medium">
-              Rise Beyond Limits.
-            </p>
-
-            <div className="mt-6 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/30 text-[10px] font-semibold tracking-wider uppercase text-[#F5D77F]">
-              <Zap className="w-3 h-3 text-[#D4AF37]" />
-              <span>Lite Mode · Instant Load</span>
-            </div>
-          </div>
-        ) : (
-          /* Branch B: High-definition cinematic logo transition */
-          <div className="relative w-full h-full flex items-center justify-center bg-black">
+            {/* 2. CINEMATIC BIRD TRANSITION VIDEO */}
+            {/* Plays smoothly in both normal mode and lite mode */}
             <video
               ref={videoRef}
               key={activeVideoSrc}
@@ -224,60 +257,87 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, forceSho
               muted={isMuted}
               preload="auto"
               onEnded={handleFinish}
-              onError={handleFinish}
+              onError={() => setIsVideoLoaded(false)}
+              onPlaying={() => setIsVideoLoaded(true)}
               onLoadedData={() => setIsVideoLoaded(true)}
-              className={`w-full h-full object-contain max-w-[500px] sm:max-w-[620px] max-h-screen transition-opacity duration-300 ${
+              className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-500 ease-out ${
                 isVideoLoaded ? "opacity-100" : "opacity-0"
               }`}
             />
           </div>
-        )}
 
-        {/* Top bar controls */}
+          {/* Under-card micro-caption */}
+          <div className="mt-4 flex items-center justify-center gap-2 text-center text-xs text-neutral-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] animate-ping" />
+            <span className="font-medium tracking-wide">
+              {isVideoLoaded
+                ? "Interactive Golden Bird Reveal"
+                : "Initializing CBT & Syllabus Environment..."}
+            </span>
+          </div>
+        </div>
+
+        {/* ================================================================= */}
+        {/* TOP BAR CONTROLS (Sound Toggle, Animation Choice, Skip Button)    */}
+        {/* ================================================================= */}
         <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-50 flex items-center gap-2">
-          {/* Sound Toggle */}
-          {!lite && (
-            <button
-              type="button"
-              onClick={toggleSound}
-              aria-label={isMuted ? "Unmute audio" : "Mute audio"}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 hover:bg-black/90 backdrop-blur-md text-[#D4AF37] border border-[#D4AF37]/30 transition-all text-xs font-semibold shadow-lg active:scale-95"
-            >
-              {isMuted ? (
-                <>
-                  <VolumeX className="w-3.5 h-3.5" />
-                  <span className="text-[11px] hidden xs:inline">Sound</span>
-                </>
-              ) : (
-                <>
-                  <Volume2 className="w-3.5 h-3.5 text-amber-400" />
-                  <span className="text-[11px] text-amber-400 font-bold hidden xs:inline">Sound On</span>
-                </>
-              )}
-            </button>
-          )}
+          {/* Video Animation Switcher (Bird Flight vs Spark Reveal) */}
+          <button
+            type="button"
+            onClick={(e) => switchVideo(selectedVideoKey === "bird" ? "spark" : "bird", e)}
+            aria-label="Switch intro animation style"
+            title="Switch animation style"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-black/70 hover:bg-black/90 backdrop-blur-md text-[#D4AF37] border border-[#D4AF37]/30 transition-all text-xs font-semibold shadow-lg active:scale-95 cursor-pointer"
+          >
+            <RefreshCw className="w-3 h-3 text-amber-400" />
+            <span className="text-[10px] hidden sm:inline">
+              {selectedVideoKey === "bird" ? "Golden Bird" : "Spark"}
+            </span>
+          </button>
 
-          {/* Quick Skip button to enter Welcome page */}
+          {/* Sound Toggle */}
+          <button
+            type="button"
+            onClick={toggleSound}
+            aria-label={isMuted ? "Unmute audio" : "Mute audio"}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 hover:bg-black/90 backdrop-blur-md text-[#D4AF37] border border-[#D4AF37]/30 transition-all text-xs font-semibold shadow-lg active:scale-95 cursor-pointer"
+          >
+            {isMuted ? (
+              <>
+                <VolumeX className="w-3.5 h-3.5" />
+                <span className="text-[11px] hidden xs:inline">Sound</span>
+              </>
+            ) : (
+              <>
+                <Volume2 className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[11px] text-amber-400 font-bold hidden xs:inline">Sound On</span>
+              </>
+            )}
+          </button>
+
+          {/* Skip Button (Enters Welcome page immediately) */}
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               handleFinish();
             }}
-            className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase bg-[#D4AF37] text-neutral-950 hover:bg-amber-400 shadow-md transition-all active:scale-95"
+            className="inline-flex items-center gap-1 px-4 py-1.5 rounded-full text-xs font-black tracking-wider uppercase bg-gradient-to-r from-[#F5D77F] via-[#D4AF37] to-[#C5A059] text-neutral-950 hover:brightness-110 shadow-[0_4px_16px_rgba(212,175,55,0.4)] transition-all active:scale-95 cursor-pointer"
           >
             <span>Skip</span>
-            <ArrowRight className="w-3 h-3" />
+            <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
           </button>
         </div>
 
-        {/* Bottom indicator & tap hint */}
-        <div className="absolute bottom-6 inset-x-0 flex flex-col items-center justify-center pointer-events-none space-y-1.5">
-          <div className="flex items-center gap-2 text-[11px] tracking-[0.2em] uppercase text-[#D4AF37]/75 font-semibold">
+        {/* ================================================================= */}
+        {/* BOTTOM BRAND FOOTPRINT & TAP TO ENTER                             */}
+        {/* ================================================================= */}
+        <div className="absolute bottom-5 inset-x-0 flex flex-col items-center justify-center pointer-events-none space-y-1 px-4">
+          <div className="flex items-center gap-1.5 text-[11px] tracking-[0.22em] uppercase text-[#D4AF37] font-bold">
             <Sparkles className="w-3 h-3 text-amber-400 animate-pulse" />
-            <span>OverraPrep AI · Loading Experience</span>
+            <span>OverraPrep AI · Nigerian Universities</span>
           </div>
-          <p className="text-[10px] tracking-[0.16em] uppercase text-neutral-500 font-medium">
+          <p className="text-[10px] tracking-[0.14em] uppercase text-neutral-400 font-medium">
             Tap anywhere to enter Welcome page
           </p>
         </div>
