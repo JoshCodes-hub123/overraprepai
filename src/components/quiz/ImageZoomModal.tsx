@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { X, ZoomIn, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -118,6 +118,7 @@ export const ImageZoomModal = ({ imageUrl, isOpen, onClose, alt = "Question imag
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] p-0 overflow-hidden bg-background/95 backdrop-blur-sm border-border">
+        <DialogTitle className="sr-only">{alt}</DialogTitle>
         <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
           {scale > 1 && (
             <Button

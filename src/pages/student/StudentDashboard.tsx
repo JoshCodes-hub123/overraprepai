@@ -43,6 +43,7 @@ import { INSTITUTIONS, isInstitutionCode } from "@/config/environments";
 import { courseActionLabel as courseAction } from "@/lib/nextStep";
 import { ExamReadinessRings } from "@/components/ux/ExamReadinessRings";
 import { StudyPulseOrb } from "@/components/ux/StudyPulseOrb";
+import OfflineStudyHub from "@/components/offline/OfflineStudyHub";
 
 if (typeof window !== "undefined") prefetchDashboardNeighbors();
 
@@ -64,7 +65,7 @@ const StudentDashboard = () => {
     useStudyAnalytics("14d");
 
   // Tab state for insights (prevents endless vertical scroll on mobile)
-  const [activeInsightTab, setActiveInsightTab] = useState<"target" | "weekly" | "heatmap">("target");
+  const [activeInsightTab, setActiveInsightTab] = useState<"target" | "weekly" | "heatmap" | "offline">("target");
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth", { replace: true });
@@ -524,6 +525,17 @@ const StudentDashboard = () => {
                 >
                   Consistency
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveInsightTab("offline")}
+                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                    activeInsightTab === "offline"
+                      ? "bg-card text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Offline Hub
+                </button>
               </div>
             </div>
 
@@ -569,6 +581,13 @@ const StudentDashboard = () => {
                     })
                   }
                 />
+              </div>
+            )}
+
+            {/* Tab 4: Deep Offline Hub */}
+            {activeInsightTab === "offline" && (
+              <div className="pt-4">
+                <OfflineStudyHub />
               </div>
             )}
           </div>

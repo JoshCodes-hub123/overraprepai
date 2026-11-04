@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Share2, Download, MessageCircle, Instagram, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { logShareEvent } from "@/hooks/useGrowth";
@@ -275,6 +275,7 @@ export function GrowthShareCard(propsIn: GrowthShareCardProps) {
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md p-0 overflow-hidden">
+        <DialogTitle className="sr-only">Share Card</DialogTitle>
         <div className="bg-gradient-to-b from-amber-50 to-background p-4">
           <div className="flex items-center gap-2 mb-3">
             <Sparkles className="w-4 h-4 text-amber-600" />

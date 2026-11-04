@@ -11,6 +11,7 @@ import { GNS106GermanTemplate } from "@/components/admin/GNS106GermanTemplate";
 import { AdminImportHistory } from "@/components/admin/AdminImportHistory";
 import { useAdminEnvironment } from "@/hooks/useAdminEnvironment";
 import { AdminPersistentHeader } from "@/components/admin/AdminPersistentHeader";
+import { QuickResourceUpload } from "@/components/admin/QuickResourceUpload";
 
 /**
  * Admin-only page for bulk-uploading quiz banks (Excel / CSV / Word).
@@ -102,6 +103,10 @@ const AdminBulkUpload = () => {
               Open bulk uploader
             </Button>
           </Card>
+
+          <div className="mb-6">
+            <QuickResourceUpload />
+          </div>
 
           <div className="mb-3">
             <GNS106GermanTemplate />
