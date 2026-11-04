@@ -40,11 +40,11 @@ import { supabase } from "@/integrations/supabase/client";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 1,
-      // Keep cache warm for 24h so returning users see the dashboard
-      // instantly while fresh data hydrates in the background.
+      staleTime: 1000 * 60 * 5, // 5 minutes cache validity for instant page transitions
       gcTime: 1000 * 60 * 60 * 24,
       refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
       retry: 1,
     },
   },

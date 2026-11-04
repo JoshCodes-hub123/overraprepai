@@ -1,46 +1,18 @@
-import { motion } from "framer-motion";
 import { ReactNode } from "react";
 
 interface PageTransitionProps {
   children: ReactNode;
 }
 
-const pageVariants = {
-  initial: {
-    opacity: 0,
-    y: 20,
-    scale: 0.98,
-  },
-  animate: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-  },
-  exit: {
-    opacity: 0,
-    y: -10,
-    scale: 0.98,
-  },
-};
-
-const pageTransition = {
-  type: "tween" as const,
-  ease: [0.25, 0.1, 0.25, 1] as const,
-  duration: 0.3,
-};
-
+/**
+ * Optimized for instant 0ms click-to-render page navigation on all devices,
+ * eliminating framer-motion exit/enter lag on low-end phones.
+ */
 export const PageTransition = ({ children }: PageTransitionProps) => {
   return (
-    <motion.div
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      variants={pageVariants}
-      transition={pageTransition}
-      className="min-h-screen"
-    >
+    <div className="min-h-screen">
       {children}
-    </motion.div>
+    </div>
   );
 };
 
