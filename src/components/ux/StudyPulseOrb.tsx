@@ -39,7 +39,7 @@ export const StudyPulseOrb: React.FC = () => {
               <button
                 onClick={() => {
                   setOpen(false);
-                  navigate("/student/coach");
+                  navigate("/coach");
                 }}
                 className="w-full text-left p-3 rounded-2xl bg-muted/40 hover:bg-muted/80 border border-border/60 transition flex items-center justify-between group"
               >
@@ -58,7 +58,7 @@ export const StudyPulseOrb: React.FC = () => {
               <button
                 onClick={() => {
                   setOpen(false);
-                  navigate("/student/study-mode");
+                  navigate("/practice");
                 }}
                 className="w-full text-left p-3 rounded-2xl bg-muted/40 hover:bg-muted/80 border border-border/60 transition flex items-center justify-between group"
               >
