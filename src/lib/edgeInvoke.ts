@@ -46,12 +46,16 @@ export async function edgeInvoke(name: string, opts?: InvokeOpts): Promise<Invok
       }
       return res;
     } catch (e) {
-      if (isRetryable(e) && i < delays.length - 1) {
-        last = { data: null, error: e as any } as InvokeResult;
-        continue;
+      const msg = String((e as any)?.message ?? e ?? "").toLowerCase();
+      if (msg.includes("functionsfetcherror") || isRetryable(e)) {
+        if (i < delays.length - 1) {
+          last = { data: null, error: e as any } as InvokeResult;
+          continue;
+        }
+        return { data: null, error: { message: "Edge function offline", details: String(e) } } as InvokeResult;
       }
       throw e;
     }
   }
-  return last ?? (await supabase.functions.invoke(name, opts));
+  return last ?? ({ data: null, error: { message: "Edge function offline" } } as InvokeResult);
 }

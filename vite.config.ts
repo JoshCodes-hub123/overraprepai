@@ -70,4 +70,19 @@ export default defineConfig(() => ({
       "jspdf-autotable",
     ],
   },
+  build: {
+    target: "esnext",
+    minify: "esbuild",
+    sourcemap: false,
+    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["react", "react-dom", "react-router-dom", "@tanstack/react-query"],
+          ui: ["framer-motion", "lucide-react", "sonner"],
+          pdf: ["jspdf", "jspdf-autotable"],
+        },
+      },
+    },
+  },
 }));

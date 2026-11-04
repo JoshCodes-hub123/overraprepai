@@ -41,6 +41,8 @@ import { StudyActivityHeatmap } from "@/components/student/analytics/StudyActivi
 import useEnvironment from "@/hooks/useEnvironment";
 import { INSTITUTIONS, isInstitutionCode } from "@/config/environments";
 import { courseActionLabel as courseAction } from "@/lib/nextStep";
+import { ExamReadinessRings } from "@/components/ux/ExamReadinessRings";
+import { StudyPulseOrb } from "@/components/ux/StudyPulseOrb";
 
 if (typeof window !== "undefined") prefetchDashboardNeighbors();
 
@@ -324,6 +326,16 @@ const StudentDashboard = () => {
             {preferences.showDailyCheckIn && (
               <DailyCheckIn variant="card" className="mt-3" />
             )}
+
+            {/* Exam Readiness Rings */}
+            <div className="mt-3">
+              <ExamReadinessRings
+                readinessPct={avgReadiness}
+                dailyDone={completedMissions}
+                dailyTotal={threeDailyTargets.length}
+                streakDays={currentStreak}
+              />
+            </div>
           </div>
 
           {/* ============================================================== */}
@@ -562,6 +574,7 @@ const StudentDashboard = () => {
           </div>
         </Screen>
       </PullToRefresh>
+      <StudyPulseOrb />
     </>
   );
 };

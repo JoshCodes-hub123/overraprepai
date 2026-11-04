@@ -57,14 +57,18 @@ export function installEdgeRetry() {
         }
         return res;
       } catch (e) {
-        if (isRetryable(e) && i < DELAYS.length - 1) {
-          last = { data: null, error: e };
-          continue;
+        const msg = String((e as any)?.message ?? e ?? "").toLowerCase();
+        if (msg.includes("functionsfetcherror") || isRetryable(e)) {
+          if (i < DELAYS.length - 1) {
+            last = { data: null, error: e };
+            continue;
+          }
+          return { data: null, error: { message: "Edge function offline", details: String(e) } };
         }
         throw e;
       }
     }
-    return last ?? (await original(name, opts));
+    return last ?? { data: null, error: { message: "Edge function offline" } };
   };
 
   fns[PATCH_FLAG] = true;
