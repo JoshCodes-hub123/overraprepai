@@ -58,7 +58,14 @@ export function getValidResumeRoute(userId: string | undefined | null, env?: str
   if (!userId) return home;
   try {
     const saved = localStorage.getItem(`overra_last_route:${userId}`);
-    if (saved && !saved.includes("/jamb") && !saved.includes("/school")) {
+    if (
+      saved &&
+      !saved.includes("/jamb") &&
+      !saved.includes("/school") &&
+      !saved.startsWith("/onboarding") &&
+      !saved.startsWith("/start") &&
+      !saved.startsWith("/auth")
+    ) {
       return saved;
     }
     if (saved) {

@@ -41,6 +41,7 @@ import { mapAuthError } from "@/lib/authErrors";
 import { prefetchStudentDashboard } from "@/lib/routePrefetch";
 import AuthPerfOverlay, { isPerfTestMode } from "@/components/auth/AuthPerfOverlay";
 import { INSTITUTION_LIST, type InstitutionCode, type EnvironmentType } from "@/config/environments";
+import { facultiesOf, departmentsOf, type UniversityCode } from "@/config/universities";
 import { isPathInEnvironment, getValidResumeRoute } from "@/lib/environmentScope";
 import { OverraLoader } from "@/components/ui/OverraLoader";
 
@@ -56,6 +57,7 @@ const signUpSchema = z.object({
   email: z.string().trim().email("Please enter a valid email address").max(255),
   password: z.string().min(6, "Password must be at least 6 characters").max(72),
   university: z.enum(["FUTA", "OAU", "UI", "FUTESIYIN"]).optional(),
+  level: z.enum(["100", "200", "300", "400", "500"]).optional(),
   referralCode: z.string().optional(),
 });
 
@@ -95,7 +97,7 @@ const Auth: React.FC = () => {
 
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user, profile, primaryRole, signIn, signUp } = useAuth();
+  const { user, profile, primaryRole, signIn, signUp, refreshProfile } = useAuth();
   const perfMode = isPerfTestMode();
 
   // Surface auth messages (expired session, verified email, etc.)
@@ -127,19 +129,18 @@ const Auth: React.FC = () => {
     } else if (reason === "verify_required") {
       toast({
         title: "Verify your email first",
-        description: "Confirm your email address before continuing to onboarding.",
+        description: "Confirm your email address before continuing to your dashboard.",
       });
     } else if (reason === "verified") {
       toast({
         title: "Email verified",
-        description: "Sign in to continue to onboarding.",
+        description: "Sign in to continue to your dashboard.",
       });
     }
   }, [reason, toast]);
 
   const postAuthDestination = (justSignedUp = false) => {
     if (intent === "tutor") return "/apply-tutor";
-    if (justSignedUp) return "/onboarding/university";
     if (primaryRole === "admin") return "/admin/dashboard";
     if (primaryRole === "tutor") return "/tutor/dashboard";
     const env: EnvironmentType = "university";
@@ -159,19 +160,26 @@ const Auth: React.FC = () => {
       } catch {
         /* noop */
       }
-      if (isPathInEnvironment(target, env)) {
+      if (
+        isPathInEnvironment(target, env) &&
+        !target.startsWith("/onboarding") &&
+        !target.startsWith("/start") &&
+        !target.startsWith("/auth")
+      ) {
         return target;
       }
     }
+
+    if (justSignedUp) return "/student/dashboard";
 
     return getValidResumeRoute(user?.id, env);
   };
 
   useEffect(() => {
-    if (user && primaryRole && profile) {
-      navigate(postAuthDestination());
+    if (user && primaryRole && profile && !isSubmitting && !otpSubmitting) {
+      navigate(postAuthDestination(), { replace: true });
     }
-  }, [user, primaryRole, profile, navigate]);
+  }, [user, primaryRole, profile, isSubmitting, otpSubmitting, navigate]);
 
   // Warm dashboard chunk for fast transition
   useEffect(() => {
@@ -199,12 +207,34 @@ const Auth: React.FC = () => {
       fullName: "",
       email: "",
       password: "",
-      university: undefined,
+      university: (() => {
+        try {
+          const saved = localStorage.getItem("overra_express_uni");
+          if (saved && ["FUTA", "OAU", "UI", "FUTESIYIN"].includes(saved)) {
+            return saved as "FUTA" | "OAU" | "UI" | "FUTESIYIN";
+          }
+        } catch {
+          /* ignore */
+        }
+        return "FUTA";
+      })(),
+      level: (() => {
+        try {
+          const saved = localStorage.getItem("overra_express_level");
+          if (saved && ["100", "200", "300", "400", "500"].includes(saved)) {
+            return saved as "100" | "200" | "300" | "400" | "500";
+          }
+        } catch {
+          /* ignore */
+        }
+        return "100";
+      })(),
       referralCode: referralCodeFromUrl,
     },
   });
 
   const universityValue = signUpForm.watch("university");
+  const levelValue = signUpForm.watch("level") || "100";
 
   const handleSignIn = async (data: SignInFormData) => {
     setIsSubmitting(true);
@@ -260,23 +290,102 @@ const Auth: React.FC = () => {
         data: { user: newUser },
       } = await supabase.auth.getUser();
       if (!newUser?.id) return false;
-      const envFields = {
-        environment_type: "university",
-        academic_path: "university",
-        university: data.university ?? null,
-      };
-      const { error } = await supabase
+
+      let chosenUni: UniversityCode = (data.university as UniversityCode) || "FUTA";
+      let chosenLevelStr = data.level || "100";
+      try {
+        const savedUni = localStorage.getItem("overra_express_uni") as UniversityCode | null;
+        if (!data.university && savedUni && ["FUTA", "OAU", "UI", "FUTESIYIN"].includes(savedUni)) {
+          chosenUni = savedUni;
+        }
+        const savedLvl = localStorage.getItem("overra_express_level");
+        if (!data.level && savedLvl && ["100", "200", "300", "400", "500"].includes(savedLvl)) {
+          chosenLevelStr = savedLvl;
+        }
+      } catch {
+        /* ignore */
+      }
+
+      const numericLevel = parseInt(chosenLevelStr, 10) || 100;
+      const defaultFaculties = facultiesOf(chosenUni);
+      const defaultFaculty = defaultFaculties[0] || "General Studies";
+      const defaultDepts = departmentsOf(chosenUni, defaultFaculty);
+      const defaultDept = defaultDepts[0] || "General Programme";
+
+      const { error } = await (supabase as any)
         .from("profiles")
         .update({
-          ...envFields,
           full_name: data.fullName,
-        } as any)
+          environment_type: "university",
+          academic_path: "university",
+          university: chosenUni,
+          faculty: defaultFaculty,
+          department: defaultDept,
+          level: numericLevel,
+          onboarding_completed: true,
+          ai_token_balance: 50,
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", newUser.id);
-      if (error) throw error;
+
+      if (error) {
+        // Fallback minimal update if any optional column fails
+        await (supabase as any)
+          .from("profiles")
+          .update({
+            full_name: data.fullName,
+            environment_type: "university",
+            academic_path: "university",
+            university: chosenUni,
+            level: numericLevel,
+            onboarding_completed: true,
+          })
+          .eq("id", newUser.id);
+      }
+
+      // Silently auto-enroll student into matching level courses
+      try {
+        const { data: coursesData } = await supabase
+          .from("courses")
+          .select("id, code, level")
+          .eq("is_active", true)
+          .eq("university", chosenUni)
+          .limit(40);
+
+        const allCourses = (coursesData as any[]) || [];
+        if (allCourses.length > 0) {
+          const levelPrefix = chosenLevelStr.charAt(0);
+          const matched = allCourses.filter((c) => {
+            const lvlStr = String(c.level || "").replace(/\D/g, "");
+            if (lvlStr === chosenLevelStr) return true;
+            const codeMatch = c.code?.match(/\b(\d)\d{2}\b/);
+            return codeMatch ? codeMatch[1] === levelPrefix : false;
+          });
+          const toEnroll = (matched.length > 0 ? matched : allCourses.slice(0, 12)).map((c) => ({
+            student_id: newUser.id,
+            course_id: c.id,
+          }));
+          if (toEnroll.length > 0) {
+            await (supabase as any)
+              .from("student_courses")
+              .upsert(toEnroll, { onConflict: "student_id,course_id", ignoreDuplicates: true });
+          }
+        }
+      } catch (enrollErr) {
+        console.warn("Silent course auto-enroll note:", enrollErr);
+      }
+
+      try {
+        localStorage.removeItem(`overra_last_route:${newUser.id}`);
+      } catch {
+        /* ignore */
+      }
+
+      await refreshProfile();
       return true;
     } catch (e) {
       console.warn("Could not persist signup details:", e);
-      return false;
+      return true;
     }
   };
 
@@ -300,22 +409,14 @@ const Auth: React.FC = () => {
       sessionData = (await supabase.auth.getSession()).data;
     }
 
-    if (!(await persistExtraSignupDetails(data))) {
-      toast({
-        variant: "destructive",
-        title: "Couldn't save your study scope",
-        description: "Sign in and finish setting up your university before studying.",
-      });
-      setIsSubmitting(false);
-      return;
-    }
+    await persistExtraSignupDetails(data);
 
     toast({
       title: `Welcome, ${data.fullName.split(" ")[0]}! 🎉`,
-      description: "Your account is ready. Let's start studying.",
+      description: "Your courses and +50 Starter Tokens are ready.",
     });
-    navigate(postAuthDestination(true));
     setIsSubmitting(false);
+    navigate(postAuthDestination(true), { replace: true });
   };
 
   const handleVerifyOtp = async () => {
@@ -336,23 +437,15 @@ const Auth: React.FC = () => {
       return;
     }
     if (pendingSignUp) {
-      if (!(await persistExtraSignupDetails(pendingSignUp))) {
-        toast({
-          variant: "destructive",
-          title: "Couldn't save your study scope",
-          description: "Sign in and finish setting up your university before studying.",
-        });
-        setOtpSubmitting(false);
-        return;
-      }
+      await persistExtraSignupDetails(pendingSignUp);
     }
     toast({
       title: "You're in! 🎉",
-      description: "Welcome to OverraPrep AI. Let's set up your study profile.",
+      description: "Welcome to OverraPrep AI. Opening your study dashboard.",
     });
     setVerifyMode(false);
     setOtpSubmitting(false);
-    navigate(postAuthDestination(true));
+    navigate(postAuthDestination(true), { replace: true });
   };
 
   const handleResendCode = async () => {
@@ -843,12 +936,17 @@ const Auth: React.FC = () => {
                           University Campus
                         </Label>
                         <Select
-                          value={universityValue ?? ""}
-                          onValueChange={(v) =>
+                          value={universityValue ?? "FUTA"}
+                          onValueChange={(v) => {
                             signUpForm.setValue("university", v as InstitutionCode, {
                               shouldValidate: true,
-                            })
-                          }
+                            });
+                            try {
+                              localStorage.setItem("overra_express_uni", v);
+                            } catch {
+                              /* ignore */
+                            }
+                          }}
                         >
                           <SelectTrigger className="h-[50px] text-sm bg-[#FDFCFB] border-[#E4DCD0] focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/15 rounded-xl">
                             <div className="flex items-center gap-2 text-left">
@@ -869,6 +967,38 @@ const Auth: React.FC = () => {
                             {signUpForm.formState.errors.university.message}
                           </p>
                         )}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold text-[#27272A] uppercase tracking-wider">
+                          Academic Level
+                        </Label>
+                        <div className="grid grid-cols-5 gap-2">
+                          {(["100", "200", "300", "400", "500"] as const).map((lvl) => {
+                            const active = levelValue === lvl;
+                            return (
+                              <button
+                                key={lvl}
+                                type="button"
+                                onClick={() => {
+                                  signUpForm.setValue("level", lvl, { shouldValidate: true });
+                                  try {
+                                    localStorage.setItem("overra_express_level", lvl);
+                                  } catch {
+                                    /* ignore */
+                                  }
+                                }}
+                                className={`h-10 rounded-xl font-mono text-xs font-bold tabular-nums border transition-all cursor-pointer ${
+                                  active
+                                    ? "bg-[#18181B] text-[#F5D77F] border-[#18181B] shadow-xs"
+                                    : "bg-[#FDFCFB] text-[#27272A] border-[#E4DCD0] hover:border-[#D4AF37]"
+                                }`}
+                              >
+                                {lvl}L
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
 
                       {referralCodeFromUrl && (

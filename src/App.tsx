@@ -209,7 +209,16 @@ function DashboardWarmup() {
 
 // Persist the last meaningful in-app route for signed-in users so the next
 // login can resume exactly where they left off.
-const RESUME_SKIP_PREFIXES = ["/auth", "/install", "/r/", "/quiz/", "/reset-password", "/forgot-password"];
+const RESUME_SKIP_PREFIXES = [
+  "/auth",
+  "/onboarding",
+  "/start",
+  "/install",
+  "/r/",
+  "/quiz/",
+  "/reset-password",
+  "/forgot-password",
+];
 function LastRouteTracker() {
   const { user } = useAuth();
   const location = useLocation();
