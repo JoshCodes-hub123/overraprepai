@@ -139,13 +139,13 @@ export const HeroContainer: React.FC<HeroContainerProps> = ({
           </nav>
 
           {/* Desktop Direct Actions */}
-          <div className="hidden sm:flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2.5">
             <Link
-              to="/auth"
-              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#5C5346] hover:text-[#1A1813] transition-colors px-3 py-2 rounded-lg hover:bg-[#D4AF37]/10"
+              to="/auth?mode=signin"
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#1A1813] bg-white hover:bg-[#FAF0D6]/60 border border-[#D4AF37]/60 px-4 py-2 rounded-xl shadow-xs transition-all active:scale-98"
             >
-              <LogIn className="w-3.5 h-3.5 text-[#996515]" />
-              <span>Sign in</span>
+              <LogIn className="w-4 h-4 text-[#996515]" />
+              <span>Log In</span>
             </Link>
             <Link
               to="/onboarding"
@@ -156,13 +156,14 @@ export const HeroContainer: React.FC<HeroContainerProps> = ({
             </Link>
           </div>
 
-          {/* Mobile Hamburger Menu Button */}
-          <div className="flex md:hidden items-center gap-2">
+          {/* Mobile Hamburger Menu + Prominent Login Button */}
+          <div className="flex sm:hidden items-center gap-2">
             <Link
-              to="/auth"
-              className="text-xs font-bold text-[#8A795D] hover:text-[#1A1813] px-2.5 py-1.5 rounded-lg"
+              to="/auth?mode=signin"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1A1813] bg-white border border-[#D4AF37]/60 px-3 py-2 rounded-xl shadow-xs active:scale-95 transition-all"
             >
-              Sign In
+              <LogIn className="w-3.5 h-3.5 text-[#996515]" />
+              <span>Log In</span>
             </Link>
             <button
               type="button"
@@ -191,6 +192,26 @@ export const HeroContainer: React.FC<HeroContainerProps> = ({
               className="border-t border-[#D4AF37]/20 bg-white/95 backdrop-blur-xl px-4 py-4 md:hidden overflow-hidden"
             >
               <div className="flex flex-col gap-3">
+                {/* Top Quick-Access Auth Actions in Mobile Drawer */}
+                <div className="grid grid-cols-2 gap-2 pb-2 border-b border-[#D4AF37]/15">
+                  <Link
+                    to="/auth?mode=signin"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-1.5 rounded-xl border border-[#D4AF37]/60 bg-white py-2.5 text-xs font-bold text-[#1A1813] shadow-xs"
+                  >
+                    <LogIn className="h-4 w-4 text-[#996515]" />
+                    <span>Student Log In</span>
+                  </Link>
+                  <Link
+                    to="/onboarding"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8860B] py-2.5 text-xs font-bold text-neutral-950 shadow-xs"
+                  >
+                    <span>Get Started</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+
                 <a
                   href="#demo"
                   onClick={handleDemoClick}
@@ -250,25 +271,6 @@ export const HeroContainer: React.FC<HeroContainerProps> = ({
                   </span>
                   <ChevronRight className="h-4 w-4 text-[#8A795D]" />
                 </button>
-
-                <div className="pt-2 border-t border-[#D4AF37]/15 flex flex-col gap-2">
-                  <Link
-                    to="/onboarding"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#B8860B] py-3 text-sm font-bold text-neutral-950 shadow-md"
-                  >
-                    <span>Start Free Practice</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                  <Link
-                    to="/auth"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#D4AF37]/40 bg-white py-2.5 text-xs font-bold text-[#1A1813]"
-                  >
-                    <LogIn className="h-4 w-4 text-[#996515]" />
-                    <span>Existing Student Login</span>
-                  </Link>
-                </div>
               </div>
             </motion.div>
           )}

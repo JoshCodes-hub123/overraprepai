@@ -8,6 +8,8 @@ import {
   BookOpen,
   Coins,
   Layers,
+  LogIn,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -68,7 +70,6 @@ export const UniversityOnboarding: React.FC = () => {
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Sync with profile if it loads after initial mount
   useEffect(() => {
     const profUni = (profile as any)?.university as UniversityCode | undefined;
     if (profUni && UNIVERSITIES[profUni]) {
@@ -80,7 +81,6 @@ export const UniversityOnboarding: React.FC = () => {
     }
   }, [profile]);
 
-  // Pre-fetch active courses for the selected university in the background
   useEffect(() => {
     let active = true;
     async function fetchUniversityCourses() {
@@ -110,14 +110,12 @@ export const UniversityOnboarding: React.FC = () => {
     };
   }, [selectedUni]);
 
-  // Filter courses matching the chosen level (or fallback to all university courses if none match)
   const matchedCourseIds = useMemo(() => {
     if (availableCourses.length === 0) return [];
-    const levelPrefix = selectedLevel.charAt(0); // e.g. '1' for 100L
+    const levelPrefix = selectedLevel.charAt(0);
     const levelFiltered = availableCourses.filter((c) => {
       const lvlStr = String(c.level || "").replace(/\D/g, "");
       if (lvlStr === selectedLevel) return true;
-      // Match course code digit (e.g. MTH 101 -> '1' for 100L)
       const codeMatch = c.code?.match(/\b(\d)\d{2}\b/);
       return codeMatch ? codeMatch[1] === levelPrefix : false;
     });
@@ -153,7 +151,7 @@ export const UniversityOnboarding: React.FC = () => {
     }
 
     if (!user) {
-      toast.success(`Saved ${selectedUni} · ${selectedLevel}L! Create your account or sign in to start.`);
+      toast.success(`Saved ${selectedUni} · ${selectedLevel}L! Create your account or log in to start.`);
       navigate(`/auth?mode=signup&redirect=${encodeURIComponent("/student/dashboard")}`);
       return;
     }
@@ -164,7 +162,6 @@ export const UniversityOnboarding: React.FC = () => {
       const existingFaculty = (profile as any)?.faculty;
       const existingDept = (profile as any)?.department;
 
-      // Assign sensible default faculty & department silently if not already set
       const defaultFaculties = facultiesOf(selectedUni);
       const fallbackFaculty = existingFaculty || defaultFaculties[0] || "General Studies";
       const defaultDepts = departmentsOf(selectedUni, fallbackFaculty);
@@ -173,7 +170,6 @@ export const UniversityOnboarding: React.FC = () => {
       const currentTokenBalance = (profile as any)?.ai_token_balance ?? 0;
       const updatedBalance = currentTokenBalance <= 0 ? 50 : currentTokenBalance;
 
-      // 1. Update student profile in one fast call
       const { error: profileError } = await (supabase as any)
         .from("profiles")
         .update({
@@ -193,7 +189,6 @@ export const UniversityOnboarding: React.FC = () => {
         console.warn("Profile update note:", profileError.message);
       }
 
-      // 2. Silently auto-enroll student into all matched level courses
       if (matchedCourseIds.length > 0) {
         const enrollments = matchedCourseIds.map((cId) => ({
           student_id: user.id,
@@ -233,19 +228,25 @@ export const UniversityOnboarding: React.FC = () => {
         noindex
       />
 
-      <div className="min-h-screen bg-background flex flex-col justify-between py-6 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-[#FAF8F5] text-[#18181B] flex flex-col justify-between py-5 px-4 sm:px-6 lg:px-8">
         {/* Clean 3-Zone Top Bar */}
-        <header className="w-full max-w-5xl mx-auto flex items-center justify-between gap-8 pb-4 border-b border-border/60">
+        <header className="w-full max-w-5xl mx-auto flex items-center justify-between gap-4 pb-4 border-b border-[#E8E2D6]">
           <Link
             to="/"
-            className="flex items-center gap-2.5 text-base font-bold tracking-tight text-foreground whitespace-nowrap shrink-0"
+            className="flex items-center gap-2.5 text-base font-extrabold tracking-tight text-[#18181B] whitespace-nowrap shrink-0"
           >
-            <img src={logo} alt="OverraPrep AI" className="w-7 h-7 object-contain" />
-            <span className="font-display">OverraPrep AI</span>
+            <div className="w-9 h-9 rounded-xl bg-white border border-[#E8E2D6] p-1 flex items-center justify-center shadow-2xs">
+              <img src={logo} alt="OverraPrep AI" className="w-full h-full object-contain" />
+            </div>
+            <span className="font-display">OverraPrep</span>
+            <span className="rounded bg-[#D4AF37]/20 px-1.5 py-0.5 text-[10px] font-black uppercase text-[#8B6B10]">
+              AI
+            </span>
           </Link>
 
-          <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground whitespace-nowrap shrink-0">
-            <span>Express Setup</span>
+          <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-[#71717A] whitespace-nowrap shrink-0">
+            <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+            <span>3-Tap Express Setup</span>
             <span aria-hidden="true">·</span>
             <span>Takes 5 seconds</span>
           </div>
@@ -255,16 +256,17 @@ export const UniversityOnboarding: React.FC = () => {
               <button
                 type="button"
                 onClick={() => navigate("/student/dashboard")}
-                className="px-3.5 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap shrink-0"
+                className="px-4 py-2 rounded-xl border border-[#E8E2D6] bg-white hover:border-[#D4AF37] text-xs font-bold text-[#18181B] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
               >
-                Skip for now
+                Go to Dashboard
               </button>
             ) : (
               <Link
                 to="/auth?mode=signin"
-                className="px-3.5 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap shrink-0"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border-2 border-[#18181B] bg-[#18181B] hover:bg-[#27272A] text-xs sm:text-sm font-bold text-[#F5D77F] transition-colors whitespace-nowrap shrink-0 shadow-xs"
               >
-                Sign In
+                <LogIn className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <span>Student Log In</span>
               </Link>
             )}
           </div>
@@ -273,31 +275,35 @@ export const UniversityOnboarding: React.FC = () => {
         {/* Main Single-Screen 3-Tap Express Container */}
         <main className="w-full max-w-4xl mx-auto my-auto py-6">
           <div className="text-center max-w-xl mx-auto mb-6 space-y-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#D4AF37]/40 text-[#996515] text-[11px] font-extrabold uppercase tracking-wider shadow-2xs">
+              <Sparkles className="w-3 h-3 text-[#D4AF37]" />
+              Personalized University Workspace
+            </span>
             <h1
-              className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground tracking-tight"
+              className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#18181B] tracking-tight"
               style={{ textWrap: "balance" }}
             >
               Pick your school and level to start practicing
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-[#71717A]">
               We automatically load your past CBT questions, lecture notes, and credit +50 free tokens.
             </p>
           </div>
 
-          {/* Single-Elevation Express Card */}
-          <div className="rounded-3xl border border-border bg-card p-5 sm:p-8 shadow-sm space-y-7">
+          {/* Single-Elevation Express Card in Warm Ivory & White */}
+          <div className="rounded-3xl border border-[#E8E2D6] bg-white p-5 sm:p-8 shadow-[0_20px_50px_-15px_rgba(28,25,23,0.06)] space-y-7">
             {/* TAP 1: UNIVERSITY SELECTION */}
             <section aria-labelledby="step-uni-heading" className="space-y-3.5">
               <div className="flex items-center justify-between">
                 <h2
                   id="step-uni-heading"
-                  className="font-display text-sm sm:text-base font-bold text-foreground flex items-center gap-2"
+                  className="font-display text-sm sm:text-base font-extrabold text-[#18181B] flex items-center gap-2"
                 >
-                  <School className="w-4 h-4 text-primary shrink-0" />
+                  <School className="w-4 h-4 text-[#996515] shrink-0" />
                   <span>1. Choose Your University</span>
                 </h2>
-                <span className="text-xs text-muted-foreground font-mono tabular-nums">
-                  Selected: <strong className="text-foreground">{selectedUni}</strong>
+                <span className="text-xs text-[#71717A] font-mono tabular-nums">
+                  Selected: <strong className="text-[#18181B]">{selectedUni}</strong>
                 </span>
               </div>
 
@@ -311,14 +317,14 @@ export const UniversityOnboarding: React.FC = () => {
                       key={uni.code}
                       type="button"
                       onClick={() => handleSelectUni(uni.code)}
-                      className={`group relative text-left rounded-2xl border transition-all duration-150 overflow-hidden min-h-[88px] flex flex-col justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98] cursor-pointer ${
+                      className={`group relative text-left rounded-2xl border-2 transition-all duration-150 overflow-hidden min-h-[92px] flex flex-col justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] active:scale-[0.98] cursor-pointer ${
                         isSelected
-                          ? "border-primary bg-primary/10 shadow-xs"
-                          : "border-border bg-background hover:border-primary/50 hover:bg-muted/40"
+                          ? "border-[#18181B] bg-[#FAF8F5] shadow-sm"
+                          : "border-[#E8E2D6] bg-white hover:border-[#D4AF37]"
                       }`}
                     >
                       {gateImg ? (
-                        <div className="relative h-20 w-full overflow-hidden bg-muted">
+                        <div className="relative h-20 w-full overflow-hidden bg-zinc-900">
                           <img
                             src={gateImg}
                             alt={uni.name}
@@ -327,33 +333,31 @@ export const UniversityOnboarding: React.FC = () => {
                             loading="eager"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent" />
-                          <span className="absolute bottom-2 left-3 font-display font-extrabold text-sm text-white tracking-tight">
+                          <span className="absolute bottom-2 left-3 font-mono font-extrabold text-sm text-white tracking-tight">
                             {uni.code}
                           </span>
                           {isSelected && (
-                            <span className="absolute top-2 right-2 p-1 rounded-full bg-primary text-primary-foreground shadow-xs">
+                            <span className="absolute top-2 right-2 p-1 rounded-full bg-[#D4AF37] text-[#18181B] shadow-xs">
                               <CheckCircle2 className="w-4 h-4" />
                             </span>
                           )}
                         </div>
                       ) : (
                         <div className="flex items-center justify-between px-3.5 pt-3.5">
-                          <span className="font-display font-extrabold text-sm text-foreground">
+                          <span className="font-mono font-extrabold text-sm text-[#18181B]">
                             {uni.code}
                           </span>
                           {isSelected && (
-                            <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                            <CheckCircle2 className="w-4 h-4 text-[#996515] shrink-0" />
                           )}
                         </div>
                       )}
 
                       <div className="p-3">
-                        <p className="text-xs font-semibold text-foreground line-clamp-1">
+                        <p className="text-xs font-bold text-[#18181B] line-clamp-1">
                           {uni.name}
                         </p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
-                          {uni.city}
-                        </p>
+                        <p className="text-[11px] text-[#71717A] mt-0.5">{uni.city}</p>
                       </div>
                     </button>
                   );
@@ -362,19 +366,19 @@ export const UniversityOnboarding: React.FC = () => {
             </section>
 
             {/* Hairline Divider */}
-            <div className="border-t border-border/70" />
+            <div className="border-t border-[#E8E2D6]" />
 
             {/* TAP 2: ACADEMIC LEVEL BAR */}
             <section aria-labelledby="step-level-heading" className="space-y-3.5">
               <div className="flex items-center justify-between">
                 <h2
                   id="step-level-heading"
-                  className="font-display text-sm sm:text-base font-bold text-foreground flex items-center gap-2"
+                  className="font-display text-sm sm:text-base font-extrabold text-[#18181B] flex items-center gap-2"
                 >
-                  <Layers className="w-4 h-4 text-primary shrink-0" />
+                  <Layers className="w-4 h-4 text-[#996515] shrink-0" />
                   <span>2. Pick Your Current Level</span>
                 </h2>
-                <span className="text-xs text-muted-foreground font-mono tabular-nums">
+                <span className="text-xs text-[#71717A] font-mono tabular-nums">
                   {loadingCourses
                     ? "Checking courses…"
                     : `${matchedCourseIds.length} courses ready`}
@@ -389,14 +393,16 @@ export const UniversityOnboarding: React.FC = () => {
                       key={lvl}
                       type="button"
                       onClick={() => handleSelectLevel(lvl)}
-                      className={`min-h-[48px] rounded-xl font-mono text-xs sm:text-sm font-bold tabular-nums border transition-all duration-150 flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-[0.98] cursor-pointer whitespace-nowrap shrink-0 ${
+                      className={`min-h-[48px] rounded-xl font-mono text-xs sm:text-sm font-bold tabular-nums border-2 transition-all duration-150 flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] active:scale-[0.98] cursor-pointer whitespace-nowrap shrink-0 ${
                         isSelected
-                          ? "bg-primary text-primary-foreground border-primary shadow-xs"
-                          : "bg-background text-foreground border-border hover:border-primary/50 hover:bg-muted/40"
+                          ? "bg-[#18181B] text-[#F5D77F] border-[#18181B] shadow-xs"
+                          : "bg-[#FAF8F5] text-[#18181B] border-[#E8E2D6] hover:border-[#D4AF37]"
                       }`}
                     >
                       <span>{lvl}L</span>
-                      {isSelected && <CheckCircle2 className="w-3.5 h-3.5 hidden sm:inline shrink-0" />}
+                      {isSelected && (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#D4AF37] hidden sm:inline shrink-0" />
+                      )}
                     </button>
                   );
                 })}
@@ -409,7 +415,7 @@ export const UniversityOnboarding: React.FC = () => {
                 type="button"
                 onClick={handleExpressLaunch}
                 disabled={isSubmitting}
-                className="w-full min-h-[52px] rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-display font-bold text-sm sm:text-base shadow-md transition-transform active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full min-h-[54px] rounded-2xl bg-gradient-to-r from-[#D4AF37] via-[#DFBE57] to-[#C5A059] hover:from-[#C5A059] hover:to-[#B8860B] text-[#18181B] font-display font-black text-sm sm:text-base shadow-[0_8px_20px_-4px_rgba(212,175,55,0.35)] transition-transform active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isSubmitting ? (
                   <>
@@ -424,16 +430,16 @@ export const UniversityOnboarding: React.FC = () => {
                 )}
               </Button>
 
-              <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted-foreground text-center">
+              <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-[#71717A] text-center">
                 <span className="inline-flex items-center gap-1">
-                  <BookOpen className="w-3.5 h-3.5 text-primary" />
+                  <BookOpen className="w-3.5 h-3.5 text-[#996515]" />
                   <span className="tabular-nums">
                     Auto-enrolls {matchedCourseIds.length || "verified"} {selectedLevel}L courses
                   </span>
                 </span>
                 <span aria-hidden="true">·</span>
                 <span className="inline-flex items-center gap-1">
-                  <Coins className="w-3.5 h-3.5 text-primary" />
+                  <Coins className="w-3.5 h-3.5 text-[#996515]" />
                   <span>+50 Free CBT Starter Tokens</span>
                 </span>
                 <span aria-hidden="true">·</span>
@@ -444,7 +450,7 @@ export const UniversityOnboarding: React.FC = () => {
         </main>
 
         {/* Quiet Footer */}
-        <footer className="w-full max-w-5xl mx-auto pt-4 text-center text-xs text-muted-foreground">
+        <footer className="w-full max-w-5xl mx-auto pt-4 text-center text-xs text-[#8C8273]">
           <span>OverraPrep AI · Nigerian University CBT &amp; Study Companion</span>
         </footer>
       </div>

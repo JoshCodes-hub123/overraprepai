@@ -10,6 +10,7 @@ import {
   Landmark,
   Target,
   Trophy,
+  LogIn,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { HeroContainer } from "./HeroContainer";
@@ -277,21 +278,32 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     variants={textFadeUp}
                     initial="initial"
                     animate="animate"
-                    className="mt-5 sm:mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-3.5 w-full sm:w-auto"
+                    className="mt-5 sm:mt-6 flex flex-wrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto"
                   >
                     <button
                       type="button"
                       onClick={handleStartPractice}
-                      className="inline-flex items-center justify-center gap-2 h-[48px] sm:h-[52px] px-6 sm:px-8 rounded-full bg-gradient-to-r from-[#F5D77F] via-[#D4AF37] to-[#C5A059] hover:brightness-105 text-[#1A1813] font-black text-sm sm:text-base tracking-wide shadow-[0_8px_20px_-4px_rgba(212,175,55,0.35)] active:scale-[0.98] transition-all cursor-pointer group"
+                      className="inline-flex items-center justify-center gap-2 h-[48px] sm:h-[52px] px-6 sm:px-7 rounded-full bg-gradient-to-r from-[#F5D77F] via-[#D4AF37] to-[#C5A059] hover:brightness-105 text-[#1A1813] font-black text-sm sm:text-base tracking-wide shadow-[0_8px_20px_-4px_rgba(212,175,55,0.35)] active:scale-[0.98] transition-all cursor-pointer group"
                     >
                       <span>Start Free Practice</span>
                       <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                     </button>
 
+                    {!user && (
+                      <button
+                        type="button"
+                        onClick={() => navigate("/auth?mode=signin")}
+                        className="inline-flex items-center justify-center gap-2 h-[48px] sm:h-[52px] px-5 sm:px-6 rounded-full border-2 border-[#1A1813] bg-[#1A1813] hover:bg-[#27241D] text-xs sm:text-sm font-bold text-[#F5D77F] shadow-sm active:scale-[0.98] transition-all cursor-pointer"
+                      >
+                        <LogIn className="w-4 h-4 text-[#D4AF37]" />
+                        <span>Student Log In</span>
+                      </button>
+                    )}
+
                     <a
                       href="#demo"
                       onClick={handleDemoClick}
-                      className="inline-flex items-center justify-center gap-2 h-[48px] sm:h-[52px] px-5 sm:px-7 rounded-full border border-[#D4AF37]/50 bg-white hover:bg-neutral-50 text-xs sm:text-sm font-bold text-[#1A1813] shadow-xs hover:border-[#D4AF37] active:scale-[0.98] transition-all cursor-pointer"
+                      className="inline-flex items-center justify-center gap-2 h-[48px] sm:h-[52px] px-5 sm:px-6 rounded-full border border-[#D4AF37]/50 bg-white hover:bg-neutral-50 text-xs sm:text-sm font-bold text-[#1A1813] shadow-xs hover:border-[#D4AF37] active:scale-[0.98] transition-all cursor-pointer"
                     >
                       <span className="w-5 h-5 rounded-full bg-[#FAF0D6] flex items-center justify-center text-[#996515] text-[10px] font-black">
                         ▶
@@ -452,21 +464,32 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     variants={textFadeUp}
                     initial="initial"
                     animate="animate"
-                    className="mt-5 sm:mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-3.5 w-full sm:w-auto"
+                    className="mt-5 sm:mt-6 flex flex-wrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto"
                   >
                     <button
                       type="button"
                       onClick={handleStartPractice}
-                      className="inline-flex items-center justify-center gap-2 h-[48px] sm:h-[52px] px-6 sm:px-8 rounded-full bg-gradient-to-r from-[#F5D77F] via-[#D4AF37] to-[#C5A059] hover:brightness-105 text-[#1A1813] font-black text-sm sm:text-base tracking-wide shadow-[0_8px_20px_-4px_rgba(212,175,55,0.35)] active:scale-[0.98] transition-all cursor-pointer group"
+                      className="inline-flex items-center justify-center gap-2 h-[48px] sm:h-[52px] px-6 sm:px-7 rounded-full bg-gradient-to-r from-[#F5D77F] via-[#D4AF37] to-[#C5A059] hover:brightness-105 text-[#1A1813] font-black text-sm sm:text-base tracking-wide shadow-[0_8px_20px_-4px_rgba(212,175,55,0.35)] active:scale-[0.98] transition-all cursor-pointer group"
                     >
                       <span>Get Started</span>
                       <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                     </button>
 
+                    {!user && (
+                      <button
+                        type="button"
+                        onClick={() => navigate("/auth?mode=signin")}
+                        className="inline-flex items-center justify-center gap-2 h-[48px] sm:h-[52px] px-5 sm:px-6 rounded-full border-2 border-[#1A1813] bg-[#1A1813] hover:bg-[#27241D] text-xs sm:text-sm font-bold text-[#F5D77F] shadow-sm active:scale-[0.98] transition-all cursor-pointer"
+                      >
+                        <LogIn className="w-4 h-4 text-[#D4AF37]" />
+                        <span>Student Log In</span>
+                      </button>
+                    )}
+
                     <a
                       href="#innovations"
                       onClick={handleLearnMoreClick}
-                      className="inline-flex items-center justify-center gap-2 h-[48px] sm:h-[52px] px-5 sm:px-7 rounded-full border border-[#D4AF37]/50 bg-white hover:bg-neutral-50 text-xs sm:text-sm font-bold text-[#1A1813] shadow-xs hover:border-[#D4AF37] active:scale-[0.98] transition-all cursor-pointer"
+                      className="inline-flex items-center justify-center gap-2 h-[48px] sm:h-[52px] px-5 sm:px-6 rounded-full border border-[#D4AF37]/50 bg-white hover:bg-neutral-50 text-xs sm:text-sm font-bold text-[#1A1813] shadow-xs hover:border-[#D4AF37] active:scale-[0.98] transition-all cursor-pointer"
                     >
                       <span className="w-5 h-5 rounded-full bg-[#FAF0D6] flex items-center justify-center text-[#996515] text-[10px] font-black">
                         ▶

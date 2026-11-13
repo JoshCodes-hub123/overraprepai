@@ -1,9 +1,15 @@
 import React, { useState } from "react";
-import { Upload, FileText, FileSpreadsheet, CheckCircle2, Sparkles, AlertCircle, X, Plus, FolderUp } from "lucide-react";
+import {
+  Upload,
+  FileText,
+  FileSpreadsheet,
+  CheckCircle2,
+  X,
+  FolderUp,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useAdminEnvironment } from "@/hooks/useAdminEnvironment";
 
@@ -45,7 +51,7 @@ export const QuickResourceUpload: React.FC = () => {
     });
 
     setFiles((prev) => [...prev, ...newItems]);
-    toast.added ? toast.added(`Added ${newItems.length} resource(s) to queue`) : toast.success(`Added ${newItems.length} resource(s) to upload queue`);
+    toast.success(`Added ${newItems.length} resource(s) to upload queue`);
   };
 
   const removeItem = (id: string) => {
@@ -64,13 +70,15 @@ export const QuickResourceUpload: React.FC = () => {
         setFiles((prev) =>
           prev.map((item, idx) => (idx === i ? { ...item, status: "uploading" } : item))
         );
-        await new Promise((r) => setTimeout(r, 600));
+        await new Promise((r) => setTimeout(r, 500));
         setFiles((prev) =>
           prev.map((item, idx) => (idx === i ? { ...item, status: "success" } : item))
         );
       }
-      toast.success(`Successfully published ${files.length} study resource(s) to ${adminEnv.current.institution} repository!`);
-    } catch (err) {
+      toast.success(
+        `Published ${files.length} study resource(s) to ${adminEnv.current.institution} repository!`
+      );
+    } catch {
       toast.error("Batch upload encountered an error.");
     } finally {
       setIsUploading(false);
@@ -78,58 +86,63 @@ export const QuickResourceUpload: React.FC = () => {
   };
 
   return (
-    <Card className="p-6 border-amber-300/60 bg-gradient-to-br from-card via-card to-amber-50/30 shadow-xl">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-600 shadow-sm">
-            <FolderUp className="w-6 h-6" />
+    <section className="rounded-3xl border border-[#E8E2D6] dark:border-border bg-white dark:bg-card p-5 sm:p-7 shadow-[0_14px_34px_-12px_rgba(24,24,27,0.06)] space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#E8E2D6] dark:border-border/60">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-[#18181B] text-[#F5D77F] flex items-center justify-center shadow-xs shrink-0">
+            <FolderUp className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-display font-bold text-lg text-foreground">
+            <h3 className="font-display font-extrabold text-base sm:text-lg text-[#18181B] dark:text-foreground">
               Quick Resource &amp; Material Uploader
             </h3>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Batch upload PDFs, CSV question sets, and study notes with auto-tagging for {adminEnv.current.institution}.
+            <p className="text-xs text-[#71717A] dark:text-muted-foreground">
+              Batch upload PDFs, CSV question sets, and study notes with auto-tagging for{" "}
+              <strong className="font-mono text-[#18181B] dark:text-foreground">
+                {adminEnv.current.institution}
+              </strong>
+              .
             </p>
           </div>
         </div>
-        <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 self-start sm:self-center">
-          Auto-Tagging Enabled
-        </Badge>
+        <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#FAF0D6] border border-[#D4AF37]/40 px-3 py-1 text-xs font-extrabold text-[#996515] self-start sm:self-center">
+          <Sparkles className="w-3.5 h-3.5" />
+          Auto-Tagging Active
+        </span>
       </div>
 
       {/* Auto-Tagging Default Controls */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-muted/40 border border-border/60 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 p-4 rounded-2xl bg-[#FAF8F5] dark:bg-muted/40 border border-[#E8E2D6] dark:border-border">
         <div>
-          <label className="block text-[11px] font-bold text-muted-foreground uppercase mb-1">
+          <label className="block text-[11px] font-extrabold text-[#52525B] uppercase tracking-wider mb-1.5">
             Default Course Code
           </label>
           <Input
             value={globalCourse}
             onChange={(e) => setGlobalCourse(e.target.value)}
             placeholder="e.g. CSC 201"
-            className="h-9 bg-card text-xs font-semibold"
+            className="h-10 rounded-xl bg-white border-[#E8E2D6] font-mono text-xs font-bold"
           />
         </div>
         <div>
-          <label className="block text-[11px] font-bold text-muted-foreground uppercase mb-1">
+          <label className="block text-[11px] font-extrabold text-[#52525B] uppercase tracking-wider mb-1.5">
             Academic Year
           </label>
           <Input
             value={globalYear}
             onChange={(e) => setGlobalYear(e.target.value)}
             placeholder="e.g. 2024/2025"
-            className="h-9 bg-card text-xs font-semibold"
+            className="h-10 rounded-xl bg-white border-[#E8E2D6] font-mono text-xs font-bold"
           />
         </div>
         <div>
-          <label className="block text-[11px] font-bold text-muted-foreground uppercase mb-1">
+          <label className="block text-[11px] font-extrabold text-[#52525B] uppercase tracking-wider mb-1.5">
             Resource Category
           </label>
           <select
             value={globalCategory}
             onChange={(e) => setGlobalCategory(e.target.value)}
-            className="w-full h-9 rounded-md border border-input bg-card px-3 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full h-10 rounded-xl border border-[#E8E2D6] bg-white px-3 text-xs font-bold text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
           >
             <option value="Lecture Notes">Lecture Notes</option>
             <option value="Past Questions">Past Questions</option>
@@ -140,7 +153,7 @@ export const QuickResourceUpload: React.FC = () => {
       </div>
 
       {/* Drag & Drop Upload Zone */}
-      <div className="relative border-2 border-dashed border-amber-400/40 hover:border-amber-500 rounded-3xl p-8 text-center bg-amber-50/20 dark:bg-amber-950/10 transition group cursor-pointer mb-6">
+      <div className="relative border-2 border-dashed border-[#D4AF37]/60 hover:border-[#18181B] rounded-3xl p-8 text-center bg-[#FAF8F5]/70 transition-all group cursor-pointer">
         <input
           type="file"
           multiple
@@ -149,33 +162,33 @@ export const QuickResourceUpload: React.FC = () => {
           className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
         />
         <div className="flex flex-col items-center pointer-events-none">
-          <div className="w-14 h-14 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-600 mb-3 group-hover:scale-110 transition">
-            <Upload className="w-6 h-6" />
+          <div className="w-12 h-12 rounded-2xl bg-[#18181B] text-[#F5D77F] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform shadow-xs">
+            <Upload className="w-5 h-5" />
           </div>
-          <h4 className="font-display font-bold text-sm text-foreground">
-            Drop PDF study materials or CSV datasets here
+          <h4 className="font-display font-extrabold text-sm sm:text-base text-[#18181B]">
+            Drop PDF study materials or CSV question banks here
           </h4>
-          <p className="text-xs text-muted-foreground mt-1">
-            Supports multiple .pdf, .csv, and .docx files with automatic metadata tagging
+          <p className="text-xs text-[#71717A] mt-1">
+            Supports batch .pdf, .csv, and .docx uploads with automatic course &amp; year tagging
           </p>
-          <Button variant="outline" size="sm" className="mt-4 border-amber-500/40 text-amber-700 dark:text-amber-300">
+          <span className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#E8E2D6] bg-white text-xs font-bold text-[#18181B] shadow-2xs">
             Browse Files on Device
-          </Button>
+          </span>
         </div>
       </div>
 
       {/* File Queue Preview */}
       {files.length > 0 && (
-        <div className="space-y-3 mb-6">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="font-display font-bold text-sm text-foreground">
+            <h4 className="font-display font-extrabold text-sm text-[#18181B] font-mono tabular-nums">
               Upload Queue ({files.length} items)
             </h4>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setFiles([])}
-              className="text-xs text-muted-foreground hover:text-destructive h-7 px-2"
+              className="text-xs text-[#71717A] hover:text-rose-600 h-7 px-2 font-bold"
             >
               Clear All
             </Button>
@@ -185,19 +198,23 @@ export const QuickResourceUpload: React.FC = () => {
             {files.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center justify-between p-3 rounded-xl bg-card border border-border/80 text-xs shadow-xs"
+                className="flex items-center justify-between p-3 rounded-2xl bg-[#FAF8F5] border border-[#E8E2D6] text-xs"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                    {item.type === "csv" ? <FileSpreadsheet className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
+                  <div className="w-8 h-8 rounded-xl bg-[#18181B] text-[#F5D77F] flex items-center justify-center shrink-0">
+                    {item.type === "csv" ? (
+                      <FileSpreadsheet className="w-4 h-4" />
+                    ) : (
+                      <FileText className="w-4 h-4" />
+                    )}
                   </div>
                   <div className="min-w-0">
-                    <p className="font-bold text-foreground truncate">{item.name}</p>
-                    <p className="text-[11px] text-muted-foreground flex items-center gap-2">
+                    <p className="font-bold text-[#18181B] truncate">{item.name}</p>
+                    <p className="font-mono text-[11px] text-[#71717A] flex items-center gap-2 tabular-nums">
                       <span>{item.size}</span>
-                      <span>•</span>
-                      <span className="font-semibold text-primary">{item.courseCode}</span>
-                      <span>•</span>
+                      <span>·</span>
+                      <span className="font-extrabold text-[#996515]">{item.courseCode}</span>
+                      <span>·</span>
                       <span>{item.academicYear}</span>
                     </p>
                   </div>
@@ -205,19 +222,20 @@ export const QuickResourceUpload: React.FC = () => {
 
                 <div className="flex items-center gap-2 shrink-0">
                   {item.status === "success" && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-500/15 px-2.5 py-1 rounded-lg">
                       <CheckCircle2 className="w-3.5 h-3.5" /> Published
                     </span>
                   )}
                   {item.status === "uploading" && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-full animate-pulse">
-                      Uploading...
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#996515] bg-[#FAF0D6] px-2.5 py-1 rounded-lg animate-pulse">
+                      Uploading…
                     </span>
                   )}
                   {item.status === "pending" && (
                     <button
+                      type="button"
                       onClick={() => removeItem(item.id)}
-                      className="p-1 rounded-full hover:bg-muted text-muted-foreground transition"
+                      className="p-1.5 rounded-lg hover:bg-white text-[#71717A] transition"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -231,14 +249,14 @@ export const QuickResourceUpload: React.FC = () => {
             <Button
               onClick={handleStartBatchUpload}
               disabled={isUploading || files.every((f) => f.status === "success")}
-              className="bg-amber-600 hover:bg-amber-700 text-white font-bold"
+              className="h-11 px-6 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#C5A059] hover:brightness-105 text-[#18181B] font-display font-black text-xs sm:text-sm cursor-pointer"
             >
-              {isUploading ? "Publishing Batch..." : `Publish ${files.length} Resource(s) Now`}
+              {isUploading ? "Publishing Batch…" : `Publish ${files.length} Resource(s) Now`}
             </Button>
           </div>
         </div>
       )}
-    </Card>
+    </section>
   );
 };
 

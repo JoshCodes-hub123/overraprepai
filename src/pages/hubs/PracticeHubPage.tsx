@@ -9,19 +9,10 @@ import {
   ChevronRight,
   Play,
   RotateCcw,
-  CheckCircle2,
-  AlertCircle,
-  HelpCircle,
   Coins,
-  Flame,
-  Award,
-  Layers,
-  Search,
   Filter,
   Download,
   Check,
-  Star,
-  GraduationCap,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCourseSnapshots } from "@/hooks/useCourseSnapshots";
@@ -79,30 +70,26 @@ export const PracticeHubPage = () => {
   const { data: courses = [], isLoading: coursesLoading } = useCourseSnapshots();
   const { balance, dailyFreeLeft } = useTokenBalance();
 
-  // Mode Selection: "simulation" (Strict CBT Exam) vs "practice" (Interactive Study) vs "weak" (Targeted Drill)
   const [examMode, setExamMode] = useState<"simulation" | "practice" | "weak">("simulation");
   const [selectedCourseId, setSelectedCourseId] = useState<string>(preselectedCourseId || "");
   const [questionCount, setQuestionCount] = useState<number>(20);
   const [durationMinutes, setDurationMinutes] = useState<number>(30);
   const [isLaunching, setIsLaunching] = useState(false);
 
-  // Available Quizzes & Recent Attempts
   const [quizzes, setQuizzes] = useState<UniversityQuiz[]>([]);
   const [quizzesLoading, setQuizzesLoading] = useState(true);
   const [recentAttempts, setRecentAttempts] = useState<RecentAttempt[]>([]);
-  const [attemptsLoading, setAttemptsLoading] = useState(true);
+  const [, setAttemptsLoading] = useState(true);
   const [courseFilter, setCourseFilter] = useState<string>("all");
 
-  // Sync selectedCourseId if passed from query params or courses load
   useEffect(() => {
     if (preselectedCourseId) {
       setSelectedCourseId(preselectedCourseId);
     } else if (courses.length > 0 && !selectedCourseId) {
       setSelectedCourseId(courses[0].id);
     }
-  }, [preselectedCourseId, courses]);
+  }, [preselectedCourseId, courses, selectedCourseId]);
 
-  // Load verified university quizzes for this level/department
   useEffect(() => {
     async function loadQuizzes() {
       try {
@@ -135,7 +122,6 @@ export const PracticeHubPage = () => {
     loadQuizzes();
   }, []);
 
-  // Load student's recent CBT attempts
   useEffect(() => {
     if (!user?.id) return;
     async function loadAttempts() {
@@ -168,9 +154,8 @@ export const PracticeHubPage = () => {
       }
     }
     loadAttempts();
-  }, [user?.id]);
+  }, [user]);
 
-  // Format institutional scope badge
   const universityShort = useMemo(() => {
     const code =
       institution ??
@@ -180,13 +165,11 @@ export const PracticeHubPage = () => {
     return code && INSTITUTIONS[code] ? INSTITUTIONS[code].short : (profile as any)?.university || "University";
   }, [institution, profile]);
 
-  // Filtered quizzes for catalog
   const filteredQuizzes = useMemo(() => {
     if (courseFilter === "all") return quizzes;
     return quizzes.filter((q) => q.course?.id === courseFilter || q.course?.code === courseFilter);
   }, [quizzes, courseFilter]);
 
-  // 1-Tap Launch Handler
   const handleLaunchExam = async () => {
     if (!selectedCourseId) {
       toast.error("Please select a course to start CBT examination");
@@ -196,7 +179,6 @@ export const PracticeHubPage = () => {
     try {
       setIsLaunching(true);
 
-      // Check if there is an existing quiz for this course
       const existingQuiz = quizzes.find((q) => q.course?.id === selectedCourseId);
 
       if (existingQuiz) {
@@ -210,8 +192,7 @@ export const PracticeHubPage = () => {
         return;
       }
 
-      // Query database for a quiz matching this course
-      const { data: dbQuiz, error } = await supabase
+      const { data: dbQuiz } = await supabase
         .from("quizzes")
         .select("id")
         .eq("course_id", selectedCourseId)
@@ -228,7 +209,6 @@ export const PracticeHubPage = () => {
           navigate(`/quiz/${dbQuiz.id}/practice`);
         }
       } else {
-        // Fallback: If no pre-authored quiz exists yet, redirect to general practice or course workspace
         toast.info("Loading questions for this course...");
         navigate(`/courses/${selectedCourseId}`);
       }
@@ -247,85 +227,87 @@ export const PracticeHubPage = () => {
         description="Real university past questions, timed CBT simulation, KaTeX AI breakdowns, and instant feedback."
       />
 
-      <div className="min-h-screen bg-background text-foreground pb-24">
+      <div className="min-h-screen bg-[#FAF8F5] dark:bg-background text-[#18181B] dark:text-foreground pb-24">
         {/* =========================================================
             HEADER & ACADEMIC CONTEXT BAR
            ========================================================= */}
-        <div className="border-b border-border/80 bg-card/60 backdrop-blur-md sticky top-0 z-20">
+        <header className="border-b border-[#E8E2D6] dark:border-border bg-white/90 dark:bg-card/80 backdrop-blur-md sticky top-0 z-20">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-900 dark:text-amber-200 font-bold">
-                <Target className="h-5 w-5 text-amber-600" />
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#18181B] text-[#F5D77F] font-bold shadow-2xs">
+                <Target className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <h1 className="font-display text-sm sm:text-base font-bold text-foreground truncate">
-                  CBT Examination Suite
+                <h1 className="font-display text-sm sm:text-base font-extrabold text-[#18181B] dark:text-foreground truncate">
+                  CBT Examination Hall
                 </h1>
-                <p className="text-[11px] text-muted-foreground truncate">
-                  {universityShort} · {department || "Department"} {level ? `· ${level}L` : ""}
+                <p className="text-[11px] font-medium text-[#71717A] dark:text-muted-foreground truncate">
+                  <span className="font-mono font-bold text-[#18181B] dark:text-foreground">
+                    {universityShort}
+                  </span>{" "}
+                  · {department || "Department"} {level ? `· ${level}L` : ""}
                 </p>
               </div>
             </div>
 
-            {/* Quota Indicator */}
+            {/* Quota & Offline Indicator */}
             <div className="flex items-center gap-2">
               <Link
                 to="/student/offline"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border bg-card hover:bg-muted text-xs font-semibold text-foreground transition-colors"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E8E2D6] dark:border-border bg-[#FAF8F5] dark:bg-card hover:border-[#D4AF37] text-xs font-bold text-[#18181B] dark:text-foreground transition-colors"
                 title="Download exams for offline practice"
               >
-                <Download className="w-3.5 h-3.5 text-muted-foreground" />
+                <Download className="w-3.5 h-3.5 text-[#996515]" />
                 <span>Offline CBT</span>
               </Link>
 
               <Link
                 to="/pricing"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-amber-300/80 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-bold transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#D4AF37]/50 bg-[#FAF0D6]/70 dark:bg-amber-500/10 hover:bg-[#FAF0D6] text-[#18181B] dark:text-amber-200 text-xs font-bold transition-colors"
               >
-                <Coins className="w-3.5 h-3.5 text-amber-600" />
-                <span className="tabular-nums">{balance}</span>
-                <span className="hidden sm:inline text-[10px] font-normal text-muted-foreground">
-                  ({dailyFreeLeft} free daily)
+                <Coins className="w-3.5 h-3.5 text-[#996515]" />
+                <span className="font-mono tabular-nums">{balance}</span>
+                <span className="hidden sm:inline text-[10px] font-medium text-[#71717A]">
+                  ({dailyFreeLeft} free)
                 </span>
               </Link>
             </div>
           </div>
-        </div>
+        </header>
 
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 pt-6 space-y-8">
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 pt-5 space-y-7">
           {/* =========================================================
               COCKPIT: 1-TAP CBT EXAM LAUNCHER
              ========================================================= */}
-          <section className="rounded-3xl border border-border/80 bg-card p-5 sm:p-7 shadow-xs relative overflow-hidden">
-            {/* Top Amber Accent Glow */}
-            <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600" />
-
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+          <section className="rounded-3xl border border-[#E8E2D6] dark:border-border bg-white dark:bg-card p-5 sm:p-7 shadow-[0_14px_34px_-12px_rgba(24,24,27,0.06)] space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-[#E8E2D6] dark:border-border/60">
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
-                  Instant Simulation Cockpit
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#996515] dark:text-amber-400">
+                  1-Tap Exam Launchpad
                 </span>
-                <h2 className="font-display text-xl sm:text-2xl font-black text-foreground">
-                  Launch CBT Mock Exam
+                <h2 className="font-display text-xl sm:text-2xl font-extrabold text-[#18181B] dark:text-foreground tracking-tight">
+                  Configure &amp; Start CBT Session
                 </h2>
               </div>
 
-              <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground bg-muted/60 px-3 py-1.5 rounded-xl border border-border/60 self-start sm:self-auto">
-                <Clock className="w-4 h-4 text-amber-600" />
-                <span>Real University Grading Logic</span>
+              <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#52525B] dark:text-muted-foreground bg-[#FAF8F5] dark:bg-muted/60 px-3 py-1.5 rounded-xl border border-[#E8E2D6] dark:border-border self-start sm:self-auto">
+                <Clock className="w-3.5 h-3.5 text-[#996515]" />
+                <span>Official Campus Grading</span>
               </div>
             </div>
 
-            {/* Step 1: Course Selection Pills */}
-            <div className="space-y-2 mb-6">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-                <span>1. Select Course Target</span>
+            {/* Step 1: Course Selection */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-extrabold uppercase tracking-wider text-[#52525B] dark:text-muted-foreground">
+                  1. Select Course
+                </label>
                 {courses.length > 0 && (
-                  <span className="text-[11px] font-normal text-muted-foreground">
-                    {courses.length} enrolled semester courses
+                  <span className="font-mono text-[11px] text-[#71717A] tabular-nums">
+                    {courses.length} enrolled courses
                   </span>
                 )}
-              </label>
+              </div>
 
               {coursesLoading ? (
                 <div className="flex gap-2 overflow-x-auto py-1">
@@ -343,68 +325,70 @@ export const PracticeHubPage = () => {
                         type="button"
                         onClick={() => setSelectedCourseId(course.id)}
                         className={cn(
-                          "px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all active:scale-95 border",
+                          "min-h-[42px] px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all active:scale-95 border-2 cursor-pointer",
                           isSelected
-                            ? "bg-amber-500 border-amber-600 text-slate-950 shadow-xs ring-2 ring-amber-500/30"
-                            : "bg-muted/40 hover:bg-muted border-border/80 text-foreground"
+                            ? "bg-[#18181B] border-[#18181B] text-[#F5D77F] shadow-xs"
+                            : "bg-[#FAF8F5] dark:bg-muted/40 hover:border-[#D4AF37] border-[#E8E2D6] dark:border-border text-[#18181B] dark:text-foreground"
                         )}
                       >
-                        <span className="font-mono">{course.code}</span>
+                        <span className="font-mono font-extrabold">{course.code}</span>
                         {course.name && (
-                          <span className="font-normal opacity-85 truncate max-w-[140px] hidden sm:inline">
+                          <span className="font-medium opacity-80 truncate max-w-[140px] hidden sm:inline">
                             · {course.name}
                           </span>
                         )}
-                        {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                        {isSelected && <Check className="w-3.5 h-3.5 text-[#D4AF37] stroke-[3]" />}
                       </button>
                     );
                   })}
                 </div>
               ) : (
-                <div className="p-4 rounded-2xl border border-dashed border-border bg-muted/20 text-center">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    No semester courses selected yet.
+                <div className="p-4 rounded-2xl border border-dashed border-[#E8E2D6] bg-[#FAF8F5] text-center">
+                  <p className="text-xs font-medium text-[#71717A]">
+                    No semester courses enrolled yet.
                   </p>
                   <Link
                     to="/onboarding/university"
-                    className="text-xs font-bold text-amber-700 dark:text-amber-400 hover:underline mt-1 inline-block"
+                    className="text-xs font-bold text-[#996515] hover:underline mt-1 inline-block"
                   >
-                    Select your department courses &rarr;
+                    Pick your university &amp; level &rarr;
                   </Link>
                 </div>
               )}
             </div>
 
             {/* Step 2: Learning Mode Switcher */}
-            <div className="space-y-2 mb-6">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
-                2. Choose CBT Mode
+            <div className="space-y-2.5">
+              <label className="text-xs font-extrabold uppercase tracking-wider text-[#52525B] dark:text-muted-foreground block">
+                2. Choose Examination Mode
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <button
                   type="button"
                   onClick={() => setExamMode("simulation")}
                   className={cn(
-                    "p-3.5 rounded-2xl border text-left transition-all active:scale-[0.99] flex flex-col justify-between",
+                    "p-3.5 rounded-2xl border-2 text-left transition-all active:scale-[0.99] flex flex-col justify-between cursor-pointer",
                     examMode === "simulation"
-                      ? "border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/20 shadow-xs"
-                      : "border-border/80 bg-muted/30 hover:bg-muted/60"
+                      ? "border-[#18181B] bg-[#FAF8F5] dark:bg-amber-500/10 shadow-xs"
+                      : "border-[#E8E2D6] dark:border-border bg-white dark:bg-muted/20 hover:border-[#D4AF37]"
                   )}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500 text-slate-950 font-bold">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#18181B] text-[#F5D77F] font-bold">
                       <Clock className="w-4 h-4" />
                     </span>
                     {examMode === "simulation" && (
-                      <span className="text-[10px] font-bold text-amber-800 dark:text-amber-300 uppercase">
-                        Selected
+                      <span className="text-[10px] font-extrabold text-[#996515] uppercase">
+                        Active
                       </span>
                     )}
                   </div>
                   <div>
-                    <h3 className="font-bold text-sm text-foreground">Exam Simulation</h3>
-                    <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
-                      Strict timed exam conditions, question palette, flag questions, and formal grade report.
+                    <h3 className="font-display font-bold text-sm text-[#18181B] dark:text-foreground">
+                      Exam Simulation
+                    </h3>
+                    <p className="text-[11px] text-[#71717A] dark:text-muted-foreground leading-snug mt-0.5">
+                      Strict timed hall conditions, question palette, and instant score breakdown.
                     </p>
                   </div>
                 </button>
@@ -413,26 +397,28 @@ export const PracticeHubPage = () => {
                   type="button"
                   onClick={() => setExamMode("practice")}
                   className={cn(
-                    "p-3.5 rounded-2xl border text-left transition-all active:scale-[0.99] flex flex-col justify-between",
+                    "p-3.5 rounded-2xl border-2 text-left transition-all active:scale-[0.99] flex flex-col justify-between cursor-pointer",
                     examMode === "practice"
-                      ? "border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/20 shadow-xs"
-                      : "border-border/80 bg-muted/30 hover:bg-muted/60"
+                      ? "border-[#18181B] bg-[#FAF8F5] dark:bg-amber-500/10 shadow-xs"
+                      : "border-[#E8E2D6] dark:border-border bg-white dark:bg-muted/20 hover:border-[#D4AF37]"
                   )}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500 text-white font-bold">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FAF0D6] text-[#996515] font-bold">
                       <Sparkles className="w-4 h-4" />
                     </span>
                     {examMode === "practice" && (
-                      <span className="text-[10px] font-bold text-blue-700 dark:text-blue-300 uppercase">
-                        Selected
+                      <span className="text-[10px] font-extrabold text-[#996515] uppercase">
+                        Active
                       </span>
                     )}
                   </div>
                   <div>
-                    <h3 className="font-bold text-sm text-foreground">Interactive Practice</h3>
-                    <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
-                      Instant feedback, step-by-step KaTeX math breakdowns, audio explanations, and hints.
+                    <h3 className="font-display font-bold text-sm text-[#18181B] dark:text-foreground">
+                      Interactive Study
+                    </h3>
+                    <p className="text-[11px] text-[#71717A] dark:text-muted-foreground leading-snug mt-0.5">
+                      Step-by-step KaTeX derivations and instant explanation after each question.
                     </p>
                   </div>
                 </button>
@@ -441,26 +427,28 @@ export const PracticeHubPage = () => {
                   type="button"
                   onClick={() => setExamMode("weak")}
                   className={cn(
-                    "p-3.5 rounded-2xl border text-left transition-all active:scale-[0.99] flex flex-col justify-between",
+                    "p-3.5 rounded-2xl border-2 text-left transition-all active:scale-[0.99] flex flex-col justify-between cursor-pointer",
                     examMode === "weak"
-                      ? "border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/20 shadow-xs"
-                      : "border-border/80 bg-muted/30 hover:bg-muted/60"
+                      ? "border-[#18181B] bg-[#FAF8F5] dark:bg-amber-500/10 shadow-xs"
+                      : "border-[#E8E2D6] dark:border-border bg-white dark:bg-muted/20 hover:border-[#D4AF37]"
                   )}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500 text-white font-bold">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-700 font-bold">
                       <Zap className="w-4 h-4" />
                     </span>
                     {examMode === "weak" && (
-                      <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase">
-                        Selected
+                      <span className="text-[10px] font-extrabold text-emerald-700 uppercase">
+                        Active
                       </span>
                     )}
                   </div>
                   <div>
-                    <h3 className="font-bold text-sm text-foreground">Weakness Drill</h3>
-                    <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
-                      Specifically targets questions and topics where your readiness score is under 60%.
+                    <h3 className="font-display font-bold text-sm text-[#18181B] dark:text-foreground">
+                      Weakness Drill
+                    </h3>
+                    <p className="text-[11px] text-[#71717A] dark:text-muted-foreground leading-snug mt-0.5">
+                      Targets topics where your accuracy is below 60% to close knowledge gaps.
                     </p>
                   </div>
                 </button>
@@ -468,22 +456,22 @@ export const PracticeHubPage = () => {
             </div>
 
             {/* Step 3: Exam Parameters */}
-            <div className="grid grid-cols-2 gap-4 mb-7 pt-4 border-t border-border/70">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-[#E8E2D6] dark:border-border/70">
               <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#52525B] dark:text-muted-foreground block mb-1.5">
                   Question Count
                 </label>
-                <div className="flex items-center gap-1.5">
-                  {[10, 20, 40].map((count) => (
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[10, 20, 35, 50].map((count) => (
                     <button
                       key={count}
                       type="button"
                       onClick={() => setQuestionCount(count)}
                       className={cn(
-                        "flex-1 py-1.5 rounded-xl text-xs font-bold transition-all border",
+                        "h-10 rounded-xl font-mono text-xs font-bold tabular-nums transition-all border cursor-pointer",
                         questionCount === count
-                          ? "bg-foreground text-background border-foreground shadow-2xs"
-                          : "bg-muted/40 hover:bg-muted text-foreground border-border/80"
+                          ? "bg-[#18181B] text-[#F5D77F] border-[#18181B] shadow-2xs"
+                          : "bg-[#FAF8F5] dark:bg-muted/40 hover:border-[#D4AF37] text-[#18181B] dark:text-foreground border-[#E8E2D6]"
                       )}
                     >
                       {count} Qs
@@ -493,20 +481,20 @@ export const PracticeHubPage = () => {
               </div>
 
               <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#52525B] dark:text-muted-foreground block mb-1.5">
                   Timer Duration
                 </label>
-                <div className="flex items-center gap-1.5">
+                <div className="grid grid-cols-3 gap-1.5">
                   {[15, 30, 45].map((mins) => (
                     <button
                       key={mins}
                       type="button"
                       onClick={() => setDurationMinutes(mins)}
                       className={cn(
-                        "flex-1 py-1.5 rounded-xl text-xs font-bold transition-all border",
+                        "h-10 rounded-xl font-mono text-xs font-bold tabular-nums transition-all border cursor-pointer",
                         durationMinutes === mins
-                          ? "bg-foreground text-background border-foreground shadow-2xs"
-                          : "bg-muted/40 hover:bg-muted text-foreground border-border/80"
+                          ? "bg-[#18181B] text-[#F5D77F] border-[#18181B] shadow-2xs"
+                          : "bg-[#FAF8F5] dark:bg-muted/40 hover:border-[#D4AF37] text-[#18181B] dark:text-foreground border-[#E8E2D6]"
                       )}
                     >
                       {mins} mins
@@ -521,13 +509,13 @@ export const PracticeHubPage = () => {
               type="button"
               onClick={handleLaunchExam}
               disabled={isLaunching || !selectedCourseId}
-              className="w-full py-4 rounded-2xl bg-amber-500 hover:bg-amber-400 active:bg-amber-600 disabled:opacity-50 text-slate-950 font-black text-base flex items-center justify-center gap-2.5 transition-all shadow-md active:scale-[0.99] cursor-pointer"
+              className="w-full min-h-[52px] rounded-2xl bg-gradient-to-r from-[#D4AF37] via-[#DFBE57] to-[#C5A059] hover:from-[#C5A059] hover:to-[#B8860B] disabled:opacity-50 text-[#18181B] font-display font-black text-sm sm:text-base flex items-center justify-center gap-2.5 transition-all shadow-[0_8px_20px_-4px_rgba(212,175,55,0.35)] active:scale-[0.99] cursor-pointer"
             >
-              <Play className="w-5 h-5 fill-current" />
+              <Play className="w-4 h-4 fill-current" />
               <span>
                 {isLaunching
                   ? "Initializing Examination Session…"
-                  : `Launch ${examMode === "simulation" ? "CBT Exam Simulation" : "Practice Mock"}`}
+                  : `Start ${examMode === "simulation" ? "CBT Exam Simulation" : "Practice Session"} (${questionCount} Qs · ${durationMinutes}m)`}
               </span>
             </button>
           </section>
@@ -538,13 +526,13 @@ export const PracticeHubPage = () => {
           {recentAttempts.length > 0 && (
             <section className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-display font-bold text-base text-foreground flex items-center gap-2">
-                  <RotateCcw className="w-4 h-4 text-amber-600" />
-                  <span>Recent CBT Examination Attempts</span>
+                <h3 className="font-display font-extrabold text-sm sm:text-base text-[#18181B] dark:text-foreground flex items-center gap-2">
+                  <RotateCcw className="w-4 h-4 text-[#996515]" />
+                  <span>Recent CBT Attempts</span>
                 </h3>
                 <Link
                   to="/progress"
-                  className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline flex items-center gap-1"
+                  className="text-xs font-bold text-[#996515] hover:underline flex items-center gap-1"
                 >
                   <span>Full Analytics</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -558,40 +546,40 @@ export const PracticeHubPage = () => {
                   return (
                     <div
                       key={attempt.id}
-                      className="p-4 rounded-2xl border border-border/80 bg-card hover:border-amber-300 transition-all shadow-xs flex items-center justify-between gap-3"
+                      className="p-4 rounded-2xl border border-[#E8E2D6] dark:border-border bg-white dark:bg-card hover:border-[#D4AF37] transition-all shadow-2xs flex items-center justify-between gap-3"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono font-bold text-xs text-foreground">
+                          <span className="font-mono font-extrabold text-xs text-[#18181B] dark:text-foreground">
                             {attempt.quiz?.course?.code || "CBT"}
                           </span>
-                          <span className="text-[10px] text-muted-foreground truncate">
+                          <span className="font-mono text-[10px] text-[#71717A] tabular-nums">
                             {new Date(attempt.created_at).toLocaleDateString()}
                           </span>
                         </div>
-                        <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        <p className="text-xs text-[#71717A] truncate mt-0.5">
                           {attempt.quiz?.title || "Mock Exam"}
                         </p>
                       </div>
 
                       <div className="flex items-center gap-3 shrink-0">
-                        <div className="text-right">
+                        <div className="text-right font-mono tabular-nums">
                           <span
                             className={cn(
-                              "font-mono font-black text-sm block",
+                              "font-extrabold text-sm block",
                               isPassing ? "text-emerald-600" : "text-rose-600"
                             )}
                           >
                             {pct}%
                           </span>
-                          <span className="text-[10px] text-muted-foreground block">
+                          <span className="text-[10px] text-[#71717A] block">
                             {attempt.score}/{attempt.total_questions}
                           </span>
                         </div>
 
                         <Link
                           to={`/quiz/${attempt.quiz_id}/results/${attempt.id}`}
-                          className="px-2.5 py-1.5 rounded-xl border border-border bg-muted/60 hover:bg-muted text-[11px] font-bold text-foreground transition-colors"
+                          className="px-3 py-1.5 rounded-xl border border-[#E8E2D6] bg-[#FAF8F5] hover:border-[#D4AF37] text-xs font-bold text-[#18181B] transition-colors"
                         >
                           Review
                         </Link>
@@ -609,22 +597,21 @@ export const PracticeHubPage = () => {
           <section className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
-                <h3 className="font-display font-bold text-base text-foreground flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-amber-600" />
-                  <span>University CBT Question Banks</span>
+                <h3 className="font-display font-extrabold text-sm sm:text-base text-[#18181B] dark:text-foreground flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-[#996515]" />
+                  <span>Verified University Past Question Banks</span>
                 </h3>
-                <p className="text-xs text-muted-foreground">
-                  Grounded in official semester past questions, syllabus tests, and exam formats.
+                <p className="text-xs text-[#71717A]">
+                  Official semester past papers and timed CBT simulations.
                 </p>
               </div>
 
-              {/* Course Filter Dropdown */}
               <div className="flex items-center gap-2 self-start sm:self-auto">
-                <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+                <Filter className="w-3.5 h-3.5 text-[#71717A]" />
                 <select
                   value={courseFilter}
                   onChange={(e) => setCourseFilter(e.target.value)}
-                  className="bg-card border border-border rounded-xl px-2.5 py-1 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  className="bg-white dark:bg-card border border-[#E8E2D6] dark:border-border rounded-xl px-3 py-1.5 text-xs font-bold text-[#18181B] dark:text-foreground focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
                 >
                   <option value="all">All Enrolled Courses</option>
                   {courses.map((c) => (
@@ -647,36 +634,36 @@ export const PracticeHubPage = () => {
                 {filteredQuizzes.map((quiz) => (
                   <div
                     key={quiz.id}
-                    className="p-4 rounded-2xl border border-border/80 bg-card hover:border-amber-400/80 transition-all shadow-xs flex flex-col justify-between gap-3 group"
+                    className="p-4 rounded-2xl border border-[#E8E2D6] dark:border-border bg-white dark:bg-card hover:border-[#D4AF37] transition-all shadow-2xs flex flex-col justify-between gap-3 group"
                   >
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="font-mono font-bold text-xs px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-900 dark:text-amber-200">
+                        <span className="font-mono font-extrabold text-xs px-2.5 py-0.5 rounded-lg bg-[#18181B] text-[#F5D77F]">
                           {quiz.course?.code}
                         </span>
-                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                          <Clock className="w-3 h-3" />
-                          <span>{quiz.duration_minutes || 30} mins</span>
+                        <div className="flex items-center gap-1.5 font-mono text-[11px] text-[#71717A] tabular-nums">
+                          <Clock className="w-3 h-3 text-[#996515]" />
+                          <span>{quiz.duration_minutes || 30}m</span>
                           <span>·</span>
                           <span>{quiz.question_count || 20} Qs</span>
                         </div>
                       </div>
 
-                      <h4 className="font-display font-bold text-sm text-foreground group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors line-clamp-1">
+                      <h4 className="font-display font-bold text-sm text-[#18181B] dark:text-foreground group-hover:text-[#996515] transition-colors line-clamp-1">
                         {quiz.title}
                       </h4>
                       {quiz.description && (
-                        <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                        <p className="text-xs text-[#71717A] line-clamp-2 mt-1">
                           {quiz.description}
                         </p>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2 pt-2 border-t border-border/50">
+                    <div className="flex items-center gap-2 pt-2.5 border-t border-[#E8E2D6]/70 dark:border-border/50">
                       <button
                         type="button"
                         onClick={() => navigate(`/quiz/${quiz.id}/simulation`)}
-                        className="flex-1 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-2xs"
+                        className="flex-1 min-h-[38px] rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#C5A059] hover:brightness-105 active:scale-98 text-[#18181B] text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                       >
                         <Play className="w-3.5 h-3.5 fill-current" />
                         <span>Simulate Exam</span>
@@ -685,22 +672,24 @@ export const PracticeHubPage = () => {
                       <button
                         type="button"
                         onClick={() => navigate(`/quiz/${quiz.id}/practice`)}
-                        className="py-2 px-3 rounded-xl border border-border/80 bg-background hover:bg-muted text-foreground text-xs font-semibold flex items-center justify-center gap-1 transition-colors"
+                        className="min-h-[38px] px-3 rounded-xl border border-[#E8E2D6] bg-[#FAF8F5] hover:border-[#D4AF37] text-[#18181B] text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
                         title="Interactive practice with step-by-step solutions"
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                        <span className="hidden sm:inline">Practice</span>
+                        <Sparkles className="w-3.5 h-3.5 text-[#996515]" />
+                        <span>Study</span>
                       </button>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="p-8 rounded-3xl border border-dashed border-border bg-card/60 text-center space-y-2">
-                <BookOpen className="w-8 h-8 text-muted-foreground/50 mx-auto" />
-                <h4 className="font-bold text-sm text-foreground">No quizzes currently listed</h4>
-                <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                  Use the CBT Exam Launcher above to start a custom mock drill for any of your enrolled courses.
+              <div className="p-8 rounded-3xl border border-dashed border-[#E8E2D6] bg-white text-center space-y-2">
+                <BookOpen className="w-8 h-8 text-[#996515]/50 mx-auto" />
+                <h4 className="font-display font-bold text-sm text-[#18181B]">
+                  No pre-packaged papers in this filter
+                </h4>
+                <p className="text-xs text-[#71717A] max-w-sm mx-auto">
+                  Use the 1-Tap Exam Launchpad above to start a custom CBT drill for any enrolled course.
                 </p>
               </div>
             )}

@@ -36,6 +36,7 @@ import { Capacitor } from "@capacitor/core";
 import { useRecordDeviceLogin } from "@/hooks/useDeviceHistory";
 import { prefetchStudentDashboard } from "@/lib/routePrefetch";
 import { supabase } from "@/integrations/supabase/client";
+import { startSmartReminderWatcher } from "@/lib/smartStudyReminders";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -153,13 +154,16 @@ function AccountQueryCacheBoundary({ children }: { children: ReactNode }) {
   return children;
 }
 
-// Auto-register push when a user signs in (native only).
+// Auto-register push when a user signs in (native + 15-min smart study reminder watcher).
 function PushBootstrap() {
   const { user } = useAuth();
   useEffect(() => {
-    if (user?.id && Capacitor.isNativePlatform()) {
+    if (!user?.id) return;
+    if (Capacitor.isNativePlatform()) {
       initPushNotifications(user.id);
     }
+    const stopSmartWatcher = startSmartReminderWatcher(user.id);
+    return () => stopSmartWatcher();
   }, [user?.id]);
   return null;
 }
