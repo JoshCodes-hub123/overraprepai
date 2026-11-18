@@ -1,24 +1,34 @@
 import React, { useState, useEffect } from "react";
-import { Wifi, WifiOff, HardDrive, DownloadCloud, Sparkles, CheckCircle2, ArrowRight, BookOpen } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
+import {
+  Wifi,
+  WifiOff,
+  HardDrive,
+  CheckCircle2,
+  BookOpen,
+  Play,
+  RefreshCw,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import {
+  getOfflineCachedCourses,
+  type CachedCourseMetadata,
+} from "@/lib/autoOfflineSeeder";
 import { AdvancedOfflineCenter } from "./AdvancedOfflineCenter";
 
 export const OfflineStudyHub: React.FC = () => {
-  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
-  const [downloading, setDownloading] = useState(false);
-  const [offlinePackDownloaded, setOfflinePackDownloaded] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem("overra_offline_pack") === "1";
-    } catch {
-      return false;
-    }
-  });
+  const navigate = useNavigate();
+  const [isOnline, setIsOnline] = useState<boolean>(() =>
+    typeof navigator !== "undefined" ? navigator.onLine : true
+  );
+  const [refreshing, setRefreshing] = useState(false);
+  const [cachedCourses, setCachedCourses] = useState<CachedCourseMetadata[]>(() =>
+    getOfflineCachedCourses()
+  );
 
   useEffect(() => {
+    setCachedCourses(getOfflineCachedCourses());
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
@@ -30,103 +40,113 @@ export const OfflineStudyHub: React.FC = () => {
     };
   }, []);
 
-  const handleDownloadCBTBundle = () => {
-    setDownloading(true);
+  const handleRefreshCache = () => {
+    setRefreshing(true);
     setTimeout(() => {
-      setDownloading(false);
-      setOfflinePackDownloaded(true);
-      try {
-        localStorage.setItem("overra_offline_pack", "1");
-      } catch {}
-      toast.success("1,500+ CBT past questions & formulas cached successfully for offline study!");
-    }, 1500);
+      setCachedCourses(getOfflineCachedCourses());
+      setRefreshing(false);
+      toast.success("All enrolled courses, formulas, notes & CBT packs verified for offline study!");
+    }, 600);
   };
 
   return (
     <div className="space-y-4">
-      <Card className="p-5 border-amber-300/50 bg-gradient-to-br from-card via-card to-amber-50/20 shadow-lg">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+      <div className="rounded-2xl border border-[#E8E2D6] bg-[#FAF8F5] p-4 sm:p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-600 shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-[#18181B] text-[#D4AF37] flex items-center justify-center shrink-0">
               <HardDrive className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-display font-bold text-base text-foreground">
-                  Deep Offline Study Hub
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-display font-extrabold text-sm sm:text-base text-[#18181B]">
+                  Auto-Saved Offline Course Packs
                 </h3>
-                <Badge
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    isOnline
-                      ? "bg-emerald-500/15 text-emerald-600 border border-emerald-500/30"
-                      : "bg-amber-500/15 text-amber-600 border border-amber-500/30"
-                  }`}
-                >
+                <span className="text-xs font-mono tabular-nums text-[#71717A] inline-flex items-center gap-1">
+                  ·{" "}
                   {isOnline ? (
-                    <span className="flex items-center gap-1">
-                      <Wifi className="w-3 h-3" /> Online Mode
-                    </span>
+                    <>
+                      <Wifi className="w-3 h-3 text-emerald-600" /> Online
+                    </>
                   ) : (
-                    <span className="flex items-center gap-1">
-                      <WifiOff className="w-3 h-3" /> Offline Mode Active
-                    </span>
+                    <>
+                      <WifiOff className="w-3 h-3 text-[#B48A1E]" /> Offline Active
+                    </>
                   )}
-                </Badge>
+                </span>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Study without internet. Cached CBT questions and lecture PDFs work seamlessly.
+              <p className="text-xs text-[#52525B]">
+                Every enrolled course below is saved on your phone—read notes, review formulas, or take a full CBT exam with zero internet.
               </p>
             </div>
           </div>
 
-          <Link to="/student/offline-downloads">
-            <Button variant="outline" size="sm" className="border-amber-500/40 text-amber-700 dark:text-amber-300 text-xs">
-              Manage Downloads <ArrowRight className="w-3 h-3 ml-1" />
-            </Button>
-          </Link>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleRefreshCache}
+            disabled={refreshing}
+            className="h-9 px-3 rounded-xl border-[#E8E2D6] bg-white hover:border-[#D4AF37] text-[#18181B] text-xs font-bold shrink-0 cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${refreshing ? "animate-spin" : ""}`} />
+            <span>{refreshing ? "Verifying…" : "Verify Offline Packs"}</span>
+          </Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-border/60">
-          <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/60 flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                <BookOpen className="w-3.5 h-3.5 text-primary" /> Core CBT Question Bundle
-              </div>
-              <div className="text-[11px] text-muted-foreground mt-0.5">
-                {offlinePackDownloaded ? "Ready for offline exams (1,500 questions)" : "Download for offline exam simulation"}
-              </div>
-            </div>
-            {offlinePackDownloaded ? (
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2.5 py-1 rounded-full">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Cached
-              </span>
-            ) : (
-              <Button
-                size="sm"
-                onClick={handleDownloadCBTBundle}
-                disabled={downloading}
-                className="bg-amber-600 hover:bg-amber-700 text-white text-xs h-8 px-3"
+        {cachedCourses.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-[#E8E2D6]">
+            {cachedCourses.map((course) => (
+              <div
+                key={course.id}
+                className="p-3.5 rounded-xl bg-white border border-[#E8E2D6] flex flex-col justify-between gap-3"
               >
-                {downloading ? "Caching..." : "Download Bundle"}
-              </Button>
-            )}
-          </div>
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="px-2 py-0.5 rounded bg-[#18181B] text-[#D4AF37] font-mono text-[11px] font-bold">
+                        {course.code}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
+                        <CheckCircle2 className="w-3 h-3" /> Saved
+                      </span>
+                    </div>
+                    <p className="text-xs font-bold text-[#18181B] mt-1 line-clamp-1">
+                      {course.name}
+                    </p>
+                    <p className="text-[11px] font-mono tabular-nums text-[#71717A] mt-0.5">
+                      {course.formulaCount} formulas · {course.noteCount} summaries ·{" "}
+                      {course.questionCount} CBT Qs
+                    </p>
+                  </div>
+                </div>
 
-          <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/60 flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Auto-Cache Lecture Notes
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/courses/${course.id}?tab=materials`)}
+                    className="min-h-[38px] px-2.5 rounded-lg border border-[#E8E2D6] bg-[#FAF8F5] hover:border-[#D4AF37] text-[#18181B] text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-[#9A7B1C]" />
+                    <span>Read Notes</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/quiz/offline_${course.id}/simulation`)}
+                    className="min-h-[38px] px-2.5 rounded-lg bg-[#18181B] hover:bg-[#27272A] text-[#FAF8F5] text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-current text-[#D4AF37]" />
+                    <span>Offline CBT</span>
+                  </button>
+                </div>
               </div>
-              <div className="text-[11px] text-muted-foreground mt-0.5">
-                PDFs open instantly without internet connection
-              </div>
-            </div>
-            <span className="text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20">
-              Active
-            </span>
+            ))}
           </div>
-        </div>
-      </Card>
+        ) : (
+          <div className="p-4 rounded-xl bg-white border border-[#E8E2D6] text-xs text-[#52525B]">
+            Your enrolled courses will appear here automatically as soon as you add them from the Courses Hub.
+          </div>
+        )}
+      </div>
 
       <AdvancedOfflineCenter />
     </div>

@@ -50,6 +50,7 @@ import { HealthDashboard } from "@/components/admin/HealthDashboard";
 import { ChallengeManagement } from "@/components/admin/ChallengeManagement";
 import { AdminInsights } from "@/components/admin/AdminInsights";
 import { AnnouncementsManagement } from "@/components/admin/AnnouncementsManagement";
+import { QuickResourceUpload } from "@/components/admin/QuickResourceUpload";
 import SchoolApplicationsTab from "@/pages/admin/SchoolApplications";
 import { SkeletonDashboard } from "@/components/ui/premium-skeletons";
 import { SuggestOpportunityDialog } from "@/components/opportunities/SuggestOpportunityDialog";
@@ -175,6 +176,7 @@ const DOMAINS: DomainDef[] = [
     shortLabel: "Curriculum",
     icon: BookOpen,
     subTabs: [
+      { id: "materials", label: "Upload & Manage Materials", description: "1-screen uploader for PDFs, pasted notes, CSV questions & current materials manager", icon: Upload },
       { id: "courses", label: "Course Catalog", description: "Syllabi, departments, active course outlines", icon: BookOpen },
       { id: "questions", label: "Question Moderation", description: "Past question verification, latex reviews & CBT sets", icon: FileText },
       { id: "challenges", label: "Contests & Arena", description: "Timed battlegrounds, campus prizes & leaderboards", icon: Target },
@@ -524,6 +526,19 @@ const AdminDashboard = () => {
                   )}
                 </Button>
 
+                {/* Primary Upload Materials Button (Always Visible) */}
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setActiveTab("materials");
+                    setSearchParams({ tab: "materials" }, { replace: true });
+                  }}
+                  className="h-8 px-3 text-xs font-extrabold gap-1.5 rounded-lg bg-[#D4AF37] hover:bg-[#C59F2D] text-[#18181B] shadow-2xs cursor-pointer"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Upload Materials</span>
+                </Button>
+
                 {/* Quick Actions Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -544,7 +559,7 @@ const AdminDashboard = () => {
                     <DropdownMenuItem asChild>
                       <Link to="/admin/bulk-upload" className="flex items-center gap-2 cursor-pointer">
                         <Upload className="w-3.5 h-3.5 text-muted-foreground" />
-                        <span>Bulk Upload Questions</span>
+                        <span>Upload Session Materials</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
@@ -649,9 +664,65 @@ const AdminDashboard = () => {
           </div>
         </header>
 
-        {/* 2. EXECUTIVE METRIC RIBBON */}
+        {/* 2. EXECUTIVE METRIC RIBBON & SESSION MATERIAL UPLOAD BANNER */}
         <section className="border-b border-border/70 bg-card/60 backdrop-blur-xs py-4">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-4">
+            {/* Prominent Academic Session Material Upload Callout Banner */}
+            <div className="rounded-2xl border-2 border-[#D4AF37] bg-[#18181B] text-[#FAF8F5] p-4 sm:p-5 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="flex items-start sm:items-center gap-3.5">
+                <div className="w-11 h-11 rounded-2xl bg-[#D4AF37] text-[#18181B] flex items-center justify-center shrink-0 font-bold">
+                  <Upload className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#D4AF37] font-bold block">
+                    Academic Session Curriculum Uploader · Step-by-Step Guide
+                  </span>
+                  <h2 className="font-display text-base sm:text-lg font-extrabold text-[#FAF8F5]">
+                    Upload Course Handouts, Notes &amp; Past Questions (1st &amp; 2nd Semester)
+                  </h2>
+                  <p className="text-xs text-[#A1A1AA] mt-0.5">
+                    Simple 3-step process: 1. Choose 1st or 2nd Semester → 2. Add or Pick Course → 3. Upload PDF, Notes, or CBT Questions.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setActiveTab("materials");
+                    setSearchParams({ tab: "materials", semester: "1st" }, { replace: true });
+                  }}
+                  className="h-10 px-4 rounded-xl bg-[#D4AF37] hover:bg-[#C59F2D] text-[#18181B] font-extrabold text-xs cursor-pointer"
+                >
+                  <Upload className="w-3.5 h-3.5 mr-1.5" />
+                  <span>Upload 1st Semester</span>
+                </Button>
+
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setActiveTab("materials");
+                    setSearchParams({ tab: "materials", semester: "2nd" }, { replace: true });
+                  }}
+                  className="h-10 px-4 rounded-xl bg-white hover:bg-[#FAF8F5] text-[#18181B] font-extrabold text-xs cursor-pointer"
+                >
+                  <Upload className="w-3.5 h-3.5 mr-1.5 text-[#B48A1E]" />
+                  <span>Upload 2nd Semester</span>
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate("/admin/bulk-upload")}
+                  className="h-10 px-3.5 rounded-xl border-[#3F3F46] bg-[#27272A] hover:bg-[#3F3F46] text-[#FAF8F5] font-bold text-xs cursor-pointer"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 mr-1.5 text-[#D4AF37]" />
+                  <span>Full-Screen Studio</span>
+                </Button>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {/* Metric 1: Students */}
               <button
@@ -706,21 +777,21 @@ const AdminDashboard = () => {
               {/* Metric 3: Academic Content */}
               <button
                 type="button"
-                onClick={() => handleTabChange("questions")}
+                onClick={() => handleTabChange("materials")}
                 className="group flex flex-col justify-between p-3.5 rounded-xl border border-border/70 bg-background/80 hover:border-border hover:bg-muted/30 transition-all text-left shadow-2xs"
               >
                 <div className="flex items-center justify-between w-full">
                   <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                    Question Bank
+                    Courses &amp; Question Bank
                   </span>
                   <BookOpen className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                 </div>
                 <div className="mt-2">
                   <span className="text-2xl font-bold font-mono tabular-nums tracking-tight text-foreground">
-                    {stats.totalQuestions.toLocaleString()}
+                    {stats.totalCourses.toLocaleString()}
                   </span>
                   <div className="text-[11px] text-muted-foreground truncate mt-0.5">
-                    {stats.totalCourses} courses · {stats.totalQuizAttempts.toLocaleString()} CBT attempts
+                    {stats.totalQuestions} questions · Click to upload
                   </div>
                 </div>
               </button>
@@ -889,6 +960,10 @@ const AdminDashboard = () => {
             </TabsContent>
 
             {/* 4. Curriculum & Moderation */}
+            <TabsContent value="materials" className="outline-hidden m-0">
+              <QuickResourceUpload />
+            </TabsContent>
+
             <TabsContent value="courses" className="outline-hidden m-0">
               <CourseModeration scope={adminEnv.scope} />
             </TabsContent>

@@ -71,7 +71,7 @@ export default function LectureNotes() {
 
   const upload = async () => {
     if (!user || !file || !title.trim()) return;
-    if (file.size > 25 * 1024 * 1024) return toast.error("File too large (max 25MB)");
+    if (file.size > 500 * 1024 * 1024) return toast.error("File too large (max 500MB)");
     setUploading(true);
 
     const ext = file.name.split(".").pop() || "bin";

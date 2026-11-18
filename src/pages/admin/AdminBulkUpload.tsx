@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, FileSpreadsheet, Sparkles, FileText, FileDown } from "lucide-react";
+import { ArrowLeft, Upload, FileSpreadsheet, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { SEO } from "@/components/seo/SEO";
 import { BulkQuizImport } from "@/components/tutor/BulkQuizImport";
 import { QuizUploadTemplates } from "@/components/tutor/quiz-upload/QuizUploadTemplates";
@@ -14,8 +12,8 @@ import { AdminPersistentHeader } from "@/components/admin/AdminPersistentHeader"
 import { QuickResourceUpload } from "@/components/admin/QuickResourceUpload";
 
 /**
- * Admin-only page for bulk-uploading quiz banks (Excel / CSV / Word).
- * Scoped to the active university campus environment (e.g. FUTA, OAU, UNILAG, UI).
+ * Unified 1-Screen Material, Note & CBT Question Studio (/admin/bulk-upload)
+ * Places the 1-Screen Uploader + Current Materials Manager Table front and center.
  */
 const AdminBulkUpload = () => {
   const navigate = useNavigate();
@@ -25,106 +23,62 @@ const AdminBulkUpload = () => {
 
   return (
     <>
-      <SEO title="Admin · Bulk upload questions" noindex />
-      <div className="min-h-screen bg-gradient-to-b from-amber-50/60 via-white to-white">
-        <div className="container mx-auto px-4 py-6 max-w-5xl">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/admin/dashboard")}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-1.5" /> Back to dashboard
-          </Button>
+      <SEO title="Admin · 1-Screen Material & CBT Upload Studio" noindex />
+      <div className="min-h-screen bg-[#FAF8F5] text-[#18181B]">
+        <div className="container mx-auto px-4 py-6 max-w-5xl space-y-6">
+          <div className="flex items-center justify-between gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/admin/dashboard")}
+              className="text-xs font-bold text-[#52525B] hover:text-[#18181B]"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1.5" /> Back to Admin Dashboard
+            </Button>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setOpen(true)}
+              className="h-9 px-3.5 rounded-xl border-[#D4AF37] bg-white hover:bg-[#FAF0D6] text-xs font-bold text-[#18181B] cursor-pointer"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5 text-[#9A7B1C]" />
+              Advanced Excel / Word Importer
+            </Button>
+          </div>
 
           <AdminPersistentHeader showNavStrip={true} />
 
-          <div className="flex items-start gap-4 mb-6">
-            <div className="grid h-12 w-12 place-items-center rounded-xl bg-amber-500 text-white shadow-md">
+          <div className="flex items-start gap-4">
+            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#18181B] text-[#D4AF37] shadow-xs shrink-0">
               <Upload className="h-6 w-6" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                  Bulk upload questions
-                </h1>
-                <Badge className="bg-amber-500 text-white">Admin</Badge>
-              </div>
-              <p className="mt-1 text-sm sm:text-base text-muted-foreground">
-                Import question banks from Excel, CSV, or Word. Columns are auto-mapped.
-                Use this to push GNS 106 German and any other course in bulk.
+              <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[#18181B]">
+                Material, Notes &amp; CBT Upload Studio
+              </h1>
+              <p className="mt-1 text-xs sm:text-sm text-[#52525B]">
+                Upload PDFs, paste summary notes &amp; formulas, import CBT questions, and manage all existing database materials in one screen.
               </p>
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3 mb-6">
-            <Card className="p-4 border-amber-200/60">
-              <div className="flex items-center gap-2 mb-1">
-                <FileSpreadsheet className="w-4 h-4 text-amber-600" />
-                <p className="text-sm font-semibold">1. Download template</p>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Grab the CSV / Excel / Word template below. Keep headers exactly as shown.
-              </p>
-            </Card>
-            <Card className="p-4 border-amber-200/60">
-              <div className="flex items-center gap-2 mb-1">
-                <FileText className="w-4 h-4 text-amber-600" />
-                <p className="text-sm font-semibold">2. Fill in your questions</p>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                One question per row. Set <code>quiz_title</code> + <code>course_code</code>{" "}
-                so rows group automatically.
-              </p>
-            </Card>
-            <Card className="p-4 border-amber-200/60">
-              <div className="flex items-center gap-2 mb-1">
-                <Sparkles className="w-4 h-4 text-amber-600" />
-                <p className="text-sm font-semibold">3. Upload &amp; review</p>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Preview every quiz before publishing. Rejected rows export to an error report.
-              </p>
-            </Card>
-          </div>
+          {/* Primary 1-Screen Uploader + Current Materials Manager Table */}
+          <QuickResourceUpload />
 
-          <Card className="p-5 mb-6 bg-gradient-to-br from-amber-50 to-white border-amber-300/60">
-            <h2 className="font-semibold text-lg mb-1">Ready to import?</h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              Open the bulk uploader — supports .xlsx, .csv, and .docx. Existing courses
-              are matched by code so you won't create duplicates.
-            </p>
-            <Button
-              size="lg"
-              onClick={() => setOpen(true)}
-              className="bg-amber-600 hover:bg-amber-700 text-white"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Open bulk uploader
-            </Button>
-          </Card>
-
-          <div className="mb-6">
-            <QuickResourceUpload />
-          </div>
-
-          <div className="mb-3">
+          {/* Additional Bulk Templates & Import History */}
+          <div className="pt-4 border-t border-[#E6E0D4] space-y-4">
             <GNS106GermanTemplate />
-          </div>
 
-          <div className="mb-2 flex items-center gap-2">
-            <FileDown className="w-4 h-4 text-muted-foreground" />
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Universal templates &amp; column guide
-            </h2>
-          </div>
-          <QuizUploadTemplates />
+            <div className="flex items-center gap-2 pt-2">
+              <FileDown className="w-4 h-4 text-[#71717A]" />
+              <h2 className="text-xs font-extrabold text-[#71717A] uppercase tracking-wider">
+                Spreadsheet Templates &amp; Column Guide
+              </h2>
+            </div>
+            <QuizUploadTemplates />
 
-          <div className="mt-6">
-            <AdminImportHistory
-              refreshKey={historyKey}
-              onRetry={() => setOpen(true)}
-            />
+            <AdminImportHistory refreshKey={historyKey} onRetry={() => setOpen(true)} />
           </div>
         </div>
       </div>

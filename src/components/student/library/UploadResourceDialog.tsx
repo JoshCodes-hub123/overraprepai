@@ -45,9 +45,9 @@ const MATERIAL_TYPES: {
   { value: "other",  label: "📁 Other",  hint: "Anything else you want kept in your library.", suggestion: "Saved for safekeeping — AI tools still work on text files.", icon: FileIcon },
 ];
 
-const MAX_BYTES = 20 * 1024 * 1024; // 20 MB
-const ACCEPTED_EXT = ["pdf", "docx", "txt", "md", "jpg", "jpeg", "png", "webp", "gif", "mp3", "wav", "m4a", "ogg"];
-const ACCEPT_ATTR = ".pdf,.docx,.txt,.md,image/*,audio/*";
+const MAX_BYTES = 500 * 1024 * 1024; // 500 MB
+const ACCEPTED_EXT = ["pdf", "doc", "docx", "ppt", "pptx", "xls", "xlsx", "txt", "md", "csv", "zip", "jpg", "jpeg", "png", "webp", "gif", "mp3", "wav", "m4a", "ogg"];
+const ACCEPT_ATTR = ".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.md,.csv,.zip,image/*,audio/*";
 
 const isAccepted = (f: File): boolean => {
   if (f.type.startsWith("image/") || f.type.startsWith("audio/")) return true;

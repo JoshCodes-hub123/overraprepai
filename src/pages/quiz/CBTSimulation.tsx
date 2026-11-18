@@ -4,6 +4,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { useBookmarkedQuestions } from "@/hooks/useBookmarkedQuestions";
 import { useOfflineAttemptSync } from "@/hooks/useOfflineAttemptSync";
 import { queuePendingAttempt } from "@/lib/offlineQuizStore";
+import {
+  buildOfflineQuizBundle,
+  saveActiveCbtCheckpoint,
+  clearActiveCbtCheckpoint,
+} from "@/lib/autoOfflineSeeder";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -188,40 +193,109 @@ export const CBTSimulation = () => {
       setIsLoading(false);
     }
 
-    // 2. Fetch or verify with Supabase (if online)
+    // 2. Fetch or verify with Server Store & Supabase (if online and not an explicit offline pack)
     const fetchQuizData = async () => {
       try {
-        const { data: quizData, error: quizError } = await supabase
-          .from("quizzes")
-          .select("*, courses(code, name)")
-          .eq("id", quizId)
-          .single();
-
-        if (quizError) {
-          // If offline and we had cache, don't crash
-          if (hasRestoredFromCache) return;
-          throw quizError;
+        if (quizId.startsWith("offline_") || !navigator.onLine) {
+          if (!hasRestoredFromCache) {
+            const offlineBundle = buildOfflineQuizBundle(quizId);
+            if (!isMounted) return;
+            setQuiz(offlineBundle.quiz);
+            setQuestions(offlineBundle.questions);
+            const fallbackAttemptId = `local_attempt_${Date.now()}_${Math.random()
+              .toString(36)
+              .slice(2, 8)}`;
+            setAttemptId(fallbackAttemptId);
+            const totalSec = (offlineBundle.quiz.duration_minutes || 25) * 60;
+            const endsAt = Date.now() + totalSec * 1000;
+            endsAtRef.current = endsAt;
+            setTimeLeft(totalSec);
+          }
+          return;
         }
 
-        const formattedQuiz: QuizData = {
-          ...quizData,
-          course: quizData.courses as { code: string; name: string },
-        };
-
-        const { data: questionsData, error: questionsError } = await supabase
-          .from("quiz_questions")
-          .select("questions(*)")
-          .eq("quiz_id", quizId)
-          .order("order_index");
-
-        if (questionsError) {
-          if (hasRestoredFromCache) return;
-          throw questionsError;
+        // First check Server Quiz Store (/api/quizzes/:quizId) for bulk-uploaded or split quizzes
+        let serverQuizFound: any = null;
+        try {
+          const srvRes = await fetch(`/api/quizzes/${encodeURIComponent(quizId)}`);
+          if (srvRes.ok) {
+            const srvJson = await srvRes.json();
+            if (srvJson.ok && srvJson.quiz) {
+              serverQuizFound = srvJson.quiz;
+            }
+          }
+        } catch {
+          // ignore
         }
 
-        const formattedQuestions: Question[] = questionsData.map((qq: any) => qq.questions);
+        let formattedQuiz: QuizData | null = null;
+        let formattedQuestions: Question[] = [];
 
-        if (!isMounted) return;
+        if (serverQuizFound && Array.isArray(serverQuizFound.questions) && serverQuizFound.questions.length > 0) {
+          formattedQuiz = {
+            id: serverQuizFound.id,
+            title: serverQuizFound.title,
+            duration_minutes: Number(serverQuizFound.duration_minutes) || 25,
+            course: {
+              code: serverQuizFound.course_code || "COURSE",
+              name: serverQuizFound.course_name || "University Course",
+            },
+          };
+          formattedQuestions = serverQuizFound.questions.map((q: any, idx: number) => ({
+            id: q.id || `q_${quizId}_${idx + 1}`,
+            question_text: q.question_text,
+            option_a: q.option_a,
+            option_b: q.option_b,
+            option_c: q.option_c,
+            option_d: q.option_d,
+            correct_option: q.correct_option || "A",
+            explanation: q.explanation || null,
+            image_url: q.image_url || null,
+          }));
+        } else {
+          const { data: quizData, error: quizError } = await supabase
+            .from("quizzes")
+            .select("*, courses(code, name)")
+            .eq("id", quizId)
+            .single();
+
+          if (quizError) {
+            if (hasRestoredFromCache) return;
+            throw quizError;
+          }
+
+          formattedQuiz = {
+            ...quizData,
+            course: quizData.courses as { code: string; name: string },
+          };
+
+          const { data: questionsData, error: questionsError } = await supabase
+            .from("quiz_questions")
+            .select("questions(*)")
+            .eq("quiz_id", quizId)
+            .order("order_index");
+
+          if (questionsError) {
+            if (hasRestoredFromCache) return;
+            throw questionsError;
+          }
+
+          formattedQuestions = questionsData
+            .map((qq: any) => qq.questions)
+            .filter(Boolean);
+
+          // If a database quiz has 0 linked question rows yet, synthesize from the course's offline study pack
+          if (formattedQuestions.length === 0) {
+            const fallbackBundle = buildOfflineQuizBundle(
+              quizId,
+              formattedQuiz.course?.code,
+              formattedQuiz.course?.name
+            );
+            formattedQuestions = fallbackBundle.questions;
+          }
+        }
+
+        if (!isMounted || !formattedQuiz) return;
 
         setQuiz(formattedQuiz);
         setQuestions(formattedQuestions);
@@ -230,7 +304,11 @@ export const CBTSimulation = () => {
         try {
           localStorage.setItem(
             cacheKeyQuiz,
-            JSON.stringify({ quiz: formattedQuiz, questions: formattedQuestions, cachedAt: Date.now() })
+            JSON.stringify({
+              quiz: formattedQuiz,
+              questions: formattedQuestions,
+              cachedAt: Date.now(),
+            })
           );
         } catch {
           // localStorage full or disabled
@@ -293,14 +371,22 @@ export const CBTSimulation = () => {
         } catch {
           // ignore
         }
-      } catch (error) {
+      } catch {
         if (!hasRestoredFromCache) {
-          toast({
-            variant: "destructive",
-            title: "Examination Load Error",
-            description: "Please check your network connection or try again.",
-          });
-          navigate("/student/dashboard");
+          // Never fail when network drops — synthesize offline pack immediately
+          const fallbackBundle = buildOfflineQuizBundle(quizId);
+          if (isMounted) {
+            setQuiz(fallbackBundle.quiz);
+            setQuestions(fallbackBundle.questions);
+            const fallbackAttemptId = `local_attempt_${Date.now()}_${Math.random()
+              .toString(36)
+              .slice(2, 8)}`;
+            setAttemptId(fallbackAttemptId);
+            const totalSec = (fallbackBundle.quiz.duration_minutes || 25) * 60;
+            const endsAt = Date.now() + totalSec * 1000;
+            endsAtRef.current = endsAt;
+            setTimeLeft(totalSec);
+          }
         }
       } finally {
         if (isMounted) setIsLoading(false);
@@ -363,11 +449,20 @@ export const CBTSimulation = () => {
             updatedAt: Date.now(),
           })
         );
+        saveActiveCbtCheckpoint({
+          quizId,
+          courseCode: quiz?.course?.code || "CBT",
+          title: quiz?.title || "CBT Examination",
+          answeredCount: Object.keys(newAnswers).length,
+          totalQuestions: questions.length || 15,
+          timeLeftSeconds: newTimeLeft,
+          updatedAt: Date.now(),
+        });
       } catch (e) {
         console.warn("Failed saving CBT session to localStorage:", e);
       }
     },
-    [quizId, attemptId]
+    [quizId, attemptId, quiz, questions.length]
   );
 
   const formatTime = (seconds: number) => {
@@ -406,6 +501,7 @@ export const CBTSimulation = () => {
     setShowSubmitConfirm(false);
     void haptic("heavy");
     if (timerRef.current) clearInterval(timerRef.current);
+    clearActiveCbtCheckpoint(quizId);
 
     const safeAttemptId = attemptId || `att_${Date.now()}`;
     const timeSpent = Math.round((Date.now() - startTimeRef.current) / 1000);

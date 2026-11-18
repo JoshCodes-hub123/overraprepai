@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { extractTextFromFile } from "@/lib/extractText";
+import { uploadLargeFileChunked } from "@/lib/chunkedFileUploader";
 import { CascadeSelection } from "./InstitutionalCascadeSelector";
 
 export interface LectureMaterialItem {
@@ -277,31 +278,11 @@ export const LectureNotesModule: React.FC<Props> = ({ cascade }) => {
         fileSize = selectedFile.size;
         fileExtension = selectedFile.name.split(".").pop()?.toLowerCase() || "pdf";
 
-        // 1. Upload to applet server to guarantee persistent static URL for students
+        // 1. Upload via 4MB binary chunks to applet server to support arbitrarily large files
         try {
-          const toBase64 = (f: File): Promise<string> =>
-            new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.readAsDataURL(f);
-              reader.onload = () => resolve(reader.result as string);
-              reader.onerror = (err) => reject(err);
-            });
-
-          const b64 = await toBase64(selectedFile);
-          const uploadRes = await fetch("/api/upload-file", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              filename: selectedFile.name,
-              base64: b64,
-              contentType: selectedFile.type || "application/pdf",
-            }),
-          });
-          if (uploadRes.ok) {
-            const uJson = await uploadRes.json();
-            if (uJson.ok && uJson.url) {
-              publicFileUrl = uJson.url;
-            }
+          const uJson = await uploadLargeFileChunked(selectedFile);
+          if (uJson.ok && uJson.url) {
+            publicFileUrl = uJson.url;
           }
         } catch (serverUpErr) {
           console.warn("Server file upload warning:", serverUpErr);

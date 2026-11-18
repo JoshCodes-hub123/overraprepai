@@ -20,9 +20,9 @@ interface Props {
   onUploaded: () => void;
 }
 
-const ACCEPTED = ".pdf,.docx,.doc,.pptx,.ppt,.txt,.md";
-const ACCEPTED_EXT = ["pdf", "docx", "doc", "pptx", "ppt", "txt", "md"];
-const MAX_BYTES = 20 * 1024 * 1024; // 20MB
+const ACCEPTED = ".pdf,.docx,.doc,.pptx,.ppt,.xls,.xlsx,.txt,.md,.csv,.zip";
+const ACCEPTED_EXT = ["pdf", "docx", "doc", "pptx", "ppt", "xls", "xlsx", "txt", "md", "csv", "zip"];
+const MAX_BYTES = 500 * 1024 * 1024; // 500MB
 
 type Stage = "idle" | "uploading" | "processing" | "ready" | "failed";
 

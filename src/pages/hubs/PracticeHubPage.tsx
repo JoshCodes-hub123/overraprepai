@@ -24,6 +24,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { SEO } from "@/components/seo/SEO";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  getActiveCbtCheckpoint,
+  clearActiveCbtCheckpoint,
+  autoSeedEnrolledCoursesOffline,
+  type ActiveCbtCheckpoint,
+} from "@/lib/autoOfflineSeeder";
 
 interface UniversityQuiz {
   id: string;
@@ -81,6 +87,15 @@ export const PracticeHubPage = () => {
   const [recentAttempts, setRecentAttempts] = useState<RecentAttempt[]>([]);
   const [, setAttemptsLoading] = useState(true);
   const [courseFilter, setCourseFilter] = useState<string>("all");
+  const [activeCheckpoint, setActiveCheckpoint] = useState<ActiveCbtCheckpoint | null>(() =>
+    getActiveCbtCheckpoint()
+  );
+
+  useEffect(() => {
+    if (courses.length > 0) {
+      void autoSeedEnrolledCoursesOffline(user?.id, courses);
+    }
+  }, [user?.id, courses]);
 
   useEffect(() => {
     if (preselectedCourseId) {
@@ -179,6 +194,12 @@ export const PracticeHubPage = () => {
     try {
       setIsLaunching(true);
 
+      // If offline, launch the auto-saved offline CBT pack immediately without waiting on network
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        navigate(`/quiz/offline_${selectedCourseId}/simulation`);
+        return;
+      }
+
       const existingQuiz = quizzes.find((q) => q.course?.id === selectedCourseId);
 
       if (existingQuiz) {
@@ -209,12 +230,12 @@ export const PracticeHubPage = () => {
           navigate(`/quiz/${dbQuiz.id}/practice`);
         }
       } else {
-        toast.info("Loading questions for this course...");
-        navigate(`/courses/${selectedCourseId}`);
+        // Launch built-in offline-ready CBT simulation pack for this course
+        navigate(`/quiz/offline_${selectedCourseId}/simulation`);
       }
-    } catch (err) {
-      console.error("Exam launcher error:", err);
-      toast.error("Failed to start CBT session. Please try again.");
+    } catch {
+      // Even if network drops mid-click, launch offline CBT simulation pack seamlessly
+      navigate(`/quiz/offline_${selectedCourseId}/simulation`);
     } finally {
       setIsLaunching(false);
     }
@@ -276,6 +297,43 @@ export const PracticeHubPage = () => {
         </header>
 
         <main className="max-w-4xl mx-auto px-4 sm:px-6 pt-5 space-y-7">
+          {activeCheckpoint && (
+            <section className="rounded-2xl border border-[#D4AF37] bg-[#18181B] text-[#FAF8F5] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[#D4AF37] font-bold">
+                  Unfinished CBT Exam Saved on This Device
+                </span>
+                <p className="text-xs sm:text-sm font-bold text-[#FAF8F5]">
+                  {activeCheckpoint.courseCode} · {activeCheckpoint.title}
+                </p>
+                <p className="text-[11px] font-mono tabular-nums text-[#A1A1AA]">
+                  {activeCheckpoint.answeredCount}/{activeCheckpoint.totalQuestions} answered ·{" "}
+                  {Math.max(1, Math.round(activeCheckpoint.timeLeftSeconds / 60))} mins remaining
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/quiz/${activeCheckpoint.quizId}/simulation`)}
+                  className="min-h-[40px] px-4 rounded-xl bg-[#D4AF37] hover:bg-[#C59F2D] text-[#18181B] font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <span>Resume Exam</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearActiveCbtCheckpoint(activeCheckpoint.quizId);
+                    setActiveCheckpoint(null);
+                  }}
+                  className="min-h-[40px] px-3 rounded-xl border border-[#3F3F46] text-[#A1A1AA] hover:text-[#FAF8F5] text-xs font-semibold cursor-pointer"
+                >
+                  Discard
+                </button>
+              </div>
+            </section>
+          )}
+
           {/* =========================================================
               COCKPIT: 1-TAP CBT EXAM LAUNCHER
              ========================================================= */}

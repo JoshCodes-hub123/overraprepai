@@ -212,7 +212,7 @@ const DocumentsUploader = ({ courseId, userId }: { courseId: string; userId?: st
 
   const upload = async () => {
     if (!file || !userId) { toast.error("Pick a file"); return; }
-    if (file.size > 25 * 1024 * 1024) { toast.error("File too large (max 25 MB)"); return; }
+    if (file.size > 500 * 1024 * 1024) { toast.error("File too large (max 500 MB)"); return; }
     setBusy(true);
     // Sanitize filename — special chars and spaces break storage paths.
     const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";

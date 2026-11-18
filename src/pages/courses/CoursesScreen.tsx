@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BookOpen,
@@ -8,9 +7,10 @@ import {
   GraduationCap,
   Sparkles,
   X,
-  Layers,
   ChevronRight,
-  SlidersHorizontal,
+  FileText,
+  ListChecks,
+  Play,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,18 +25,18 @@ import { SEO } from "@/components/seo/SEO";
 import { CourseCardV2 } from "@/components/courses/CourseCardV2";
 import { ChangeLevelSheet } from "@/components/courses/ChangeLevelSheet";
 import CourseDirectory from "@/pages/courses/CourseDirectory";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { resolveCourseSemester, type AcademicSemester } from "@/lib/cleanSlateManager";
 
 const LEVEL_TABS = ["all", "100", "200", "300", "400", "500"] as const;
 
 /**
- * Rebranded Courses Screen
- * Beautiful, organized, and tranquil course grid featuring automatic subject
- * imagery, clean metadata typography, CBT practice triggers, and seamless enrollment.
+ * Structured Courses Screen
+ * Warm Academic Ivory (#FAF8F5), Deep Charcoal (#18181B), and Gold (#D4AF37) aesthetic
+ * with an explicit 3-step learning guide (1. Notes -> 2. Topic Drills -> 3. CBT Exam)
+ * and direct action buttons on every course card.
  */
 const CoursesScreen = () => {
-  const navigate = useNavigate();
   const { user, primaryRole } = useAuth();
   const { isUniversity, institution } = useEnvironment();
   const qc = useQueryClient();
@@ -47,6 +47,7 @@ const CoursesScreen = () => {
 
   const [q, setQ] = useState("");
   const [activeTab, setActiveTab] = useState<"mine" | "explore">("mine");
+  const [semesterFilter, setSemesterFilter] = useState<"all" | AcademicSemester>("all");
   const [levelFilter, setLevelFilter] = useState<string>("all");
   const [levelSheetOpen, setLevelSheetOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -72,26 +73,61 @@ const CoursesScreen = () => {
   // Full university course catalogue for exploration/adding
   const { data: fullCatalogue = [], isLoading: isLoadingCatalogue } = useQuery({
     queryKey: ["courses-screen-catalogue", user?.id, institution],
-    enabled: isStudent && !!user && isUniversity && !!institution,
-    staleTime: 60_000,
+    enabled: isStudent && !!user,
+    staleTime: 15_000,
     queryFn: async () => {
-      if (!isUniversity || !institution) return [];
-      const { data, error } = await supabase
-        .from("courses")
-        .select("id, code, name, department, level")
-        .eq("is_active", true)
-        .eq("environment_type", "university")
-        .eq("university", institution)
-        .order("code", { ascending: true })
-        .limit(300);
-      if (error) throw error;
-      return (data ?? []) as Array<{
-        id: string;
-        code: string;
-        name: string;
-        department: string | null;
-        level: string | null;
-      }>;
+      const [dbRes, apiRes] = await Promise.all([
+        supabase
+          .from("courses")
+          .select("id, code, name, department, level, description, is_active")
+          .eq("is_active", true)
+          .order("code", { ascending: true })
+          .limit(300),
+        fetch("/api/courses")
+          .then((r) => (r.ok ? r.json() : { courses: [] }))
+          .catch(() => ({ courses: [] })),
+      ]);
+
+      const byId = new Map<
+        string,
+        {
+          id: string;
+          code: string;
+          name: string;
+          department: string | null;
+          level: string | null;
+          description?: string | null;
+        }
+      >();
+
+      const apiCourses = Array.isArray(apiRes?.courses) ? apiRes.courses : [];
+      for (const c of apiCourses) {
+        if (!c || !c.id || c.is_active === false) continue;
+        byId.set(c.id, {
+          id: c.id,
+          code: c.code || "COURSE",
+          name: c.name || c.title || "Untitled Course",
+          department: c.department || "General",
+          level: c.level ? String(c.level).replace(/[^0-9]/g, "") || "100" : "100",
+          description: c.description || null,
+        });
+      }
+
+      for (const c of (dbRes.data ?? []) as any[]) {
+        if (!c || !c.id || c.is_active === false) continue;
+        byId.set(c.id, {
+          id: c.id,
+          code: c.code || "COURSE",
+          name: c.name || "Untitled Course",
+          department: c.department || "General",
+          level: c.level ? String(c.level).replace(/[^0-9]/g, "") || "100" : "100",
+          description: c.description || null,
+        });
+      }
+
+      return Array.from(byId.values()).sort((a, b) =>
+        (a.code || "").localeCompare(b.code || "")
+      );
     },
   });
 
@@ -120,12 +156,15 @@ const CoursesScreen = () => {
         const str = `${c.code} ${c.name} ${c.department || ""}`.toLowerCase();
         if (!str.includes(term)) return false;
       }
+      if (semesterFilter !== "all" && resolveCourseSemester(c) !== semesterFilter) {
+        return false;
+      }
       if (levelFilter !== "all" && c.level !== levelFilter) {
         return false;
       }
       return true;
     });
-  }, [enrolled, term, levelFilter]);
+  }, [enrolled, term, semesterFilter, levelFilter]);
 
   // Filtered explore courses
   const filteredExplore = useMemo(() => {
@@ -134,12 +173,15 @@ const CoursesScreen = () => {
         const str = `${c.code} ${c.name} ${c.department || ""}`.toLowerCase();
         if (!str.includes(term)) return false;
       }
+      if (semesterFilter !== "all" && resolveCourseSemester(c) !== semesterFilter) {
+        return false;
+      }
       if (levelFilter !== "all" && c.level !== levelFilter) {
         return false;
       }
       return true;
     });
-  }, [fullCatalogue, term, levelFilter]);
+  }, [fullCatalogue, term, semesterFilter, levelFilter]);
 
   // Automatically show Explore tab if student has no enrolled courses yet once loaded
   const effectiveTab =
@@ -158,35 +200,34 @@ const CoursesScreen = () => {
   return (
     <>
       <SEO
-        title="Courses — OverraPrep"
-        description="Your academic curriculum, lecture notes, syllabus breakdowns and CBT practice."
+        title="Courses & Study Hub — OverraPrep"
+        description="Your academic curriculum structured in 3 steps: Read Notes & Formulas, Practice Topic Drills, and Take Timed CBT Exams."
         noindex
       />
 
-      <div className="min-h-screen bg-background pb-28 pt-4">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-6">
-          {/* Header Card: Tranquil, dignified university brand presence */}
-          <header className="relative overflow-hidden rounded-3xl border border-border/70 bg-gradient-to-br from-card via-card to-amber-500/5 p-5 sm:p-7 shadow-xs">
+      <div className="min-h-screen bg-[#FAF8F5] text-[#18181B] pb-28 pt-4">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-5">
+          {/* Header Card: Warm Academic Ivory & Deep Charcoal */}
+          <header className="relative overflow-hidden rounded-2xl border border-[#E6E0D4] bg-white p-5 sm:p-6 shadow-2xs">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="space-y-1.5">
-                {/* Academic Context line */}
-                <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400 font-medium">
-                  <GraduationCap className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                  <span className="font-semibold">{institution || "University Curriculum"}</span>
+                <div className="flex items-center gap-2 text-xs text-[#9A7B1C] font-semibold">
+                  <GraduationCap className="w-4 h-4 shrink-0 text-[#D4AF37]" />
+                  <span className="font-bold">{institution || "University Curriculum"}</span>
                   {studentDept && (
                     <>
                       <span aria-hidden="true" className="opacity-40">·</span>
-                      <span className="text-muted-foreground">{studentDept}</span>
+                      <span className="text-[#71717A]">{studentDept}</span>
                     </>
                   )}
                 </div>
 
-                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
-                  Courses & Curriculum
+                <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[#18181B]">
+                  Structured Course Hub
                 </h1>
 
-                <p className="text-xs sm:text-sm text-muted-foreground max-w-xl leading-relaxed">
-                  Every course includes weekly syllabus breakdowns, KaTeX notes, and verified CBT past questions.
+                <p className="text-xs sm:text-sm text-[#52525B] max-w-2xl leading-relaxed">
+                  Every course follows a simple 3-step mastery pipeline: read summary notes &amp; formulas, practice topic drills, and test yourself with timed CBT exams.
                 </p>
               </div>
 
@@ -194,42 +235,90 @@ const CoursesScreen = () => {
               <button
                 type="button"
                 onClick={() => setLevelSheetOpen(true)}
-                className="inline-flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-card border border-border/80 hover:border-amber-400/80 hover:shadow-xs transition-all self-start md:self-center cursor-pointer group select-none"
+                className="inline-flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#FAF8F5] border border-[#E6E0D4] hover:border-[#D4AF37] transition-all self-start md:self-center cursor-pointer group select-none"
               >
-                <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 grid place-items-center font-mono font-bold text-xs group-hover:scale-105 transition-transform">
+                <div className="w-9 h-9 rounded-lg bg-[#18181B] text-[#D4AF37] grid place-items-center font-mono tabular-nums font-bold text-xs group-hover:scale-105 transition-transform">
                   {studentLevel ? studentLevel.replace(/\D/g, "") || "L" : "L"}
                 </div>
                 <div className="text-left">
-                  <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                  <p className="text-[10px] uppercase font-bold text-[#71717A] tracking-wider">
                     Academic Level
                   </p>
-                  <p className="text-xs sm:text-sm font-bold text-foreground flex items-center gap-1">
+                  <p className="text-xs sm:text-sm font-bold text-[#18181B] flex items-center gap-1">
                     <span>{studentLevel ? `${studentLevel} Level` : "Set your level"}</span>
-                    <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+                    <ChevronRight className="w-3.5 h-3.5 text-[#71717A] group-hover:translate-x-0.5 transition-transform" />
                   </p>
                 </div>
               </button>
             </div>
 
+            {/* 3-Step Structured Learning Guide Strip */}
+            <div className="mt-4 pt-4 border-t border-[#EFECE6] grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[#FAF8F5] border border-[#E6E0D4]">
+                <span className="w-6 h-6 rounded-lg bg-[#18181B] text-[#D4AF37] font-mono tabular-nums text-[11px] font-bold grid place-items-center shrink-0">
+                  1
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-[#18181B] flex items-center gap-1">
+                    <FileText className="w-3 h-3 text-[#B48A1E]" />
+                    <span>Read Notes &amp; Formulas</span>
+                  </p>
+                  <p className="text-[11px] text-[#71717A] truncate">
+                    PDF handouts + built-in key formulas
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[#FAF8F5] border border-[#E6E0D4]">
+                <span className="w-6 h-6 rounded-lg bg-[#18181B] text-[#D4AF37] font-mono tabular-nums text-[11px] font-bold grid place-items-center shrink-0">
+                  2
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-[#18181B] flex items-center gap-1">
+                    <ListChecks className="w-3 h-3 text-[#B48A1E]" />
+                    <span>Topic Drills &amp; AI Tutor</span>
+                  </p>
+                  <p className="text-[11px] text-[#71717A] truncate">
+                    Master each module with instant explanations
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-[#FAF8F5] border border-[#E6E0D4]">
+                <span className="w-6 h-6 rounded-lg bg-[#D4AF37] text-[#18181B] font-mono tabular-nums text-[11px] font-bold grid place-items-center shrink-0">
+                  3
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-[#18181B] flex items-center gap-1">
+                    <Play className="w-3 h-3 fill-current text-[#B48A1E]" />
+                    <span>Timed CBT Exam</span>
+                  </p>
+                  <p className="text-[11px] text-[#71717A] truncate">
+                    Simulate real semester exam conditions
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Quick Search Input */}
-            <div className="mt-5 pt-4 border-t border-border/60">
+            <div className="mt-4 pt-4 border-t border-[#EFECE6]">
               <div className="relative max-w-xl">
                 <Search
-                  className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#71717A]"
                   aria-hidden
                 />
                 <input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
-                  placeholder="Search by course code (e.g. MTH 101, CSC 201), title, or department…"
+                  placeholder="Search by course code (e.g. MTH 101, PHY 101, CSC 201), title, or department…"
                   aria-label="Search courses"
-                  className="h-11 w-full rounded-xl border border-border/80 bg-background pl-10 pr-9 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 shadow-2xs transition-all"
+                  className="h-11 w-full rounded-xl border border-[#E6E0D4] bg-[#FAF8F5] pl-10 pr-9 text-xs sm:text-sm text-[#18181B] placeholder:text-[#71717A] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] transition-all"
                 />
                 {q && (
                   <button
                     type="button"
                     onClick={() => setQ("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-md text-muted-foreground hover:text-foreground cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-md text-[#71717A] hover:text-[#18181B] cursor-pointer"
                     aria-label="Clear search"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -240,24 +329,24 @@ const CoursesScreen = () => {
           </header>
 
           {/* Interactive Navigation Controls: Segmented Tabs + Level Filters */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             {/* Primary Segmented Tabs */}
-            <div className="inline-flex p-1 rounded-2xl bg-muted/70 border border-border/60 self-start">
+            <div className="inline-flex p-1 rounded-xl bg-[#EFECE6] border border-[#E6E0D4] self-start">
               <button
                 type="button"
                 onClick={() => setActiveTab("mine")}
-                className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   effectiveTab === "mine"
-                    ? "bg-card text-foreground shadow-xs border border-border/50"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-[#18181B] text-[#FAF8F5] shadow-2xs"
+                    : "text-[#52525B] hover:text-[#18181B]"
                 }`}
               >
                 <span>My Courses</span>
                 <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded-md font-extrabold ${
+                  className={`font-mono tabular-nums text-[10px] px-1.5 py-0.5 rounded font-extrabold ${
                     effectiveTab === "mine"
-                      ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
-                      : "bg-muted text-muted-foreground"
+                      ? "bg-[#D4AF37] text-[#18181B]"
+                      : "bg-white/80 text-[#52525B]"
                   }`}
                 >
                   {enrolledCount}
@@ -267,19 +356,19 @@ const CoursesScreen = () => {
               <button
                 type="button"
                 onClick={() => setActiveTab("explore")}
-                className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   effectiveTab === "explore"
-                    ? "bg-card text-foreground shadow-xs border border-border/50"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-[#18181B] text-[#FAF8F5] shadow-2xs"
+                    : "text-[#52525B] hover:text-[#18181B]"
                 }`}
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
                 <span>Explore Curriculum</span>
                 <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded-md font-extrabold ${
+                  className={`font-mono tabular-nums text-[10px] px-1.5 py-0.5 rounded font-extrabold ${
                     effectiveTab === "explore"
-                      ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
-                      : "bg-muted text-muted-foreground"
+                      ? "bg-[#D4AF37] text-[#18181B]"
+                      : "bg-white/80 text-[#52525B]"
                   }`}
                 >
                   {catalogueCount}
@@ -287,26 +376,56 @@ const CoursesScreen = () => {
               </button>
             </div>
 
-            {/* Level Filter Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-1">
-              {LEVEL_TABS.map((lvl) => {
-                const isSelected = levelFilter === lvl;
-                const label = lvl === "all" ? "All Levels" : `${lvl}L`;
-                return (
-                  <button
-                    key={lvl}
-                    type="button"
-                    onClick={() => setLevelFilter(lvl)}
-                    className={`shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-amber-500 text-slate-950 font-bold shadow-2xs"
-                        : "bg-card border border-border/70 text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
+            {/* Semester + Level Filter Controls */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* 1st / 2nd Semester Segmented Filter */}
+              <div className="inline-flex p-1 rounded-xl bg-[#EFECE6] border border-[#E6E0D4]">
+                {(["all", "1st", "2nd"] as const).map((sem) => {
+                  const isSelected = semesterFilter === sem;
+                  const label =
+                    sem === "all"
+                      ? "All Semesters"
+                      : sem === "1st"
+                      ? "1st Semester"
+                      : "2nd Semester";
+                  return (
+                    <button
+                      key={sem}
+                      type="button"
+                      onClick={() => setSemesterFilter(sem)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-[#18181B] text-[#D4AF37] shadow-2xs"
+                          : "text-[#52525B] hover:text-[#18181B]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Level Filter Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-1">
+                {LEVEL_TABS.map((lvl) => {
+                  const isSelected = levelFilter === lvl;
+                  const label = lvl === "all" ? "All Levels" : `${lvl}L`;
+                  return (
+                    <button
+                      key={lvl}
+                      type="button"
+                      onClick={() => setLevelFilter(lvl)}
+                      className={`shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-semibold font-mono tabular-nums transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-[#D4AF37] text-[#18181B] font-bold shadow-2xs"
+                          : "bg-white border border-[#E6E0D4] text-[#52525B] hover:text-[#18181B] hover:border-[#D4AF37]/60"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -318,31 +437,31 @@ const CoursesScreen = () => {
                   {Array.from({ length: 6 }).map((_, i) => (
                     <div
                       key={i}
-                      className="rounded-2xl border border-border/60 bg-card overflow-hidden h-72 animate-pulse flex flex-col"
+                      className="rounded-2xl border border-[#E6E0D4] bg-white overflow-hidden h-72 animate-pulse flex flex-col"
                     >
-                      <div className="h-36 bg-muted/60" />
+                      <div className="h-36 bg-[#EFECE6]" />
                       <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
                         <div className="space-y-2">
-                          <div className="h-4 bg-muted/60 rounded w-3/4" />
-                          <div className="h-3 bg-muted/40 rounded w-1/2" />
+                          <div className="h-4 bg-[#EFECE6] rounded w-3/4" />
+                          <div className="h-3 bg-[#EFECE6] rounded w-1/2" />
                         </div>
-                        <div className="h-9 bg-muted/50 rounded-xl" />
+                        <div className="h-9 bg-[#EFECE6] rounded-xl" />
                       </div>
                     </div>
                   ))}
                 </div>
               ) : filteredMine.length > 0 ? (
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+                  <div className="flex items-center justify-between text-xs text-[#71717A] px-1">
                     <span>
-                      Showing {filteredMine.length} enrolled course{filteredMine.length === 1 ? "" : "s"}
+                      Showing <strong className="font-mono tabular-nums text-[#18181B]">{filteredMine.length}</strong> enrolled course{filteredMine.length === 1 ? "" : "s"}
                       {levelFilter !== "all" ? ` · ${levelFilter} Level` : ""}
                     </span>
                     {term && (
                       <button
                         type="button"
                         onClick={() => setQ("")}
-                        className="text-amber-600 dark:text-amber-400 hover:underline font-medium"
+                        className="text-[#9A7B1C] hover:underline font-semibold cursor-pointer"
                       >
                         Reset search
                       </button>
@@ -367,20 +486,20 @@ const CoursesScreen = () => {
                   </div>
                 </div>
               ) : term ? (
-                <div className="rounded-3xl border border-border/80 bg-card p-10 text-center max-w-md mx-auto space-y-3">
-                  <div className="w-12 h-12 rounded-2xl bg-muted text-muted-foreground grid place-items-center mx-auto">
+                <div className="rounded-2xl border border-[#E6E0D4] bg-white p-10 text-center max-w-md mx-auto space-y-3">
+                  <div className="w-12 h-12 rounded-xl bg-[#FAF8F5] border border-[#E6E0D4] text-[#71717A] grid place-items-center mx-auto">
                     <Search className="w-6 h-6" />
                   </div>
-                  <h3 className="font-display font-bold text-base text-foreground">
+                  <h3 className="font-display font-bold text-base text-[#18181B]">
                     No enrolled courses match “{q.trim()}”
                   </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
+                  <p className="text-xs text-[#71717A] leading-relaxed">
                     Would you like to search across the entire university catalogue instead?
                   </p>
                   <div className="pt-2 flex items-center justify-center gap-2">
                     <Button
                       onClick={() => setActiveTab("explore")}
-                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl h-9"
+                      className="bg-[#D4AF37] hover:bg-[#C59F2D] text-[#18181B] font-bold text-xs rounded-xl h-9"
                     >
                       <Sparkles className="w-3.5 h-3.5 mr-1" />
                       Search All Curriculum
@@ -388,32 +507,32 @@ const CoursesScreen = () => {
                     <Button
                       variant="outline"
                       onClick={() => setQ("")}
-                      className="text-xs font-semibold rounded-xl h-9"
+                      className="text-xs font-semibold rounded-xl h-9 border-[#E6E0D4]"
                     >
                       Clear
                     </Button>
                   </div>
                 </div>
               ) : (
-                <div className="rounded-3xl border border-border/80 bg-card p-8 sm:p-12 text-center max-w-lg mx-auto shadow-xs space-y-4">
-                  <div className="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 grid place-items-center mx-auto">
+                <div className="rounded-2xl border border-[#E6E0D4] bg-white p-8 sm:p-12 text-center max-w-lg mx-auto shadow-2xs space-y-4">
+                  <div className="w-14 h-14 rounded-2xl bg-[#D4AF37]/15 text-[#9A7B1C] grid place-items-center mx-auto">
                     <BookOpen className="w-7 h-7" />
                   </div>
                   <div className="space-y-1.5">
-                    <h3 className="font-display font-bold text-lg text-foreground">
+                    <h3 className="font-display font-bold text-lg text-[#18181B]">
                       No courses registered yet
                     </h3>
-                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                      Select your semester courses from your department curriculum to start practicing verified past questions and reading lecture notes.
+                    <p className="text-xs sm:text-sm text-[#52525B] leading-relaxed">
+                      Select your semester courses from your department curriculum to unlock summary notes, key formulas, topic drills, and CBT practice.
                     </p>
                   </div>
                   <div className="pt-2">
                     <Button
                       onClick={() => setActiveTab("explore")}
-                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm rounded-xl h-11 px-5 shadow-xs"
+                      className="bg-[#D4AF37] hover:bg-[#C59F2D] text-[#18181B] font-bold text-xs sm:text-sm rounded-xl h-11 px-5 shadow-2xs"
                     >
                       <Plus className="w-4 h-4 mr-1.5" />
-                      Explore & Add Semester Courses
+                      Explore &amp; Add Semester Courses
                     </Button>
                   </div>
                 </div>
@@ -424,16 +543,16 @@ const CoursesScreen = () => {
           {/* Tab 2: Explore Curriculum & Add Courses */}
           {effectiveTab === "explore" && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+              <div className="flex items-center justify-between text-xs text-[#71717A] px-1">
                 <span>
-                  Showing {filteredExplore.length} curriculum courses in {institution || "University"}
+                  Showing <strong className="font-mono tabular-nums text-[#18181B]">{filteredExplore.length}</strong> curriculum courses in {institution || "University"}
                   {levelFilter !== "all" ? ` (${levelFilter}L)` : ""}
                 </span>
                 {term && (
                   <button
                     type="button"
                     onClick={() => setQ("")}
-                    className="text-amber-600 dark:text-amber-400 hover:underline font-medium"
+                    className="text-[#9A7B1C] hover:underline font-semibold cursor-pointer"
                   >
                     Clear search
                   </button>
@@ -445,15 +564,15 @@ const CoursesScreen = () => {
                   {Array.from({ length: 6 }).map((_, i) => (
                     <div
                       key={i}
-                      className="rounded-2xl border border-border/60 bg-card overflow-hidden h-72 animate-pulse flex flex-col"
+                      className="rounded-2xl border border-[#E6E0D4] bg-white overflow-hidden h-72 animate-pulse flex flex-col"
                     >
-                      <div className="h-36 bg-muted/60" />
+                      <div className="h-36 bg-[#EFECE6]" />
                       <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
                         <div className="space-y-2">
-                          <div className="h-4 bg-muted/60 rounded w-3/4" />
-                          <div className="h-3 bg-muted/40 rounded w-1/2" />
+                          <div className="h-4 bg-[#EFECE6] rounded w-3/4" />
+                          <div className="h-3 bg-[#EFECE6] rounded w-1/2" />
                         </div>
-                        <div className="h-9 bg-muted/50 rounded-xl" />
+                        <div className="h-9 bg-[#EFECE6] rounded-xl" />
                       </div>
                     </div>
                   ))}
@@ -483,14 +602,14 @@ const CoursesScreen = () => {
                   })}
                 </div>
               ) : (
-                <div className="rounded-3xl border border-border/80 bg-card p-10 text-center max-w-md mx-auto space-y-3">
-                  <div className="w-12 h-12 rounded-2xl bg-muted text-muted-foreground grid place-items-center mx-auto">
+                <div className="rounded-2xl border border-[#E6E0D4] bg-white p-10 text-center max-w-md mx-auto space-y-3">
+                  <div className="w-12 h-12 rounded-xl bg-[#FAF8F5] border border-[#E6E0D4] text-[#71717A] grid place-items-center mx-auto">
                     <Search className="w-6 h-6" />
                   </div>
-                  <h3 className="font-display font-bold text-base text-foreground">
+                  <h3 className="font-display font-bold text-base text-[#18181B]">
                     No curriculum courses match “{q.trim()}”
                   </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
+                  <p className="text-xs text-[#71717A] leading-relaxed">
                     Try checking your course code or clearing the level filter.
                   </p>
                   <Button
@@ -499,7 +618,7 @@ const CoursesScreen = () => {
                       setQ("");
                       setLevelFilter("all");
                     }}
-                    className="text-xs font-semibold rounded-xl h-9"
+                    className="text-xs font-semibold rounded-xl h-9 border-[#E6E0D4]"
                   >
                     Reset Filters
                   </Button>

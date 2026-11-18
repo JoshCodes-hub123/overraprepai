@@ -1,15 +1,17 @@
 import React, { useState, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ChevronRight,
+  FileText,
+  Layers,
   BookOpen,
   Target,
   CheckCircle2,
-  Sparkles,
   GraduationCap,
   Clock,
+  CalendarRange,
 } from "lucide-react";
 import { getAutomaticCourseImage } from "@/lib/courseImages";
+import { resolveCourseSemester, type AcademicSemester } from "@/lib/cleanSlateManager";
 import { cn } from "@/lib/utils";
 
 export interface CourseRowProps {
@@ -18,12 +20,17 @@ export interface CourseRowProps {
   name: string;
   department?: string | null;
   level?: string | null;
+  description?: string | null;
+  semester?: AcademicSemester;
   unreadUpdates?: number;
   actionLabel?: string;
   readinessScore?: number | null;
   progressPercent?: number | null;
   completedTopics?: number;
   totalTopics?: number;
+  materialsCount?: number;
+  quizzesCount?: number;
+  questionsCount?: number;
   className?: string;
 }
 
@@ -33,11 +40,16 @@ export const CourseRow = memo(function CourseRow({
   name,
   department,
   level,
+  description,
+  semester,
   unreadUpdates = 0,
   readinessScore,
   progressPercent,
   completedTopics = 0,
   totalTopics = 0,
+  materialsCount = 0,
+  quizzesCount = 0,
+  questionsCount = 0,
   className,
 }: CourseRowProps) {
   const navigate = useNavigate();
@@ -47,13 +59,14 @@ export const CourseRow = memo(function CourseRow({
     displayTitle,
     displayDepartment,
     category,
-    gradient,
   } = getAutomaticCourseImage({ id, code, name, department });
 
   const [currentSrc, setCurrentSrc] = useState(imageUrl);
   const [imgLoaded, setImgLoaded] = useState(false);
 
-  // Compute effective progress (topics-based if available, else readiness score)
+  const effectiveSemester =
+    semester || resolveCourseSemester({ code, description, semester });
+
   const effectivePercent = Math.min(
     100,
     Math.max(
@@ -68,12 +81,13 @@ export const CourseRow = memo(function CourseRow({
 
   const isCompleted = effectivePercent >= 80;
   const isStarted = effectivePercent > 0;
+  const cleanLevel = level ? String(level).replace(/[^0-9]/g, "") || level : null;
 
   return (
     <div
-      onClick={() => navigate(`/courses/${id}`)}
+      onClick={() => navigate(`/courses/${id}?tab=materials`)}
       className={cn(
-        "group relative flex flex-col gap-3 rounded-2xl border border-amber-200/70 dark:border-border/80 bg-card p-3 sm:p-4 text-left transition-all duration-200 shadow-2xs hover:shadow-md hover:border-amber-400/90 cursor-pointer select-none",
+        "group relative flex flex-col gap-3 rounded-2xl border border-[#E6E0D4] dark:border-border bg-white dark:bg-card p-3.5 sm:p-4 text-left transition-all duration-150 shadow-2xs hover:border-[#D4AF37] cursor-pointer select-none",
         className
       )}
       role="button"
@@ -81,20 +95,18 @@ export const CourseRow = memo(function CourseRow({
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          navigate(`/courses/${id}`);
+          navigate(`/courses/${id}?tab=materials`);
         }
       }}
       aria-label={`${code}: ${displayTitle} — ${effectivePercent}% completed`}
     >
-      <div className="flex items-start sm:items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
-        {/* Course Info with Photographic / Discipline Thumbnail */}
-        <div className="flex items-center gap-3.5 min-w-0 flex-1">
-          {/* Beautiful Course Badge Thumbnail */}
-          <div className="relative h-16 w-20 sm:h-16 sm:w-24 shrink-0 overflow-hidden rounded-xl bg-neutral-900 border border-amber-300/40 dark:border-neutral-800 shadow-xs">
-            {/* Shimmer Placeholder while image loads */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
+        {/* Course Info with Photographic Thumbnail */}
+        <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
+          <div className="relative h-16 w-20 sm:h-18 sm:w-24 shrink-0 overflow-hidden rounded-xl bg-[#18181B] border border-[#E6E0D4] dark:border-border shadow-2xs">
             {!imgLoaded && (
-              <div className="absolute inset-0 bg-neutral-800 animate-pulse flex items-center justify-center">
-                <GraduationCap className="w-5 h-5 text-amber-500/50" />
+              <div className="absolute inset-0 bg-[#18181B] animate-pulse flex items-center justify-center">
+                <GraduationCap className="w-5 h-5 text-[#D4AF37]/60" />
               </div>
             )}
 
@@ -108,142 +120,194 @@ export const CourseRow = memo(function CourseRow({
                 }
               }}
               className={cn(
-                "h-full w-full object-cover object-center transition-all duration-500 group-hover:scale-105",
+                "h-full w-full object-cover object-center transition-all duration-300 group-hover:scale-105",
                 imgLoaded ? "opacity-100" : "opacity-0"
               )}
               loading="lazy"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
-            <span className="absolute bottom-1 left-1.5 right-1.5 truncate text-center font-mono text-[10px] font-bold text-amber-300 bg-black/75 rounded px-1 py-0.5 backdrop-blur-xs shadow-2xs">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent pointer-events-none" />
+            <span className="absolute bottom-1 left-1.5 right-1.5 truncate text-center font-mono text-[10px] font-extrabold text-[#F5D77F] bg-[#18181B]/90 rounded px-1 py-0.5">
               {code}
             </span>
           </div>
 
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-400">
-                {displayDepartment || category}
+            {/* Metadata Badges Row */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded-md border",
+                  effectiveSemester === "1st"
+                    ? "bg-[#18181B] text-[#D4AF37] border-[#18181B]"
+                    : "bg-[#FAF8F5] text-[#18181B] border-[#D4AF37]/60"
+                )}
+              >
+                <CalendarRange className="w-2.5 h-2.5 text-[#D4AF37]" />
+                <span>{effectiveSemester === "1st" ? "1st Sem" : "2nd Sem"}</span>
               </span>
-              {level && (
-                <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-1.5 py-0.2 rounded-md">
-                  {level}L
+
+              {cleanLevel && (
+                <span className="font-mono text-[10px] font-bold text-[#52525B] bg-[#FAF8F5] border border-[#E6E0D4] px-1.5 py-0.5 rounded-md">
+                  {cleanLevel}L
                 </span>
               )}
+
+              <span className="text-[11px] font-bold text-[#9A7B1C] dark:text-amber-400 truncate max-w-[180px]">
+                {displayDepartment || category}
+              </span>
+
               {unreadUpdates > 0 && (
-                <span className="inline-flex h-4 items-center rounded-full bg-amber-500 px-1.5 text-[9px] font-bold text-slate-950 shadow-2xs">
+                <span className="inline-flex h-4 items-center rounded-md bg-[#D4AF37] px-1.5 font-mono text-[9px] font-extrabold text-[#18181B]">
                   +{unreadUpdates} new
                 </span>
               )}
 
-              {/* Completion status pill */}
               {isCompleted ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.2 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded-md">
                   <CheckCircle2 className="w-3 h-3" />
                   <span>Exam Ready</span>
                 </span>
               ) : isStarted ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-800 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.2 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#9A7B1C] bg-[#FAF0D6] px-2 py-0.5 rounded-md">
                   <Clock className="w-3 h-3" />
                   <span>In Progress</span>
                 </span>
               ) : null}
             </div>
 
-            <span className="block line-clamp-1 text-sm sm:text-[15px] font-display font-bold text-foreground group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors mt-0.5">
+            {/* Course Title */}
+            <span className="block line-clamp-1 text-sm sm:text-[15px] font-display font-extrabold text-[#18181B] dark:text-foreground group-hover:text-[#9A7B1C] transition-colors mt-1">
               {displayTitle}
             </span>
-            <span className="text-[11.5px] text-muted-foreground truncate block mt-0.5">
-              {code} · Syllabus, Notes & CBT Question Bank
-            </span>
+
+            {/* Live Uploaded Content Indicators */}
+            <div className="flex items-center gap-2 flex-wrap mt-1">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md border",
+                  materialsCount > 0
+                    ? "bg-emerald-500/10 text-emerald-800 border-emerald-500/25"
+                    : "bg-[#FAF8F5] text-[#71717A] border-[#E6E0D4]"
+                )}
+              >
+                <FileText className="w-3 h-3 shrink-0" />
+                <span className="font-mono tabular-nums font-bold">{materialsCount}</span>
+                <span>{materialsCount === 1 ? "Handout / Note" : "Handouts & PDFs"}</span>
+              </span>
+
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md border",
+                  quizzesCount > 0
+                    ? "bg-[#D4AF37]/15 text-[#18181B] border-[#D4AF37]/40"
+                    : "bg-[#FAF8F5] text-[#71717A] border-[#E6E0D4]"
+                )}
+              >
+                <Target className="w-3 h-3 shrink-0 text-[#9A7B1C]" />
+                <span className="font-mono tabular-nums font-bold">{quizzesCount}</span>
+                <span>
+                  {quizzesCount === 1 ? "CBT Paper" : "CBT Papers"}
+                  {questionsCount > 0 ? ` (${questionsCount} Qs)` : ""}
+                </span>
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+        {/* 3 Direct Learning Buttons: Notes | Drills | CBT */}
+        <div className="grid grid-cols-3 sm:flex items-center gap-1.5 shrink-0">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/practice?course=${id}`);
+              navigate(`/courses/${id}?tab=materials`);
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 text-xs font-bold transition-all shadow-xs"
-            title={`Take CBT Practice Mock for ${code}`}
+            className="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-xl border border-[#E6E0D4] bg-[#FAF8F5] hover:border-[#D4AF37] text-[#18181B] text-xs font-bold transition-colors cursor-pointer"
+            title={`Read Notes & Handouts for ${code}`}
           >
-            <Target className="h-3.5 w-3.5" />
-            <span>Practice CBT</span>
+            <FileText className="h-3.5 w-3.5 text-[#9A7B1C]" />
+            <span>Notes</span>
+            {materialsCount > 0 && (
+              <span className="font-mono tabular-nums text-[10px] px-1.5 py-0.2 rounded bg-[#18181B] text-[#D4AF37] font-extrabold">
+                {materialsCount}
+              </span>
+            )}
           </button>
 
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/courses/${id}`);
+              navigate(`/courses/${id}?tab=topics`);
             }}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-border/80 bg-background hover:bg-muted text-foreground text-xs font-semibold transition-colors"
-            title={`Open course ${code}`}
+            className="inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-xl border border-[#E6E0D4] bg-[#FAF8F5] hover:border-[#D4AF37] text-[#18181B] text-xs font-bold transition-colors cursor-pointer"
+            title={`Practice Topic Drills for ${code}`}
           >
-            <span className="hidden sm:inline">Study</span>
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+            <Layers className="h-3.5 w-3.5 text-[#9A7B1C]" />
+            <span>Drills</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/courses/${id}?tab=quizzes`);
+            }}
+            className="inline-flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-xl bg-[#18181B] hover:bg-[#27272A] text-[#F5D77F] text-xs font-bold transition-colors shadow-2xs cursor-pointer"
+            title={`Start CBT Exam for ${code}`}
+          >
+            <Target className="h-3.5 w-3.5 text-[#D4AF37]" />
+            <span>CBT</span>
+            {quizzesCount > 0 && (
+              <span className="font-mono tabular-nums text-[10px] px-1.5 py-0.2 rounded bg-[#D4AF37] text-[#18181B] font-extrabold">
+                {quizzesCount}
+              </span>
+            )}
           </button>
         </div>
       </div>
 
-      {/* Visual Progress Bar Section */}
-      <div className="mt-1 pt-2.5 border-t border-border/60">
-        <div className="flex items-center justify-between text-xs mb-1.5">
-          <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
-            <span
-              className={cn(
-                "inline-block w-2 h-2 rounded-full",
-                isCompleted
-                  ? "bg-emerald-500 shadow-xs shadow-emerald-500/50"
-                  : isStarted
-                  ? "bg-amber-500 shadow-xs shadow-amber-500/50"
-                  : "bg-muted-foreground/40"
-              )}
-            />
+      {/* Visual Progress Bar */}
+      <div className="pt-2 border-t border-[#EFECE6] dark:border-border/60">
+        <div className="flex items-center justify-between text-xs mb-1">
+          <span className="text-[11px] font-medium text-[#71717A]">
             {totalTopics > 0 ? (
               <span>
-                <strong className="text-foreground font-semibold">
-                  {completedTopics} of {totalTopics}
+                <strong className="text-[#18181B] dark:text-foreground font-bold font-mono">
+                  {completedTopics}/{totalTopics}
                 </strong>{" "}
-                topics completed
+                topics mastered
               </span>
             ) : effectivePercent > 0 ? (
               <span>
-                <strong className="text-foreground font-semibold">
+                <strong className="text-[#18181B] dark:text-foreground font-bold font-mono">
                   {effectivePercent}%
                 </strong>{" "}
-                mastery & readiness
+                exam readiness score
+              </span>
+            ) : materialsCount > 0 || quizzesCount > 0 ? (
+              <span className="text-[#18181B] font-medium">
+                Ready for study — open <strong className="text-[#9A7B1C]">Notes</strong> or start{" "}
+                <strong className="text-[#9A7B1C]">CBT Exam</strong>
               </span>
             ) : (
-              <span>Not started yet · Ready for topic 1</span>
+              <span>Step 1: Read Notes &amp; Handouts · Step 2: Topic Drills · Step 3: CBT</span>
             )}
           </span>
 
-          <span
-            className={cn(
-              "font-mono text-xs font-bold tabular-nums",
-              isCompleted
-                ? "text-emerald-600 dark:text-emerald-400"
-                : isStarted
-                ? "text-amber-700 dark:text-amber-400"
-                : "text-muted-foreground"
-            )}
-          >
+          <span className="font-mono text-xs font-bold tabular-nums text-[#18181B] dark:text-foreground">
             {effectivePercent}%
           </span>
         </div>
 
-        {/* Sleek Gradient Visual Progress Track */}
-        <div className="relative h-2 w-full overflow-hidden rounded-full bg-muted/80 dark:bg-neutral-800/80 border border-border/40">
+        <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-[#FAF8F5] dark:bg-neutral-800 border border-[#E6E0D4] dark:border-border/40">
           <div
             className={cn(
-              "h-full rounded-full transition-all duration-700 ease-out",
+              "h-full rounded-full transition-all duration-500",
               isCompleted
-                ? "bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 shadow-xs shadow-emerald-500/30"
+                ? "bg-emerald-600"
                 : isStarted
-                ? "bg-gradient-to-r from-amber-600 via-amber-400 to-amber-500 shadow-xs shadow-amber-500/30"
+                ? "bg-gradient-to-r from-[#D4AF37] to-[#B8860B]"
                 : "bg-transparent"
             )}
             style={{ width: `${Math.min(100, Math.max(0, effectivePercent))}%` }}
@@ -254,37 +318,17 @@ export const CourseRow = memo(function CourseRow({
   );
 });
 
-/**
- * Beautiful Luxury Skeleton matching CourseRow layout
- */
 export function CourseRowSkeleton() {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-card p-3 sm:p-4 text-left shadow-2xs">
+    <div className="flex flex-col gap-3 rounded-2xl border border-[#E6E0D4] bg-white p-3.5 sm:p-4 text-left shadow-2xs">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3.5 min-w-0 flex-1">
-          {/* Thumbnail box */}
-          <div className="relative h-16 w-20 sm:h-16 sm:w-24 shrink-0 overflow-hidden rounded-xl bg-amber-500/10 border border-amber-500/10">
-            <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-amber-400/15 to-transparent" />
-          </div>
+          <div className="h-16 w-20 sm:w-24 shrink-0 rounded-xl bg-muted animate-pulse" />
           <div className="min-w-0 flex-1 space-y-2">
             <div className="h-3 w-28 rounded bg-muted animate-pulse" />
             <div className="h-4 w-3/4 rounded bg-muted animate-pulse" />
             <div className="h-3 w-1/2 rounded bg-muted animate-pulse" />
           </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="h-8 w-24 rounded-xl bg-amber-500/20 animate-pulse" />
-          <div className="h-8 w-16 rounded-xl bg-muted animate-pulse" />
-        </div>
-      </div>
-      {/* Progress bar shimmer line */}
-      <div className="pt-2 border-t border-border/40 space-y-1.5">
-        <div className="flex justify-between">
-          <div className="h-2.5 w-36 rounded bg-muted animate-pulse" />
-          <div className="h-2.5 w-8 rounded bg-muted animate-pulse" />
-        </div>
-        <div className="h-2 w-full rounded-full bg-muted overflow-hidden relative">
-          <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-amber-400/20 to-transparent" />
         </div>
       </div>
     </div>
@@ -296,19 +340,21 @@ export function EmptyCourses({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "flex w-full flex-col items-center justify-center rounded-3xl border border-dashed border-amber-200 dark:border-border bg-card/60 p-8 text-center",
+        "flex w-full flex-col items-center justify-center rounded-3xl border border-dashed border-[#E6E0D4] bg-white p-8 text-center",
         className
       )}
     >
-      <BookOpen className="h-9 w-9 text-amber-500/70" aria-hidden />
-      <p className="mt-3 font-display text-sm font-bold text-foreground">No courses enrolled yet</p>
-      <p className="mt-1 text-xs text-muted-foreground max-w-xs">
-        Browse your university curriculum to add your semester courses and start practicing.
+      <BookOpen className="h-8 w-8 text-[#9A7B1C]" aria-hidden />
+      <p className="mt-3 font-display text-sm font-extrabold text-[#18181B]">
+        No courses available in this view yet
+      </p>
+      <p className="mt-1 text-xs text-[#71717A] max-w-xs">
+        Explore your university curriculum or switch semesters to view uploaded handouts, notes, and CBT exams.
       </p>
       <button
         type="button"
         onClick={() => navigate("/courses")}
-        className="mt-4 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-colors shadow-xs"
+        className="mt-4 px-4 py-2 rounded-xl bg-[#18181B] text-[#F5D77F] text-xs font-bold transition-colors cursor-pointer"
       >
         Explore Semester Courses
       </button>
