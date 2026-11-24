@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   GraduationCap,
   Clock,
-  CalendarRange,
 } from "lucide-react";
 import { getAutomaticCourseImage } from "@/lib/courseImages";
 import { resolveCourseSemester, type AcademicSemester } from "@/lib/cleanSlateManager";
@@ -132,30 +131,18 @@ export const CourseRow = memo(function CourseRow({
           </div>
 
           <div className="min-w-0 flex-1">
-            {/* Metadata Badges Row */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2 py-0.5 rounded-md border",
-                  effectiveSemester === "1st"
-                    ? "bg-[#18181B] text-[#D4AF37] border-[#18181B]"
-                    : "bg-[#FAF8F5] text-[#18181B] border-[#D4AF37]/60"
-                )}
-              >
-                <CalendarRange className="w-2.5 h-2.5 text-[#D4AF37]" />
-                <span>{effectiveSemester === "1st" ? "1st Sem" : "2nd Sem"}</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] font-bold text-[#996515] dark:text-amber-400">
+                {displayDepartment || category}
               </span>
-
               {cleanLevel && (
-                <span className="font-mono text-[10px] font-bold text-[#52525B] bg-[#FAF8F5] border border-[#E6E0D4] px-1.5 py-0.5 rounded-md">
+                <span className="font-mono text-[10px] font-bold text-[#52525B] bg-[#FAF8F5] border border-[#E8E2D6] px-1.5 py-0.2 rounded-md">
                   {cleanLevel}L
                 </span>
               )}
-
-              <span className="text-[11px] font-bold text-[#9A7B1C] dark:text-amber-400 truncate max-w-[180px]">
-                {displayDepartment || category}
+              <span className="font-mono text-[10px] font-semibold text-[#71717A] bg-[#FAF8F5] border border-[#E8E2D6] px-1.5 py-0.2 rounded-md">
+                {effectiveSemester === "1st" ? "1st Sem" : "2nd Sem"}
               </span>
-
               {unreadUpdates > 0 && (
                 <span className="inline-flex h-4 items-center rounded-md bg-[#D4AF37] px-1.5 font-mono text-[9px] font-extrabold text-[#18181B]">
                   +{unreadUpdates} new
@@ -163,54 +150,26 @@ export const CourseRow = memo(function CourseRow({
               )}
 
               {isCompleted ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-500/10 px-2 py-0.2 rounded-md">
                   <CheckCircle2 className="w-3 h-3" />
                   <span>Exam Ready</span>
                 </span>
               ) : isStarted ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#9A7B1C] bg-[#FAF0D6] px-2 py-0.5 rounded-md">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#996515] bg-[#FAF0D6] px-2 py-0.2 rounded-md">
                   <Clock className="w-3 h-3" />
                   <span>In Progress</span>
                 </span>
               ) : null}
             </div>
 
-            {/* Course Title */}
-            <span className="block line-clamp-1 text-sm sm:text-[15px] font-display font-extrabold text-[#18181B] dark:text-foreground group-hover:text-[#9A7B1C] transition-colors mt-1">
+            <span className="block line-clamp-1 text-sm sm:text-[15px] font-display font-extrabold text-[#18181B] dark:text-foreground group-hover:text-[#996515] transition-colors mt-0.5">
               {displayTitle}
             </span>
-
-            {/* Live Uploaded Content Indicators */}
-            <div className="flex items-center gap-2 flex-wrap mt-1">
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md border",
-                  materialsCount > 0
-                    ? "bg-emerald-500/10 text-emerald-800 border-emerald-500/25"
-                    : "bg-[#FAF8F5] text-[#71717A] border-[#E6E0D4]"
-                )}
-              >
-                <FileText className="w-3 h-3 shrink-0" />
-                <span className="font-mono tabular-nums font-bold">{materialsCount}</span>
-                <span>{materialsCount === 1 ? "Handout / Note" : "Handouts & PDFs"}</span>
-              </span>
-
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md border",
-                  quizzesCount > 0
-                    ? "bg-[#D4AF37]/15 text-[#18181B] border-[#D4AF37]/40"
-                    : "bg-[#FAF8F5] text-[#71717A] border-[#E6E0D4]"
-                )}
-              >
-                <Target className="w-3 h-3 shrink-0 text-[#9A7B1C]" />
-                <span className="font-mono tabular-nums font-bold">{quizzesCount}</span>
-                <span>
-                  {quizzesCount === 1 ? "CBT Paper" : "CBT Papers"}
-                  {questionsCount > 0 ? ` (${questionsCount} Qs)` : ""}
-                </span>
-              </span>
-            </div>
+            <span className="text-[11px] text-[#71717A] truncate block mt-0.5">
+              {materialsCount > 0 || quizzesCount > 0
+                ? `${materialsCount} Handout${materialsCount === 1 ? "" : "s"} · ${quizzesCount} CBT Paper${quizzesCount === 1 ? "" : "s"}${questionsCount > 0 ? ` (${questionsCount} Qs)` : ""}`
+                : "Step 1: Notes & Formulas · Step 2: Topic Drills · Step 3: CBT Exam"}
+            </span>
           </div>
         </div>
 

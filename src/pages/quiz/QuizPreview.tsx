@@ -77,20 +77,59 @@ const QuizPreview = () => {
       if (!quizId) return;
 
       try {
-        // Fetch quiz details
-        const { data: quizData, error: quizError } = await supabase
-          .from("quizzes")
-          .select(`
-            *,
-            course:courses(id, code, name, level)
-          `)
-          .eq("id", quizId)
-          .single();
+        // 1. Check Server Studio Quiz Store (/api/quizzes/:quizId) first
+        let resolvedQuiz: Quiz | null = null;
+        try {
+          const srvRes = await fetch(`/api/quizzes/${encodeURIComponent(quizId)}`);
+          if (srvRes.ok) {
+            const srvJson = await srvRes.json();
+            if (srvJson?.ok && srvJson?.quiz) {
+              const sq = srvJson.quiz;
+              resolvedQuiz = {
+                id: sq.id,
+                title: sq.title || "CBT Practice Paper",
+                description: sq.description || null,
+                duration_minutes: Number(sq.duration_minutes) || 30,
+                question_count:
+                  sq.question_count ??
+                  (Array.isArray(sq.questions) ? sq.questions.length : 0),
+                is_premium: false,
+                token_cost: 0,
+                is_active: true,
+                is_simulation: true,
+                tutor_id: null,
+                level: null,
+                course: {
+                  id: sq.course_id || "course",
+                  code: sq.course_code || "COURSE",
+                  name: sq.course_name || "University Course",
+                  level: null,
+                },
+              };
+            }
+          }
+        } catch {
+          // ignore and try Supabase
+        }
 
-        if (quizError || !quizData) {
-          toast.error("Quiz not found");
-          navigate("/");
-          return;
+        // 2. Fallback to Supabase quizzes table
+        let quizData: any = resolvedQuiz;
+        if (!quizData) {
+          const { data: dbQuiz, error: quizError } = await supabase
+            .from("quizzes")
+            .select(`
+              *,
+              course:courses(id, code, name, level)
+            `)
+            .eq("id", quizId)
+            .single();
+
+          if (quizError || !dbQuiz) {
+            toast.error("Quiz not found");
+            navigate("/practice");
+            return;
+          }
+          quizData = dbQuiz;
         }
 
         setQuiz(quizData as Quiz);

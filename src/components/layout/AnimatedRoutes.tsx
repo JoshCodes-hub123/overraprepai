@@ -361,6 +361,7 @@ export const AnimatedRoutes = () => {
               </PageTransition>
             }
           />
+          <Route path="/quiz" element={<Navigate to="/practice" replace />} />
 
           <Route
             path="/quiz/:quizId"
@@ -389,6 +390,14 @@ export const AnimatedRoutes = () => {
           />
           <Route
             path="/quiz/:quizId/cbt"
+            element={
+              <PageTransition>
+                <CBTSimulation />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/quiz/cbt/:quizId"
             element={
               <PageTransition>
                 <CBTSimulation />

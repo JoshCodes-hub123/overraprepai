@@ -420,8 +420,13 @@ async function startServer() {
   // Get materials for course
   app.get("/api/courses/:courseId/materials", (req: Request, res: Response) => {
     const { courseId } = req.params;
+    const normTarget = String(courseId || "").trim().toLowerCase();
     const all = readCourseMaterials();
-    const courseMats = all.filter((m) => m.course_id === courseId || m.courseCode === courseId);
+    const courseMats = all.filter((m) => {
+      const mCid = String(m.course_id || "").trim().toLowerCase();
+      const mCode = String(m.course_code || m.courseCode || "").trim().toLowerCase();
+      return mCid === normTarget || (mCode && mCode === normTarget);
+    });
     return res.json({ ok: true, materials: courseMats });
   });
 
@@ -790,8 +795,15 @@ REQUIREMENTS:
   });
 
   // Wipe and reset all server courses, materials, quizzes, and uploaded files
-  app.post("/api/materials/reset-all", (_req: Request, res: Response) => {
+  // Strictly requires explicit manual admin confirmation flag so background/startup code can never wipe data
+  app.post("/api/materials/reset-all", (req: Request, res: Response) => {
     try {
+      if (req.body?.confirmManualAdminReset !== true) {
+        return res.status(403).json({
+          ok: false,
+          error: "Blocked automatic reset — explicit manual admin confirmation is required.",
+        });
+      }
       writeCourses([]);
       writeCourseMaterials([]);
       writeCourseQuizzes([]);

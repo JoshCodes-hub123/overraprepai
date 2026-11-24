@@ -157,6 +157,55 @@ const QuizPractice = () => {
     if (!quizId || !user) return;
 
     try {
+      // 1. Check Server Studio Quiz Store (/api/quizzes/:quizId) first
+      let serverQuiz: any = null;
+      try {
+        const srvRes = await fetch(`/api/quizzes/${encodeURIComponent(quizId)}`);
+        if (srvRes.ok) {
+          const srvJson = await srvRes.json();
+          if (srvJson?.ok && srvJson?.quiz) {
+            serverQuiz = srvJson.quiz;
+          }
+        }
+      } catch {
+        // ignore
+      }
+
+      if (serverQuiz && Array.isArray(serverQuiz.questions) && serverQuiz.questions.length > 0) {
+        setQuiz({
+          id: serverQuiz.id,
+          title: serverQuiz.title || "Practice Quiz",
+          description: serverQuiz.description || null,
+          duration_minutes: Number(serverQuiz.duration_minutes) || 30,
+          course: {
+            code: serverQuiz.course_code || "COURSE",
+            name: serverQuiz.course_name || "University Course",
+          },
+        });
+
+        const formattedQuestions: Question[] = serverQuiz.questions.map((q: any, idx: number) => ({
+          id: q.id || `q_${quizId}_${idx + 1}`,
+          question_text: q.question_text,
+          option_a: q.option_a,
+          option_b: q.option_b,
+          option_c: q.option_c,
+          option_d: q.option_d,
+          correct_option: String(q.correct_option || "A").toUpperCase(),
+          explanation: q.explanation || null,
+          image_url: q.image_url || null,
+          topic: q.topic_title ? { name: q.topic_title } : null,
+        }));
+
+        setQuestions(formattedQuestions);
+        setAttemptId(resumeData?.attemptId || `local_practice_${Date.now()}`);
+        if (resumeData?.answers) {
+          setAnswersMap(resumeData.answers);
+          setCurrentIndex(resumeData.currentIndex || 0);
+        }
+        setIsLoading(false);
+        return;
+      }
+
       const { data: quizData, error: quizError } = await supabase
         .from("quizzes")
         .select("*, courses(code, name)")
@@ -167,7 +216,7 @@ const QuizPractice = () => {
 
       // Token gate: EVERY quiz needs to be unlocked (uses a free daily action first,
       // then a wallet token). Only the tutor's own quizzes skip the gate.
-      const needsGate = quizData.tutor_id !== user.id;
+      const needsGate = quizData.tutor_id && quizData.tutor_id !== user.id;
       if (needsGate) {
         const { data: unlockRow } = await (supabase as any)
           .from("quiz_unlocks")
@@ -178,7 +227,10 @@ const QuizPractice = () => {
         if (!unlockRow) {
           setQuiz({
             ...quizData,
-            course: quizData.courses as { code: string; name: string },
+            course: (quizData.courses as { code: string; name: string }) || {
+              code: "COURSE",
+              name: "Course",
+            },
           });
           setNeedsUnlock(true);
           setIsLoading(false);
@@ -188,7 +240,10 @@ const QuizPractice = () => {
 
       setQuiz({
         ...quizData,
-        course: quizData.courses as { code: string; name: string }
+        course: (quizData.courses as { code: string; name: string }) || {
+          code: "COURSE",
+          name: "Course",
+        },
       });
 
       const { data: questionsData, error: questionsError } = await supabase
@@ -199,10 +254,12 @@ const QuizPractice = () => {
 
       if (questionsError) throw questionsError;
 
-      const formattedQuestions = questionsData.map((qq: any) => ({
-        ...qq.questions,
-        topic: qq.questions.topics
-      }));
+      const formattedQuestions = (questionsData ?? [])
+        .filter((qq: any) => qq?.questions)
+        .map((qq: any) => ({
+          ...qq.questions,
+          topic: qq.questions.topics,
+        }));
 
       setQuestions(formattedQuestions);
 
@@ -241,8 +298,11 @@ const QuizPractice = () => {
           .select()
           .single();
 
-        if (attemptError) throw attemptError;
-        setAttemptId(attemptData.id);
+        if (attemptError) {
+          setAttemptId(`local_practice_${Date.now()}`);
+        } else {
+          setAttemptId(attemptData.id);
+        }
         void track("quiz_started", { quiz_id: quizId, mode: "practice", total_questions: formattedQuestions.length });
       }
     } catch (error) {

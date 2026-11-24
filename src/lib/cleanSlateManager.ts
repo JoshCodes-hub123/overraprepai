@@ -1,34 +1,40 @@
-const CLEAN_SLATE_CUTOFF_KEY = "overra_clean_slate_cutoff_v1";
-const AUTO_WIPE_EXECUTED_KEY = "overra_clean_slate_auto_wiped_v1";
+const LEGACY_CLEAN_SLATE_CUTOFF_KEY = "overra_clean_slate_cutoff_v1";
+const MANUAL_RESET_CUTOFF_KEY = "overra_manual_reset_cutoff_v2";
 
 /**
- * Baseline clean-slate timestamp corresponding to the clean-slate reset request.
- * Any pre-existing course, material, lecture note, topic, quiz, or question created
- * prior to this cutoff is excluded across all queries, while newly created records
- * pass through immediately.
+ * Legacy export kept for compatibility; no longer applied automatically as a
+ * query filter because future/drifted timestamps hid real Supabase courses and documents.
  */
-export const BASELINE_CLEAN_SLATE_ISO = "2026-11-18T02:20:00.000Z";
+export const BASELINE_CLEAN_SLATE_ISO = "";
 
-export function getCleanSlateCutoff(): string {
+export function getCleanSlateCutoff(): string | null {
   if (typeof window === "undefined") {
-    return BASELINE_CLEAN_SLATE_ISO;
+    return null;
   }
   try {
-    const stored = localStorage.getItem(CLEAN_SLATE_CUTOFF_KEY);
-    if (stored && stored > BASELINE_CLEAN_SLATE_ISO) {
-      return stored;
+    // Purge legacy v1 cutoff that previously hid real Supabase courses & documents
+    if (localStorage.getItem(LEGACY_CLEAN_SLATE_CUTOFF_KEY)) {
+      localStorage.removeItem(LEGACY_CLEAN_SLATE_CUTOFF_KEY);
     }
-    localStorage.setItem(CLEAN_SLATE_CUTOFF_KEY, BASELINE_CLEAN_SLATE_ISO);
+    const stored = localStorage.getItem(MANUAL_RESET_CUTOFF_KEY);
+    if (stored && stored.trim().length > 0) {
+      return stored.trim();
+    }
   } catch {
     // ignore storage access issues
   }
-  return BASELINE_CLEAN_SLATE_ISO;
+  return null;
 }
 
-export function setCleanSlateCutoff(isoTimestamp: string): void {
+export function setCleanSlateCutoff(isoTimestamp: string | null): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(CLEAN_SLATE_CUTOFF_KEY, isoTimestamp);
+    localStorage.removeItem(LEGACY_CLEAN_SLATE_CUTOFF_KEY);
+    if (isoTimestamp) {
+      localStorage.setItem(MANUAL_RESET_CUTOFF_KEY, isoTimestamp);
+    } else {
+      localStorage.removeItem(MANUAL_RESET_CUTOFF_KEY);
+    }
   } catch {
     // ignore
   }
@@ -75,27 +81,28 @@ export function clearAllBrowserStudyCaches(): void {
 }
 
 /**
- * Executes a full clean-slate purge across:
- * 1. Express Server Store (`POST /api/materials/reset-all`)
- * 2. Supabase PostgreSQL tables (`quiz_questions`, `questions`, `quizzes`, `study_materials`, `lecture_notes`, `topics`, `student_courses`, `courses`)
+ * Executes an EXPLICIT manual admin clean-slate purge across:
+ * 1. Express Server Store (`POST /api/materials/reset-all` with confirmManualAdminReset: true)
+ * 2. Supabase PostgreSQL tables
  * 3. Browser localStorage & IndexedDB study/CBT caches
- * 4. Clean-slate cutoff timestamp (so any RLS/FK-protected legacy rows are also hidden immediately)
  */
 export async function executeFullCleanSlateWipe(supabaseClient: any): Promise<{
   ok: boolean;
   cutoffIso: string;
 }> {
-  // Set cutoff 3 seconds before current time so newly created items right after reset pass `gte`
   const newCutoff = new Date(Date.now() - 3000).toISOString();
   setCleanSlateCutoff(newCutoff);
   clearAllBrowserStudyCaches();
 
-  // 1. Wipe Express Server materials JSON + uploaded PDF files
+  // 1. Wipe Express Server materials JSON + uploaded PDF files (explicit manual confirmation)
   try {
     await fetch("/api/materials/reset-all", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cutoffIso: newCutoff }),
+      body: JSON.stringify({
+        cutoffIso: newCutoff,
+        confirmManualAdminReset: true,
+      }),
     });
   } catch (err) {
     console.warn("Server materials reset notice:", err);
@@ -147,20 +154,15 @@ export async function executeFullCleanSlateWipe(supabaseClient: any): Promise<{
 }
 
 /**
- * Ensures the automatic one-time clean-slate wipe runs immediately on startup
- * so existing courses, materials, notes, and quizzes are purged automatically.
+ * Safe no-op: automatic startup wiping has been permanently disabled so uploaded
+ * 1st & 2nd semester courses and documents are never deleted on page load.
  */
-export async function ensureAutoCleanSlateWipeOnStartup(supabaseClient: any): Promise<void> {
+export async function ensureAutoCleanSlateWipeOnStartup(_supabaseClient: any): Promise<void> {
   if (typeof window === "undefined") return;
   try {
-    const alreadyWiped = localStorage.getItem(AUTO_WIPE_EXECUTED_KEY);
-    if (alreadyWiped === "done_v1") {
-      return;
-    }
-    localStorage.setItem(AUTO_WIPE_EXECUTED_KEY, "done_v1");
-    await executeFullCleanSlateWipe(supabaseClient);
-  } catch (err) {
-    console.warn("Auto clean-slate startup notice:", err);
+    localStorage.removeItem(LEGACY_CLEAN_SLATE_CUTOFF_KEY);
+  } catch {
+    // ignore
   }
 }
 

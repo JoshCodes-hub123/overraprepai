@@ -2,17 +2,20 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import useEnvironment from "@/hooks/useEnvironment";
 import { useAuth } from "@/hooks/useAuth";
+import { resolveCourseSemester, type AcademicSemester } from "@/lib/cleanSlateManager";
 
 /**
- * Student-facing view of the SAME `study_materials` rows admins and tutors
- * upload. Nothing is duplicated: we only read, scoped to the student's own
- * environment (RLS enforces the same rule server-side).
+ * Student-facing view of all uploaded course documents across the Express server
+ * store (`/api/materials`) and Supabase (`study_materials` + `lecture_notes`).
  */
 
 export interface MaterialCourse {
   id: string;
   code: string;
   name: string;
+  department?: string | null;
+  level?: string | null;
+  semester: AcademicSemester;
   count: number;
 }
 
@@ -28,42 +31,131 @@ export interface StudyMaterial {
   owner_name?: string | null;
 }
 
-/** Courses (JAMB: subjects) in the student's environment that have materials. */
+/** Courses in the student's environment that have uploaded materials (1st & 2nd semester). */
 export function useMaterialCourses() {
   const { user } = useAuth();
   const { environment, institution } = useEnvironment();
 
   return useQuery({
-    queryKey: ["material-courses", user?.id, environment, institution],
-    enabled: !!user && !!institution,
-    staleTime: 60_000,
+    queryKey: ["material-courses", user?.id ?? "guest", environment, institution],
+    staleTime: 20_000,
     queryFn: async (): Promise<MaterialCourse[]> => {
-      let q = (supabase as any)
-        .from("courses")
-        .select("id, code, name")
-        .eq("is_active", true)
-        .eq("environment_type", "university")
-        .order("code");
-      if (institution) q = q.eq("university", institution);
-      const { data: courses, error } = await q;
-      if (error) throw error;
+      const [apiCoursesRes, dbCoursesRes, apiMatsRes, dbStudyMatsRes, dbNotesRes] =
+        await Promise.all([
+          fetch("/api/courses")
+            .then((r) => (r.ok ? r.json() : { courses: [] }))
+            .catch(() => ({ courses: [] })),
+          supabase
+            .from("courses")
+            .select("id, code, name, department, level, description, is_active")
+            .eq("is_active", true)
+            .order("code"),
+          fetch("/api/materials")
+            .then((r) => (r.ok ? r.json() : { materials: [] }))
+            .catch(() => ({ materials: [] })),
+          supabase.from("study_materials").select("id, course_id, file_url, title, description"),
+          supabase.from("lecture_notes").select("id, course_id, file_url, title, description"),
+        ]);
 
-      const ids = (courses ?? []).map((c: any) => c.id);
-      if (ids.length === 0) return [];
+      const courseMap = new Map<
+        string,
+        {
+          id: string;
+          code: string;
+          name: string;
+          department: string | null;
+          level: string | null;
+          description: string | null;
+          semester?: string | null;
+        }
+      >();
 
-      const { data: mats } = await supabase
-        .from("study_materials")
-        .select("course_id")
-        .in("course_id", ids);
+      for (const c of Array.isArray(apiCoursesRes?.courses) ? apiCoursesRes.courses : []) {
+        if (!c?.id || c.is_active === false) continue;
+        courseMap.set(c.id, {
+          id: c.id,
+          code: c.code || "COURSE",
+          name: c.name || c.title || "Untitled Course",
+          department: c.department || null,
+          level: c.level ? String(c.level).replace(/[^0-9]/g, "") || null : null,
+          description: c.description || null,
+          semester: c.semester || null,
+        });
+      }
 
-      const counts: Record<string, number> = {};
-      (mats ?? []).forEach((m: any) => {
-        counts[m.course_id] = (counts[m.course_id] ?? 0) + 1;
-      });
+      for (const c of (dbCoursesRes.data ?? []) as any[]) {
+        if (!c?.id || c.is_active === false) continue;
+        const existing = courseMap.get(c.id);
+        courseMap.set(c.id, {
+          id: c.id,
+          code: c.code || existing?.code || "COURSE",
+          name: c.name || existing?.name || "Untitled Course",
+          department: c.department || existing?.department || null,
+          level: c.level
+            ? String(c.level).replace(/[^0-9]/g, "") || null
+            : existing?.level || null,
+          description: c.description ?? existing?.description ?? null,
+          semester: (c as any).semester ?? existing?.semester ?? null,
+        });
+      }
 
-      return (courses ?? [])
-        .map((c: any) => ({ id: c.id, code: c.code, name: c.name, count: counts[c.id] ?? 0 }))
-        .filter((c: MaterialCourse) => c.count > 0);
+      // Deduplicate all uploaded materials per course across Server + study_materials + lecture_notes
+      const seenPerCourse = new Map<string, Set<string>>();
+      const fallbackCourseInfo = new Map<
+        string,
+        { code: string; name: string; description: string | null }
+      >();
+
+      const registerMaterial = (m: any) => {
+        if (!m?.course_id) return;
+        const cid = String(m.course_id);
+        const dedupeKey = m.file_url || m.id || m.title;
+        if (!seenPerCourse.has(cid)) seenPerCourse.set(cid, new Set());
+        if (dedupeKey) seenPerCourse.get(cid)!.add(String(dedupeKey));
+        if (!courseMap.has(cid) && !fallbackCourseInfo.has(cid)) {
+          fallbackCourseInfo.set(cid, {
+            code: m.course_code || m.courseCode || "COURSE",
+            name: m.title || m.course_code || "Uploaded Course Materials",
+            description: m.description || null,
+          });
+        }
+      };
+
+      for (const m of Array.isArray(apiMatsRes?.materials) ? apiMatsRes.materials : []) {
+        registerMaterial(m);
+      }
+      for (const m of (dbStudyMatsRes.data ?? []) as any[]) {
+        registerMaterial(m);
+      }
+      for (const m of (dbNotesRes.data ?? []) as any[]) {
+        registerMaterial(m);
+      }
+
+      const result: MaterialCourse[] = [];
+      for (const [cid, items] of seenPerCourse.entries()) {
+        if (items.size === 0) continue;
+        const c = courseMap.get(cid);
+        const fb = fallbackCourseInfo.get(cid);
+        const code = c?.code || fb?.code || "COURSE";
+        const name = c?.name || fb?.name || code;
+        const description = c?.description ?? fb?.description ?? null;
+        result.push({
+          id: cid,
+          code,
+          name,
+          department: c?.department ?? null,
+          level: c?.level ?? null,
+          semester: resolveCourseSemester({
+            id: cid,
+            code,
+            description,
+            semester: c?.semester ?? null,
+          }),
+          count: items.size,
+        });
+      }
+
+      return result.sort((a, b) => (a.code || "").localeCompare(b.code || ""));
     },
   });
 }
@@ -75,21 +167,28 @@ export interface MaterialsByTopic {
 }
 
 /** All materials for one course, grouped by their real topic. */
-/** All materials for one course, grouped by their real topic. */
 export function useCourseMaterials(courseId?: string) {
   const { user } = useAuth();
   return useQuery({
     queryKey: ["course-materials", user?.id ?? "guest", courseId],
     enabled: !!courseId,
-    staleTime: 30_000,
+    staleTime: 20_000,
     queryFn: async (): Promise<{ course: { code: string; name: string } | null; groups: MaterialsByTopic[] }> => {
-      // 1. Fetch course metadata and syllabus topics
-      const [courseRes, topicsRes] = await Promise.all([
+      // 1. Fetch course metadata (Supabase + Server Store) and syllabus topics
+      const [courseRes, apiCoursesRes, topicsRes] = await Promise.all([
         supabase.from("courses").select("code, name").eq("id", courseId!).maybeSingle(),
+        fetch("/api/courses")
+          .then((r) => (r.ok ? r.json() : { courses: [] }))
+          .catch(() => ({ courses: [] })),
         supabase.from("topics").select("id, name").eq("course_id", courseId!),
       ]);
 
-      const course = (courseRes.data as any) ?? null;
+      const srvCourse = (Array.isArray(apiCoursesRes?.courses) ? apiCoursesRes.courses : []).find(
+        (c: any) => c?.id === courseId
+      );
+      const course =
+        (courseRes.data as any) ??
+        (srvCourse ? { code: srvCourse.code, name: srvCourse.name } : null);
       const topics = topicsRes.data ?? [];
 
       // 2. Fetch materials from local server store (always available & reliable for admin uploads)

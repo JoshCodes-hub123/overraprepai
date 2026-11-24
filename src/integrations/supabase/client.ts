@@ -3,7 +3,7 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 import { brokeredPreviewStorage } from "./previewAuthStorage";
-import { getCleanSlateCutoff, ensureAutoCleanSlateWipeOnStartup } from "@/lib/cleanSlateManager";
+import { getCleanSlateCutoff } from "@/lib/cleanSlateManager";
 
 const DEFAULT_SUPABASE_Project_ID = "vfbxyldwtjwwecpbgezu";
 const DEFAULT_SUPABASE_URL = "https://vfbxyldwtjwwecpbgezu.supabase.co";
@@ -280,6 +280,38 @@ const cleanSlateFetch: typeof fetch = async (input, init) => {
         }
       }
 
+      // If inserting into `study_materials` or `lecture_notes`, also persist to Express Server `/api/courses/:courseId/materials`
+      if (
+        (table === "study_materials" || table === "lecture_notes") &&
+        preparedRows.length > 0 &&
+        typeof window !== "undefined"
+      ) {
+        for (const r of preparedRows) {
+          if (!r?.course_id || !r?.title) continue;
+          try {
+            await fetch(`/api/courses/${encodeURIComponent(r.course_id)}/materials`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                id: r.id,
+                course_id: r.course_id,
+                course_code: r.course_code ?? null,
+                topic_id: r.topic_id ?? null,
+                title: r.title,
+                description: r.description ?? null,
+                file_url: r.file_url ?? "",
+                file_type: r.file_type || "pdf",
+                file_size: r.file_size ?? r.file_size_bytes ?? 0,
+                created_at: r.created_at,
+                visibility: "published",
+              }),
+            });
+          } catch {
+            // ignore server sync error
+          }
+        }
+      }
+
       // Attempt real Supabase insert
       let supabaseRes: Response | null = null;
       try {
@@ -419,6 +451,63 @@ const cleanSlateFetch: typeof fetch = async (input, init) => {
         }
       }
 
+      // If querying `study_materials` or `lecture_notes`, sync from `/api/materials` first
+      if (
+        (table === "study_materials" || table === "lecture_notes") &&
+        typeof window !== "undefined"
+      ) {
+        try {
+          const srvRes = await fetch("/api/materials");
+          if (srvRes.ok) {
+            const srvJson = await srvRes.json();
+            if (Array.isArray(srvJson.materials)) {
+              const currentMirror = readLocalMirror(table);
+              const byId = new Map<string, any>();
+              for (const m of currentMirror) byId.set(m.id, m);
+              for (const sm of srvJson.materials) {
+                if (!sm?.id) continue;
+                byId.set(sm.id, {
+                  ...sm,
+                  file_size: sm.file_size ?? 0,
+                  file_size_bytes: sm.file_size ?? sm.file_size_bytes ?? 0,
+                });
+              }
+              writeLocalMirror(table, Array.from(byId.values()));
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      // If querying `quizzes`, sync from `/api/quizzes` first
+      if (table === "quizzes" && typeof window !== "undefined") {
+        try {
+          const srvRes = await fetch("/api/quizzes");
+          if (srvRes.ok) {
+            const srvJson = await srvRes.json();
+            if (Array.isArray(srvJson.quizzes)) {
+              const currentMirror = readLocalMirror("quizzes");
+              const byId = new Map<string, any>();
+              for (const m of currentMirror) byId.set(m.id, m);
+              for (const sq of srvJson.quizzes) {
+                if (!sq?.id) continue;
+                byId.set(sq.id, {
+                  ...sq,
+                  is_active: sq.is_active !== false,
+                  is_published: sq.is_published !== false,
+                  question_count:
+                    sq.question_count ?? (Array.isArray(sq.questions) ? sq.questions.length : 0),
+                });
+              }
+              writeLocalMirror("quizzes", Array.from(byId.values()));
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+
       const mirrorRows = readLocalMirror(table).filter((r) => {
         if (table === "courses" && r.is_active === false) return false;
         return matchesPostgrestFilter(r, originalSearchParams);
@@ -526,8 +615,11 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   },
 });
 
+// Remove any legacy v1 cutoff key from previous sessions on startup without deleting data
 if (typeof window !== "undefined") {
-  setTimeout(() => {
-    void ensureAutoCleanSlateWipeOnStartup(supabase);
-  }, 300);
+  try {
+    localStorage.removeItem("overra_clean_slate_cutoff_v1");
+  } catch {
+    // ignore
+  }
 }

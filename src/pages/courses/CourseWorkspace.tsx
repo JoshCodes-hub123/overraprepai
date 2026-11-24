@@ -101,15 +101,35 @@ const CourseWorkspace = () => {
   const { data: course, isLoading: courseLoading } = useQuery({
     queryKey: ["course-workspace", courseId],
     enabled: !!courseId,
-    staleTime: 60_000,
+    staleTime: 30_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("courses")
-        .select("id, code, name, level, department, university_code")
-        .eq("id", courseId)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
+      const [dbRes, apiRes] = await Promise.all([
+        supabase
+          .from("courses")
+          .select("id, code, name, level, department, university_code")
+          .eq("id", courseId)
+          .maybeSingle(),
+        fetch("/api/courses")
+          .then((r) => (r.ok ? r.json() : { courses: [] }))
+          .catch(() => ({ courses: [] })),
+      ]);
+
+      if (dbRes.data) return dbRes.data;
+
+      const srvCourse = (Array.isArray(apiRes?.courses) ? apiRes.courses : []).find(
+        (c: any) => c?.id === courseId
+      );
+      if (srvCourse) {
+        return {
+          id: srvCourse.id,
+          code: srvCourse.code || "COURSE",
+          name: srvCourse.name || srvCourse.title || "Course",
+          level: srvCourse.level || "100",
+          department: srvCourse.department || "General Studies",
+          university_code: srvCourse.university || null,
+        };
+      }
+      return null;
     },
   });
 
