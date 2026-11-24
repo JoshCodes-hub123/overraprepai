@@ -157,22 +157,715 @@ async function startServer() {
   });
 
   // Persistent Courses, Course Materials & Quizzes Storage
-  const COURSES_FILE = path.resolve(__dirname, "data", "courses.json");
-  const MATERIALS_FILE = path.resolve(__dirname, "data", "course_materials.json");
-  const QUIZZES_FILE = path.resolve(__dirname, "data", "course_quizzes.json");
+  const DATA_DIR = path.resolve(__dirname, "data");
+  const COURSES_FILE = path.resolve(DATA_DIR, "courses.json");
+  const MATERIALS_FILE = path.resolve(DATA_DIR, "course_materials.json");
+  const QUIZZES_FILE = path.resolve(DATA_DIR, "course_quizzes.json");
   const UPLOADS_DIR = path.resolve(__dirname, "public", "uploads", "materials");
 
-  function readCourses(): any[] {
-    try {
-      if (fs.existsSync(COURSES_FILE)) {
-        const raw = fs.readFileSync(COURSES_FILE, "utf-8");
-        return JSON.parse(raw);
-      }
-    } catch (e) {
-      console.warn("Could not read courses file:", e);
-    }
-    return [];
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  } catch (e) {
+    console.warn("Directory init notice:", e);
   }
+
+  const DEFAULT_SEMESTER_COURSES = [
+    // 1st Semester Courses
+    {
+      id: "course-mth-101",
+      code: "MTH 101",
+      name: "Elementary Mathematics I: Algebra & Trigonometry",
+      department: "Mathematics",
+      level: "100",
+      semester: "1st",
+      description: "[1st Semester] Sets, real numbers, mathematical induction, quadratic equations, binomial theorem, complex numbers, and trigonometry.",
+      university: "FUTA",
+      university_code: "FUTA",
+      environment_type: "university",
+      is_active: true,
+      created_at: "2026-01-15T08:00:00.000Z",
+    },
+    {
+      id: "course-mts-101",
+      code: "MTS 101",
+      name: "Introductory Mathematics I: Algebra & Trigonometry",
+      department: "Mathematical Sciences",
+      level: "100",
+      semester: "1st",
+      description: "[1st Semester] Foundation university algebra, indices, logarithms, surds, inequalities, permutations, combinations, and circular functions.",
+      university: "FUTA",
+      university_code: "FUTA",
+      environment_type: "university",
+      is_active: true,
+      created_at: "2026-01-15T08:05:00.000Z",
+    },
+    {
+      id: "course-phy-101",
+      code: "PHY 101",
+      name: "General Physics I: Mechanics, Thermal Physics & Properties of Matter",
+      department: "Physics",
+      level: "100",
+      semester: "1st",
+      description: "[1st Semester] Space and time, units and dimensions, kinematics, Newton's laws of motion, work and energy, gravitation, elasticity, and thermal physics.",
+      university: "FUTA",
+      university_code: "FUTA",
+      environment_type: "university",
+      is_active: true,
+      created_at: "2026-01-15T08:10:00.000Z",
+    },
+    {
+      id: "course-che-101",
+      code: "CHE 101",
+      name: "General Chemistry I: Physical & Inorganic Principles",
+      department: "Chemistry",
+      level: "100",
+      semester: "1st",
+      description: "[1st Semester] Atomic structure, periodic table periodicity, chemical bonding, stoichiometry, states of matter, gas laws, and thermochemistry.",
+      university: "FUTA",
+      university_code: "FUTA",
+      environment_type: "university",
+      is_active: true,
+      created_at: "2026-01-15T08:15:00.000Z",
+    },
+    {
+      id: "course-csc-101",
+      code: "CSC 101",
+      name: "Introduction to Computer Science & Digital Systems",
+      department: "Computer Science",
+      level: "100",
+      semester: "1st",
+      description: "[1st Semester] History of computing, computer hardware and software architecture, number systems, binary arithmetic, boolean logic, and algorithms.",
+      university: "FUTA",
+      university_code: "FUTA",
+      environment_type: "university",
+      is_active: true,
+      created_at: "2026-01-15T08:20:00.000Z",
+    },
+    {
+      id: "course-bio-101",
+      code: "BIO 101",
+      name: "General Biology I: Cell Biology, Genetics & Evolution",
+      department: "Biology",
+      level: "100",
+      semester: "1st",
+      description: "[1st Semester] Cell structure and organization, biomolecules, cellular respiration, photosynthesis, mitosis, meiosis, Mendelian genetics, and evolution.",
+      university: "FUTA",
+      university_code: "FUTA",
+      environment_type: "university",
+      is_active: true,
+      created_at: "2026-01-15T08:25:00.000Z",
+    },
+    {
+      id: "course-gns-101",
+      code: "GNS 101",
+      name: "Use of English & Academic Reading Skills I",
+      department: "General Studies",
+      level: "100",
+      semester: "1st",
+      description: "[1st Semester] Effective study skills, listening and reading comprehension, grammatical structures, critical review writing, and vocabulary development.",
+      university: "FUTA",
+      university_code: "FUTA",
+      environment_type: "university",
+      is_active: true,
+      created_at: "2026-01-15T08:30:00.000Z",
+    },
+    {
+      id: "course-mee-101",
+      code: "MEE 101",
+      name: "Engineering Drawing & Technical Graphics I",
+      department: "Mechanical Engineering",
+      level: "100",
+      semester: "1st",
+      description: "[1st Semester] Isometric and orthographic projections, geometrical constructions, sectioning, dimensioning, and CAD fundamentals.",
+      university: "FUTA",
+      university_code: "FUTA",
+      environment_type: "university",
+      is_active: true,
+      created_at: "2026-01-15T08:35:00.000Z",
+    },
+    // 2nd Semester Courses
+    {
+      id: "course-mth-102",
+      code: "MTH 102",
+      name: "Elementary Mathematics II: Differential & Integral Calculus",
+      department: "Mathematics",
+      level: "100",
+      semester: "2nd",
+      description: "[2nd Semester] Functions of a real variable, limits, continuity, differentiation techniques, maxima and minima, integration methods, and volumes of revolution.",
+      university: "FUTA",
+      university_code: "FUTA",
+      environment_type: "university",
+      is_active: true,
+      created_at: "2026-02-15T08:00:00.000Z",
+    },
+    {
+      id: "course-mts-102",
+      code: "MTS 102",
+      name: "Introductory Mathematics II: Calculus & Analytic Geometry",
+      department: "Mathematical Sciences",
+      level: "100",
+      semester: "2nd",
+      description: "[2nd Semester] Coordinate geometry of conic sections, limits, L'Hôpital's rule, derivatives, definite and indefinite integrals, and differential equations.",
+      university: "FUTA",
+      university_code: "FUTA",
+      environment_type: "university",
+      is_active: true,
+      created_at: "2026-02-15T08:05:00.000Z",
+    },
+    {
+      id: "course-phy-102",
+      code: "PHY 102",
+      name: "General Physics II: Electricity, Magnetism & Modern Physics",
+      department: "Physics",
+      level: "100",
+      semester: "2nd",
+      description: "[2nd Semester] Electrostatics, Coulomb's law, Gauss's theorem, capacitors, DC circuits, Kirchhoff's laws, magnetic fields, electromagnetic induction, and AC circuits.",
+      university: "FUTA",
+      university_code: "FUTA",
+      environment_type: "university",
+      is_active: true,
+      created_at: "2026-02-15T08:10:00.000Z",
+    },
+    {
+      id: "course-che-102",
+      code: "CHE 102",
+      name: "General Chemistry II: Organic & Analytical Chemistry",
+      department: "Chemistry",
+      level: "100",
+      semester: "2nd",
+      description: "[2nd Semester] Chemical equilibrium, acid-base equilibria, electrochemistry, reaction kinetics, hybridization, functional groups, and introductory organic reactions.",
+      university: "FUTA",
+      university_code: "FUTA",
+      environment_type: "university",
+      is_active: true,
+      created_at: "2026-02-15T08:15:00.000Z",
+    },
+    {
+      id: "course-csc-102",
+      code: "CSC 102",
+      name: "Introduction to Problem Solving & Structured Programming",
+      department: "Computer Science",
+      level: "100",
+      semester: "2nd",
+      description: "[2nd Semester] Algorithmic problem solving, flowcharts, pseudocode, control structures, functions, arrays, and structured programming in Python/C.",
+      university: "FUTA",
+      university_code: "FUTA",
+      environment_type: "university",
+      is_active: true,
+      created_at: "2026-02-15T08:20:00.000Z",
+    },
+    {
+      id: "course-bio-102",
+      code: "BIO 102",
+      name: "General Biology II: Diversity of Life & Ecology",
+      department: "Biology",
+      level: "100",
+      semester: "2nd",
+      description: "[2nd Semester] Classification of living organisms, plant and animal kingdom taxonomy, ecological systems, biogeochemical cycles, and conservation.",
+      university: "FUTA",
+      university_code: "FUTA",
+      environment_type: "university",
+      is_active: true,
+      created_at: "2026-02-15T08:25:00.000Z",
+    },
+    {
+      id: "course-gns-102",
+      code: "GNS 102",
+      name: "Use of English & Academic Writing Communication II",
+      department: "General Studies",
+      level: "100",
+      semester: "2nd",
+      description: "[2nd Semester] Essay writing, technical report writing, academic citation styles (APA/MLA), logical reasoning, and formal presentation skills.",
+      university: "FUTA",
+      university_code: "FUTA",
+      environment_type: "university",
+      is_active: true,
+      created_at: "2026-02-15T08:30:00.000Z",
+    },
+    {
+      id: "course-gns-106",
+      code: "GNS 106",
+      name: "Use of English & International Language Communication",
+      department: "General Studies",
+      level: "100",
+      semester: "2nd",
+      description: "[2nd Semester] Academic communication, comprehension, grammar mastery, and foundational international language and technical communication.",
+      university: "FUTA",
+      university_code: "FUTA",
+      environment_type: "university",
+      is_active: true,
+      created_at: "2026-02-15T08:35:00.000Z",
+    },
+  ];
+
+  const DEFAULT_SEMESTER_MATERIALS = [
+    // 1st Semester Materials
+    {
+      id: "mat-gns-101-critical-review",
+      course_id: "course-gns-101",
+      course_code: "GNS 101",
+      topic_id: null,
+      title: "GNS 101 — Module 3: Reading for Reviews & Writing a Critical Review",
+      description: "[1st Semester] Official academic reading and critical review writing handout covering structure, thesis evaluation, paragraph transitions, and academic critique.",
+      file_url: "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+      file_type: "pdf",
+      file_size: 95597,
+      created_at: "2026-01-20T09:00:00.000Z",
+      owner_name: "Course Administrator",
+      tags: ["1st Semester", "GNS 101"],
+      visibility: "published",
+    },
+    {
+      id: "mat-mth-101-algebra-notes",
+      course_id: "course-mth-101",
+      course_code: "MTH 101",
+      topic_id: null,
+      title: "MTH 101 — Complete 1st Semester Lecture Notes: Algebra, Binomial Theorem & Trigonometry",
+      description: `### [1st Semester] MTH 101 Lecture Summary & Key Formulas\n\n#### 1. Set Theory & Principle of Inclusion-Exclusion\nFor any finite sets $A$ and $B$:\n$$n(A \\cup B) = n(A) + n(B) - n(A \\cap B)$$\nDe Morgan's Laws: $(A \\cup B)' = A' \\cap B'$ and $(A \\cap B)' = A' \\cup B'$.\n\n#### 2. Theory of Quadratic Equations\nFor $ax^2 + bx + c = 0$ ($a \\neq 0$) with roots $\\alpha, \\beta$:\n- Sum of roots: $\\alpha + \\beta = -\\frac{b}{a}$\n- Product of roots: $\\alpha \\beta = \\frac{c}{a}$\n- Symmetric identity: $\\alpha^2 + \\beta^2 = (\\alpha + \\beta)^2 - 2\\alpha\\beta$\n\n#### 3. Binomial Theorem & Complex Numbers\n- General term in $(a + b)^n$: $T_{r+1} = \\binom{n}{r} a^{n-r} b^r$\n- De Moivre's Theorem: $[r(\\cos\\theta + i\\sin\\theta)]^n = r^n(\\cos n\\theta + i\\sin n\\theta)$`,
+      file_url: "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+      file_type: "markdown",
+      file_size: 48200,
+      created_at: "2026-01-21T10:00:00.000Z",
+      owner_name: "Department of Mathematics",
+      tags: ["1st Semester", "MTH 101"],
+      visibility: "published",
+    },
+    {
+      id: "mat-phy-101-mechanics-notes",
+      course_id: "course-phy-101",
+      course_code: "PHY 101",
+      topic_id: null,
+      title: "PHY 101 — 1st Semester Mechanics, Kinematics & Thermal Physics Handout",
+      description: `### [1st Semester] PHY 101 Core Syllabus Notes & Equations\n\n#### 1. Kinematics & Projectile Motion\n- Equations of motion under constant acceleration $a$: $v = u + at$, $s = ut + \\frac{1}{2}at^2$, $v^2 = u^2 + 2as$\n- Projectile Time of Flight: $T = \\frac{2u\\sin\\theta}{g}$\n- Maximum Height: $H = \\frac{u^2\\sin^2\\theta}{2g}$\n- Horizontal Range: $R = \\frac{u^2\\sin 2\\theta}{g}$ (maximum at $\\theta = 45^\\circ$)\n\n#### 2. Newton's Laws, Momentum & Work-Energy\n- Linear Momentum: $\\vec{p} = m\\vec{v}$, Impulse $J = F\\Delta t = \\Delta p$\n- Work-Energy Theorem: $W_{\\text{net}} = \\Delta K = \\frac{1}{2}mv^2 - \\frac{1}{2}mu^2$\n- Universal Gravitation: $F = \\frac{G m_1 m_2}{r^2}$, Escape Velocity $v_e = \\sqrt{2gR}$`,
+      file_url: "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+      file_type: "markdown",
+      file_size: 52400,
+      created_at: "2026-01-22T11:00:00.000Z",
+      owner_name: "Department of Physics",
+      tags: ["1st Semester", "PHY 101"],
+      visibility: "published",
+    },
+    {
+      id: "mat-che-101-physical-chem",
+      course_id: "course-che-101",
+      course_code: "CHE 101",
+      topic_id: null,
+      title: "CHE 101 — 1st Semester Atomic Structure, Gas Laws & Stoichiometry Guide",
+      description: `### [1st Semester] CHE 101 Physical & Inorganic Chemistry Handout\n\n#### 1. Ideal Gas Law & Kinetic Theory\n- Ideal Gas Equation: $PV = nRT$\n- Graham's Law of Diffusion: $\\frac{r_1}{r_2} = \\sqrt{\\frac{M_2}{M_1}}$\n\n#### 2. Quantum Numbers & Electronic Configuration\n- Principal ($n$), Azimuthal ($l = 0 \\dots n-1$), Magnetic ($m_l = -l \\dots +l$), Spin ($m_s = \\pm \\frac{1}{2}$)\n- Aufbau Principle, Pauli Exclusion Principle, and Hund's Rule of Maximum Multiplicity.`,
+      file_url: "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+      file_type: "markdown",
+      file_size: 44100,
+      created_at: "2026-01-23T12:00:00.000Z",
+      owner_name: "Department of Chemistry",
+      tags: ["1st Semester", "CHE 101"],
+      visibility: "published",
+    },
+    {
+      id: "mat-csc-101-digital-systems",
+      course_id: "course-csc-101",
+      course_code: "CSC 101",
+      topic_id: null,
+      title: "CSC 101 — 1st Semester Number Systems, Boolean Logic & Computer Architecture",
+      description: `### [1st Semester] CSC 101 Digital Systems & Computing Fundamentals\n\n#### 1. Number Base Conversions & Binary Arithmetic\n- Binary (Base 2), Octal (Base 8), Decimal (Base 10), and Hexadecimal (Base 16).\n- Two's Complement representation for signed integers.\n\n#### 2. CPU Architecture & Memory Hierarchy\n- Von Neumann Architecture: Control Unit (CU), Arithmetic Logic Unit (ALU), Registers, RAM/ROM, and I/O Buses.`,
+      file_url: "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+      file_type: "markdown",
+      file_size: 39800,
+      created_at: "2026-01-24T13:00:00.000Z",
+      owner_name: "Department of Computer Science",
+      tags: ["1st Semester", "CSC 101"],
+      visibility: "published",
+    },
+    // 2nd Semester Materials
+    {
+      id: "mat-mth-102-calculus-notes",
+      course_id: "course-mth-102",
+      course_code: "MTH 102",
+      topic_id: null,
+      title: "MTH 102 — 2nd Semester Differential & Integral Calculus Comprehensive Notes",
+      description: `### [2nd Semester] MTH 102 Differential & Integral Calculus Handout\n\n#### 1. Limits, Continuity & L'Hôpital's Rule\n- Standard trigonometric limit: $\\lim_{x \\to 0} \\frac{\\sin x}{x} = 1$\n- Continuity at $x = a$: $\\lim_{x \\to a^-} f(x) = \\lim_{x \\to a^+} f(x) = f(a)$\n\n#### 2. Differentiation Rules & Stationary Points\n- Product Rule: $\\frac{d}{dx}(uv) = u\\frac{dv}{dx} + v\\frac{du}{dx}$\n- Quotient Rule: $\\frac{d}{dx}\\left(\\frac{u}{v}\\right) = \\frac{v\\frac{du}{dx} - u\\frac{dv}{dx}}{v^2}$\n- Integration by Parts: $\\int u\\,dv = uv - \\int v\\,du$`,
+      file_url: "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+      file_type: "markdown",
+      file_size: 56900,
+      created_at: "2026-02-20T09:00:00.000Z",
+      owner_name: "Department of Mathematics",
+      tags: ["2nd Semester", "MTH 102"],
+      visibility: "published",
+    },
+    {
+      id: "mat-mts-102-calculus-geometry",
+      course_id: "course-mts-102",
+      course_code: "MTS 102",
+      topic_id: null,
+      title: "MTS 102 — 2nd Semester Calculus, Conic Sections & Differential Equations",
+      description: `### [2nd Semester] MTS 102 Calculus & Analytic Geometry Revision Pack\n\n#### 1. Analytic Geometry of Conic Sections\n- Circle: $(x - h)^2 + (y - k)^2 = r^2$\n- Parabola: $y^2 = 4ax$ (Focus $(a, 0)$, Directrix $x = -a$)\n- Ellipse: $\\frac{x^2}{a^2} + \\frac{y^2}{b^2} = 1$, Eccentricity $e = \\sqrt{1 - \\frac{b^2}{a^2}} < 1$\n\n#### 2. Definite Integrals & Area Under Curves\n- Fundamental Theorem: $\\int_a^b f(x)\\,dx = [F(x)]_a^b = F(b) - F(a)$\n- Volume of Revolution about the x-axis: $V = \\pi \\int_a^b y^2\\,dx$`,
+      file_url: "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+      file_type: "markdown",
+      file_size: 54300,
+      created_at: "2026-02-21T10:00:00.000Z",
+      owner_name: "Department of Mathematical Sciences",
+      tags: ["2nd Semester", "MTS 102"],
+      visibility: "published",
+    },
+    {
+      id: "mat-phy-102-electromagnetism",
+      course_id: "course-phy-102",
+      course_code: "PHY 102",
+      topic_id: null,
+      title: "PHY 102 — 2nd Semester Electricity, Magnetism & Modern Physics Notes",
+      description: `### [2nd Semester] PHY 102 Electricity & Magnetism Lecture Handout\n\n#### 1. Electrostatics, Electric Field & Potential\n- Coulomb's Law: $F = \\frac{1}{4\\pi\\varepsilon_0} \\frac{|q_1 q_2|}{r^2}$\n- Electric Field Intensity: $E = \\frac{F}{q} = -\\frac{dV}{dr}$\n- Energy Stored in a Capacitor: $U = \\frac{1}{2}CV^2 = \\frac{Q^2}{2C}$\n\n#### 2. Direct Current Circuits & Electromagnetism\n- Kirchhoff's Current Law (KCL): $\\sum I_{\\text{in}} = \\sum I_{\\text{out}}$\n- Kirchhoff's Voltage Law (KVL): $\\sum \\Delta V = 0$ around any closed loop\n- Magnetic Force on Moving Charge: $\\vec{F} = q(\\vec{v} \\times \\vec{B})$`,
+      file_url: "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+      file_type: "markdown",
+      file_size: 61200,
+      created_at: "2026-02-22T11:00:00.000Z",
+      owner_name: "Department of Physics",
+      tags: ["2nd Semester", "PHY 102"],
+      visibility: "published",
+    },
+    {
+      id: "mat-che-102-organic-chem",
+      course_id: "course-che-102",
+      course_code: "CHE 102",
+      topic_id: null,
+      title: "CHE 102 — 2nd Semester Organic Chemistry, Equilibrium & Electrochemistry",
+      description: `### [2nd Semester] CHE 102 General Chemistry II Study Handout\n\n#### 1. Chemical Equilibrium & Acids/Bases\n- Equilibrium Constant: $K_c = \\frac{[C]^c[D]^d}{[A]^a[B]^b}$, $K_p = K_c(RT)^{\\Delta n}$\n- Henderson-Hasselbalch Equation: $\\text{pH} = \\text{p}K_a + \\log\\left(\\frac{[\\text{Conjugate Base}]}{[\\text{Weak Acid}]}\\right)$\n\n#### 2. Organic Chemistry & Hybridization\n- Alkanes ($sp^3$, $109.5^\\circ$, tetrahedral), Alkenes ($sp^2$, $120^\\circ$, trigonal planar), Alkynes ($sp$, $180^\\circ$, linear).\n- Functional groups, homologous series, and IUPAC nomenclature rules.`,
+      file_url: "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+      file_type: "markdown",
+      file_size: 53800,
+      created_at: "2026-02-23T12:00:00.000Z",
+      owner_name: "Department of Chemistry",
+      tags: ["2nd Semester", "CHE 102"],
+      visibility: "published",
+    },
+    {
+      id: "mat-csc-102-programming",
+      course_id: "course-csc-102",
+      course_code: "CSC 102",
+      topic_id: null,
+      title: "CSC 102 — 2nd Semester Structured Programming, Algorithms & Data Types",
+      description: `### [2nd Semester] CSC 102 Problem Solving & Structured Programming\n\n#### 1. Algorithm Design & Control Structures\n- Sequence, Selection (\`if/else\`, \`switch\`), and Iteration (\`for\`, \`while\`, \`do-while\`).\n- Time Complexity fundamentals: $O(1)$, $O(\\log n)$, $O(n)$, $O(n \\log n)$, $O(n^2)$.\n\n#### 2. Functions, Arrays & Modular Design\n- Scope of variables (local vs global), pass-by-value vs pass-by-reference, 1D/2D arrays, and recursion.`,
+      file_url: "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+      file_type: "markdown",
+      file_size: 47500,
+      created_at: "2026-02-24T13:00:00.000Z",
+      owner_name: "Department of Computer Science",
+      tags: ["2nd Semester", "CSC 102"],
+      visibility: "published",
+    },
+    {
+      id: "mat-gns-102-academic-writing",
+      course_id: "course-gns-102",
+      course_code: "GNS 102",
+      topic_id: null,
+      title: "GNS 102 — 2nd Semester Technical Report Writing, Citation & Critical Review PDF",
+      description: "[2nd Semester] Complete GNS 102 academic writing, critical review methodology, APA referencing, and technical report writing manual.",
+      file_url: "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+      file_type: "pdf",
+      file_size: 95597,
+      created_at: "2026-02-25T14:00:00.000Z",
+      owner_name: "General Studies Unit",
+      tags: ["2nd Semester", "GNS 102"],
+      visibility: "published",
+    },
+  ];
+
+  const DEFAULT_SEMESTER_QUIZZES = [
+    {
+      id: "quiz-mth-101-cbt",
+      course_id: "course-mth-101",
+      course_code: "MTH 101",
+      course_name: "Elementary Mathematics I: Algebra & Trigonometry",
+      semester: "1st",
+      level: "100L",
+      title: "MTH 101 — 1st Semester CBT Mock Exam: Algebra, Sets & Binomial Series",
+      description: "[1st Semester] Timed CBT practice covering set theory, quadratic roots, binomial theorem, and complex numbers.",
+      duration_minutes: 20,
+      question_count: 5,
+      is_active: true,
+      is_simulation: true,
+      created_at: "2026-01-25T10:00:00.000Z",
+      questions: [
+        {
+          id: "q-mth101-1",
+          question_text: "If α and β are the roots of the quadratic equation 2x² - 8x + 5 = 0, what is the value of α + β?",
+          option_a: "4",
+          option_b: "-4",
+          option_c: "5/2",
+          option_d: "8",
+          correct_option: "A",
+          explanation: "For ax² + bx + c = 0, sum of roots α + β = -b/a = -(-8)/2 = 4.",
+        },
+        {
+          id: "q-mth101-2",
+          question_text: "In a class of 50 students, 30 offer MTH 101 and 25 offer PHY 101. If every student offers at least one of the two courses, how many offer both?",
+          option_a: "10",
+          option_b: "5",
+          option_c: "15",
+          option_d: "20",
+          correct_option: "B",
+          explanation: "Using n(M ∪ P) = n(M) + n(P) - n(M ∩ P): 50 = 30 + 25 - x => x = 5.",
+        },
+        {
+          id: "q-mth101-3",
+          question_text: "What is the coefficient of x³ in the binomial expansion of (1 + 2x)⁴?",
+          option_a: "8",
+          option_b: "16",
+          option_c: "32",
+          option_d: "24",
+          correct_option: "C",
+          explanation: "The x³ term is C(4, 3)(1)¹(2x)³ = 4 × 8x³ = 32x³.",
+        },
+        {
+          id: "q-mth101-4",
+          question_text: "Evaluate i²⁵ where i = √(-1).",
+          option_a: "1",
+          option_b: "-1",
+          option_c: "i",
+          option_d: "-i",
+          correct_option: "C",
+          explanation: "Since i⁴ = 1, i²⁵ = (i⁴)⁶ · i¹ = 1 · i = i.",
+        },
+        {
+          id: "q-mth101-5",
+          question_text: "For what value of k does the quadratic equation x² + 6x + k = 0 have equal real roots?",
+          option_a: "6",
+          option_b: "9",
+          option_c: "12",
+          option_d: "36",
+          correct_option: "B",
+          explanation: "Equal roots occur when Δ = b² - 4ac = 0 => 6² - 4(1)(k) = 0 => 36 = 4k => k = 9.",
+        },
+      ],
+    },
+    {
+      id: "quiz-phy-101-cbt",
+      course_id: "course-phy-101",
+      course_code: "PHY 101",
+      course_name: "General Physics I: Mechanics, Thermal Physics & Properties of Matter",
+      semester: "1st",
+      level: "100L",
+      title: "PHY 101 — 1st Semester CBT Mock Exam: Mechanics & Kinematics",
+      description: "[1st Semester] Timed CBT practice covering dimensional analysis, projectile motion, Newton's laws, and energy conservation.",
+      duration_minutes: 20,
+      question_count: 4,
+      is_active: true,
+      is_simulation: true,
+      created_at: "2026-01-26T10:00:00.000Z",
+      questions: [
+        {
+          id: "q-phy101-1",
+          question_text: "A projectile is launched with an initial speed of 20 m/s at 30° to the horizontal (take g = 10 m/s²). What is its time of flight?",
+          option_a: "1.0 s",
+          option_b: "2.0 s",
+          option_c: "3.5 s",
+          option_d: "4.0 s",
+          correct_option: "B",
+          explanation: "Time of flight T = (2 u sin θ) / g = (2 × 20 × sin 30°) / 10 = (40 × 0.5) / 10 = 2.0 s.",
+        },
+        {
+          id: "q-phy101-2",
+          question_text: "Which of the following represents the correct dimensional formula for Young's Modulus of Elasticity?",
+          option_a: "M L⁻¹ T⁻²",
+          option_b: "M L T⁻²",
+          option_c: "M L² T⁻²",
+          option_d: "M L⁻² T⁻¹",
+          correct_option: "A",
+          explanation: "Young's Modulus = Stress / Strain. Since strain is dimensionless, it has the dimensions of pressure/stress: Force / Area = (M L T⁻²) / L² = M L⁻¹ T⁻².",
+        },
+        {
+          id: "q-phy101-3",
+          question_text: "A 4 kg body moving at 6 m/s collides with a stationary 2 kg body and they stick together. What is their common velocity after collision?",
+          option_a: "2 m/s",
+          option_b: "3 m/s",
+          option_c: "4 m/s",
+          option_d: "6 m/s",
+          correct_option: "C",
+          explanation: "By conservation of linear momentum: m₁u₁ + m₂u₂ = (m₁ + m₂)v => 4(6) + 0 = (4 + 2)v => v = 24 / 6 = 4 m/s.",
+        },
+        {
+          id: "q-phy101-4",
+          question_text: "What is the kinetic energy of a 2 kg mass moving with a linear momentum of 10 kg·m/s?",
+          option_a: "20 J",
+          option_b: "25 J",
+          option_c: "50 J",
+          option_d: "100 J",
+          correct_option: "B",
+          explanation: "Kinetic energy K = p² / (2m) = 10² / (2 × 2) = 100 / 4 = 25 J.",
+        },
+      ],
+    },
+    {
+      id: "quiz-mth-102-cbt",
+      course_id: "course-mth-102",
+      course_code: "MTH 102",
+      course_name: "Elementary Mathematics II: Differential & Integral Calculus",
+      semester: "2nd",
+      level: "100L",
+      title: "MTH 102 — 2nd Semester CBT Mock Exam: Differential & Integral Calculus",
+      description: "[2nd Semester] Timed CBT exam covering limits, L'Hôpital's rule, derivatives, and definite integration.",
+      duration_minutes: 20,
+      question_count: 4,
+      is_active: true,
+      is_simulation: true,
+      created_at: "2026-02-26T10:00:00.000Z",
+      questions: [
+        {
+          id: "q-mth102-1",
+          question_text: "Evaluate lim_{x -> 0} (sin 5x) / x.",
+          option_a: "0",
+          option_b: "1",
+          option_c: "5",
+          option_d: "1/5",
+          correct_option: "C",
+          explanation: "Using lim_{u -> 0} (sin u)/u = 1, lim_{x -> 0} 5 · (sin 5x)/(5x) = 5 × 1 = 5.",
+        },
+        {
+          id: "q-mth102-2",
+          question_text: "Find the derivative dy/dx of y = x³ - 4x² + 7x - 2 at x = 2.",
+          option_a: "1",
+          option_b: "3",
+          option_c: "5",
+          option_d: "-1",
+          correct_option: "B",
+          explanation: "dy/dx = 3x² - 8x + 7. At x = 2, dy/dx = 3(4) - 8(2) + 7 = 12 - 16 + 7 = 3.",
+        },
+        {
+          id: "q-mth102-3",
+          question_text: "Evaluate the definite integral ∫₀² (3x² + 2x) dx.",
+          option_a: "8",
+          option_b: "10",
+          option_c: "12",
+          option_d: "14",
+          correct_option: "C",
+          explanation: "Antiderivative is [x³ + x²]₀² = (2³ + 2²) - 0 = 8 + 4 = 12.",
+        },
+        {
+          id: "q-mth102-4",
+          question_text: "What is the derivative of f(x) = ln(x² + 1)?",
+          option_a: "1 / (x² + 1)",
+          option_b: "2x / (x² + 1)",
+          option_c: "2 / (x + 1)",
+          option_d: "x / (x² + 1)",
+          correct_option: "B",
+          explanation: "By the chain rule, d/dx [ln(u)] = u'/u = 2x / (x² + 1).",
+        },
+      ],
+    },
+    {
+      id: "quiz-phy-102-cbt",
+      course_id: "course-phy-102",
+      course_code: "PHY 102",
+      course_name: "General Physics II: Electricity, Magnetism & Modern Physics",
+      semester: "2nd",
+      level: "100L",
+      title: "PHY 102 — 2nd Semester CBT Mock Exam: Electrostatics & DC Circuits",
+      description: "[2nd Semester] Timed CBT practice covering Coulomb's law, capacitance, Ohm's law, and Kirchhoff's circuit rules.",
+      duration_minutes: 20,
+      question_count: 4,
+      is_active: true,
+      is_simulation: true,
+      created_at: "2026-02-27T10:00:00.000Z",
+      questions: [
+        {
+          id: "q-phy102-1",
+          question_text: "Two capacitors of capacitance 6 μF and 3 μF are connected in series. What is their equivalent capacitance?",
+          option_a: "9 μF",
+          option_b: "2 μF",
+          option_c: "4.5 μF",
+          option_d: "18 μF",
+          correct_option: "B",
+          explanation: "For series capacitors: C_eq = (C₁ × C₂) / (C₁ + C₂) = (6 × 3) / (6 + 3) = 18 / 9 = 2 μF.",
+        },
+        {
+          id: "q-phy102-2",
+          question_text: "Calculate the energy stored in a 10 μF capacitor charged to a potential difference of 100 V.",
+          option_a: "0.05 J",
+          option_b: "0.50 J",
+          option_c: "5.0 J",
+          option_d: "0.001 J",
+          correct_option: "A",
+          explanation: "Energy U = ½ C V² = 0.5 × (10 × 10⁻⁶ F) × (100 V)² = 5 × 10⁻⁶ × 10⁴ = 0.05 J.",
+        },
+        {
+          id: "q-phy102-3",
+          question_text: "A 12 V battery of negligible internal resistance is connected across two parallel resistors of 4 Ω and 12 Ω. What is the total current drawn from the battery?",
+          option_a: "1 A",
+          option_b: "3 A",
+          option_c: "4 A",
+          option_d: "6 A",
+          correct_option: "C",
+          explanation: "Equivalent parallel resistance R_eq = (4 × 12)/(4 + 12) = 48/16 = 3 Ω. Total current I = V / R_eq = 12 V / 3 Ω = 4 A.",
+        },
+        {
+          id: "q-phy102-4",
+          question_text: "According to Gauss's Law, the net electric flux through any closed surface enclosing a total charge Q is equal to:",
+          option_a: "Q / ε₀",
+          option_b: "Q · ε₀",
+          option_c: "Q / (4π ε₀)",
+          option_d: "Zero",
+          correct_option: "A",
+          explanation: "Gauss's law states that the total electric flux Φ_E through any closed surface is Q_enclosed / ε₀.",
+        },
+      ],
+    },
+    {
+      id: "quiz-che-102-cbt",
+      course_id: "course-che-102",
+      course_code: "CHE 102",
+      course_name: "General Chemistry II: Organic & Analytical Chemistry",
+      semester: "2nd",
+      level: "100L",
+      title: "CHE 102 — 2nd Semester CBT Mock Exam: Equilibrium, Acids/Bases & Organic Chemistry",
+      description: "[2nd Semester] Timed CBT exam covering chemical equilibrium, pH calculations, hybridization, and functional groups.",
+      duration_minutes: 20,
+      question_count: 4,
+      is_active: true,
+      is_simulation: true,
+      created_at: "2026-02-28T10:00:00.000Z",
+      questions: [
+        {
+          id: "q-che102-1",
+          question_text: "What is the hybridization of the carbon atoms in ethyne (C₂H₂)?",
+          option_a: "sp³",
+          option_b: "sp²",
+          option_c: "sp",
+          option_d: "dsp²",
+          correct_option: "C",
+          explanation: "Each carbon atom in ethyne (HC≡CH) forms a triple bond and is sp-hybridized with a linear bond angle of 180°.",
+        },
+        {
+          id: "q-che102-2",
+          question_text: "What is the pH of a 0.01 M aqueous solution of hydrochloric acid (HCl)?",
+          option_a: "1",
+          option_b: "2",
+          option_c: "12",
+          option_d: "7",
+          correct_option: "B",
+          explanation: "HCl is a strong monoprotic acid, so [H⁺] = 0.01 M = 10⁻² M. pH = -log₁₀(10⁻²) = 2.",
+        },
+        {
+          id: "q-che102-3",
+          question_text: "Which functional group characterizes alkanoic (carboxylic) acids?",
+          option_a: "-OH",
+          option_b: "-CHO",
+          option_c: "-COOH",
+          option_d: "-COOR",
+          correct_option: "C",
+          explanation: "Carboxylic (alkanoic) acids contain the carboxyl functional group -COOH.",
+        },
+        {
+          id: "q-che102-4",
+          question_text: "According to Le Chatelier's Principle, increasing the pressure on the exothermic equilibrium N₂(g) + 3H₂(g) ⇌ 2NH₃(g) shifts the equilibrium toward:",
+          option_a: "The reactants (left)",
+          option_b: "The products (right)",
+          option_c: "No change in equilibrium position",
+          option_d: "Complete decomposition of NH₃",
+          correct_option: "B",
+          explanation: "There are 4 moles of gas on the left and 2 moles of gas on the right. Increasing pressure shifts equilibrium toward fewer gas moles (right).",
+        },
+      ],
+    },
+  ];
 
   function writeCourses(items: any[]) {
     try {
@@ -183,16 +876,20 @@ async function startServer() {
     }
   }
 
-  function readCourseMaterials(): any[] {
+  function readCourses(): any[] {
     try {
-      if (fs.existsSync(MATERIALS_FILE)) {
-        const raw = fs.readFileSync(MATERIALS_FILE, "utf-8");
-        return JSON.parse(raw);
+      if (fs.existsSync(COURSES_FILE)) {
+        const raw = fs.readFileSync(COURSES_FILE, "utf-8");
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
       }
     } catch (e) {
-      console.warn("Could not read course materials file:", e);
+      console.warn("Could not read courses file:", e);
     }
-    return [];
+    writeCourses(DEFAULT_SEMESTER_COURSES);
+    return [...DEFAULT_SEMESTER_COURSES];
   }
 
   function writeCourseMaterials(items: any[]) {
@@ -204,16 +901,73 @@ async function startServer() {
     }
   }
 
-  function readCourseQuizzes(): any[] {
+  function readCourseMaterials(): any[] {
+    let items: any[] = [];
     try {
-      if (fs.existsSync(QUIZZES_FILE)) {
-        const raw = fs.readFileSync(QUIZZES_FILE, "utf-8");
-        return JSON.parse(raw);
+      if (fs.existsSync(MATERIALS_FILE)) {
+        const raw = fs.readFileSync(MATERIALS_FILE, "utf-8");
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          items = parsed;
+        }
       }
     } catch (e) {
-      console.warn("Could not read course quizzes file:", e);
+      console.warn("Could not read course materials file:", e);
     }
-    return [];
+
+    let changed = false;
+    if (items.length === 0) {
+      items = [...DEFAULT_SEMESTER_MATERIALS];
+      changed = true;
+    }
+
+    // Auto-discover any physical uploaded files in public/uploads/materials/ that aren't registered yet
+    try {
+      if (fs.existsSync(UPLOADS_DIR)) {
+        const existingUrls = new Set(items.map((m) => String(m.file_url || "").trim()));
+        const filesOnDisk = fs.readdirSync(UPLOADS_DIR);
+        for (const fname of filesOnDisk) {
+          if (!fname || fname.startsWith(".")) continue;
+          const publicUrl = `/uploads/materials/${fname}`;
+          if (!existingUrls.has(publicUrl)) {
+            const fullPath = path.join(UPLOADS_DIR, fname);
+            const stat = fs.statSync(fullPath);
+            if (stat.isFile()) {
+              const ext = path.extname(fname).replace(/^\./, "").toLowerCase() || "pdf";
+              const cleanTitle = fname
+                .replace(/^\d+_/, "")
+                .replace(/\.[^/.]+$/, "")
+                .replace(/[_-]+/g, " ")
+                .trim();
+              items.unshift({
+                id: `mat_disk_${fname.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40)}`,
+                course_id: "course-gns-101",
+                course_code: "GNS 101",
+                topic_id: null,
+                title: cleanTitle || fname,
+                description: "[1st Semester] Uploaded course document recovered from server storage.",
+                file_url: publicUrl,
+                file_type: ext,
+                file_size: stat.size,
+                created_at: stat.mtime.toISOString(),
+                owner_name: "Course Administrator",
+                tags: ["1st Semester", "Uploaded"],
+                visibility: "published",
+              });
+              existingUrls.add(publicUrl);
+              changed = true;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Auto-discover uploads notice:", e);
+    }
+
+    if (changed) {
+      writeCourseMaterials(items);
+    }
+    return items;
   }
 
   function writeCourseQuizzes(items: any[]) {
@@ -223,6 +977,22 @@ async function startServer() {
     } catch (e) {
       console.warn("Could not write course quizzes file:", e);
     }
+  }
+
+  function readCourseQuizzes(): any[] {
+    try {
+      if (fs.existsSync(QUIZZES_FILE)) {
+        const raw = fs.readFileSync(QUIZZES_FILE, "utf-8");
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn("Could not read course quizzes file:", e);
+    }
+    writeCourseQuizzes(DEFAULT_SEMESTER_QUIZZES);
+    return [...DEFAULT_SEMESTER_QUIZZES];
   }
 
   // ============================================================================

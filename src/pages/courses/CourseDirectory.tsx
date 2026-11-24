@@ -58,26 +58,46 @@ const CourseDirectory = () => {
     "admin" | "tutor" | "student";
 
   const { data: courses = [], isLoading } = useQuery({
-    queryKey: ["course-directory", user?.id, navRole, institution],
-    enabled: !!user && (navRole !== "student" || (isUniversity && !!institution)),
+    queryKey: ["course-directory", user?.id ?? "guest", navRole, institution],
     queryFn: async () => {
-      if (navRole === "student" && (!isUniversity || !institution)) return [];
-      let query = supabase
-        .from("courses")
-        .select("id, code, name, department, level")
-        .eq("is_active", true)
-        .order("code", { ascending: true })
-        .limit(1000);
-      if (navRole === "student") {
-        query = query
-          .eq("environment_type", "university")
-          .eq("university", institution);
+      const [dbRes, apiRes] = await Promise.all([
+        supabase
+          .from("courses")
+          .select("id, code, name, department, level")
+          .eq("is_active", true)
+          .order("code", { ascending: true })
+          .limit(1000),
+        fetch("/api/courses")
+          .then((r) => (r.ok ? r.json() : { courses: [] }))
+          .catch(() => ({ courses: [] })),
+      ]);
+
+      const byId = new Map<string, CourseRow>();
+      for (const c of Array.isArray(apiRes?.courses) ? apiRes.courses : []) {
+        if (!c?.id || c.is_active === false) continue;
+        byId.set(c.id, {
+          id: c.id,
+          code: c.code || "COURSE",
+          name: c.name || c.title || "Untitled Course",
+          department: c.department || "General Studies",
+          level: c.level ? String(c.level).replace(/\D/g, "") || "100" : "100",
+        });
       }
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data ?? []) as CourseRow[];
+      for (const c of (dbRes.data ?? []) as any[]) {
+        if (!c?.id || c.is_active === false) continue;
+        byId.set(c.id, {
+          id: c.id,
+          code: c.code || "COURSE",
+          name: c.name || "Untitled Course",
+          department: c.department || "General Studies",
+          level: c.level ? String(c.level).replace(/\D/g, "") || "100" : "100",
+        });
+      }
+      return Array.from(byId.values()).sort((a, b) =>
+        (a.code || "").localeCompare(b.code || "")
+      );
     },
-    staleTime: 60_000,
+    staleTime: 30_000,
   });
 
   const enroll = async (id: string) => {

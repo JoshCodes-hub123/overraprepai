@@ -23,7 +23,7 @@ const TomorrowExamCard = () => {
         .from("quizzes")
         .select("id, title")
         .eq("course_id", course.id)
-        .eq("is_published", true)
+        .eq("is_active", true)
         .order("created_at", { ascending: false })
         .limit(3);
       return { course, quizzes: (quizzes || []) as { id: string; title: string }[] };

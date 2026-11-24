@@ -145,7 +145,7 @@ export default function StudentDashboard() {
         supabase
           .from("quizzes")
           .select("id, course_id, title, question_count")
-          .eq("is_published", true)
+          .eq("is_active", true)
           .order("created_at", { ascending: false })
           .limit(150),
       ]);

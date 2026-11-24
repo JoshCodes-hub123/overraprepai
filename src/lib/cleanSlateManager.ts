@@ -12,14 +12,9 @@ export function getCleanSlateCutoff(): string | null {
     return null;
   }
   try {
-    // Purge legacy v1 cutoff that previously hid real Supabase courses & documents
-    if (localStorage.getItem(LEGACY_CLEAN_SLATE_CUTOFF_KEY)) {
-      localStorage.removeItem(LEGACY_CLEAN_SLATE_CUTOFF_KEY);
-    }
-    const stored = localStorage.getItem(MANUAL_RESET_CUTOFF_KEY);
-    if (stored && stored.trim().length > 0) {
-      return stored.trim();
-    }
+    // Purge any legacy cutoff keys that could hide courses or documents
+    localStorage.removeItem(LEGACY_CLEAN_SLATE_CUTOFF_KEY);
+    localStorage.removeItem(MANUAL_RESET_CUTOFF_KEY);
   } catch {
     // ignore storage access issues
   }

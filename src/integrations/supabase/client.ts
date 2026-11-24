@@ -432,7 +432,7 @@ const cleanSlateFetch: typeof fetch = async (input, init) => {
         urlObj.searchParams.append("created_at", `gte.${cutoff}`);
       }
 
-      // If querying `courses`, sync from `/api/courses` first
+      // If querying `courses`, sync bidirectionally with `/api/courses`
       if (table === "courses" && typeof window !== "undefined") {
         try {
           const srvRes = await fetch("/api/courses");
@@ -440,6 +440,17 @@ const cleanSlateFetch: typeof fetch = async (input, init) => {
             const srvJson = await srvRes.json();
             if (Array.isArray(srvJson.courses)) {
               const currentMirror = readLocalMirror("courses");
+              const srvIds = new Set(srvJson.courses.map((sc: any) => sc?.id).filter(Boolean));
+              const missingOnServer = currentMirror.filter(
+                (m) => m?.id && m?.code && !srvIds.has(m.id)
+              );
+              if (missingOnServer.length > 0) {
+                void fetch("/api/courses", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ courses: missingOnServer }),
+                }).catch(() => {});
+              }
               const byId = new Map<string, any>();
               for (const m of currentMirror) byId.set(m.id, m);
               for (const sc of srvJson.courses) byId.set(sc.id, sc);
@@ -451,7 +462,7 @@ const cleanSlateFetch: typeof fetch = async (input, init) => {
         }
       }
 
-      // If querying `study_materials` or `lecture_notes`, sync from `/api/materials` first
+      // If querying `study_materials` or `lecture_notes`, sync bidirectionally with `/api/materials`
       if (
         (table === "study_materials" || table === "lecture_notes") &&
         typeof window !== "undefined"
@@ -462,6 +473,29 @@ const cleanSlateFetch: typeof fetch = async (input, init) => {
             const srvJson = await srvRes.json();
             if (Array.isArray(srvJson.materials)) {
               const currentMirror = readLocalMirror(table);
+              const srvIds = new Set(srvJson.materials.map((sm: any) => sm?.id).filter(Boolean));
+              const missingOnServer = currentMirror.filter(
+                (m) => m?.id && m?.course_id && m?.title && !srvIds.has(m.id)
+              );
+              for (const m of missingOnServer) {
+                void fetch(`/api/courses/${encodeURIComponent(m.course_id)}/materials`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    id: m.id,
+                    course_id: m.course_id,
+                    course_code: m.course_code ?? null,
+                    topic_id: m.topic_id ?? null,
+                    title: m.title,
+                    description: m.description ?? null,
+                    file_url: m.file_url ?? "",
+                    file_type: m.file_type || "pdf",
+                    file_size: m.file_size ?? m.file_size_bytes ?? 0,
+                    created_at: m.created_at,
+                    visibility: "published",
+                  }),
+                }).catch(() => {});
+              }
               const byId = new Map<string, any>();
               for (const m of currentMirror) byId.set(m.id, m);
               for (const sm of srvJson.materials) {
@@ -470,6 +504,7 @@ const cleanSlateFetch: typeof fetch = async (input, init) => {
                   ...sm,
                   file_size: sm.file_size ?? 0,
                   file_size_bytes: sm.file_size ?? sm.file_size_bytes ?? 0,
+                  is_published: true,
                 });
               }
               writeLocalMirror(table, Array.from(byId.values()));
@@ -480,7 +515,7 @@ const cleanSlateFetch: typeof fetch = async (input, init) => {
         }
       }
 
-      // If querying `quizzes`, sync from `/api/quizzes` first
+      // If querying `quizzes`, sync bidirectionally with `/api/quizzes`
       if (table === "quizzes" && typeof window !== "undefined") {
         try {
           const srvRes = await fetch("/api/quizzes");
@@ -488,6 +523,17 @@ const cleanSlateFetch: typeof fetch = async (input, init) => {
             const srvJson = await srvRes.json();
             if (Array.isArray(srvJson.quizzes)) {
               const currentMirror = readLocalMirror("quizzes");
+              const srvIds = new Set(srvJson.quizzes.map((sq: any) => sq?.id).filter(Boolean));
+              const missingOnServer = currentMirror.filter(
+                (m) => m?.id && m?.course_id && m?.title && !srvIds.has(m.id)
+              );
+              for (const q of missingOnServer) {
+                void fetch(`/api/courses/${encodeURIComponent(q.course_id)}/quizzes`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(q),
+                }).catch(() => {});
+              }
               const byId = new Map<string, any>();
               for (const m of currentMirror) byId.set(m.id, m);
               for (const sq of srvJson.quizzes) {

@@ -72,8 +72,8 @@ const CoursesScreen = () => {
 
   // Full university course catalogue for exploration/adding
   const { data: fullCatalogue = [], isLoading: isLoadingCatalogue } = useQuery({
-    queryKey: ["courses-screen-catalogue", user?.id, institution],
-    enabled: isStudent && !!user,
+    queryKey: ["courses-screen-catalogue", user?.id ?? "guest", institution],
+    enabled: isStudent,
     staleTime: 15_000,
     queryFn: async () => {
       const [dbRes, apiRes] = await Promise.all([
@@ -97,6 +97,7 @@ const CoursesScreen = () => {
           department: string | null;
           level: string | null;
           description?: string | null;
+          semester?: AcademicSemester;
         }
       >();
 
@@ -110,18 +111,28 @@ const CoursesScreen = () => {
           department: c.department || "General",
           level: c.level ? String(c.level).replace(/[^0-9]/g, "") || "100" : "100",
           description: c.description || null,
+          semester: resolveCourseSemester(c),
         });
       }
 
       for (const c of (dbRes.data ?? []) as any[]) {
         if (!c || !c.id || c.is_active === false) continue;
+        const existing = byId.get(c.id);
         byId.set(c.id, {
           id: c.id,
-          code: c.code || "COURSE",
-          name: c.name || "Untitled Course",
-          department: c.department || "General",
-          level: c.level ? String(c.level).replace(/[^0-9]/g, "") || "100" : "100",
-          description: c.description || null,
+          code: c.code || existing?.code || "COURSE",
+          name: c.name || existing?.name || "Untitled Course",
+          department: c.department || existing?.department || "General",
+          level: c.level
+            ? String(c.level).replace(/[^0-9]/g, "") || "100"
+            : existing?.level || "100",
+          description: c.description ?? existing?.description ?? null,
+          semester: resolveCourseSemester({
+            id: c.id,
+            code: c.code || existing?.code,
+            description: c.description ?? existing?.description,
+            semester: (c as any).semester ?? existing?.semester,
+          }),
         });
       }
 
@@ -159,7 +170,10 @@ const CoursesScreen = () => {
       if (semesterFilter !== "all" && resolveCourseSemester(c) !== semesterFilter) {
         return false;
       }
-      if (levelFilter !== "all" && c.level !== levelFilter) {
+      if (
+        levelFilter !== "all" &&
+        (String(c.level || "").replace(/\D/g, "") || "100") !== levelFilter
+      ) {
         return false;
       }
       return true;
@@ -176,7 +190,10 @@ const CoursesScreen = () => {
       if (semesterFilter !== "all" && resolveCourseSemester(c) !== semesterFilter) {
         return false;
       }
-      if (levelFilter !== "all" && c.level !== levelFilter) {
+      if (
+        levelFilter !== "all" &&
+        (String(c.level || "").replace(/\D/g, "") || "100") !== levelFilter
+      ) {
         return false;
       }
       return true;

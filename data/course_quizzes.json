@@ -1,0 +1,297 @@
+[
+  {
+    "id": "quiz-mth-101-cbt",
+    "course_id": "course-mth-101",
+    "course_code": "MTH 101",
+    "course_name": "Elementary Mathematics I: Algebra & Trigonometry",
+    "semester": "1st",
+    "level": "100L",
+    "title": "MTH 101 — 1st Semester CBT Mock Exam: Algebra, Sets & Binomial Series",
+    "description": "[1st Semester] Timed CBT practice covering set theory, quadratic roots, binomial theorem, and complex numbers.",
+    "duration_minutes": 20,
+    "question_count": 5,
+    "is_active": true,
+    "is_simulation": true,
+    "created_at": "2026-01-25T10:00:00.000Z",
+    "questions": [
+      {
+        "id": "q-mth101-1",
+        "question_text": "If α and β are the roots of the quadratic equation 2x² - 8x + 5 = 0, what is the value of α + β?",
+        "option_a": "4",
+        "option_b": "-4",
+        "option_c": "5/2",
+        "option_d": "8",
+        "correct_option": "A",
+        "explanation": "For ax² + bx + c = 0, sum of roots α + β = -b/a = -(-8)/2 = 4."
+      },
+      {
+        "id": "q-mth101-2",
+        "question_text": "In a class of 50 students, 30 offer MTH 101 and 25 offer PHY 101. If every student offers at least one of the two courses, how many offer both?",
+        "option_a": "10",
+        "option_b": "5",
+        "option_c": "15",
+        "option_d": "20",
+        "correct_option": "B",
+        "explanation": "Using n(M ∪ P) = n(M) + n(P) - n(M ∩ P): 50 = 30 + 25 - x => x = 5."
+      },
+      {
+        "id": "q-mth101-3",
+        "question_text": "What is the coefficient of x³ in the binomial expansion of (1 + 2x)⁴?",
+        "option_a": "8",
+        "option_b": "16",
+        "option_c": "32",
+        "option_d": "24",
+        "correct_option": "C",
+        "explanation": "The x³ term is C(4, 3)(1)¹(2x)³ = 4 × 8x³ = 32x³."
+      },
+      {
+        "id": "q-mth101-4",
+        "question_text": "Evaluate i²⁵ where i = √(-1).",
+        "option_a": "1",
+        "option_b": "-1",
+        "option_c": "i",
+        "option_d": "-i",
+        "correct_option": "C",
+        "explanation": "Since i⁴ = 1, i²⁵ = (i⁴)⁶ · i¹ = 1 · i = i."
+      },
+      {
+        "id": "q-mth101-5",
+        "question_text": "For what value of k does the quadratic equation x² + 6x + k = 0 have equal real roots?",
+        "option_a": "6",
+        "option_b": "9",
+        "option_c": "12",
+        "option_d": "36",
+        "correct_option": "B",
+        "explanation": "Equal roots occur when Δ = b² - 4ac = 0 => 6² - 4(1)(k) = 0 => 36 = 4k => k = 9."
+      }
+    ]
+  },
+  {
+    "id": "quiz-phy-101-cbt",
+    "course_id": "course-phy-101",
+    "course_code": "PHY 101",
+    "course_name": "General Physics I: Mechanics, Thermal Physics & Properties of Matter",
+    "semester": "1st",
+    "level": "100L",
+    "title": "PHY 101 — 1st Semester CBT Mock Exam: Mechanics & Kinematics",
+    "description": "[1st Semester] Timed CBT practice covering dimensional analysis, projectile motion, Newton's laws, and energy conservation.",
+    "duration_minutes": 20,
+    "question_count": 4,
+    "is_active": true,
+    "is_simulation": true,
+    "created_at": "2026-01-26T10:00:00.000Z",
+    "questions": [
+      {
+        "id": "q-phy101-1",
+        "question_text": "A projectile is launched with an initial speed of 20 m/s at 30° to the horizontal (take g = 10 m/s²). What is its time of flight?",
+        "option_a": "1.0 s",
+        "option_b": "2.0 s",
+        "option_c": "3.5 s",
+        "option_d": "4.0 s",
+        "correct_option": "B",
+        "explanation": "Time of flight T = (2 u sin θ) / g = (2 × 20 × sin 30°) / 10 = (40 × 0.5) / 10 = 2.0 s."
+      },
+      {
+        "id": "q-phy101-2",
+        "question_text": "Which of the following represents the correct dimensional formula for Young's Modulus of Elasticity?",
+        "option_a": "M L⁻¹ T⁻²",
+        "option_b": "M L T⁻²",
+        "option_c": "M L² T⁻²",
+        "option_d": "M L⁻² T⁻¹",
+        "correct_option": "A",
+        "explanation": "Young's Modulus = Stress / Strain. Since strain is dimensionless, it has the dimensions of pressure/stress: Force / Area = (M L T⁻²) / L² = M L⁻¹ T⁻²."
+      },
+      {
+        "id": "q-phy101-3",
+        "question_text": "A 4 kg body moving at 6 m/s collides with a stationary 2 kg body and they stick together. What is their common velocity after collision?",
+        "option_a": "2 m/s",
+        "option_b": "3 m/s",
+        "option_c": "4 m/s",
+        "option_d": "6 m/s",
+        "correct_option": "C",
+        "explanation": "By conservation of linear momentum: m₁u₁ + m₂u₂ = (m₁ + m₂)v => 4(6) + 0 = (4 + 2)v => v = 24 / 6 = 4 m/s."
+      },
+      {
+        "id": "q-phy101-4",
+        "question_text": "What is the kinetic energy of a 2 kg mass moving with a linear momentum of 10 kg·m/s?",
+        "option_a": "20 J",
+        "option_b": "25 J",
+        "option_c": "50 J",
+        "option_d": "100 J",
+        "correct_option": "B",
+        "explanation": "Kinetic energy K = p² / (2m) = 10² / (2 × 2) = 100 / 4 = 25 J."
+      }
+    ]
+  },
+  {
+    "id": "quiz-mth-102-cbt",
+    "course_id": "course-mth-102",
+    "course_code": "MTH 102",
+    "course_name": "Elementary Mathematics II: Differential & Integral Calculus",
+    "semester": "2nd",
+    "level": "100L",
+    "title": "MTH 102 — 2nd Semester CBT Mock Exam: Differential & Integral Calculus",
+    "description": "[2nd Semester] Timed CBT exam covering limits, L'Hôpital's rule, derivatives, and definite integration.",
+    "duration_minutes": 20,
+    "question_count": 4,
+    "is_active": true,
+    "is_simulation": true,
+    "created_at": "2026-02-26T10:00:00.000Z",
+    "questions": [
+      {
+        "id": "q-mth102-1",
+        "question_text": "Evaluate lim_{x -> 0} (sin 5x) / x.",
+        "option_a": "0",
+        "option_b": "1",
+        "option_c": "5",
+        "option_d": "1/5",
+        "correct_option": "C",
+        "explanation": "Using lim_{u -> 0} (sin u)/u = 1, lim_{x -> 0} 5 · (sin 5x)/(5x) = 5 × 1 = 5."
+      },
+      {
+        "id": "q-mth102-2",
+        "question_text": "Find the derivative dy/dx of y = x³ - 4x² + 7x - 2 at x = 2.",
+        "option_a": "1",
+        "option_b": "3",
+        "option_c": "5",
+        "option_d": "-1",
+        "correct_option": "B",
+        "explanation": "dy/dx = 3x² - 8x + 7. At x = 2, dy/dx = 3(4) - 8(2) + 7 = 12 - 16 + 7 = 3."
+      },
+      {
+        "id": "q-mth102-3",
+        "question_text": "Evaluate the definite integral ∫₀² (3x² + 2x) dx.",
+        "option_a": "8",
+        "option_b": "10",
+        "option_c": "12",
+        "option_d": "14",
+        "correct_option": "C",
+        "explanation": "Antiderivative is [x³ + x²]₀² = (2³ + 2²) - 0 = 8 + 4 = 12."
+      },
+      {
+        "id": "q-mth102-4",
+        "question_text": "What is the derivative of f(x) = ln(x² + 1)?",
+        "option_a": "1 / (x² + 1)",
+        "option_b": "2x / (x² + 1)",
+        "option_c": "2 / (x + 1)",
+        "option_d": "x / (x² + 1)",
+        "correct_option": "B",
+        "explanation": "By the chain rule, d/dx [ln(u)] = u'/u = 2x / (x² + 1)."
+      }
+    ]
+  },
+  {
+    "id": "quiz-phy-102-cbt",
+    "course_id": "course-phy-102",
+    "course_code": "PHY 102",
+    "course_name": "General Physics II: Electricity, Magnetism & Modern Physics",
+    "semester": "2nd",
+    "level": "100L",
+    "title": "PHY 102 — 2nd Semester CBT Mock Exam: Electrostatics & DC Circuits",
+    "description": "[2nd Semester] Timed CBT practice covering Coulomb's law, capacitance, Ohm's law, and Kirchhoff's circuit rules.",
+    "duration_minutes": 20,
+    "question_count": 4,
+    "is_active": true,
+    "is_simulation": true,
+    "created_at": "2026-02-27T10:00:00.000Z",
+    "questions": [
+      {
+        "id": "q-phy102-1",
+        "question_text": "Two capacitors of capacitance 6 μF and 3 μF are connected in series. What is their equivalent capacitance?",
+        "option_a": "9 μF",
+        "option_b": "2 μF",
+        "option_c": "4.5 μF",
+        "option_d": "18 μF",
+        "correct_option": "B",
+        "explanation": "For series capacitors: C_eq = (C₁ × C₂) / (C₁ + C₂) = (6 × 3) / (6 + 3) = 18 / 9 = 2 μF."
+      },
+      {
+        "id": "q-phy102-2",
+        "question_text": "Calculate the energy stored in a 10 μF capacitor charged to a potential difference of 100 V.",
+        "option_a": "0.05 J",
+        "option_b": "0.50 J",
+        "option_c": "5.0 J",
+        "option_d": "0.001 J",
+        "correct_option": "A",
+        "explanation": "Energy U = ½ C V² = 0.5 × (10 × 10⁻⁶ F) × (100 V)² = 5 × 10⁻⁶ × 10⁴ = 0.05 J."
+      },
+      {
+        "id": "q-phy102-3",
+        "question_text": "A 12 V battery of negligible internal resistance is connected across two parallel resistors of 4 Ω and 12 Ω. What is the total current drawn from the battery?",
+        "option_a": "1 A",
+        "option_b": "3 A",
+        "option_c": "4 A",
+        "option_d": "6 A",
+        "correct_option": "C",
+        "explanation": "Equivalent parallel resistance R_eq = (4 × 12)/(4 + 12) = 48/16 = 3 Ω. Total current I = V / R_eq = 12 V / 3 Ω = 4 A."
+      },
+      {
+        "id": "q-phy102-4",
+        "question_text": "According to Gauss's Law, the net electric flux through any closed surface enclosing a total charge Q is equal to:",
+        "option_a": "Q / ε₀",
+        "option_b": "Q · ε₀",
+        "option_c": "Q / (4π ε₀)",
+        "option_d": "Zero",
+        "correct_option": "A",
+        "explanation": "Gauss's law states that the total electric flux Φ_E through any closed surface is Q_enclosed / ε₀."
+      }
+    ]
+  },
+  {
+    "id": "quiz-che-102-cbt",
+    "course_id": "course-che-102",
+    "course_code": "CHE 102",
+    "course_name": "General Chemistry II: Organic & Analytical Chemistry",
+    "semester": "2nd",
+    "level": "100L",
+    "title": "CHE 102 — 2nd Semester CBT Mock Exam: Equilibrium, Acids/Bases & Organic Chemistry",
+    "description": "[2nd Semester] Timed CBT exam covering chemical equilibrium, pH calculations, hybridization, and functional groups.",
+    "duration_minutes": 20,
+    "question_count": 4,
+    "is_active": true,
+    "is_simulation": true,
+    "created_at": "2026-02-28T10:00:00.000Z",
+    "questions": [
+      {
+        "id": "q-che102-1",
+        "question_text": "What is the hybridization of the carbon atoms in ethyne (C₂H₂)?",
+        "option_a": "sp³",
+        "option_b": "sp²",
+        "option_c": "sp",
+        "option_d": "dsp²",
+        "correct_option": "C",
+        "explanation": "Each carbon atom in ethyne (HC≡CH) forms a triple bond and is sp-hybridized with a linear bond angle of 180°."
+      },
+      {
+        "id": "q-che102-2",
+        "question_text": "What is the pH of a 0.01 M aqueous solution of hydrochloric acid (HCl)?",
+        "option_a": "1",
+        "option_b": "2",
+        "option_c": "12",
+        "option_d": "7",
+        "correct_option": "B",
+        "explanation": "HCl is a strong monoprotic acid, so [H⁺] = 0.01 M = 10⁻² M. pH = -log₁₀(10⁻²) = 2."
+      },
+      {
+        "id": "q-che102-3",
+        "question_text": "Which functional group characterizes alkanoic (carboxylic) acids?",
+        "option_a": "-OH",
+        "option_b": "-CHO",
+        "option_c": "-COOH",
+        "option_d": "-COOR",
+        "correct_option": "C",
+        "explanation": "Carboxylic (alkanoic) acids contain the carboxyl functional group -COOH."
+      },
+      {
+        "id": "q-che102-4",
+        "question_text": "According to Le Chatelier's Principle, increasing the pressure on the exothermic equilibrium N₂(g) + 3H₂(g) ⇌ 2NH₃(g) shifts the equilibrium toward:",
+        "option_a": "The reactants (left)",
+        "option_b": "The products (right)",
+        "option_c": "No change in equilibrium position",
+        "option_d": "Complete decomposition of NH₃",
+        "correct_option": "B",
+        "explanation": "There are 4 moles of gas on the left and 2 moles of gas on the right. Increasing pressure shifts equilibrium toward fewer gas moles (right)."
+      }
+    ]
+  }
+]

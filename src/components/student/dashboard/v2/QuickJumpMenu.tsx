@@ -53,7 +53,7 @@ const QuickJumpMenu = () => {
           .from("quizzes")
           .select("id, title, course_id")
           .in("course_id", courseIds)
-          .eq("is_published", true)
+          .eq("is_active", true)
           .order("created_at", { ascending: false })
           .limit(30);
         for (const q of (quizzes ?? []) as QuizRow[]) {

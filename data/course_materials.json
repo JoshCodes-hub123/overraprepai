@@ -1,1 +1,200 @@
-[]
+[
+  {
+    "id": "mat-gns-101-critical-review",
+    "course_id": "course-gns-101",
+    "course_code": "GNS 101",
+    "topic_id": null,
+    "title": "GNS 101 — Module 3: Reading for Reviews & Writing a Critical Review",
+    "description": "[1st Semester] Official academic reading and critical review writing handout covering structure, thesis evaluation, paragraph transitions, and academic critique.",
+    "file_url": "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+    "file_type": "pdf",
+    "file_size": 95597,
+    "created_at": "2026-01-20T09:00:00.000Z",
+    "owner_name": "Course Administrator",
+    "tags": [
+      "1st Semester",
+      "GNS 101"
+    ],
+    "visibility": "published"
+  },
+  {
+    "id": "mat-mth-101-algebra-notes",
+    "course_id": "course-mth-101",
+    "course_code": "MTH 101",
+    "topic_id": null,
+    "title": "MTH 101 — Complete 1st Semester Lecture Notes: Algebra, Binomial Theorem & Trigonometry",
+    "description": "### [1st Semester] MTH 101 Lecture Summary & Key Formulas\n\n#### 1. Set Theory & Principle of Inclusion-Exclusion\nFor any finite sets $A$ and $B$:\n$$n(A \\cup B) = n(A) + n(B) - n(A \\cap B)$$\nDe Morgan's Laws: $(A \\cup B)' = A' \\cap B'$ and $(A \\cap B)' = A' \\cup B'$.\n\n#### 2. Theory of Quadratic Equations\nFor $ax^2 + bx + c = 0$ ($a \\neq 0$) with roots $\\alpha, \\beta$:\n- Sum of roots: $\\alpha + \\beta = -\\frac{b}{a}$\n- Product of roots: $\\alpha \\beta = \\frac{c}{a}$\n- Symmetric identity: $\\alpha^2 + \\beta^2 = (\\alpha + \\beta)^2 - 2\\alpha\\beta$\n\n#### 3. Binomial Theorem & Complex Numbers\n- General term in $(a + b)^n$: $T_{r+1} = \\binom{n}{r} a^{n-r} b^r$\n- De Moivre's Theorem: $[r(\\cos\\theta + i\\sin\\theta)]^n = r^n(\\cos n\\theta + i\\sin n\\theta)$",
+    "file_url": "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+    "file_type": "markdown",
+    "file_size": 48200,
+    "created_at": "2026-01-21T10:00:00.000Z",
+    "owner_name": "Department of Mathematics",
+    "tags": [
+      "1st Semester",
+      "MTH 101"
+    ],
+    "visibility": "published"
+  },
+  {
+    "id": "mat-phy-101-mechanics-notes",
+    "course_id": "course-phy-101",
+    "course_code": "PHY 101",
+    "topic_id": null,
+    "title": "PHY 101 — 1st Semester Mechanics, Kinematics & Thermal Physics Handout",
+    "description": "### [1st Semester] PHY 101 Core Syllabus Notes & Equations\n\n#### 1. Kinematics & Projectile Motion\n- Equations of motion under constant acceleration $a$: $v = u + at$, $s = ut + \\frac{1}{2}at^2$, $v^2 = u^2 + 2as$\n- Projectile Time of Flight: $T = \\frac{2u\\sin\\theta}{g}$\n- Maximum Height: $H = \\frac{u^2\\sin^2\\theta}{2g}$\n- Horizontal Range: $R = \\frac{u^2\\sin 2\\theta}{g}$ (maximum at $\\theta = 45^\\circ$)\n\n#### 2. Newton's Laws, Momentum & Work-Energy\n- Linear Momentum: $\\vec{p} = m\\vec{v}$, Impulse $J = F\\Delta t = \\Delta p$\n- Work-Energy Theorem: $W_{\\text{net}} = \\Delta K = \\frac{1}{2}mv^2 - \\frac{1}{2}mu^2$\n- Universal Gravitation: $F = \\frac{G m_1 m_2}{r^2}$, Escape Velocity $v_e = \\sqrt{2gR}$",
+    "file_url": "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+    "file_type": "markdown",
+    "file_size": 52400,
+    "created_at": "2026-01-22T11:00:00.000Z",
+    "owner_name": "Department of Physics",
+    "tags": [
+      "1st Semester",
+      "PHY 101"
+    ],
+    "visibility": "published"
+  },
+  {
+    "id": "mat-che-101-physical-chem",
+    "course_id": "course-che-101",
+    "course_code": "CHE 101",
+    "topic_id": null,
+    "title": "CHE 101 — 1st Semester Atomic Structure, Gas Laws & Stoichiometry Guide",
+    "description": "### [1st Semester] CHE 101 Physical & Inorganic Chemistry Handout\n\n#### 1. Ideal Gas Law & Kinetic Theory\n- Ideal Gas Equation: $PV = nRT$\n- Graham's Law of Diffusion: $\\frac{r_1}{r_2} = \\sqrt{\\frac{M_2}{M_1}}$\n\n#### 2. Quantum Numbers & Electronic Configuration\n- Principal ($n$), Azimuthal ($l = 0 \\dots n-1$), Magnetic ($m_l = -l \\dots +l$), Spin ($m_s = \\pm \\frac{1}{2}$)\n- Aufbau Principle, Pauli Exclusion Principle, and Hund's Rule of Maximum Multiplicity.",
+    "file_url": "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+    "file_type": "markdown",
+    "file_size": 44100,
+    "created_at": "2026-01-23T12:00:00.000Z",
+    "owner_name": "Department of Chemistry",
+    "tags": [
+      "1st Semester",
+      "CHE 101"
+    ],
+    "visibility": "published"
+  },
+  {
+    "id": "mat-csc-101-digital-systems",
+    "course_id": "course-csc-101",
+    "course_code": "CSC 101",
+    "topic_id": null,
+    "title": "CSC 101 — 1st Semester Number Systems, Boolean Logic & Computer Architecture",
+    "description": "### [1st Semester] CSC 101 Digital Systems & Computing Fundamentals\n\n#### 1. Number Base Conversions & Binary Arithmetic\n- Binary (Base 2), Octal (Base 8), Decimal (Base 10), and Hexadecimal (Base 16).\n- Two's Complement representation for signed integers.\n\n#### 2. CPU Architecture & Memory Hierarchy\n- Von Neumann Architecture: Control Unit (CU), Arithmetic Logic Unit (ALU), Registers, RAM/ROM, and I/O Buses.",
+    "file_url": "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+    "file_type": "markdown",
+    "file_size": 39800,
+    "created_at": "2026-01-24T13:00:00.000Z",
+    "owner_name": "Department of Computer Science",
+    "tags": [
+      "1st Semester",
+      "CSC 101"
+    ],
+    "visibility": "published"
+  },
+  {
+    "id": "mat-mth-102-calculus-notes",
+    "course_id": "course-mth-102",
+    "course_code": "MTH 102",
+    "topic_id": null,
+    "title": "MTH 102 — 2nd Semester Differential & Integral Calculus Comprehensive Notes",
+    "description": "### [2nd Semester] MTH 102 Differential & Integral Calculus Handout\n\n#### 1. Limits, Continuity & L'Hôpital's Rule\n- Standard trigonometric limit: $\\lim_{x \\to 0} \\frac{\\sin x}{x} = 1$\n- Continuity at $x = a$: $\\lim_{x \\to a^-} f(x) = \\lim_{x \\to a^+} f(x) = f(a)$\n\n#### 2. Differentiation Rules & Stationary Points\n- Product Rule: $\\frac{d}{dx}(uv) = u\\frac{dv}{dx} + v\\frac{du}{dx}$\n- Quotient Rule: $\\frac{d}{dx}\\left(\\frac{u}{v}\\right) = \\frac{v\\frac{du}{dx} - u\\frac{dv}{dx}}{v^2}$\n- Integration by Parts: $\\int u\\,dv = uv - \\int v\\,du$",
+    "file_url": "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+    "file_type": "markdown",
+    "file_size": 56900,
+    "created_at": "2026-02-20T09:00:00.000Z",
+    "owner_name": "Department of Mathematics",
+    "tags": [
+      "2nd Semester",
+      "MTH 102"
+    ],
+    "visibility": "published"
+  },
+  {
+    "id": "mat-mts-102-calculus-geometry",
+    "course_id": "course-mts-102",
+    "course_code": "MTS 102",
+    "topic_id": null,
+    "title": "MTS 102 — 2nd Semester Calculus, Conic Sections & Differential Equations",
+    "description": "### [2nd Semester] MTS 102 Calculus & Analytic Geometry Revision Pack\n\n#### 1. Analytic Geometry of Conic Sections\n- Circle: $(x - h)^2 + (y - k)^2 = r^2$\n- Parabola: $y^2 = 4ax$ (Focus $(a, 0)$, Directrix $x = -a$)\n- Ellipse: $\\frac{x^2}{a^2} + \\frac{y^2}{b^2} = 1$, Eccentricity $e = \\sqrt{1 - \\frac{b^2}{a^2}} < 1$\n\n#### 2. Definite Integrals & Area Under Curves\n- Fundamental Theorem: $\\int_a^b f(x)\\,dx = [F(x)]_a^b = F(b) - F(a)$\n- Volume of Revolution about the x-axis: $V = \\pi \\int_a^b y^2\\,dx$",
+    "file_url": "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+    "file_type": "markdown",
+    "file_size": 54300,
+    "created_at": "2026-02-21T10:00:00.000Z",
+    "owner_name": "Department of Mathematical Sciences",
+    "tags": [
+      "2nd Semester",
+      "MTS 102"
+    ],
+    "visibility": "published"
+  },
+  {
+    "id": "mat-phy-102-electromagnetism",
+    "course_id": "course-phy-102",
+    "course_code": "PHY 102",
+    "topic_id": null,
+    "title": "PHY 102 — 2nd Semester Electricity, Magnetism & Modern Physics Notes",
+    "description": "### [2nd Semester] PHY 102 Electricity & Magnetism Lecture Handout\n\n#### 1. Electrostatics, Electric Field & Potential\n- Coulomb's Law: $F = \\frac{1}{4\\pi\\varepsilon_0} \\frac{|q_1 q_2|}{r^2}$\n- Electric Field Intensity: $E = \\frac{F}{q} = -\\frac{dV}{dr}$\n- Energy Stored in a Capacitor: $U = \\frac{1}{2}CV^2 = \\frac{Q^2}{2C}$\n\n#### 2. Direct Current Circuits & Electromagnetism\n- Kirchhoff's Current Law (KCL): $\\sum I_{\\text{in}} = \\sum I_{\\text{out}}$\n- Kirchhoff's Voltage Law (KVL): $\\sum \\Delta V = 0$ around any closed loop\n- Magnetic Force on Moving Charge: $\\vec{F} = q(\\vec{v} \\times \\vec{B})$",
+    "file_url": "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+    "file_type": "markdown",
+    "file_size": 61200,
+    "created_at": "2026-02-22T11:00:00.000Z",
+    "owner_name": "Department of Physics",
+    "tags": [
+      "2nd Semester",
+      "PHY 102"
+    ],
+    "visibility": "published"
+  },
+  {
+    "id": "mat-che-102-organic-chem",
+    "course_id": "course-che-102",
+    "course_code": "CHE 102",
+    "topic_id": null,
+    "title": "CHE 102 — 2nd Semester Organic Chemistry, Equilibrium & Electrochemistry",
+    "description": "### [2nd Semester] CHE 102 General Chemistry II Study Handout\n\n#### 1. Chemical Equilibrium & Acids/Bases\n- Equilibrium Constant: $K_c = \\frac{[C]^c[D]^d}{[A]^a[B]^b}$, $K_p = K_c(RT)^{\\Delta n}$\n- Henderson-Hasselbalch Equation: $\\text{pH} = \\text{p}K_a + \\log\\left(\\frac{[\\text{Conjugate Base}]}{[\\text{Weak Acid}]}\\right)$\n\n#### 2. Organic Chemistry & Hybridization\n- Alkanes ($sp^3$, $109.5^\\circ$, tetrahedral), Alkenes ($sp^2$, $120^\\circ$, trigonal planar), Alkynes ($sp$, $180^\\circ$, linear).\n- Functional groups, homologous series, and IUPAC nomenclature rules.",
+    "file_url": "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+    "file_type": "markdown",
+    "file_size": 53800,
+    "created_at": "2026-02-23T12:00:00.000Z",
+    "owner_name": "Department of Chemistry",
+    "tags": [
+      "2nd Semester",
+      "CHE 102"
+    ],
+    "visibility": "published"
+  },
+  {
+    "id": "mat-csc-102-programming",
+    "course_id": "course-csc-102",
+    "course_code": "CSC 102",
+    "topic_id": null,
+    "title": "CSC 102 — 2nd Semester Structured Programming, Algorithms & Data Types",
+    "description": "### [2nd Semester] CSC 102 Problem Solving & Structured Programming\n\n#### 1. Algorithm Design & Control Structures\n- Sequence, Selection (`if/else`, `switch`), and Iteration (`for`, `while`, `do-while`).\n- Time Complexity fundamentals: $O(1)$, $O(\\log n)$, $O(n)$, $O(n \\log n)$, $O(n^2)$.\n\n#### 2. Functions, Arrays & Modular Design\n- Scope of variables (local vs global), pass-by-value vs pass-by-reference, 1D/2D arrays, and recursion.",
+    "file_url": "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+    "file_type": "markdown",
+    "file_size": 47500,
+    "created_at": "2026-02-24T13:00:00.000Z",
+    "owner_name": "Department of Computer Science",
+    "tags": [
+      "2nd Semester",
+      "CSC 102"
+    ],
+    "visibility": "published"
+  },
+  {
+    "id": "mat-gns-102-academic-writing",
+    "course_id": "course-gns-102",
+    "course_code": "GNS 102",
+    "topic_id": null,
+    "title": "GNS 102 — 2nd Semester Technical Report Writing, Citation & Critical Review PDF",
+    "description": "[2nd Semester] Complete GNS 102 academic writing, critical review methodology, APA referencing, and technical report writing manual.",
+    "file_url": "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+    "file_type": "pdf",
+    "file_size": 95597,
+    "created_at": "2026-02-25T14:00:00.000Z",
+    "owner_name": "General Studies Unit",
+    "tags": [
+      "2nd Semester",
+      "GNS 102"
+    ],
+    "visibility": "published"
+  }
+]
