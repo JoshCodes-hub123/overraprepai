@@ -62,11 +62,16 @@ interface QuizData {
   id: string;
   title: string;
   duration_minutes: number;
+  course_id?: string;
   course: {
+    id?: string;
     code: string;
     name: string;
   };
 }
+
+const isUuid = (val?: string | null) =>
+  !!val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
 export const CBTSimulation = () => {
   const { quizId } = useParams<{ quizId: string }>();
@@ -236,7 +241,9 @@ export const CBTSimulation = () => {
             id: serverQuizFound.id,
             title: serverQuizFound.title,
             duration_minutes: Number(serverQuizFound.duration_minutes) || 25,
+            course_id: serverQuizFound.course_id || "",
             course: {
+              id: serverQuizFound.course_id || "",
               code: serverQuizFound.course_code || "COURSE",
               name: serverQuizFound.course_name || "University Course",
             },
@@ -252,10 +259,10 @@ export const CBTSimulation = () => {
             explanation: q.explanation || null,
             image_url: q.image_url || null,
           }));
-        } else {
+        } else if (isUuid(quizId)) {
           const { data: quizData, error: quizError } = await supabase
             .from("quizzes")
-            .select("*, courses(code, name)")
+            .select("*, courses(id, code, name)")
             .eq("id", quizId)
             .single();
 
@@ -293,6 +300,10 @@ export const CBTSimulation = () => {
             );
             formattedQuestions = fallbackBundle.questions;
           }
+        } else {
+          const fallbackBundle = buildOfflineQuizBundle(quizId);
+          formattedQuiz = fallbackBundle.quiz;
+          formattedQuestions = fallbackBundle.questions;
         }
 
         if (!isMounted || !formattedQuiz) return;
@@ -319,7 +330,7 @@ export const CBTSimulation = () => {
         let currentAttemptId = existingSessionRaw ? JSON.parse(existingSessionRaw).attemptId : null;
         let existingEndsAt = existingSessionRaw ? JSON.parse(existingSessionRaw).endsAt : null;
 
-        if (!currentAttemptId && navigator.onLine) {
+        if (!currentAttemptId && navigator.onLine && isUuid(quizId)) {
           const { data: attemptData, error: attemptError } = await supabase
             .from("quiz_attempts")
             .insert({
@@ -543,8 +554,8 @@ export const CBTSimulation = () => {
       // ignore
     }
 
-    // Try online submission if connected
-    if (navigator.onLine && user && !safeAttemptId.startsWith("local_attempt_")) {
+    // Try online submission if connected and both attemptId and quizId are Supabase UUIDs
+    if (navigator.onLine && user && isUuid(safeAttemptId) && isUuid(quizId)) {
       try {
         await supabase.from("quiz_answers").insert(answerInserts);
 
@@ -570,8 +581,8 @@ export const CBTSimulation = () => {
       }
     }
 
-    // Fallback: Queue attempt in offline store for background sync
-    if (user) {
+    // Fallback: Queue attempt in offline store for background sync if it is a Supabase UUID quiz
+    if (user && !navigator.onLine && isUuid(quizId)) {
       try {
         await queuePendingAttempt({
           user_id: user.id,
@@ -594,12 +605,15 @@ export const CBTSimulation = () => {
       localStorage.removeItem(`cbt_session_${quizId}`);
     } catch {}
 
-    toast({
-      title: "Offline Mode — Exam Saved Locally",
-      description: `Your score of ${score}% (${correctCount}/${questions.length}) is safely stored on this device. It will automatically sync when you are back online.`,
-    });
-
-    navigate(`/quiz/${quizId}/results/${safeAttemptId}?offline=true`);
+    if (!navigator.onLine) {
+      toast({
+        title: "Offline Mode — Exam Saved Locally",
+        description: `Your score of ${score}% (${correctCount}/${questions.length}) is safely stored on this device. It will automatically sync when you are back online.`,
+      });
+      navigate(`/quiz/${quizId}/results/${safeAttemptId}?offline=true`);
+    } else {
+      navigate(`/quiz/${quizId}/results/${safeAttemptId}`);
+    }
   };
 
   handleSubmitRef.current = handleSubmitExam;
@@ -943,19 +957,19 @@ export const CBTSimulation = () => {
               Ready to submit your CBT examination?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 space-y-2 mt-2">
-              <p>
+              <span className="block">
                 You have answered <strong className="text-neutral-950 dark:text-white font-bold">{answeredCount}</strong> of{" "}
                 <strong className="text-neutral-950 dark:text-white font-bold">{questions.length}</strong> questions.
-              </p>
+              </span>
               {unansweredCount > 0 && (
-                <p className="text-rose-600 dark:text-rose-400 font-semibold">
+                <span className="block text-rose-600 dark:text-rose-400 font-semibold">
                   ⚠️ You still have {unansweredCount} unanswered question{unansweredCount === 1 ? "" : "s"}.
-                </p>
+                </span>
               )}
               {!isOnline && (
-                <p className="text-amber-800 dark:text-amber-400 font-medium text-xs bg-amber-50 dark:bg-amber-950/40 p-2.5 rounded-xl border border-amber-200 dark:border-amber-900">
+                <span className="block text-amber-800 dark:text-amber-400 font-medium text-xs bg-amber-50 dark:bg-amber-950/40 p-2.5 rounded-xl border border-amber-200 dark:border-amber-900">
                   ⚡ Offline Mode Active: Your answers will be graded instantly and preserved locally on this device, then synced automatically once connection is restored.
-                </p>
+                </span>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>

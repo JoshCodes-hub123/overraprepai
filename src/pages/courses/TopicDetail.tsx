@@ -11,6 +11,7 @@ import { SEO } from "@/components/seo/SEO";
 import { Screen, ScreenHeader, Section, EmptyState, BrandSkeleton, BrandButton } from "@/components/ui-kit";
 import { InAppDocViewer } from "@/components/viewer/InAppDocViewer";
 import { coachHref } from "@/lib/coachLink";
+import { downloadMaterialExternally } from "@/lib/downloadMaterial";
 
 /** One topic: what you'll learn, what you can practise, and where to get help. */
 const TopicDetail = () => {
@@ -196,18 +197,24 @@ const TopicDetail = () => {
                             <Eye className="w-3.5 h-3.5" />
                             <span>Read</span>
                           </button>
-                          {m.file_url && (
-                            <a
-                              href={m.file_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              download
-                              className="p-2 rounded-xl border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition"
-                              title="Download"
-                            >
-                              <Download className="w-4 h-4" />
-                            </a>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void downloadMaterialExternally({
+                                id: m.id,
+                                title: m.title,
+                                courseCode: course?.code,
+                                fileUrl: m.file_url,
+                                fileType: m.file_type,
+                                description: m.description,
+                              })
+                            }
+                            className="h-8 px-3 rounded-xl border border-neutral-200 text-neutral-800 hover:bg-neutral-50 transition flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
+                            title="Download to Device"
+                          >
+                            <Download className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Download</span>
+                          </button>
                         </div>
                       </div>
                     );

@@ -50,6 +50,9 @@ interface MissedTopic {
   totalCount: number;
 }
 
+const isUuid = (val?: string | null) =>
+  !!val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
 export const QuizResults = () => {
   const { quizId, attemptId } = useParams<{ quizId: string; attemptId: string }>();
   const navigate = useNavigate();
@@ -85,9 +88,9 @@ export const QuizResults = () => {
               quiz: {
                 id: off.quizId,
                 title: off.quiz?.title || "CBT Examination",
-                course_id: off.quiz?.course?.id || "",
+                course_id: off.quiz?.course_id || off.quiz?.course?.id || "",
                 course: {
-                  id: off.quiz?.course?.id || "",
+                  id: off.quiz?.course_id || off.quiz?.course?.id || "",
                   code: off.quiz?.course?.code || "CBT",
                   name: off.quiz?.course?.name || "Verified Course Examination",
                 },
@@ -127,10 +130,14 @@ export const QuizResults = () => {
             }
 
             setIsLoading(false);
-            if (!navigator.onLine) return; // Stay with offline result if no connection
+            if (!navigator.onLine || !isUuid(attemptId)) return; // Skip Supabase if offline or local attempt ID
           } catch (e) {
             console.warn("Failed reading offline result cache:", e);
           }
+        }
+
+        if (!isUuid(attemptId)) {
+          return;
         }
 
         // 2. Fetch attempt and quiz details from Supabase
@@ -199,14 +206,16 @@ export const QuizResults = () => {
         }
 
         // 4. Check rating
-        const { data: ratingData } = await supabase
-          .from("quiz_ratings")
-          .select("id")
-          .eq("quiz_id", quizId)
-          .eq("user_id", user.id)
-          .maybeSingle();
+        if (isUuid(quizId)) {
+          const { data: ratingData } = await supabase
+            .from("quiz_ratings")
+            .select("id")
+            .eq("quiz_id", quizId)
+            .eq("user_id", user.id)
+            .maybeSingle();
 
-        setHasRated(!!ratingData);
+          setHasRated(!!ratingData);
+        }
 
         const scorePercent = Math.round((attemptData.correct_answers / attemptData.total_questions) * 100);
         if (scorePercent >= 75) {
@@ -268,7 +277,9 @@ export const QuizResults = () => {
           <div className="max-w-3xl mx-auto flex items-center justify-between">
             <button
               type="button"
-              onClick={() => navigate(`/courses/${attempt.quiz.course_id}`)}
+              onClick={() =>
+                navigate(attempt.quiz.course_id ? `/courses/${attempt.quiz.course_id}` : "/courses")
+              }
               className="flex items-center gap-1.5 text-xs font-semibold text-neutral-600 hover:text-neutral-900 transition"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -406,7 +417,9 @@ export const QuizResults = () => {
             </Button>
             <Button
               variant="outline"
-              onClick={() => navigate(`/courses/${attempt.quiz.course_id}`)}
+              onClick={() =>
+                navigate(attempt.quiz.course_id ? `/courses/${attempt.quiz.course_id}` : "/courses")
+              }
               className="flex-1 rounded-xl border-neutral-300 font-semibold text-xs h-10"
             >
               <BookOpen className="w-3.5 h-3.5 mr-1.5" />

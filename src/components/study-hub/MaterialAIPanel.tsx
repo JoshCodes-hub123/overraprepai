@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { FileText, Layers, ListChecks, Sparkles, Loader2, RefreshCw, Headphones, MessageSquare } from "lucide-react";
+import { FileText, Layers, ListChecks, Sparkles, Loader2, RefreshCw, Headphones, MessageSquare, Download } from "lucide-react";
 import { OverraAudioSuite } from "./OverraAudioSuite";
 import { ChatWithNotesPanel } from "./ChatWithNotesPanel";
 import { SaveToLibraryButton } from "@/components/student/SaveToLibraryButton";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { sanitizeAIText } from "@/lib/sanitizeAI";
+import { downloadMaterialExternally } from "@/lib/downloadMaterial";
 
 type Kind = "summary" | "key_points" | "flashcards" | "likely_questions";
 type Tab = Kind | "audio" | "chat";
@@ -20,6 +21,8 @@ interface Material {
   id: string;
   title: string;
   description: string | null;
+  file_url?: string | null;
+  file_type?: string | null;
 }
 
 interface Props {
@@ -179,10 +182,28 @@ export const MaterialAIPanel = ({ material, open, onOpenChange }: Props) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+        <DialogHeader className="flex flex-row items-center justify-between gap-3 pr-6">
           <DialogTitle className="font-display flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" /> {material.title}
+            <Sparkles className="w-5 h-5 text-primary shrink-0" />
+            <span className="line-clamp-1">{material.title}</span>
           </DialogTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 px-3 text-xs font-semibold shrink-0"
+            onClick={() =>
+              void downloadMaterialExternally({
+                id: material.id,
+                title: material.title,
+                fileUrl: material.file_url,
+                fileType: material.file_type,
+                description: material.description,
+              })
+            }
+          >
+            <Download className="w-3.5 h-3.5 mr-1.5 text-amber-600" />
+            Download Document
+          </Button>
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>

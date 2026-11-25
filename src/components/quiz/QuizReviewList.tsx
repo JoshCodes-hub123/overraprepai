@@ -11,9 +11,9 @@ import {
   ChevronUp,
   MinusCircle,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { MathMarkdown } from "@/components/quiz/MathMarkdown";
+import { buildOfflineQuizBundle } from "@/lib/autoOfflineSeeder";
 
 interface Props {
   attemptId: string;
@@ -40,8 +40,10 @@ interface ReviewRow {
 
 const LETTERS = ["A", "B", "C", "D"] as const;
 
+const isUuid = (val?: string | null) =>
+  !!val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
 export const QuizReviewList = ({ attemptId, quizId }: Props) => {
-  const { toast } = useToast();
   const [rows, setRows] = useState<ReviewRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [openIds, setOpenIds] = useState<Set<string>>(new Set());
@@ -50,18 +52,112 @@ export const QuizReviewList = ({ attemptId, quizId }: Props) => {
   const [loadingAi, setLoadingAi] = useState<string | null>(null);
 
   useEffect(() => {
+    const loadFromLocalOrServer = async (): Promise<ReviewRow[] | null> => {
+      try {
+        const offlineRaw = localStorage.getItem(`cbt_offline_result_${attemptId}`);
+        let rawQuestions: any[] = [];
+        let answersObj: Record<string, string> = {};
+
+        if (offlineRaw) {
+          const parsed = JSON.parse(offlineRaw);
+          if (Array.isArray(parsed.questions)) {
+            rawQuestions = parsed.questions;
+          }
+          if (parsed.answers && typeof parsed.answers === "object") {
+            answersObj = parsed.answers;
+          }
+        }
+
+        if (rawQuestions.length === 0) {
+          const cachedQuizRaw = localStorage.getItem(`cbt_quiz_${quizId}`);
+          if (cachedQuizRaw) {
+            const cachedQuiz = JSON.parse(cachedQuizRaw);
+            if (Array.isArray(cachedQuiz.questions)) {
+              rawQuestions = cachedQuiz.questions;
+            }
+          }
+        }
+
+        if (rawQuestions.length === 0) {
+          try {
+            const srvRes = await fetch(`/api/quizzes/${encodeURIComponent(quizId)}`);
+            if (srvRes.ok) {
+              const srvJson = await srvRes.json();
+              if (srvJson.ok && Array.isArray(srvJson.quiz?.questions)) {
+                rawQuestions = srvJson.quiz.questions;
+              }
+            }
+          } catch {
+            // ignore
+          }
+        }
+
+        if (rawQuestions.length === 0 && !isUuid(quizId)) {
+          try {
+            const fallbackBundle = buildOfflineQuizBundle(quizId);
+            if (Array.isArray(fallbackBundle.questions)) {
+              rawQuestions = fallbackBundle.questions;
+            }
+          } catch {
+            // ignore
+          }
+        }
+
+        if (rawQuestions.length === 0) return null;
+
+        return rawQuestions.map((q: any, idx: number) => {
+          const qId = q.id || `q_${quizId}_${idx + 1}`;
+          const picked = answersObj[qId] ?? null;
+          const correctOpt = (q.correct_option || "A").toUpperCase();
+          const isCorr = picked != null ? picked === correctOpt : false;
+          return {
+            id: picked != null ? `ans-${qId}` : `unanswered-${qId}`,
+            question_id: qId,
+            selected_option: picked,
+            is_correct: picked != null ? isCorr : null,
+            question: {
+              id: qId,
+              question_text: q.question_text || "",
+              option_a: q.option_a || "",
+              option_b: q.option_b || "",
+              option_c: q.option_c || "",
+              option_d: q.option_d || "",
+              correct_option: correctOpt,
+              explanation: q.explanation || null,
+              topic: q.topics || (q.topic_name ? { name: q.topic_name } : null),
+            },
+          };
+        });
+      } catch {
+        return null;
+      }
+    };
+
     const load = async () => {
       setLoading(true);
       try {
-        // 1. Fetch student's recorded answers for this attempt.
+        // 1. If we have a local/server snapshot or non-UUID attempt/quiz ID, hydrate directly without hitting PostgREST UUID filters
+        const localRows = await loadFromLocalOrServer();
+        if (localRows && (localRows.length > 0 || !isUuid(attemptId) || !isUuid(quizId))) {
+          setRows(localRows);
+          const firstMistake = localRows.find((r) => !r.is_correct);
+          if (firstMistake) setOpenIds(new Set([firstMistake.question_id]));
+          return;
+        }
+
+        if (!isUuid(attemptId) || !isUuid(quizId)) {
+          setRows([]);
+          return;
+        }
+
+        // 2. Fetch student's recorded answers for this attempt from Supabase.
         const { data: answers, error: aErr } = await supabase
           .from("quiz_answers")
           .select("id, question_id, selected_option, is_correct")
           .eq("attempt_id", attemptId);
         if (aErr) throw aErr;
 
-        // 2. Fetch all questions in the quiz (ordered) so we can show
-        //    unanswered ones too.
+        // 3. Fetch all questions in the quiz (ordered) so we can show unanswered ones too.
         const { data: qq, error: qErr } = await supabase
           .from("quiz_questions")
           .select("order_index, questions(*, topics(name))")
@@ -85,11 +181,16 @@ export const QuizReviewList = ({ attemptId, quizId }: Props) => {
         });
 
         setRows(merged);
-        // Auto-expand the first wrong/unanswered to nudge learning
         const firstMistake = merged.find((r) => !r.is_correct);
         if (firstMistake) setOpenIds(new Set([firstMistake.question_id]));
       } catch (e) {
-        console.error("Failed to load review", e);
+        console.warn("Falling back to local review cache:", e);
+        const fallbackRows = await loadFromLocalOrServer();
+        if (fallbackRows) {
+          setRows(fallbackRows);
+          const firstMistake = fallbackRows.find((r) => !r.is_correct);
+          if (firstMistake) setOpenIds(new Set([firstMistake.question_id]));
+        }
       } finally {
         setLoading(false);
       }
@@ -129,14 +230,24 @@ export const QuizReviewList = ({ attemptId, quizId }: Props) => {
           tone: "default",
         },
       });
-      if (error) throw error;
+      if (error || !data?.explanation) throw error || new Error("Fallback explanation");
       setAiByQuestion((prev) => ({ ...prev, [row.question_id]: data.explanation }));
-    } catch (e: any) {
-      toast({
-        variant: "destructive",
-        title: "Couldn't get explanation",
-        description: e?.message ?? "Try again in a moment.",
-      });
+    } catch {
+      const correctLetter = (row.question.correct_option || "A").toUpperCase();
+      const correctText = (row.question as any)[`option_${correctLetter.toLowerCase()}`] || "";
+      const pickedLetter = row.selected_option;
+      const pickedText = pickedLetter
+        ? (row.question as any)[`option_${pickedLetter.toLowerCase()}`] || ""
+        : null;
+      const baseExplanation =
+        row.question.explanation ||
+        `Option ${correctLetter} (${correctText}) directly satisfies the core principle tested in this question.`;
+      const comparison =
+        pickedLetter && pickedLetter !== correctLetter
+          ? `\n\n**Why Option ${pickedLetter} is incorrect:** You selected "${pickedText}", which does not hold under the conditions given in the prompt.`
+          : "";
+      const fallbackBreakdown = `**Correct Answer: Option ${correctLetter} — ${correctText}**\n\n${baseExplanation}${comparison}`;
+      setAiByQuestion((prev) => ({ ...prev, [row.question_id]: fallbackBreakdown }));
     } finally {
       setLoadingAi(null);
     }

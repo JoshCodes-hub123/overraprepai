@@ -48,6 +48,7 @@ import { MathMarkdown } from "@/components/quiz/MathMarkdown";
 import { getOrCreateCourseSyllabus, SyllabusTopic } from "@/data/accreditedSyllabi";
 import { ExplainConceptSheet } from "@/components/courses/ExplainConceptSheet";
 import { LectureNoteReaderModal } from "@/components/courses/LectureNoteReaderModal";
+import { downloadMaterialExternally } from "@/lib/downloadMaterial";
 
 const VALID_TABS = ["syllabus", "documents", "quizzes", "flashcards", "ai", "images", "discuss"] as const;
 type TabValue = typeof VALID_TABS[number];
@@ -676,10 +677,22 @@ const CourseHub = () => {
                               <ExternalLink className="w-3 h-3 mr-1" /> Open
                             </a>
                           </Button>
-                          <Button asChild size="sm" variant="outline" className="h-7 px-2 text-xs rounded-lg">
-                            <a href={d.file_url} download>
-                              <Download className="w-3 h-3 mr-1" /> Save
-                            </a>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2.5 text-xs font-semibold rounded-lg cursor-pointer"
+                            onClick={() =>
+                              void downloadMaterialExternally({
+                                id: d.id,
+                                title: d.title,
+                                courseCode: course.code,
+                                fileUrl: d.file_url,
+                                fileType: d.file_type,
+                                description: d.description,
+                              })
+                            }
+                          >
+                            <Download className="w-3 h-3 mr-1 text-amber-600" /> Download
                           </Button>
                           <CourseOfflineButton
                             materialId={d.id}

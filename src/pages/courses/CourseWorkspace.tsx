@@ -40,6 +40,7 @@ import { InAppDocViewer } from "@/components/viewer/InAppDocViewer";
 import { CourseNoteReaderDialog } from "@/components/viewer/CourseNoteReaderDialog";
 import { getCoverImage } from "@/lib/courseCovers";
 import { Button } from "@/components/ui/button";
+import { downloadMaterialExternally } from "@/lib/downloadMaterial";
 
 /**
  * Guided 3-Step Course Workspace (/courses/:courseId)
@@ -82,6 +83,7 @@ const CourseWorkspace = () => {
     fileType?: string;
   } | null>(null);
   const [selectedNote, setSelectedNote] = useState<{
+    id?: string;
     title: string;
     courseCode?: string;
     courseName?: string;
@@ -300,6 +302,7 @@ const CourseWorkspace = () => {
         <CourseNoteReaderDialog
           open={!!selectedNote}
           onOpenChange={(open) => !open && setSelectedNote(null)}
+          id={selectedNote.id}
           title={selectedNote.title}
           courseCode={selectedNote.courseCode}
           courseName={selectedNote.courseName}
@@ -666,6 +669,25 @@ const CourseWorkspace = () => {
                               <Sparkles className="w-3.5 h-3.5 text-[#B48A1E]" />
                               <span>Ask AI Tutor</span>
                             </Button>
+
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                void downloadMaterialExternally({
+                                  title: note.title,
+                                  courseCode: course.code,
+                                  content: `${note.summary}\n\nKey Exam Takeaways:\n• ${note.keyTakeaways.join(
+                                    "\n• "
+                                  )}\n\nCommon CBT Trap: ${note.examTrap}`,
+                                })
+                              }
+                              className="h-8 px-3 text-xs font-bold rounded-xl border-[#E6E0D4] text-[#18181B] bg-white hover:bg-[#FAF8F5] flex items-center gap-1.5 cursor-pointer ml-auto"
+                              title="Download Guide as PDF"
+                            >
+                              <Download className="w-3.5 h-3.5 text-[#B48A1E]" />
+                              <span>Download PDF</span>
+                            </Button>
                           </div>
                         </div>
                       ))}
@@ -751,6 +773,7 @@ const CourseWorkspace = () => {
                                       className="relative sm:w-44 h-32 sm:h-auto shrink-0 overflow-hidden bg-[#18181B] cursor-pointer"
                                       onClick={() =>
                                         setSelectedNote({
+                                          id: m.id,
                                           title: m.title,
                                           courseCode: course?.code,
                                           courseName: course?.name,
@@ -812,11 +835,12 @@ const CourseWorkspace = () => {
                                         )}
                                       </div>
 
-                                      <div className="flex items-center gap-2 pt-2 border-t border-[#EFECE6]">
+                                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#EFECE6]">
                                         <Button
                                           size="sm"
                                           onClick={() =>
                                             setSelectedNote({
+                                              id: m.id,
                                               title: m.title,
                                               courseCode: course?.code,
                                               courseName: course?.name,
@@ -846,18 +870,25 @@ const CourseWorkspace = () => {
                                           <span>AI Explain</span>
                                         </Button>
 
-                                        {m.file_url && (
-                                          <a
-                                            href={m.file_url}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            download
-                                            className="p-2 rounded-xl border border-[#E6E0D4] text-[#52525B] hover:bg-[#FAF8F5] transition ml-auto"
-                                            title="Download Document"
-                                          >
-                                            <Download className="w-4 h-4" />
-                                          </a>
-                                        )}
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() =>
+                                            void downloadMaterialExternally({
+                                              id: m.id,
+                                              title: m.title,
+                                              courseCode: course?.code,
+                                              fileUrl: m.file_url,
+                                              fileType: m.file_type,
+                                              description: m.description,
+                                            })
+                                          }
+                                          className="h-8 px-3 text-xs font-bold rounded-xl border-[#18181B]/20 text-[#18181B] bg-white hover:bg-[#FAF8F5] flex items-center gap-1.5 cursor-pointer ml-auto shadow-2xs"
+                                          title="Download Document to Device"
+                                        >
+                                          <Download className="w-3.5 h-3.5 text-[#B48A1E]" />
+                                          <span>Download</span>
+                                        </Button>
                                       </div>
                                     </div>
                                   </div>

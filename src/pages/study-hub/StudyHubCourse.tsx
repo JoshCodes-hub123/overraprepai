@@ -17,6 +17,7 @@ import { LearningGoalsPanel } from "@/components/study-hub/LearningGoalsPanel";
 import { CourseChat } from "@/components/course/CourseChat";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { downloadMaterialExternally } from "@/lib/downloadMaterial";
 
 interface Material {
   id: string;
@@ -24,6 +25,7 @@ interface Material {
   description: string | null;
   file_type: string;
   file_size: number;
+  file_url?: string | null;
   visibility: "public" | "private";
   owner_id: string;
   created_at: string;
@@ -189,16 +191,37 @@ const StudyHubCourse = () => {
                           </Badge>
                         </div>
                       </CardHeader>
-                      <CardContent className="flex items-center justify-between text-xs text-muted-foreground">
+                      <CardContent className="flex items-center justify-between text-xs text-muted-foreground gap-2">
                         <span className="flex items-center gap-1.5">
                           <FileText className="w-3.5 h-3.5" />
-                          {(m.file_size / 1024 / 1024).toFixed(2)} MB
+                          {((m.file_size || 45000) / 1024 / 1024).toFixed(2)} MB
                         </span>
-                        {m.owner_id === user?.id && (
-                          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDelete(m); }}>
-                            <Trash2 className="w-3.5 h-3.5" />
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2.5 text-xs font-semibold border-amber-200 text-amber-900 hover:bg-amber-50"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void downloadMaterialExternally({
+                                id: m.id,
+                                title: m.title,
+                                courseCode: course.code,
+                                fileUrl: m.file_url,
+                                fileType: m.file_type,
+                                description: m.description,
+                              });
+                            }}
+                          >
+                            <Download className="w-3.5 h-3.5 mr-1 text-amber-600" />
+                            Download
                           </Button>
-                        )}
+                          {m.owner_id === user?.id && (
+                            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDelete(m); }}>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                        </div>
                       </CardContent>
                     </Card>
                   </motion.div>

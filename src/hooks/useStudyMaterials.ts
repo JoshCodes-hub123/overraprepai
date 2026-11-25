@@ -109,7 +109,7 @@ export function useMaterialCourses() {
       const registerMaterial = (m: any) => {
         if (!m?.course_id) return;
         const cid = String(m.course_id);
-        const dedupeKey = m.file_url || m.id || m.title;
+        const dedupeKey = m.id || m.title || m.file_url;
         if (!seenPerCourse.has(cid)) seenPerCourse.set(cid, new Set());
         if (dedupeKey) seenPerCourse.get(cid)!.add(String(dedupeKey));
         if (!courseMap.has(cid) && !fallbackCourseInfo.has(cid)) {
@@ -250,7 +250,7 @@ export function useCourseMaterials(courseId?: string) {
 
       // Add server materials first
       for (const m of serverMaterials) {
-        const key = m.file_url || m.id;
+        const key = m.id || m.title || m.file_url;
         mergedMap.set(key, {
           id: m.id,
           title: m.title,
@@ -266,7 +266,7 @@ export function useCourseMaterials(courseId?: string) {
 
       // Add database study materials
       for (const m of dbStudyMaterials) {
-        const key = m.file_url || m.id;
+        const key = m.id || m.title || m.file_url;
         if (!mergedMap.has(key)) {
           mergedMap.set(key, {
             id: m.id,
@@ -284,7 +284,7 @@ export function useCourseMaterials(courseId?: string) {
 
       // Add database lecture notes
       for (const m of dbLectureNotes) {
-        const key = m.file_url || m.id;
+        const key = m.id || m.title || m.file_url;
         if (!mergedMap.has(key)) {
           mergedMap.set(key, {
             id: m.id,

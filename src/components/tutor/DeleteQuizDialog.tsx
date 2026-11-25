@@ -82,15 +82,15 @@ export function DeleteQuizDialog({
             Delete Quiz
           </AlertDialogTitle>
           <AlertDialogDescription className="space-y-2">
-            <p>
+            <span className="block">
               Are you sure you want to delete <strong>"{quiz?.title}"</strong>?
-            </p>
+            </span>
             {quiz && quiz.attempts_count > 0 && (
-              <p className="text-destructive">
+              <span className="block text-destructive">
                 Warning: This quiz has {quiz.attempts_count} attempt(s). Student attempt history will remain but the quiz will no longer be accessible.
-              </p>
+              </span>
             )}
-            <p>This action cannot be undone.</p>
+            <span className="block">This action cannot be undone.</span>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

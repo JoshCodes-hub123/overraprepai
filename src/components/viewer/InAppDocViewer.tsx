@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Lock, X } from "lucide-react";
+import { Download, Loader2, FileText, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { downloadMaterialExternally } from "@/lib/downloadMaterial";
 
 interface Props {
   url: string;
@@ -11,15 +12,6 @@ interface Props {
   onOpenChange: (o: boolean) => void;
 }
 
-/**
- * In-app document viewer with watermark + view-only protections.
- * - Renders PDFs and images inline. Other types fall back to a Microsoft
- *   Office Web Viewer iframe (read-only).
- * - Disables right-click, text selection, Ctrl/Cmd+P and Ctrl/Cmd+S.
- * - Watermarks every view with the signed-in user's email.
- * NOTE: this is a strong deterrent, not bulletproof — screenshots are
- * always possible in a browser. The watermark makes leaks traceable.
- */
 export function InAppDocViewer({ url, title, fileType, open, onOpenChange }: Props) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -31,39 +23,44 @@ export function InAppDocViewer({ url, title, fileType, open, onOpenChange }: Pro
   useEffect(() => {
     if (!open) return;
     setLoading(true);
-    const block = (e: KeyboardEvent) => {
-      const k = e.key.toLowerCase();
-      if ((e.ctrlKey || e.metaKey) && (k === "p" || k === "s")) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    };
-    window.addEventListener("keydown", block, { capture: true });
-    return () => window.removeEventListener("keydown", block, { capture: true } as any);
   }, [open, url]);
 
-  const watermark = user?.email ?? "OverraPrep · View only";
+  const watermark = user?.email ?? "OverraPrep";
   const viewerUrl = isPdf
-    ? `${url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`
+    ? `${url}#view=FitH`
     : isImage
       ? url
       : `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="max-w-5xl w-[95vw] h-[90vh] p-0 overflow-hidden"
-        onContextMenu={(e) => e.preventDefault()}
-      >
+      <DialogContent className="max-w-5xl w-[95vw] h-[90vh] p-0 overflow-hidden">
         <DialogTitle className="sr-only">{title}</DialogTitle>
-        <div className="absolute top-2 left-3 z-30 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-amber-800 bg-amber-50/90 backdrop-blur border border-amber-200 px-2 py-1 rounded-md">
-          <Lock className="w-3 h-3" /> View only
+        <div className="absolute top-2.5 left-3 z-30 flex items-center gap-2">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-900 bg-amber-50/95 backdrop-blur border border-amber-200 px-2.5 py-1.5 rounded-lg shadow-2xs">
+            <FileText className="w-3.5 h-3.5 text-amber-700" />
+            <span className="truncate max-w-[200px] sm:max-w-xs">{title}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() =>
+              void downloadMaterialExternally({
+                title,
+                fileUrl: url,
+                fileType,
+              })
+            }
+            className="flex items-center gap-1.5 text-xs font-bold text-neutral-950 bg-amber-500 hover:bg-amber-600 px-3 py-1.5 rounded-lg shadow-xs transition cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Download to Device</span>
+          </button>
         </div>
         <button
           type="button"
           aria-label="Close"
           onClick={() => onOpenChange(false)}
-          className="absolute top-2 right-2 z-30 h-9 w-9 rounded-full bg-white/90 border border-amber-200 hover:bg-amber-50 flex items-center justify-center"
+          className="absolute top-2.5 right-2.5 z-30 h-9 w-9 rounded-full bg-white/90 border border-amber-200 hover:bg-amber-50 flex items-center justify-center"
         >
           <X className="w-4 h-4 text-amber-800" />
         </button>

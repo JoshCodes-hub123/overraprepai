@@ -19,10 +19,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getCoverImage } from "@/lib/courseCovers";
+import { downloadMaterialExternally } from "@/lib/downloadMaterial";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  id?: string;
   title: string;
   courseCode?: string;
   courseName?: string;
@@ -40,6 +42,7 @@ interface Props {
 export function CourseNoteReaderDialog({
   open,
   onOpenChange,
+  id,
   title,
   courseCode,
   courseName,
@@ -147,20 +150,26 @@ export function CourseNoteReaderDialog({
               </Button>
             )}
 
-            {/* Download */}
-            {fileUrl && (
-              <a
-                href={fileUrl}
-                download
-                target="_blank"
-                rel="noreferrer"
-                className="h-8 px-2.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 flex items-center gap-1 text-xs font-semibold"
-                title="Download Note Document"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Download</span>
-              </a>
-            )}
+            {/* Download to External Device */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                void downloadMaterialExternally({
+                  id,
+                  title,
+                  courseCode,
+                  fileUrl,
+                  fileType,
+                  description,
+                })
+              }
+              className="h-8 px-2.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-100 flex items-center gap-1.5 text-xs font-bold cursor-pointer"
+              title="Download Document to Device"
+            >
+              <Download className="w-3.5 h-3.5 text-amber-600" />
+              <span>Download</span>
+            </Button>
 
             {/* Fullscreen Toggle */}
             <button
@@ -355,13 +364,33 @@ export function CourseNoteReaderDialog({
 
             {/* Bottom Actions */}
             <div className="pt-4 flex flex-wrap items-center justify-between gap-3 border-t border-neutral-200 dark:border-neutral-800">
-              <Button
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                className="rounded-xl text-xs font-semibold"
-              >
-                Finished Reading
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  className="rounded-xl text-xs font-semibold"
+                >
+                  Finished Reading
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    void downloadMaterialExternally({
+                      id,
+                      title,
+                      courseCode,
+                      fileUrl,
+                      fileType,
+                      description,
+                    })
+                  }
+                  className="rounded-xl text-xs font-bold border-neutral-300 text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Download to Device</span>
+                </Button>
+              </div>
 
               {onExplain && (
                 <Button

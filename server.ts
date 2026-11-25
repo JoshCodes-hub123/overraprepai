@@ -1265,6 +1265,231 @@ async function startServer() {
     return res.json({ ok: true });
   });
 
+  // Helper to generate a valid single/multi-line PDF 1.4 buffer for markdown/text course notes
+  const buildValidPdfBuffer = (title: string, courseCode: string, rawContent: string): Buffer => {
+    const sanitizePdfText = (str: string) =>
+      String(str || "")
+        .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, "($1)/($2)")
+        .replace(/\\sqrt\{([^}]+)\}/g, "sqrt($1)")
+        .replace(/\\binom\{([^}]+)\}\{([^}]+)\}/g, "C($1,$2)")
+        .replace(/\\cup/g, " U ")
+        .replace(/\\cap/g, " n ")
+        .replace(/\\theta/g, "theta")
+        .replace(/\\alpha/g, "alpha")
+        .replace(/\\beta/g, "beta")
+        .replace(/\\Delta/g, "Delta ")
+        .replace(/\\pi/g, "pi")
+        .replace(/\\sum/g, "Sum ")
+        .replace(/\\int/g, "Integral ")
+        .replace(/\\lim/g, "lim ")
+        .replace(/\\to/g, "->")
+        .replace(/\\neq/g, "!=")
+        .replace(/\\pm/g, "+/-")
+        .replace(/\\times/g, "x")
+        .replace(/\$\$/g, "")
+        .replace(/\$/g, "")
+        .replace(/\\[a-zA-Z]+/g, "")
+        .replace(/[{}]/g, "")
+        .replace(/[^\x20-\x7E\n]/g, " ")
+        .replace(/([()\\])/g, "\\$1");
+
+    const wrapLine = (line: string, maxChars = 82): string[] => {
+      const trimmed = line.trim();
+      if (!trimmed) return [""];
+      const words = trimmed.split(/\s+/);
+      const out: string[] = [];
+      let current = "";
+      for (const w of words) {
+        if ((current + " " + w).trim().length > maxChars) {
+          if (current) out.push(current);
+          current = w;
+        } else {
+          current = current ? `${current} ${w}` : w;
+        }
+      }
+      if (current) out.push(current);
+      return out;
+    };
+
+    const headerLines = [
+      `OVERRAPREP UNIVERSITY STUDY HANDOUT — ${courseCode || "COURSE"}`,
+      title || "Lecture Notes & Study Guide",
+      "----------------------------------------------------------------------------------",
+      "",
+    ];
+
+    const rawParagraphs = String(rawContent || title || "")
+      .replace(/^#+\s*/gm, "")
+      .split(/\r?\n/);
+
+    const wrappedBody: string[] = [];
+    for (const p of rawParagraphs) {
+      wrappedBody.push(...wrapLine(p, 82));
+    }
+
+    const allLines = [...headerLines, ...wrappedBody].slice(0, 48);
+
+    const streamOps: string[] = ["BT", "/F1 11 Tf", "50 755 Td", "15 TL"];
+    allLines.forEach((ln, idx) => {
+      const clean = sanitizePdfText(ln);
+      if (idx === 0) {
+        streamOps.push(`(${clean}) Tj`);
+      } else {
+        streamOps.push(`T* (${clean}) Tj`);
+      }
+    });
+    streamOps.push("ET");
+    const streamData = streamOps.join("\n");
+
+    const objs: string[] = [];
+    objs.push("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+    objs.push("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n");
+    objs.push(
+      "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n"
+    );
+    objs.push(
+      `4 0 obj\n<< /Length ${Buffer.byteLength(streamData, "utf8")} >>\nstream\n${streamData}\nendstream\nendobj\n`
+    );
+    objs.push(
+      "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n"
+    );
+
+    let pdf = "%PDF-1.4\n";
+    const offsets: number[] = [0];
+    for (const obj of objs) {
+      offsets.push(Buffer.byteLength(pdf, "utf8"));
+      pdf += obj;
+    }
+    const xrefStart = Buffer.byteLength(pdf, "utf8");
+    pdf += `xref\n0 ${objs.length + 1}\n`;
+    pdf += "0000000000 65535 f \n";
+    for (let i = 1; i <= objs.length; i++) {
+      pdf += `${String(offsets[i]).padStart(10, "0")} 00000 n \n`;
+    }
+    pdf += `trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF\n`;
+    return Buffer.from(pdf, "utf8");
+  };
+
+  const formatSafeDownloadName = (title: string, courseCode?: string, ext = "pdf") => {
+    const prefix = courseCode ? `${courseCode.trim().replace(/\s+/g, "_")}_` : "";
+    const base = `${prefix}${title || "Course_Document"}`
+      .replace(/[^a-zA-Z0-9._-\s]/g, "")
+      .trim()
+      .replace(/\s+/g, "_")
+      .slice(0, 90);
+    if (base.toLowerCase().endsWith(`.${ext}`)) return base;
+    return `${base}.${ext}`;
+  };
+
+  // Download a material directly to the student's device by material ID
+  app.get("/api/materials/:materialId/download", (req: Request, res: Response) => {
+    try {
+      const { materialId } = req.params;
+      const all = readCourseMaterials();
+      const mat = all.find((m) => m.id === materialId);
+      if (!mat) {
+        return res.status(404).json({ ok: false, error: "Material not found" });
+      }
+
+      const fileUrl = String(mat.file_url || "");
+      const isMarkdownSeed =
+        String(mat.file_type || "").toLowerCase() === "markdown" &&
+        mat.description &&
+        String(mat.description).length > 80;
+
+      // If it's a real uploaded file in /uploads/materials/ and not a synthetic markdown note, stream the physical file
+      if (!isMarkdownSeed && fileUrl.startsWith("/uploads/materials/")) {
+        const filenameOnDisk = path.basename(fileUrl.split("?")[0]);
+        const fullPath = path.join(UPLOADS_DIR, filenameOnDisk);
+        if (fs.existsSync(fullPath)) {
+          const extMatch = filenameOnDisk.match(/\.([a-zA-Z0-9]{2,5})$/);
+          const ext = extMatch ? extMatch[1].toLowerCase() : "pdf";
+          const downloadName = formatSafeDownloadName(mat.title, mat.course_code, ext);
+          res.setHeader("Content-Disposition", `attachment; filename="${downloadName}"`);
+          return res.sendFile(fullPath);
+        }
+      }
+
+      // Otherwise generate a clean PDF handout from the material's title & description/notes
+      const pdfBuf = buildValidPdfBuffer(
+        mat.title || "Course Material",
+        mat.course_code || "UNIVERSITY COURSE",
+        mat.description || mat.title || "University Lecture Handout"
+      );
+      const downloadName = formatSafeDownloadName(mat.title, mat.course_code, "pdf");
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${downloadName}"`);
+      return res.send(pdfBuf);
+    } catch (err: any) {
+      console.error("Material download error:", err);
+      return res.status(500).json({ ok: false, error: "Failed to download material" });
+    }
+  });
+
+  // Download any local or remote file URL with Content-Disposition: attachment
+  app.get("/api/download-file", async (req: Request, res: Response) => {
+    try {
+      const fileUrl = String(req.query.url || "");
+      const title = String(req.query.title || "Course_Document");
+      const courseCode = String(req.query.courseCode || "");
+
+      if (!fileUrl) {
+        return res.status(400).json({ ok: false, error: "Missing url query parameter" });
+      }
+
+      if (fileUrl.startsWith("/uploads/materials/")) {
+        const filenameOnDisk = path.basename(fileUrl.split("?")[0]);
+        const fullPath = path.join(UPLOADS_DIR, filenameOnDisk);
+        if (fs.existsSync(fullPath)) {
+          const extMatch = filenameOnDisk.match(/\.([a-zA-Z0-9]{2,5})$/);
+          const ext = extMatch ? extMatch[1].toLowerCase() : "pdf";
+          const downloadName = formatSafeDownloadName(title, courseCode, ext);
+          res.setHeader("Content-Disposition", `attachment; filename="${downloadName}"`);
+          return res.sendFile(fullPath);
+        }
+      }
+
+      if (/^https?:\/\//i.test(fileUrl)) {
+        const upstream = await fetch(fileUrl);
+        if (upstream.ok) {
+          const arrayBuffer = await upstream.arrayBuffer();
+          const contentType = upstream.headers.get("content-type") || "application/octet-stream";
+          const urlPath = fileUrl.split("?")[0];
+          const extMatch = urlPath.match(/\.([a-zA-Z0-9]{2,5})$/);
+          const ext = extMatch ? extMatch[1].toLowerCase() : "pdf";
+          const downloadName = formatSafeDownloadName(title, courseCode, ext);
+          res.setHeader("Content-Type", contentType);
+          res.setHeader("Content-Disposition", `attachment; filename="${downloadName}"`);
+          return res.send(Buffer.from(arrayBuffer));
+        }
+      }
+
+      return res.status(404).json({ ok: false, error: "File not found" });
+    } catch (err: any) {
+      console.error("Download proxy error:", err);
+      return res.status(500).json({ ok: false, error: "Failed to proxy file download" });
+    }
+  });
+
+  // Generate a downloadable PDF on the fly from any note title & text content
+  app.post("/api/generate-note-pdf", (req: Request, res: Response) => {
+    try {
+      const { title, courseCode, content } = req.body || {};
+      const pdfBuf = buildValidPdfBuffer(
+        title || "Course Study Notes",
+        courseCode || "COURSE",
+        content || title || "Study Notes"
+      );
+      const downloadName = formatSafeDownloadName(title || "Study_Notes", courseCode, "pdf");
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${downloadName}"`);
+      return res.send(pdfBuf);
+    } catch (err: any) {
+      console.error("Generate note PDF error:", err);
+      return res.status(500).json({ ok: false, error: "Failed to generate PDF" });
+    }
+  });
+
   // ============================================================================
   // PERSISTENT CBT QUIZZES & BULK QUESTION BANK ENDPOINTS
   // ============================================================================

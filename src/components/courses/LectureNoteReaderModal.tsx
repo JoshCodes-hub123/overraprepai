@@ -16,10 +16,11 @@ import {
   Check,
   ZoomIn,
   ZoomOut,
-  Share2,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { MathMarkdown } from "@/components/quiz/MathMarkdown";
+import { downloadMaterialExternally } from "@/lib/downloadMaterial";
 
 interface Props {
   open: boolean;
@@ -111,6 +112,22 @@ export const LectureNoteReaderModal: React.FC<Props> = ({
               onClick={handleCopy}
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 px-2.5 rounded-lg border-neutral-200 text-neutral-800 hover:bg-white text-xs font-bold flex items-center gap-1"
+              title="Download Note as PDF"
+              onClick={() =>
+                void downloadMaterialExternally({
+                  title,
+                  courseCode,
+                  content,
+                })
+              }
+            >
+              <Download className="w-3.5 h-3.5 text-amber-600" />
+              <span className="hidden sm:inline">Download</span>
             </Button>
           </div>
         </div>
