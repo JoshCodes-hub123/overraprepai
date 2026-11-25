@@ -24,7 +24,7 @@ const TopupReceipt = ({
 }: TopupReceiptProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>₦{amount_naira} added · +{tokens} tokens · {SITE_NAME}</Preview>
+    <Preview>{`₦${amount_naira} added · +${tokens} tokens · ${SITE_NAME}`}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Heading style={h1}>Top-up successful 🎉</Heading>

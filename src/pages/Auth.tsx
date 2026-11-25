@@ -292,7 +292,7 @@ const Auth: React.FC = () => {
       if (!newUser?.id) return false;
 
       let chosenUni: UniversityCode = (data.university as UniversityCode) || "FUTA";
-      let chosenLevelStr = data.level || "100";
+      let chosenLevelStr: NonNullable<SignUpFormData["level"]> = data.level || "100";
       try {
         const savedUni = localStorage.getItem("overra_express_uni") as UniversityCode | null;
         if (!data.university && savedUni && ["FUTA", "OAU", "UI", "FUTESIYIN"].includes(savedUni)) {
@@ -300,7 +300,7 @@ const Auth: React.FC = () => {
         }
         const savedLvl = localStorage.getItem("overra_express_level");
         if (!data.level && savedLvl && ["100", "200", "300", "400", "500"].includes(savedLvl)) {
-          chosenLevelStr = savedLvl;
+          chosenLevelStr = savedLvl as NonNullable<SignUpFormData["level"]>;
         }
       } catch {
         /* ignore */

@@ -38,11 +38,11 @@ const Navbar = () => {
   }, []);
 
   const navLinks = [
-    { name: "Home", href: "/" },
-    { name: "Features", href: "#features" },
-    { name: "How It Works", href: "#how-it-works" },
-    { name: "Pricing", href: "#pricing" },
-    { name: "Testimonials", href: "#testimonials" },
+    { name: "Home", href: "/", isRoute: true },
+    { name: "Features", href: "#features", isRoute: false },
+    { name: "How It Works", href: "#how-it-works", isRoute: false },
+    { name: "Pricing", href: "#pricing", isRoute: false },
+    { name: "Testimonials", href: "#testimonials", isRoute: false },
   ];
 
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {

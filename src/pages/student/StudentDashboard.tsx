@@ -187,13 +187,16 @@ export default function StudentDashboard() {
     enabled: !!user && courses.length > 0,
     staleTime: 60_000,
     queryFn: async () => {
+      const studentId = user?.id;
+      if (!studentId || courses.length === 0) return {};
+
       const courseIds = courses.map((c) => c.id);
       const [{ data: topics }, { data: progress }] = await Promise.all([
         supabase.from("topics").select("id, course_id").in("course_id", courseIds),
-        supabase
+        (supabase as any)
           .from("user_topic_progress")
           .select("course_id, topic_id, is_completed, mastery_score")
-          .eq("user_id", user!.id)
+          .eq("user_id", studentId)
           .in("course_id", courseIds),
       ]);
 

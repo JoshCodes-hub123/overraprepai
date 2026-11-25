@@ -10,3 +10,6 @@
 - [x] Recharts Study Analytics dashboard (performance progress, quiz accuracy trends, daily study streaks)
 - [x] Daily Check-in consecutive login streak bonus prominently displayed in the sidebar & dashboard
 
+## Preview typecheck cleanup (completed)
+- [x] Fix navigation link typing, study reminder query, signup level typing, dashboard topic-progress query, and email function/template type errors
+

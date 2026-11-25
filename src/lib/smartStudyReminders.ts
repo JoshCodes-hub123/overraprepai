@@ -203,7 +203,7 @@ export async function analyzeStudentHistoricalStudyTime(
       supabase
         .from("quiz_attempts")
         .select("completed_at, started_at")
-        .eq("student_id", userId)
+        .eq("user_id", userId)
         .order("started_at", { ascending: false })
         .limit(40),
       (supabase as any)
