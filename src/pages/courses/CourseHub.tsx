@@ -116,20 +116,75 @@ const CourseHub = () => {
     },
   });
 
-  // Fetch uploaded lecture notes
+  // Fetch uploaded lecture notes across Server Store, study_materials, and lecture_notes
   const { data: documents = [] } = useQuery({
     queryKey: ["course-docs", user?.id, courseId, topicFilter],
     enabled: !!courseId && !!user,
     queryFn: async () => {
-      let q = supabase
-        .from("lecture_notes")
-        .select("id, title, description, file_url, file_type, created_at, view_count, download_count, topic_id")
-        .eq("course_id", courseId)
-        .eq("is_published", true)
-        .order("created_at", { ascending: false });
-      if (topicFilter) q = q.eq("topic_id", topicFilter);
-      const { data } = await q;
-      return data ?? [];
+      const [apiMatsRes, studyMatsRes, lectureNotesRes] = await Promise.all([
+        fetch(`/api/courses/${encodeURIComponent(courseId)}/materials`)
+          .then((r) => (r.ok ? r.json() : { materials: [] }))
+          .catch(() => ({ materials: [] })),
+        supabase.from("study_materials").select("id, title, description, file_url, file_type, created_at, topic_id").eq("course_id", courseId),
+        supabase.from("lecture_notes").select("id, title, description, file_url, file_type, created_at, view_count, download_count, topic_id").eq("course_id", courseId),
+      ]);
+
+      const mergedMap = new Map<string, any>();
+
+      for (const m of Array.isArray(apiMatsRes?.materials) ? apiMatsRes.materials : []) {
+        if (topicFilter && m.topic_id && m.topic_id !== topicFilter) continue;
+        mergedMap.set(m.id || m.file_url || m.title, {
+          id: m.id || `mat_${Math.random()}`,
+          title: m.title || "Course Document",
+          description: m.description || null,
+          file_url: m.file_url || null,
+          file_type: m.file_type || "pdf",
+          created_at: m.created_at || new Date().toISOString(),
+          view_count: m.view_count || 0,
+          download_count: m.download_count || 0,
+          topic_id: m.topic_id || null,
+        });
+      }
+
+      for (const m of (studyMatsRes.data ?? []) as any[]) {
+        if (topicFilter && m.topic_id && m.topic_id !== topicFilter) continue;
+        const key = m.id || m.file_url || m.title;
+        if (!mergedMap.has(key)) {
+          mergedMap.set(key, {
+            id: m.id,
+            title: m.title,
+            description: m.description,
+            file_url: m.file_url || null,
+            file_type: m.file_type || "pdf",
+            created_at: m.created_at,
+            view_count: 0,
+            download_count: 0,
+            topic_id: m.topic_id || null,
+          });
+        }
+      }
+
+      for (const m of (lectureNotesRes.data ?? []) as any[]) {
+        if (topicFilter && m.topic_id && m.topic_id !== topicFilter) continue;
+        const key = m.id || m.file_url || m.title;
+        if (!mergedMap.has(key)) {
+          mergedMap.set(key, {
+            id: m.id,
+            title: m.title,
+            description: m.description,
+            file_url: m.file_url || null,
+            file_type: m.file_type || "pdf",
+            created_at: m.created_at,
+            view_count: m.view_count || 0,
+            download_count: m.download_count || 0,
+            topic_id: m.topic_id || null,
+          });
+        }
+      }
+
+      return Array.from(mergedMap.values()).sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
     },
   });
 

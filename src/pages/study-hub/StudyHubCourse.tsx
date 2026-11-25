@@ -51,12 +51,73 @@ const StudyHubCourse = () => {
 
   const load = async () => {
     if (!courseId) return;
-    const [{ data: c }, { data: m }] = await Promise.all([
-      supabase.from("courses").select("id, code, name").eq("id", courseId).single(),
-      supabase.from("study_materials").select("*").eq("course_id", courseId).order("created_at", { ascending: false }),
+    const [courseRes, apiMatsRes, studyMatsRes, lectureNotesRes] = await Promise.all([
+      supabase.from("courses").select("id, code, name").eq("id", courseId).maybeSingle(),
+      fetch(`/api/courses/${encodeURIComponent(courseId)}/materials`)
+        .then((r) => (r.ok ? r.json() : { materials: [] }))
+        .catch(() => ({ materials: [] })),
+      supabase.from("study_materials").select("*").eq("course_id", courseId),
+      supabase.from("lecture_notes").select("*").eq("course_id", courseId),
     ]);
-    if (c) setCourse(c as Course);
-    const mats = (m as Material[]) ?? [];
+
+    if (courseRes.data) setCourse(courseRes.data as Course);
+
+    const mergedMap = new Map<string, Material>();
+
+    // 1. Server store materials
+    for (const m of Array.isArray(apiMatsRes?.materials) ? apiMatsRes.materials : []) {
+      mergedMap.set(m.id || m.file_url || m.title, {
+        id: m.id || `mat_${Math.random()}`,
+        title: m.title || "Course Material",
+        description: m.description || null,
+        file_type: m.file_type || "pdf",
+        file_size: m.file_size || 45000,
+        visibility: m.visibility === "private" ? "private" : "public",
+        owner_id: m.owner_id || user?.id || "",
+        created_at: m.created_at || new Date().toISOString(),
+        file_url: m.file_url || null,
+      });
+    }
+
+    // 2. Study materials table
+    for (const m of (studyMatsRes.data ?? []) as any[]) {
+      const key = m.id || m.file_url || m.title;
+      if (!mergedMap.has(key)) {
+        mergedMap.set(key, {
+          id: m.id,
+          title: m.title,
+          description: m.description,
+          file_type: m.file_type || "pdf",
+          file_size: m.file_size || 45000,
+          visibility: m.visibility || "public",
+          owner_id: m.owner_id || "",
+          created_at: m.created_at,
+          file_url: m.file_url || null,
+        });
+      }
+    }
+
+    // 3. Lecture notes table
+    for (const m of (lectureNotesRes.data ?? []) as any[]) {
+      const key = m.id || m.file_url || m.title;
+      if (!mergedMap.has(key)) {
+        mergedMap.set(key, {
+          id: m.id,
+          title: m.title,
+          description: m.description,
+          file_type: m.file_type || "pdf",
+          file_size: m.file_size_bytes || m.file_size || 45000,
+          visibility: "public",
+          owner_id: m.tutor_id || m.owner_id || "",
+          created_at: m.created_at,
+          file_url: m.file_url || null,
+        });
+      }
+    }
+
+    const mats = Array.from(mergedMap.values()).sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
     setMaterials(mats);
 
     // Identify which owners are tutors so we can mark verified materials
