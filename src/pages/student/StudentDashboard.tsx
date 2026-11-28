@@ -474,9 +474,9 @@ export default function StudentDashboard() {
         noindex
       />
 
-      <Screen className="lg:max-w-6xl">
+      <Screen className="lg:max-w-7xl">
         {/* Top Bar (Formal App Header with Drawer, Wallet, Notifications, Profile Menu) */}
-        <BrandTopBar className="mb-2" />
+        <BrandTopBar className="mb-3" />
 
         {/* Offline Rescue Banner */}
         <DashboardOfflineBanner
@@ -485,34 +485,36 @@ export default function StudentDashboard() {
           primaryCourseCode={primaryCourse?.code}
         />
 
-        {/* Calm Academic Greeting */}
-        <section className="mb-5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-400">
+        {/* Calm Academic Greeting — Unboxed editorial context metadata */}
+        <section className="mb-5 pb-4 border-b border-border/70">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2.5">
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-primary">
                 {timeGreeting()}
               </p>
-              <h1 className="font-display text-2xl sm:text-[28px] font-extrabold tracking-tight text-brand-ink mt-0.5">
+              <h1 className="font-display text-2xl sm:text-[30px] font-extrabold tracking-tight text-foreground mt-0.5 leading-tight">
                 Welcome back, {firstName}
               </h1>
             </div>
 
             <Link
               to="/settings/academic"
-              className="inline-flex items-center gap-1.5 rounded-full border border-brand-line bg-brand-surface px-3.5 py-1.5 text-xs font-semibold text-brand-ink hover:border-env transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors py-1 min-h-[36px] self-start sm:self-auto"
             >
-              <GraduationCap className="h-3.5 w-3.5 text-env" />
-              <span>{institution || "University"}</span>
+              <GraduationCap className="h-4 w-4 text-primary shrink-0" />
+              <span className="font-bold text-foreground">{institution || "University"}</span>
               {studentLevel && (
                 <>
                   <span aria-hidden="true" className="opacity-40">
                     ·
                   </span>
-                  <span className="font-mono font-bold tabular-nums">{studentLevel}L</span>
+                  <span className="font-mono font-bold tabular-nums text-foreground">
+                    {studentLevel}L
+                  </span>
                 </>
               )}
               {studentDept && (
-                <span className="hidden sm:inline text-brand-ink-soft truncate max-w-[160px]">
+                <span className="truncate max-w-[180px] sm:max-w-[220px]">
                   · {studentDept}
                 </span>
               )}
@@ -520,264 +522,262 @@ export default function StudentDashboard() {
           </div>
         </section>
 
-        {/* Universal Dashboard Search (⌘K) */}
-        <div className="mb-6">
-          <DashboardSearch />
-        </div>
+        {/* Adaptive 12-Column Workspace: Single-Column Thumb Flow (<lg) -> 8+4 Editorial Workspace (lg+) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+          {/* PRIMARY STUDY COLUMN (8 cols on desktop) */}
+          <div className="lg:col-span-8 min-w-0 space-y-6">
+            {/* Universal Dashboard Search (⌘K) */}
+            <DashboardSearch />
 
-        {/* Daily Check-in Streak Bonus */}
-        {preferences.showDailyCheckIn && (
-          <div className="mb-6">
-            <DailyCheckIn variant="card" />
-          </div>
-        )}
+            {/* Cinematic Photographic Next Step Hero */}
+            <NextStepHero
+              eyebrow={nextHero.eyebrow}
+              kicker={nextHero.kicker}
+              title={nextHero.title}
+              context={nextHero.context}
+              cta={nextHero.cta}
+              to={nextHero.to}
+              coverImage={nextHero.coverImage}
+              fallbackImage={nextHero.fallbackImage}
+              secondaryCta={nextHero.secondaryCta}
+            />
 
-        {/* Cinematic Photographic Next Step Hero */}
-        <div className="mb-6">
-          <NextStepHero
-            eyebrow={nextHero.eyebrow}
-            kicker={nextHero.kicker}
-            title={nextHero.title}
-            context={nextHero.context}
-            cta={nextHero.cta}
-            to={nextHero.to}
-            coverImage={nextHero.coverImage}
-            fallbackImage={nextHero.fallbackImage}
-            secondaryCta={nextHero.secondaryCta}
-          />
-        </div>
+            {/* 4-Destination Quick Access Grid */}
+            <QuickAccess items={quickItems} />
 
-        {/* 4-Destination Quick Access Grid */}
-        <div className="mb-8">
-          <QuickAccess items={quickItems} />
-        </div>
+            {/* Your Courses — Cover Cards / Compact List + Horizontal-Safe Semester Switcher */}
+            <Section title="Your courses" to="/courses" linkLabel="See all">
+              <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                {/* Semester Segmented Filter (horizontal scroll-safe on 375px phones) */}
+                <div className="max-w-full overflow-x-auto no-scrollbar">
+                  <div className="inline-flex rounded-xl border border-border bg-secondary/70 p-1">
+                    {(["all", "1st", "2nd"] as const).map((sem) => {
+                      const active = semesterFilter === sem;
+                      const count =
+                        sem === "all"
+                          ? semesterCounts.all
+                          : sem === "1st"
+                          ? semesterCounts.first
+                          : semesterCounts.second;
+                      const label =
+                        sem === "all"
+                          ? "All Semesters"
+                          : sem === "1st"
+                          ? "1st Semester"
+                          : "2nd Semester";
+                      return (
+                        <button
+                          key={sem}
+                          type="button"
+                          onClick={() => setSemesterFilter(sem)}
+                          className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-all cursor-pointer whitespace-nowrap min-h-[38px] ${
+                            active
+                              ? "bg-foreground text-background shadow-2xs"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          <span>{label}</span>
+                          <span
+                            className={`font-mono text-[10px] tabular-nums px-1.5 py-0.5 rounded ${
+                              active
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-card text-muted-foreground"
+                            }`}
+                          >
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
-        {/* Your Courses — Full Photographic Cover Card Grid + Semester Switcher & View Toggle */}
-        <Section title="Your courses" to="/courses" linkLabel="See all">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2.5">
-            {/* Semester Segmented Filter */}
-            <div className="inline-flex rounded-xl border border-brand-line bg-brand-soft p-1">
-              {(["all", "1st", "2nd"] as const).map((sem) => {
-                const active = semesterFilter === sem;
-                const count =
-                  sem === "all"
-                    ? semesterCounts.all
-                    : sem === "1st"
-                    ? semesterCounts.first
-                    : semesterCounts.second;
-                const label =
-                  sem === "all"
-                    ? "All Semesters"
-                    : sem === "1st"
-                    ? "1st Semester"
-                    : "2nd Semester";
-                return (
+                {/* Cover Cards / Compact List Switcher */}
+                <div
+                  className="inline-flex items-center self-start sm:self-auto rounded-xl border border-border bg-secondary/70 p-1"
+                  role="group"
+                  aria-label="Course layout view"
+                >
                   <button
-                    key={sem}
                     type="button"
-                    onClick={() => setSemesterFilter(sem)}
-                    className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                      active
-                        ? "bg-[#18181B] text-[#FAF8F5] shadow-2xs"
-                        : "text-brand-ink-soft hover:text-brand-ink"
+                    onClick={() => setCourseViewMode("grid")}
+                    className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap min-h-[36px] ${
+                      courseViewMode === "grid"
+                        ? "bg-card text-foreground shadow-2xs"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
+                    aria-pressed={courseViewMode === "grid"}
                   >
-                    <span>{label}</span>
-                    <span
-                      className={`font-mono text-[10px] tabular-nums px-1.5 py-0.2 rounded ${
-                        active
-                          ? "bg-[#D4AF37] text-[#18181B]"
-                          : "bg-white/80 dark:bg-card text-brand-ink-soft"
-                      }`}
-                    >
-                      {count}
-                    </span>
+                    <LayoutGrid className="h-3.5 w-3.5" aria-hidden />
+                    <span>Covers</span>
                   </button>
-                );
-              })}
-            </div>
+                  <button
+                    type="button"
+                    onClick={() => setCourseViewMode("list")}
+                    className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap min-h-[36px] ${
+                      courseViewMode === "list"
+                        ? "bg-card text-foreground shadow-2xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    aria-pressed={courseViewMode === "list"}
+                  >
+                    <List className="h-3.5 w-3.5" aria-hidden />
+                    <span>List</span>
+                  </button>
+                </div>
+              </div>
 
-            {/* Cover Cards / Compact List Switcher */}
-            <div
-              className="inline-flex items-center rounded-xl border border-brand-line bg-brand-soft p-1"
-              role="group"
-              aria-label="Course layout view"
-            >
-              <button
-                type="button"
-                onClick={() => setCourseViewMode("grid")}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  courseViewMode === "grid"
-                    ? "bg-white dark:bg-card text-[#18181B] dark:text-foreground shadow-2xs"
-                    : "text-brand-ink-soft hover:text-brand-ink"
-                }`}
-                aria-pressed={courseViewMode === "grid"}
-              >
-                <LayoutGrid className="h-3.5 w-3.5" aria-hidden />
-                <span className="hidden sm:inline">Covers</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setCourseViewMode("list")}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  courseViewMode === "list"
-                    ? "bg-white dark:bg-card text-[#18181B] dark:text-foreground shadow-2xs"
-                    : "text-brand-ink-soft hover:text-brand-ink"
-                }`}
-                aria-pressed={courseViewMode === "list"}
-              >
-                <List className="h-3.5 w-3.5" aria-hidden />
-                <span className="hidden sm:inline">List</span>
-              </button>
-            </div>
+              {coursesLoading ? (
+                courseViewMode === "grid" ? (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <CourseCoverCardSkeleton />
+                    <CourseCoverCardSkeleton />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <CourseRowSkeleton />
+                    <CourseRowSkeleton />
+                    <CourseRowSkeleton />
+                  </div>
+                )
+              ) : filteredCourses.length === 0 ? (
+                <EmptyCourses />
+              ) : courseViewMode === "grid" ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {filteredCourses.slice(0, 8).map((c) => {
+                    const topicStats = courseTopicProgress[c.id];
+                    const counts = contentCountsByCourse[c.id] || {
+                      materialsCount: 0,
+                      quizzesCount: 0,
+                      questionsCount: 0,
+                    };
+                    return (
+                      <CourseCoverCard
+                        key={c.id}
+                        id={c.id}
+                        code={c.code}
+                        name={c.name}
+                        department={c.department}
+                        level={c.level}
+                        description={c.description}
+                        semester={c.semester}
+                        unreadUpdates={c.unread_updates}
+                        readinessScore={readinessByCourse[c.id] ?? null}
+                        progressPercent={
+                          topicStats && topicStats.total > 0
+                            ? topicStats.percent
+                            : readinessByCourse[c.id] ?? 0
+                        }
+                        completedTopics={topicStats?.completed ?? 0}
+                        totalTopics={topicStats?.total ?? 0}
+                        materialsCount={counts.materialsCount}
+                        quizzesCount={counts.quizzesCount}
+                        questionsCount={counts.questionsCount}
+                      />
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredCourses.slice(0, 9).map((c) => {
+                    const topicStats = courseTopicProgress[c.id];
+                    const counts = contentCountsByCourse[c.id] || {
+                      materialsCount: 0,
+                      quizzesCount: 0,
+                      questionsCount: 0,
+                    };
+                    return (
+                      <CourseRow
+                        key={c.id}
+                        id={c.id}
+                        code={c.code}
+                        name={c.name}
+                        department={c.department}
+                        level={c.level}
+                        description={c.description}
+                        semester={c.semester}
+                        unreadUpdates={c.unread_updates}
+                        readinessScore={readinessByCourse[c.id] ?? null}
+                        progressPercent={
+                          topicStats && topicStats.total > 0
+                            ? topicStats.percent
+                            : readinessByCourse[c.id] ?? 0
+                        }
+                        completedTopics={topicStats?.completed ?? 0}
+                        totalTopics={topicStats?.total ?? 0}
+                        materialsCount={counts.materialsCount}
+                        quizzesCount={counts.quizzesCount}
+                        questionsCount={counts.questionsCount}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </Section>
+
+            {/* Photographic Spotlight: Latest Handouts & CBT Exams */}
+            {spotlightItems.length > 0 && (
+              <Section title="Latest CBT exams & handouts" to="/practice" linkLabel="Practice hub">
+                <StudySpotlightStrip items={spotlightItems} />
+              </Section>
+            )}
+
+            {/* Opportunities Strip */}
+            {opportunities.length > 0 && (
+              <Section title="Opportunities for you" to="/opportunities">
+                <OpportunityStrip items={opportunities} />
+              </Section>
+            )}
+
+            {/* Top Articles Strip */}
+            {articles.length > 0 && (
+              <Section title="Top articles today" to="/posts">
+                <TopArticlesStrip items={articles} />
+              </Section>
+            )}
+
+            {/* Tutors Strip */}
+            {tutors.length > 0 && (
+              <Section title="Tutors for your courses" to="/tutors">
+                <TutorStrip items={tutors} />
+              </Section>
+            )}
           </div>
 
-          {coursesLoading ? (
-            courseViewMode === "grid" ? (
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                <CourseCoverCardSkeleton />
-                <CourseCoverCardSkeleton />
-                <CourseCoverCardSkeleton />
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <CourseRowSkeleton />
-                <CourseRowSkeleton />
-                <CourseRowSkeleton />
-              </div>
-            )
-          ) : filteredCourses.length === 0 ? (
-            <EmptyCourses />
-          ) : courseViewMode === "grid" ? (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredCourses.slice(0, 9).map((c) => {
-                const topicStats = courseTopicProgress[c.id];
-                const counts = contentCountsByCourse[c.id] || {
-                  materialsCount: 0,
-                  quizzesCount: 0,
-                  questionsCount: 0,
-                };
-                return (
-                  <CourseCoverCard
-                    key={c.id}
-                    id={c.id}
-                    code={c.code}
-                    name={c.name}
-                    department={c.department}
-                    level={c.level}
-                    description={c.description}
-                    semester={c.semester}
-                    unreadUpdates={c.unread_updates}
-                    readinessScore={readinessByCourse[c.id] ?? null}
-                    progressPercent={
-                      topicStats && topicStats.total > 0
-                        ? topicStats.percent
-                        : readinessByCourse[c.id] ?? 0
-                    }
-                    completedTopics={topicStats?.completed ?? 0}
-                    totalTopics={topicStats?.total ?? 0}
-                    materialsCount={counts.materialsCount}
-                    quizzesCount={counts.quizzesCount}
-                    questionsCount={counts.questionsCount}
+          {/* RIGHT UTILITY RAIL (4 cols sticky on desktop; stacked cleanly below courses on mobile/tablet) */}
+          <aside className="lg:col-span-4 min-w-0 space-y-6 lg:sticky lg:top-6">
+            {/* Daily Check-in Streak Bonus */}
+            {preferences.showDailyCheckIn && <DailyCheckIn variant="card" />}
+
+            {/* Progress Overview */}
+            <Section title="Today's progress">
+              <ProgressCards />
+            </Section>
+
+            {/* Daily Mission & Weekly Pulse */}
+            {preferences.showPracticeTarget && (
+              <Section title="Daily mission & pulse">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+                  <MissionBlock
+                    title="Today's Mission"
+                    subtitle="Complete 3 quick actions to keep your streak"
+                    missions={missionTasks}
+                    completed={missionTasks.filter((m) => m.done).length}
+                    total={missionTasks.length}
+                    currentCourseId={primaryCourse?.id}
                   />
-                );
-              })}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredCourses.slice(0, 9).map((c) => {
-                const topicStats = courseTopicProgress[c.id];
-                const counts = contentCountsByCourse[c.id] || {
-                  materialsCount: 0,
-                  quizzesCount: 0,
-                  questionsCount: 0,
-                };
-                return (
-                  <CourseRow
-                    key={c.id}
-                    id={c.id}
-                    code={c.code}
-                    name={c.name}
-                    department={c.department}
-                    level={c.level}
-                    description={c.description}
-                    semester={c.semester}
-                    unreadUpdates={c.unread_updates}
-                    readinessScore={readinessByCourse[c.id] ?? null}
-                    progressPercent={
-                      topicStats && topicStats.total > 0
-                        ? topicStats.percent
-                        : readinessByCourse[c.id] ?? 0
-                    }
-                    completedTopics={topicStats?.completed ?? 0}
-                    totalTopics={topicStats?.total ?? 0}
-                    materialsCount={counts.materialsCount}
-                    quizzesCount={counts.quizzesCount}
-                    questionsCount={counts.questionsCount}
+                  <WeeklyPulse
+                    quizzesCompleted={weekly?.quizzes_completed ?? 0}
+                    accuracy={weekly?.accuracy_pct ?? 0}
                   />
-                );
-              })}
-            </div>
-          )}
-        </Section>
+                </div>
+              </Section>
+            )}
 
-        {/* Photographic Spotlight: Latest Handouts & CBT Exams */}
-        {spotlightItems.length > 0 && (
-          <Section title="Latest CBT exams & handouts" to="/practice" linkLabel="Practice hub">
-            <StudySpotlightStrip items={spotlightItems} />
-          </Section>
-        )}
-
-        {/* Progress Overview */}
-        <Section title="Today's progress">
-          <ProgressCards />
-        </Section>
-
-        {/* Daily Mission & Weekly Pulse */}
-        {preferences.showPracticeTarget && (
-          <Section title="Daily mission & pulse">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <MissionBlock
-                title="Today's Mission"
-                subtitle="Complete 3 quick actions to keep your streak"
-                missions={missionTasks}
-                completed={missionTasks.filter((m) => m.done).length}
-                total={missionTasks.length}
-                currentCourseId={primaryCourse?.id}
-              />
-              <WeeklyPulse
-                quizzesCompleted={weekly?.quizzes_completed ?? 0}
-                accuracy={weekly?.accuracy_pct ?? 0}
-              />
-            </div>
-          </Section>
-        )}
-
-        {/* Signature AI Entry Point */}
-        <div className="mb-8">
-          <AskOverraBlock />
+            {/* Signature AI Entry Point */}
+            <AskOverraBlock />
+          </aside>
         </div>
-
-        {/* Opportunities Strip */}
-        {opportunities.length > 0 && (
-          <Section title="Opportunities for you" to="/opportunities">
-            <OpportunityStrip items={opportunities} />
-          </Section>
-        )}
-
-        {/* Top Articles Strip */}
-        {articles.length > 0 && (
-          <Section title="Top articles today" to="/posts">
-            <TopArticlesStrip items={articles} />
-          </Section>
-        )}
-
-        {/* Tutors Strip */}
-        {tutors.length > 0 && (
-          <Section title="Tutors for your courses" to="/tutors">
-            <TutorStrip items={tutors} />
-          </Section>
-        )}
       </Screen>
     </>
   );

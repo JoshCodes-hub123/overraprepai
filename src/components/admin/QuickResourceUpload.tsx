@@ -3221,231 +3221,356 @@ export const QuickResourceUpload: React.FC = () => {
       {/* =====================================================================
           3. UNIFIED ACADEMIC SESSION INVENTORY (MATERIALS + PUBLISHED QUIZZES)
          ===================================================================== */}
-      <section className="rounded-3xl border border-[#E6E0D4] bg-white p-5 sm:p-6 shadow-2xs space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-4 border-b border-[#EFECE6]">
-          <div className="space-y-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#9A7B1C] block">
+      <section className="rounded-3xl border border-border bg-card p-4 sm:p-6 space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-4 border-b border-border/80">
+          <div className="space-y-2 min-w-0">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-primary block">
               Academic Session Content &amp; Exam Directory
             </span>
             {/* Dual-Tab Switcher: Study Materials vs. Published CBT Quizzes */}
-            <div className="inline-flex p-1 rounded-2xl bg-[#EFECE6] border border-[#E6E0D4]">
-              <button
-                type="button"
-                onClick={() => setInventoryTab("materials")}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  inventoryTab === "materials"
-                    ? "bg-[#18181B] text-[#D4AF37] shadow-2xs"
-                    : "text-[#52525B] hover:text-[#18181B]"
-                }`}
-              >
-                <FileText className="w-3.5 h-3.5" />
-                <span>Uploaded Materials ({filteredMaterials.length})</span>
-              </button>
+            <div className="max-w-full overflow-x-auto no-scrollbar">
+              <div className="inline-flex p-1 rounded-2xl bg-secondary border border-border">
+                <button
+                  type="button"
+                  onClick={() => setInventoryTab("materials")}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap min-h-[38px] ${
+                    inventoryTab === "materials"
+                      ? "bg-foreground text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5 shrink-0" />
+                  <span>Uploaded Materials ({filteredMaterials.length})</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setInventoryTab("quizzes")}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  inventoryTab === "quizzes"
-                    ? "bg-[#18181B] text-[#D4AF37] shadow-2xs"
-                    : "text-[#52525B] hover:text-[#18181B]"
-                }`}
-              >
-                <ClipboardList className="w-3.5 h-3.5" />
-                <span>Published CBT Quizzes ({filteredQuizzes.length})</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setInventoryTab("quizzes")}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap min-h-[38px] ${
+                    inventoryTab === "quizzes"
+                      ? "bg-foreground text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <ClipboardList className="w-3.5 h-3.5 shrink-0" />
+                  <span>Published CBT Quizzes ({filteredQuizzes.length})</span>
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Semester Filter + Course Filter + Search */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex p-1 rounded-xl bg-[#EFECE6] border border-[#E6E0D4]">
-              {(["all", "1st", "2nd"] as const).map((sem) => (
-                <button
-                  key={sem}
-                  type="button"
-                  onClick={() => setManagerSemesterFilter(sem)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    managerSemesterFilter === sem
-                      ? "bg-[#18181B] text-[#D4AF37]"
-                      : "text-[#52525B] hover:text-[#18181B]"
-                  }`}
-                >
-                  {sem === "all"
-                    ? "All Semesters"
-                    : sem === "1st"
-                    ? "1st Semester"
-                    : "2nd Semester"}
-                </button>
-              ))}
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2">
+            <div className="max-w-full overflow-x-auto no-scrollbar">
+              <div className="inline-flex p-1 rounded-xl bg-secondary border border-border">
+                {(["all", "1st", "2nd"] as const).map((sem) => (
+                  <button
+                    key={sem}
+                    type="button"
+                    onClick={() => setManagerSemesterFilter(sem)}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap min-h-[36px] ${
+                      managerSemesterFilter === sem
+                        ? "bg-foreground text-primary"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {sem === "all"
+                      ? "All Semesters"
+                      : sem === "1st"
+                      ? "1st Semester"
+                      : "2nd Semester"}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <select
-              value={managerCourseFilter}
-              onChange={(e) => setManagerCourseFilter(e.target.value)}
-              className="h-9 rounded-xl border border-[#E6E0D4] bg-[#FAF8F5] px-3 text-xs font-bold text-[#18181B]"
-            >
-              <option value="all">All Courses</option>
-              {courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.code} ({c.semester} Sem)
-                </option>
-              ))}
-            </select>
+            <div className="grid grid-cols-1 sm:flex items-center gap-2">
+              <select
+                value={managerCourseFilter}
+                onChange={(e) => setManagerCourseFilter(e.target.value)}
+                className="h-10 w-full sm:w-auto rounded-xl border border-border bg-background px-3 text-xs font-bold text-foreground"
+              >
+                <option value="all">All Courses</option>
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.code} ({c.semester} Sem)
+                  </option>
+                ))}
+              </select>
 
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 text-[#71717A] absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                value={managerSearch}
-                onChange={(e) => setManagerSearch(e.target.value)}
-                placeholder="Search title or course…"
-                className="h-9 pl-8 pr-3 rounded-xl border border-[#E6E0D4] bg-[#FAF8F5] text-xs text-[#18181B] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]"
-              />
+              <div className="relative w-full sm:w-52">
+                <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  value={managerSearch}
+                  onChange={(e) => setManagerSearch(e.target.value)}
+                  placeholder="Search title or course…"
+                  className="h-10 w-full pl-8 pr-3 rounded-xl border border-border bg-background text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
             </div>
           </div>
         </div>
 
-        {/* TAB 1: UPLOADED MATERIALS TABLE */}
+        {/* TAB 1: UPLOADED MATERIALS (Mobile Stacked Cards + Desktop Table) */}
         {inventoryTab === "materials" ? (
           loadingMaterials ? (
-            <div className="py-8 text-center text-xs text-[#71717A]">
+            <div className="py-8 text-center text-xs text-muted-foreground">
               Loading materials from Supabase PostgreSQL &amp; Server Store…
             </div>
           ) : filteredMaterials.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[#E6E0D4] bg-[#FAF8F5] p-8 text-center space-y-2">
-              <FileText className="w-7 h-7 text-[#9A7B1C] mx-auto opacity-70" />
-              <p className="text-xs sm:text-sm font-bold text-[#18181B]">
+            <div className="rounded-2xl border border-dashed border-border bg-background p-8 text-center space-y-2">
+              <FileText className="w-7 h-7 text-primary mx-auto opacity-80" />
+              <p className="text-xs sm:text-sm font-bold text-foreground">
                 No study materials uploaded for this filter yet
               </p>
-              <p className="text-xs text-[#71717A] max-w-md mx-auto">
+              <p className="text-xs text-muted-foreground max-w-md mx-auto">
                 Use Option A (PDF/Word) or Option B (Summary Notes) in Step 3 above to upload handouts for your 1st or 2nd Semester courses.
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-[#E6E0D4] text-[11px] font-extrabold uppercase tracking-wider text-[#71717A]">
-                    <th className="py-2.5 px-3">Semester &amp; Level</th>
-                    <th className="py-2.5 px-3">Course</th>
-                    <th className="py-2.5 px-3">Material Title &amp; Summary</th>
-                    <th className="py-2.5 px-3">Type</th>
-                    <th className="py-2.5 px-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#EFECE6] text-xs">
-                  {filteredMaterials.map((row) => (
-                    <tr key={row.id} className="hover:bg-[#FAF8F5] transition-colors">
-                      <td className="py-3 px-3 whitespace-nowrap align-top">
-                        <span className="font-mono font-bold text-[#9A7B1C]">
-                          {row.semester === "1st" ? "1st Semester" : "2nd Semester"}
-                        </span>
-                        <span className="text-[#71717A] font-mono"> · {row.level}</span>
-                      </td>
-                      <td className="py-3 px-3 whitespace-nowrap align-top">
-                        <span className="px-2 py-0.5 rounded bg-[#18181B] text-[#D4AF37] font-mono text-[11px] font-bold">
-                          {row.course_code}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 align-top max-w-md">
-                        <p className="font-bold text-[#18181B] leading-snug">{row.title}</p>
+            <>
+              {/* MOBILE & TABLET STACKED CARD LIST (Zero horizontal scroll trapping) */}
+              <div className="md:hidden space-y-3">
+                {filteredMaterials.map((row) => (
+                  <div
+                    key={row.id}
+                    className="rounded-2xl border border-border bg-background p-4 space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-mono tabular-nums">
+                          <span className="px-2 py-0.5 rounded bg-foreground text-primary font-bold">
+                            {row.course_code}
+                          </span>
+                          <span className="font-bold text-primary">
+                            {row.semester === "1st" ? "1st Sem" : "2nd Sem"}
+                          </span>
+                          <span className="text-muted-foreground">· {row.level}</span>
+                          <span className="uppercase text-muted-foreground">· {row.file_type}</span>
+                        </div>
+                        <p className="font-display font-bold text-sm text-foreground leading-snug">
+                          {row.title}
+                        </p>
                         {row.description && (
-                          <p className="text-[11px] text-[#71717A] line-clamp-1 mt-0.5">
+                          <p className="text-xs text-muted-foreground line-clamp-2">
                             {row.description}
                           </p>
                         )}
-                      </td>
-                      <td className="py-3 px-3 whitespace-nowrap align-top font-mono uppercase text-[11px] text-[#52525B]">
-                        {row.file_type}
-                      </td>
-                      <td className="py-3 px-3 whitespace-nowrap align-top text-right">
-                        <div className="inline-flex flex-wrap items-center justify-end gap-1.5">
-                          {verifiedMap[row.id] && (
-                            <span
-                              className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                                verifiedMap[row.id].ok
-                                  ? "bg-emerald-500/15 text-emerald-800"
-                                  : "bg-rose-500/15 text-rose-700"
-                              }`}
-                            >
-                              {verifiedMap[row.id].label}
-                            </span>
+                      </div>
+                    </div>
+
+                    {verifiedMap[row.id] && (
+                      <div
+                        className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold ${
+                          verifiedMap[row.id].ok
+                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                            : "bg-rose-500/15 text-rose-700 dark:text-rose-300"
+                        }`}
+                      >
+                        {verifiedMap[row.id].label}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/80">
+                      {(row.file_url || row.file_path) && (
+                        <>
+                          <button
+                            type="button"
+                            disabled={verifyingId === row.id}
+                            onClick={() => void handleVerifyMaterialLive(row)}
+                            className="min-h-[40px] px-3 py-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold text-xs inline-flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                            <span>{verifyingId === row.id ? "Checking…" : "Verify"}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPreviewRow(row)}
+                            className="min-h-[40px] px-3 py-2 rounded-xl border border-border bg-card hover:border-primary text-foreground font-bold text-xs inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5 shrink-0 text-primary" />
+                            <span>Open</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void downloadMaterialExternally({
+                                id: row.id,
+                                title: row.title,
+                                courseCode: row.course_code,
+                                fileUrl: row.file_url,
+                                filePath: row.file_path,
+                                fileType: row.file_type,
+                                description: row.description,
+                              })
+                            }
+                            className="min-h-[40px] px-3 py-2 rounded-xl border border-border bg-card hover:border-primary text-foreground font-bold text-xs inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            <Download className="w-3.5 h-3.5 shrink-0 text-primary" />
+                            <span>Download</span>
+                          </button>
+                        </>
+                      )}
+                      {row.file_type !== "markdown" && row.file_type !== "md" && (
+                        <button
+                          type="button"
+                          disabled={replacingBusyId === row.id}
+                          onClick={() => triggerReplaceFile(row)}
+                          className="min-h-[40px] px-3 py-2 rounded-xl border border-border bg-card hover:border-primary text-foreground font-bold text-xs inline-flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        >
+                          <Upload className="w-3.5 h-3.5 shrink-0 text-primary" />
+                          <span>{replacingBusyId === row.id ? "Uploading…" : "Replace PDF"}</span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(row)}
+                        className="min-h-[40px] px-3 py-2 rounded-xl border border-border bg-card hover:border-primary text-foreground font-bold text-xs inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Pencil className="w-3.5 h-3.5 shrink-0" />
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteMaterial(row)}
+                        className="min-h-[40px] px-3 py-2 rounded-xl border border-rose-500/30 bg-rose-500/5 hover:border-rose-500 text-rose-600 dark:text-rose-400 font-bold text-xs inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                        <span>Delete</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* DESKTOP HAIRLINE TABLE */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-border text-[11px] font-extrabold uppercase tracking-wider text-muted-foreground">
+                      <th className="py-2.5 px-3">Semester &amp; Level</th>
+                      <th className="py-2.5 px-3">Course</th>
+                      <th className="py-2.5 px-3">Material Title &amp; Summary</th>
+                      <th className="py-2.5 px-3">Type</th>
+                      <th className="py-2.5 px-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/70 text-xs">
+                    {filteredMaterials.map((row) => (
+                      <tr key={row.id} className="hover:bg-background/80 transition-colors">
+                        <td className="py-3 px-3 whitespace-nowrap align-top">
+                          <span className="font-mono tabular-nums font-bold text-primary">
+                            {row.semester === "1st" ? "1st Semester" : "2nd Semester"}
+                          </span>
+                          <span className="text-muted-foreground font-mono tabular-nums">
+                            {" "}· {row.level}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 whitespace-nowrap align-top">
+                          <span className="px-2 py-0.5 rounded bg-foreground text-primary font-mono text-[11px] font-bold">
+                            {row.course_code}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 align-top max-w-md">
+                          <p className="font-bold text-foreground leading-snug">{row.title}</p>
+                          {row.description && (
+                            <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
+                              {row.description}
+                            </p>
                           )}
-                          {(row.file_url || row.file_path) && (
-                            <>
+                        </td>
+                        <td className="py-3 px-3 whitespace-nowrap align-top font-mono uppercase text-[11px] text-muted-foreground">
+                          {row.file_type}
+                        </td>
+                        <td className="py-3 px-3 whitespace-nowrap align-top text-right">
+                          <div className="inline-flex flex-wrap items-center justify-end gap-1.5">
+                            {verifiedMap[row.id] && (
+                              <span
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                                  verifiedMap[row.id].ok
+                                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                                    : "bg-rose-500/15 text-rose-700 dark:text-rose-300"
+                                }`}
+                              >
+                                {verifiedMap[row.id].label}
+                              </span>
+                            )}
+                            {(row.file_url || row.file_path) && (
+                              <>
+                                <button
+                                  type="button"
+                                  disabled={verifyingId === row.id}
+                                  onClick={() => void handleVerifyMaterialLive(row)}
+                                  className="px-2.5 py-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                                  title="Run live verification check on this document"
+                                >
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  <span>{verifyingId === row.id ? "Checking…" : "Verify"}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewRow(row)}
+                                  className="p-1.5 rounded-lg border border-border bg-card hover:border-primary text-foreground cursor-pointer"
+                                  title="Open / Preview File"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    void downloadMaterialExternally({
+                                      id: row.id,
+                                      title: row.title,
+                                      courseCode: row.course_code,
+                                      fileUrl: row.file_url,
+                                      filePath: row.file_path,
+                                      fileType: row.file_type,
+                                      description: row.description,
+                                    })
+                                  }
+                                  className="p-1.5 rounded-lg border border-border bg-card hover:border-primary text-foreground cursor-pointer"
+                                  title="Download File to Device"
+                                >
+                                  <Download className="w-3.5 h-3.5" />
+                                </button>
+                              </>
+                            )}
+                            {row.file_type !== "markdown" && row.file_type !== "md" && (
                               <button
                                 type="button"
-                                disabled={verifyingId === row.id}
-                                onClick={() => void handleVerifyMaterialLive(row)}
-                                className="px-2 py-1 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                                title="Run live verification check on this document"
+                                disabled={replacingBusyId === row.id}
+                                onClick={() => triggerReplaceFile(row)}
+                                className="px-2.5 py-1.5 rounded-lg border border-border bg-card hover:border-primary text-foreground font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                                title="Re-upload / Replace PDF file into permanent cloud storage"
                               >
-                                <CheckCircle2 className="w-3 h-3" />
-                                <span>{verifyingId === row.id ? "Checking…" : "Verify"}</span>
+                                <Upload className="w-3 h-3 text-primary" />
+                                <span>{replacingBusyId === row.id ? "Uploading…" : "Replace PDF"}</span>
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => setPreviewRow(row)}
-                                className="p-1.5 rounded-lg border border-[#E6E0D4] bg-white hover:border-[#D4AF37] text-[#18181B] cursor-pointer"
-                                title="Open / Preview File"
-                              >
-                                <Eye className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  void downloadMaterialExternally({
-                                    id: row.id,
-                                    title: row.title,
-                                    courseCode: row.course_code,
-                                    fileUrl: row.file_url,
-                                    filePath: row.file_path,
-                                    fileType: row.file_type,
-                                    description: row.description,
-                                  })
-                                }
-                                className="p-1.5 rounded-lg border border-[#E6E0D4] bg-white hover:border-[#D4AF37] text-[#18181B] cursor-pointer"
-                                title="Download File to Device"
-                              >
-                                <Download className="w-3.5 h-3.5" />
-                              </button>
-                            </>
-                          )}
-                          {row.file_type !== "markdown" && row.file_type !== "md" && (
+                            )}
                             <button
                               type="button"
-                              disabled={replacingBusyId === row.id}
-                              onClick={() => triggerReplaceFile(row)}
-                              className="px-2 py-1 rounded-lg border border-[#E6E0D4] bg-white hover:border-[#D4AF37] text-[#18181B] font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                              title="Re-upload / Replace PDF file into permanent cloud storage"
+                              onClick={() => openEditModal(row)}
+                              className="p-1.5 rounded-lg border border-border bg-card hover:border-primary text-foreground cursor-pointer"
+                              title="Edit Title, Summary, or Course"
                             >
-                              <Upload className="w-3 h-3 text-[#9A7B1C]" />
-                              <span>{replacingBusyId === row.id ? "Uploading…" : "Replace PDF"}</span>
+                              <Pencil className="w-3.5 h-3.5" />
                             </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => openEditModal(row)}
-                            className="p-1.5 rounded-lg border border-[#E6E0D4] bg-white hover:border-[#D4AF37] text-[#18181B] cursor-pointer"
-                            title="Edit Title, Summary, or Course"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteMaterial(row)}
-                            className="p-1.5 rounded-lg border border-[#E6E0D4] bg-white hover:border-rose-500 text-rose-600 cursor-pointer"
-                            title="Delete Material"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteMaterial(row)}
+                              className="p-1.5 rounded-lg border border-border bg-card hover:border-rose-500 text-rose-600 cursor-pointer"
+                              title="Delete Material"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )
         ) : (
           /* TAB 2: PUBLISHED CBT QUIZZES & QUESTION BANKS TABLE */

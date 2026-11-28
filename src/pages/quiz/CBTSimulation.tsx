@@ -634,12 +634,12 @@ export const CBTSimulation = () => {
 
   if (isLoading || !currentQuestion) {
     return (
-      <div className="min-h-screen bg-white dark:bg-neutral-950 flex flex-col items-center justify-center p-6 text-center">
-        <Loader2 className="w-9 h-9 animate-spin text-amber-500 mb-4" />
-        <p className="font-display font-bold text-base text-neutral-900 dark:text-white">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
+        <Loader2 className="w-9 h-9 animate-spin text-primary mb-4" />
+        <p className="font-display font-bold text-base text-foreground">
           Preparing CBT Examination Engine…
         </p>
-        <p className="text-xs text-neutral-500 mt-1 max-w-xs">
+        <p className="text-xs text-muted-foreground mt-1 max-w-xs">
           Loading verified university questions and initializing local offline storage cache.
         </p>
       </div>
@@ -647,226 +647,344 @@ export const CBTSimulation = () => {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50/80 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 flex flex-col pb-28 selection:bg-amber-500 selection:text-neutral-950">
+    <div className="min-h-screen bg-background text-foreground flex flex-col pb-28 selection:bg-primary selection:text-primary-foreground">
       {/* ==================== 1. NETWORK STATUS BANNER ==================== */}
       {!isOnline && (
-        <div className="bg-amber-500 border-b border-amber-600 px-4 py-2 text-neutral-950 text-xs font-bold flex items-center justify-center gap-2 shadow-xs sticky top-0 z-40 select-none animate-in fade-in slide-in-from-top-1">
+        <div className="bg-primary border-b border-primary/80 px-4 py-2 text-primary-foreground text-xs font-bold flex items-center justify-center gap-2 sticky top-0 z-40 select-none animate-in fade-in slide-in-from-top-1">
           <WifiOff className="w-4 h-4 shrink-0" />
           <span>Offline Mode — All answers and timer continuously preserved locally.</span>
         </div>
       )}
 
       {showReconnectedBanner && (
-        <div className="bg-emerald-600 text-white px-4 py-2 text-xs font-bold flex items-center justify-center gap-2 shadow-xs sticky top-0 z-40 select-none animate-in fade-in slide-in-from-top-1">
+        <div className="bg-emerald-600 text-white px-4 py-2 text-xs font-bold flex items-center justify-center gap-2 sticky top-0 z-40 select-none animate-in fade-in slide-in-from-top-1">
           <Wifi className="w-4 h-4 shrink-0" />
           <span>Back Online — Connection restored. Background synchronization active.</span>
         </div>
       )}
 
-      {/* ==================== 2. STICKY TOP HEADER ==================== */}
-      <header className="sticky top-0 z-30 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border-b border-neutral-200/90 dark:border-neutral-800 px-4 sm:px-6 py-3 shadow-2xs">
-        <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
+      {/* ==================== 2. LEAN STICKY EXAM HEADER (56px) ==================== */}
+      <header className="sticky top-0 z-30 h-14 bg-background/95 backdrop-blur-xl border-b border-border px-4 sm:px-6 flex items-center">
+        <div className="max-w-6xl mx-auto w-full flex items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-display font-extrabold text-sm sm:text-base text-neutral-950 dark:text-white tracking-tight truncate">
+              <span className="font-display font-extrabold text-sm sm:text-base text-foreground tracking-tight truncate">
                 {quiz?.course.code}
               </span>
-              <span className="text-xs text-neutral-500 hidden sm:inline truncate">
-                {quiz?.title}
+              <span className="text-xs text-muted-foreground hidden md:inline truncate">
+                · {quiz?.title}
               </span>
             </div>
-            <p className="text-xs font-semibold text-neutral-600 dark:text-neutral-400 mt-0.5">
-              Question {currentIndex + 1} of {questions.length}
+            <p className="text-[11px] font-mono tabular-nums font-semibold text-muted-foreground leading-none mt-0.5">
+              Question {currentIndex + 1} / {questions.length}
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {/* High-Contrast Toggle Button */}
             <Button
               size="sm"
               variant={highContrast ? "secondary" : "outline"}
               onClick={toggleHighContrast}
-              className={`h-9 px-2.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 ${
+              className={`h-9 px-2.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 whitespace-nowrap ${
                 highContrast
-                  ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 font-bold border-neutral-900 shadow-xs"
-                  : "border-neutral-300 text-neutral-700 dark:text-neutral-300 hover:text-neutral-950"
+                  ? "bg-foreground text-background font-bold border-foreground"
+                  : "border-border text-muted-foreground hover:text-foreground"
               }`}
               title="Toggle high-contrast choices for sunlight and OLED readability"
             >
-              <SunMedium className="w-4 h-4" />
-              <span className="hidden sm:inline">High Contrast</span>
+              <SunMedium className="w-4 h-4 shrink-0" />
+              <span className="hidden sm:inline">Contrast</span>
             </Button>
 
-            {/* Continuous Timer Badge */}
+            {/* Continuous Timer Display (Tabular Mono) */}
             <div
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-mono text-sm sm:text-base font-extrabold transition-colors select-none ${
+              className={`flex items-center gap-1.5 px-3 h-9 rounded-xl font-mono tabular-nums text-sm sm:text-base font-extrabold transition-colors select-none ${
                 isLowTime
-                  ? "bg-rose-50 text-rose-700 border border-rose-300 animate-pulse"
-                  : "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border border-neutral-200 dark:border-neutral-700"
+                  ? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/40 animate-pulse"
+                  : "bg-secondary text-foreground border border-border"
               }`}
+              aria-label={`Time remaining: ${formatTime(timeLeft)}`}
             >
-              <Clock className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
+              <Clock className="w-4 h-4 text-primary shrink-0" />
               <span>{formatTime(timeLeft)}</span>
             </div>
 
-            {/* Question Navigator Drawer Trigger */}
+            {/* Question Navigator Drawer Trigger (Mobile & Tablet only; Desktop uses persistent panel) */}
             <Button
               size="sm"
               variant="outline"
               onClick={() => setShowGridDrawer(true)}
-              className="h-9 px-3 rounded-xl border-neutral-300 dark:border-neutral-700 font-semibold text-xs flex items-center gap-1.5 active:scale-95"
+              className="lg:hidden h-9 px-3 rounded-xl border-border font-semibold text-xs flex items-center gap-1.5 active:scale-95 whitespace-nowrap"
             >
-              <LayoutGrid className="w-4 h-4" />
-              <span className="hidden sm:inline">Grid</span>
+              <LayoutGrid className="w-4 h-4 shrink-0" />
+              <span className="hidden sm:inline">Questions</span>
             </Button>
           </div>
         </div>
       </header>
 
-      {/* ==================== 3. MAIN QUESTION SURFACE ==================== */}
-      <main className="max-w-3xl mx-auto w-full px-4 sm:px-6 py-6 flex-1">
-        <div
-          className={`bg-white dark:bg-neutral-900 rounded-3xl p-5 sm:p-7 shadow-xs transition-all ${
-            highContrast
-              ? "border-2 border-neutral-900 dark:border-neutral-100 shadow-md"
-              : "border border-neutral-200/90 dark:border-neutral-800"
-          }`}
-        >
-          {/* Top question toolbar */}
-          <div className="flex items-center justify-between gap-3 pb-3 mb-4 border-b border-neutral-100 dark:border-neutral-800">
-            <span
-              className={`text-xs uppercase tracking-wider font-extrabold ${
-                highContrast ? "text-neutral-950 dark:text-white" : "text-neutral-500"
+      {/* ==================== 3. ADAPTIVE EXAM WORKSPACE (1-col Mobile -> 8+4 Desktop Console) ==================== */}
+      <main className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-5 sm:py-6 flex-1">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* LEFT 8-COL: FOCUSED QUESTION SURFACE */}
+          <div className="lg:col-span-8 min-w-0">
+            <div
+              className={`bg-card rounded-2xl sm:rounded-3xl p-5 sm:p-7 transition-all ${
+                highContrast
+                  ? "border-2 border-foreground"
+                  : "border border-border"
               }`}
             >
-              Question #{currentIndex + 1}
-            </span>
+              {/* Top question toolbar */}
+              <div className="flex items-center justify-between gap-3 pb-3.5 mb-5 border-b border-border/80">
+                <span
+                  className={`font-mono tabular-nums text-xs uppercase tracking-wider font-extrabold ${
+                    highContrast ? "text-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  Question {currentIndex + 1} of {questions.length}
+                </span>
 
-            <div className="flex items-center gap-2">
-              {/* Bookmark */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => toggleBookmark(currentQuestion.id)}
-                className="h-9 w-9 p-0 rounded-xl text-neutral-500 hover:text-neutral-900 dark:hover:text-white active:scale-95"
-                title="Bookmark for review"
-              >
-                {isBookmarked(currentQuestion.id) ? (
-                  <BookmarkCheck className="w-4 h-4 text-amber-600" />
-                ) : (
-                  <Bookmark className="w-4 h-4" />
-                )}
-              </Button>
+                <div className="flex items-center gap-2">
+                  {/* Bookmark */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleBookmark(currentQuestion.id)}
+                    className="h-10 w-10 p-0 rounded-xl text-muted-foreground hover:text-foreground active:scale-95"
+                    title="Bookmark for review"
+                    aria-label="Bookmark question"
+                  >
+                    {isBookmarked(currentQuestion.id) ? (
+                      <BookmarkCheck className="w-4 h-4 text-primary" />
+                    ) : (
+                      <Bookmark className="w-4 h-4" />
+                    )}
+                  </Button>
 
-              {/* Flag for Review */}
-              <Button
-                variant={flagged.has(currentQuestion.id) ? "destructive" : "outline"}
-                size="sm"
-                onClick={() => toggleFlag(currentQuestion.id)}
-                className={`h-9 px-3 rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-all ${
-                  flagged.has(currentQuestion.id)
-                    ? "bg-amber-500 hover:bg-amber-600 text-neutral-950 border-amber-500 shadow-xs"
-                    : "border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400"
+                  {/* Flag for Review */}
+                  <Button
+                    variant={flagged.has(currentQuestion.id) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => toggleFlag(currentQuestion.id)}
+                    className={`h-10 px-3.5 rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-all whitespace-nowrap ${
+                      flagged.has(currentQuestion.id)
+                        ? "bg-primary hover:bg-primary/90 text-primary-foreground border-primary"
+                        : "border-border text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Flag className="w-3.5 h-3.5 shrink-0" />
+                    <span>{flagged.has(currentQuestion.id) ? "Flagged" : "Flag"}</span>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Question Prompt */}
+              <div
+                className={`font-display leading-relaxed mb-6 ${
+                  highContrast
+                    ? "text-lg sm:text-xl font-bold text-foreground"
+                    : "text-base sm:text-lg font-semibold text-foreground"
                 }`}
               >
-                <Flag className="w-3.5 h-3.5" />
-                <span>{flagged.has(currentQuestion.id) ? "Flagged" : "Flag"}</span>
-              </Button>
+                <MathMarkdown content={currentQuestion.question_text} />
+              </div>
+
+              {/* Optional Question Image */}
+              <ClickableQuestionImage
+                imageUrl={currentQuestion.image_url}
+                onImageClick={() => setZoomedImageUrl(currentQuestion.image_url)}
+                className="max-h-64 mb-6 rounded-2xl border border-border"
+              />
+
+              {/* High-Contrast Responsive Answer Options */}
+              <div className="space-y-3" role="radiogroup" aria-label="Answer choices">
+                {options.map((option) => {
+                  const isSelected = answers[currentQuestion.id] === option.key;
+
+                  let choiceStyle = "";
+                  let badgeStyle = "";
+
+                  if (highContrast) {
+                    if (isSelected) {
+                      choiceStyle =
+                        "border-2 border-primary bg-primary/15 text-foreground ring-2 ring-primary/40";
+                      badgeStyle = "bg-primary text-primary-foreground font-extrabold";
+                    } else {
+                      choiceStyle =
+                        "border-2 border-foreground/80 bg-card text-foreground hover:bg-secondary";
+                      badgeStyle =
+                        "border-2 border-foreground/80 bg-secondary text-foreground font-bold";
+                    }
+                  } else {
+                    if (isSelected) {
+                      choiceStyle =
+                        "border-2 border-primary bg-primary/10 text-foreground";
+                      badgeStyle = "bg-primary text-primary-foreground font-extrabold";
+                    } else {
+                      choiceStyle =
+                        "border border-border bg-card hover:border-foreground/30 hover:bg-secondary/40 text-foreground";
+                      badgeStyle = "bg-secondary text-muted-foreground font-bold";
+                    }
+                  }
+
+                  return (
+                    <button
+                      key={option.key}
+                      type="button"
+                      role="radio"
+                      aria-checked={isSelected}
+                      onClick={() => handleSelectAnswer(currentQuestion.id, option.key)}
+                      className={`w-full min-h-[56px] text-left p-4 rounded-2xl transition-all flex items-start gap-3.5 active:scale-[0.99] select-none cursor-pointer ${choiceStyle}`}
+                    >
+                      <span
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-mono shrink-0 transition-colors ${badgeStyle}`}
+                      >
+                        {isSelected ? <Check className="w-4 h-4 stroke-[3]" /> : option.key}
+                      </span>
+                      <div
+                        className={`leading-relaxed pt-0.5 flex-1 min-w-0 ${
+                          highContrast ? "text-base font-semibold" : "text-sm sm:text-[15px] font-medium"
+                        }`}
+                      >
+                        <MathMarkdown content={option.text} />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
-          {/* Question Prompt */}
-          <div
-            className={`font-display leading-relaxed mb-6 ${
-              highContrast
-                ? "text-lg sm:text-xl font-bold text-neutral-950 dark:text-white"
-                : "text-base sm:text-lg font-semibold text-neutral-950 dark:text-neutral-100"
-            }`}
-          >
-            <MathMarkdown content={currentQuestion.question_text} />
-          </div>
-
-          {/* Optional Question Image */}
-          <ClickableQuestionImage
-            imageUrl={currentQuestion.image_url}
-            onImageClick={() => setZoomedImageUrl(currentQuestion.image_url)}
-            className="max-h-60 mb-6 rounded-2xl border border-neutral-200 dark:border-neutral-800"
-          />
-
-          {/* High-Contrast Responsive Choices */}
-          <div className="space-y-3">
-            {options.map((option) => {
-              const isSelected = answers[currentQuestion.id] === option.key;
-
-              // High-Contrast vs Standard styling
-              let choiceStyle = "";
-              let badgeStyle = "";
-
-              if (highContrast) {
-                if (isSelected) {
-                  choiceStyle =
-                    "border-3 border-amber-600 bg-amber-100/90 dark:bg-amber-950/60 text-neutral-950 dark:text-amber-100 shadow-md ring-2 ring-amber-500";
-                  badgeStyle = "bg-amber-600 text-white font-extrabold";
-                } else {
-                  choiceStyle =
-                    "border-2 border-neutral-800 dark:border-neutral-300 bg-white dark:bg-neutral-900 text-neutral-950 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 shadow-xs";
-                  badgeStyle =
-                    "border-2 border-neutral-800 dark:border-neutral-300 bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 font-bold";
-                }
-              } else {
-                if (isSelected) {
-                  choiceStyle =
-                    "border-2 border-amber-500 bg-amber-50/80 dark:bg-amber-950/30 text-neutral-950 dark:text-white shadow-xs";
-                  badgeStyle = "bg-amber-500 text-neutral-950 font-bold";
-                } else {
-                  choiceStyle =
-                    "border border-neutral-200/90 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-neutral-300 text-neutral-800 dark:text-neutral-200";
-                  badgeStyle = "bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-semibold";
-                }
-              }
-
-              return (
-                <button
-                  key={option.key}
-                  type="button"
-                  onClick={() => handleSelectAnswer(currentQuestion.id, option.key)}
-                  className={`w-full min-h-[56px] text-left p-4 rounded-2xl transition-all flex items-start gap-3.5 active:scale-[0.98] select-none ${choiceStyle}`}
-                >
-                  <span
-                    className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs shrink-0 transition-colors ${badgeStyle}`}
-                  >
-                    {isSelected ? <Check className="w-4 h-4 stroke-[3]" /> : option.key}
-                  </span>
-                  <div
-                    className={`leading-normal pt-1 flex-1 ${
-                      highContrast ? "text-base font-semibold" : "text-sm font-medium"
-                    }`}
-                  >
-                    <MathMarkdown content={option.text} />
+          {/* RIGHT 4-COL: PERSISTENT DESKTOP QUESTION NAVIGATOR & EXAM SUMMARY */}
+          <aside className="hidden lg:block lg:col-span-4 sticky top-20">
+            <div className="bg-card border border-border rounded-3xl p-5 space-y-5">
+              <div className="pb-3.5 border-b border-border/80">
+                <h2 className="font-display font-bold text-base text-foreground">
+                  Question Navigator
+                </h2>
+                <div className="grid grid-cols-3 gap-2 mt-3">
+                  <div className="rounded-xl bg-secondary/70 border border-border/70 px-2.5 py-2 text-center">
+                    <p className="font-mono tabular-nums text-base font-extrabold text-foreground">
+                      {answeredCount}
+                    </p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Answered
+                    </p>
                   </div>
-                </button>
-              );
-            })}
-          </div>
+                  <div className="rounded-xl bg-secondary/70 border border-border/70 px-2.5 py-2 text-center">
+                    <p className="font-mono tabular-nums text-base font-extrabold text-foreground">
+                      {unansweredCount}
+                    </p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Left
+                    </p>
+                  </div>
+                  <div className="rounded-xl bg-secondary/70 border border-border/70 px-2.5 py-2 text-center">
+                    <p className="font-mono tabular-nums text-base font-extrabold text-primary">
+                      {flagged.size}
+                    </p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Flagged
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Numbered Question Grid */}
+              <div className="grid grid-cols-5 gap-2 max-h-[38vh] overflow-y-auto pr-1">
+                {questions.map((q, idx) => {
+                  const isAnswered = !!answers[q.id];
+                  const isFlagged = flagged.has(q.id);
+                  const isCurrent = idx === currentIndex;
+
+                  let badgeStyle =
+                    "bg-background border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground";
+                  if (isCurrent) {
+                    badgeStyle =
+                      "ring-2 ring-primary bg-primary/15 border-primary text-foreground font-extrabold";
+                  } else if (isFlagged) {
+                    badgeStyle =
+                      "bg-primary text-primary-foreground border-primary font-extrabold";
+                  } else if (isAnswered) {
+                    badgeStyle =
+                      "bg-foreground text-background border-foreground font-bold";
+                  }
+
+                  return (
+                    <button
+                      key={q.id}
+                      type="button"
+                      onClick={() => handleNavigateIndex(idx)}
+                      className={`min-h-[40px] h-10 rounded-xl border text-xs font-mono tabular-nums flex items-center justify-center transition active:scale-95 cursor-pointer ${badgeStyle}`}
+                      aria-label={`Question ${idx + 1}${isAnswered ? ", answered" : ""}${isFlagged ? ", flagged" : ""}`}
+                    >
+                      {idx + 1}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Explicit Legend (Never Hue-Only) */}
+              <div className="grid grid-cols-2 gap-2 pt-3 border-t border-border/80 text-[11px] text-muted-foreground font-medium">
+                <div className="flex items-center gap-2">
+                  <span className="w-3.5 h-3.5 rounded border-2 border-primary bg-primary/15 shrink-0" />
+                  <span>Current</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3.5 h-3.5 rounded bg-foreground shrink-0" />
+                  <span>Answered</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3.5 h-3.5 rounded bg-primary shrink-0" />
+                  <span>Flagged</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3.5 h-3.5 rounded border border-border bg-background shrink-0" />
+                  <span>Unanswered</span>
+                </div>
+              </div>
+
+              {/* Direct Submit CTA */}
+              <Button
+                onClick={() => setShowSubmitConfirm(true)}
+                disabled={isSubmitting}
+                className="w-full h-11 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm active:scale-[0.98] cursor-pointer"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    <span>Submitting…</span>
+                  </>
+                ) : (
+                  <span>Submit Exam</span>
+                )}
+              </Button>
+            </div>
+          </aside>
         </div>
       </main>
 
-      {/* ==================== 4. FIXED BOTTOM CONTROL BAR ==================== */}
-      <footer className="fixed bottom-0 inset-x-0 z-30 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border-t border-neutral-200 dark:border-neutral-800 px-4 sm:px-6 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
-        <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
+      {/* ==================== 4. FIXED BOTTOM THUMB-ZONE CONTROL BAR ==================== */}
+      <footer
+        className="fixed bottom-0 inset-x-0 z-30 bg-background/95 backdrop-blur-xl border-t border-border px-4 sm:px-6 pt-2.5"
+        style={{ paddingBottom: "max(env(safe-area-inset-bottom), 10px)" }}
+      >
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-2.5">
           {/* Previous Button (strictly min-h-[48px]) */}
           <Button
             variant="outline"
             onClick={() => handleNavigateIndex(currentIndex - 1)}
             disabled={currentIndex === 0}
-            className="rounded-2xl border-neutral-300 dark:border-neutral-700 font-bold text-xs sm:text-sm min-h-[48px] h-12 px-5 active:scale-95 disabled:opacity-40"
+            className="rounded-2xl border-border font-bold text-xs sm:text-sm min-h-[48px] h-12 px-4 sm:px-5 active:scale-95 disabled:opacity-40 whitespace-nowrap"
           >
-            <ChevronLeft className="w-4 h-4 mr-1" />
+            <ChevronLeft className="w-4 h-4 mr-1 shrink-0" />
             <span>Prev</span>
           </Button>
 
           <div className="text-center hidden sm:block">
-            <span className="text-xs font-bold text-neutral-600 dark:text-neutral-400">
+            <span className="text-xs font-mono tabular-nums font-bold text-muted-foreground">
               {answeredCount} of {questions.length} answered
             </span>
           </div>
@@ -876,10 +994,10 @@ export const CBTSimulation = () => {
             {currentIndex < questions.length - 1 ? (
               <Button
                 onClick={() => handleNavigateIndex(currentIndex + 1)}
-                className="bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 text-white dark:text-neutral-950 font-bold text-xs sm:text-sm min-h-[48px] h-12 px-5 rounded-2xl flex items-center gap-1.5 active:scale-95 shadow-xs"
+                className="bg-foreground hover:bg-foreground/90 text-background font-bold text-xs sm:text-sm min-h-[48px] h-12 px-5 rounded-2xl flex items-center gap-1.5 active:scale-95 whitespace-nowrap"
               >
                 <span>Next</span>
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4 shrink-0" />
               </Button>
             ) : null}
 
@@ -887,7 +1005,7 @@ export const CBTSimulation = () => {
             <Button
               onClick={() => setShowSubmitConfirm(true)}
               disabled={isSubmitting}
-              className="bg-amber-500 hover:bg-amber-600 text-neutral-950 font-bold text-xs sm:text-sm min-h-[48px] h-12 px-6 rounded-2xl shadow-xs active:scale-95"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs sm:text-sm min-h-[48px] h-12 px-5 sm:px-6 rounded-2xl active:scale-95 whitespace-nowrap"
             >
               {isSubmitting ? (
                 <>
@@ -902,32 +1020,35 @@ export const CBTSimulation = () => {
         </div>
       </footer>
 
-      {/* ==================== 5. QUESTION GRID OVERVIEW DRAWER ==================== */}
+      {/* ==================== 5. QUESTION GRID OVERVIEW DRAWER (MOBILE & TABLET) ==================== */}
       <Sheet open={showGridDrawer} onOpenChange={setShowGridDrawer}>
-        <SheetContent side="bottom" className="max-h-[80vh] h-auto rounded-t-3xl bg-white dark:bg-neutral-900 p-5 sm:p-7">
-          <SheetHeader className="text-left pb-3 border-b border-neutral-100 dark:border-neutral-800">
-            <SheetTitle className="font-display font-bold text-lg text-neutral-950 dark:text-white">
+        <SheetContent side="bottom" className="max-h-[82vh] h-auto rounded-t-3xl bg-card border-t border-border p-5 sm:p-7">
+          <SheetHeader className="text-left pb-3 border-b border-border/80">
+            <SheetTitle className="font-display font-bold text-lg text-foreground">
               Question Navigator
             </SheetTitle>
-            <SheetDescription className="text-xs text-neutral-500 dark:text-neutral-400">
+            <SheetDescription className="font-mono tabular-nums text-xs text-muted-foreground">
               {answeredCount} answered · {unansweredCount} remaining · {flagged.size} flagged
             </SheetDescription>
           </SheetHeader>
 
-          <div className="py-4">
+          <div className="py-4 space-y-4">
             <div className="grid grid-cols-5 sm:grid-cols-10 gap-2.5 max-h-[45vh] overflow-y-auto p-1">
               {questions.map((q, idx) => {
                 const isAnswered = !!answers[q.id];
                 const isFlagged = flagged.has(q.id);
                 const isCurrent = idx === currentIndex;
 
-                let badgeStyle = "bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300";
+                let badgeStyle = "bg-background border-border text-muted-foreground";
                 if (isCurrent) {
-                  badgeStyle = "ring-2 ring-amber-500 bg-amber-50 dark:bg-amber-950/40 border-amber-500 text-neutral-950 dark:text-white font-bold";
+                  badgeStyle =
+                    "ring-2 ring-primary bg-primary/15 border-primary text-foreground font-extrabold";
                 } else if (isFlagged) {
-                  badgeStyle = "bg-amber-500 text-neutral-950 border-amber-500 font-bold shadow-xs";
+                  badgeStyle =
+                    "bg-primary text-primary-foreground border-primary font-extrabold";
                 } else if (isAnswered) {
-                  badgeStyle = "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-950 border-neutral-900 dark:border-neutral-100 font-semibold";
+                  badgeStyle =
+                    "bg-foreground text-background border-foreground font-bold";
                 }
 
                 return (
@@ -938,12 +1059,27 @@ export const CBTSimulation = () => {
                       handleNavigateIndex(idx);
                       setShowGridDrawer(false);
                     }}
-                    className={`min-h-[44px] h-11 rounded-2xl border text-xs font-semibold flex items-center justify-center transition active:scale-90 ${badgeStyle}`}
+                    className={`min-h-[44px] h-11 rounded-2xl border text-xs font-mono tabular-nums flex items-center justify-center transition active:scale-90 ${badgeStyle}`}
                   >
                     {idx + 1}
                   </button>
                 );
               })}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-2 border-t border-border/80 text-[11px] text-muted-foreground font-medium">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded border-2 border-primary bg-primary/15" /> Current
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded bg-foreground" /> Answered
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded bg-primary" /> Flagged
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded border border-border bg-background" /> Unanswered
+              </span>
             </div>
           </div>
         </SheetContent>
@@ -951,35 +1087,35 @@ export const CBTSimulation = () => {
 
       {/* ==================== 6. SUBMIT CONFIRMATION DIALOG ==================== */}
       <AlertDialog open={showSubmitConfirm} onOpenChange={setShowSubmitConfirm}>
-        <AlertDialogContent className="rounded-3xl max-w-md p-6">
+        <AlertDialogContent className="rounded-3xl max-w-md p-6 bg-card border-border">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-display font-bold text-lg text-neutral-950 dark:text-white">
+            <AlertDialogTitle className="font-display font-bold text-lg text-foreground">
               Ready to submit your CBT examination?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 space-y-2 mt-2">
+            <AlertDialogDescription className="text-xs sm:text-sm text-muted-foreground space-y-2 mt-2">
               <span className="block">
-                You have answered <strong className="text-neutral-950 dark:text-white font-bold">{answeredCount}</strong> of{" "}
-                <strong className="text-neutral-950 dark:text-white font-bold">{questions.length}</strong> questions.
+                You have answered <strong className="font-mono tabular-nums text-foreground font-bold">{answeredCount}</strong> of{" "}
+                <strong className="font-mono tabular-nums text-foreground font-bold">{questions.length}</strong> questions.
               </span>
               {unansweredCount > 0 && (
                 <span className="block text-rose-600 dark:text-rose-400 font-semibold">
-                  ⚠️ You still have {unansweredCount} unanswered question{unansweredCount === 1 ? "" : "s"}.
+                  You still have {unansweredCount} unanswered question{unansweredCount === 1 ? "" : "s"}.
                 </span>
               )}
               {!isOnline && (
-                <span className="block text-amber-800 dark:text-amber-400 font-medium text-xs bg-amber-50 dark:bg-amber-950/40 p-2.5 rounded-xl border border-amber-200 dark:border-amber-900">
-                  ⚡ Offline Mode Active: Your answers will be graded instantly and preserved locally on this device, then synced automatically once connection is restored.
+                <span className="block text-amber-800 dark:text-amber-300 font-medium text-xs bg-primary/10 p-2.5 rounded-xl border border-primary/30">
+                  Offline Mode Active: Your answers will be graded instantly and preserved locally on this device, then synced automatically once connection is restored.
                 </span>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-5 gap-2.5">
-            <AlertDialogCancel className="rounded-2xl border-neutral-300 dark:border-neutral-700 min-h-[48px] font-semibold active:scale-95">
+            <AlertDialogCancel className="rounded-2xl border-border min-h-[48px] font-semibold active:scale-95">
               Continue Practising
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleSubmitExam}
-              className="bg-amber-500 hover:bg-amber-600 text-neutral-950 font-bold rounded-2xl min-h-[48px] px-5 active:scale-95 shadow-xs"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-2xl min-h-[48px] px-5 active:scale-95"
             >
               Yes, Submit Exam
             </AlertDialogAction>

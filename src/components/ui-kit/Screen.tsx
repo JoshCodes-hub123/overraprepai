@@ -9,20 +9,22 @@ interface ScreenProps {
 }
 
 /**
- * The single mobile screen container. Safe areas, one max width, one rhythm.
- * No decoration lives here — screens stay calm by default.
+ * Unified responsive screen container:
+ * - Mobile (<md): clean 16px gutters + safe bottom dock clearance
+ * - Tablet (md..lg): 24px gutters up to max-w-4xl
+ * - Desktop (lg+): full balanced workspace width up to max-w-7xl
  */
 export function Screen({ children, className, bleed }: ScreenProps) {
   return (
     <div
-      className="min-h-screen bg-brand-surface text-brand-ink"
+      className="min-h-screen bg-background text-foreground"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <div
         className={cn(
-          "mx-auto w-full max-w-2xl lg:max-w-5xl pb-28 md:pb-14",
-          bleed ? "px-0" : "px-5",
-          className,
+          "mx-auto w-full max-w-2xl md:max-w-4xl lg:max-w-7xl pb-24 md:pb-12",
+          bleed ? "px-0" : "px-4 sm:px-6 lg:px-8",
+          className
         )}
       >
         {children}

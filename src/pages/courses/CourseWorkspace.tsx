@@ -429,14 +429,14 @@ const CourseWorkspace = () => {
                 </div>
 
                 {/* Guided 3-Step Learning Path Banner */}
-                <div className="rounded-xl bg-[#FAF8F5] border border-[#E6E0D4] p-3 sm:p-3.5">
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#9A7B1C]">
+                <div className="rounded-xl bg-background border border-border p-3 sm:p-3.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
                       Guided 3-Step Learning Path
                     </span>
                     {weakTopic && (
-                      <span className="text-[11px] font-medium text-[#71717A] truncate">
-                        Focus area: <strong className="text-[#18181B]">{weakTopic}</strong>
+                      <span className="text-[11px] font-medium text-muted-foreground truncate">
+                        Focus area: <strong className="text-foreground">{weakTopic}</strong>
                       </span>
                     )}
                   </div>
@@ -445,75 +445,75 @@ const CourseWorkspace = () => {
                     <button
                       type="button"
                       onClick={() => handleTabChange("materials")}
-                      className={`text-left p-2.5 rounded-lg border transition-all cursor-pointer ${
+                      className={`text-left p-2.5 sm:p-3 rounded-lg border transition-all cursor-pointer min-h-[56px] ${
                         activeTab === "materials"
-                          ? "bg-[#18181B] text-[#FAF8F5] border-[#18181B] shadow-2xs"
-                          : "bg-white text-[#18181B] border-[#E6E0D4] hover:border-[#D4AF37]"
+                          ? "bg-foreground text-background border-foreground"
+                          : "bg-card text-foreground border-border hover:border-primary/60"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-1">
-                        <span className="font-mono tabular-nums text-[10px] font-bold uppercase tracking-wider text-[#D4AF37]">
+                        <span className="font-mono tabular-nums text-[10px] font-bold uppercase tracking-wider text-primary">
                           Step 1
                         </span>
-                        <FileText className="w-3.5 h-3.5 text-[#D4AF37]" />
+                        <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
                       </div>
                       <p className="text-xs font-bold mt-0.5 truncate">Read Notes</p>
                       <p
                         className={`text-[10px] font-mono tabular-nums truncate ${
-                          activeTab === "materials" ? "text-[#A1A1AA]" : "text-[#71717A]"
+                          activeTab === "materials" ? "opacity-75" : "text-muted-foreground"
                         }`}
                       >
-                        {totalNotesCount} summaries &amp; formulas
+                        {totalNotesCount} guides
                       </p>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleTabChange("topics")}
-                      className={`text-left p-2.5 rounded-lg border transition-all cursor-pointer ${
+                      className={`text-left p-2.5 sm:p-3 rounded-lg border transition-all cursor-pointer min-h-[56px] ${
                         activeTab === "topics"
-                          ? "bg-[#18181B] text-[#FAF8F5] border-[#18181B] shadow-2xs"
-                          : "bg-white text-[#18181B] border-[#E6E0D4] hover:border-[#D4AF37]"
+                          ? "bg-foreground text-background border-foreground"
+                          : "bg-card text-foreground border-border hover:border-primary/60"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-1">
-                        <span className="font-mono tabular-nums text-[10px] font-bold uppercase tracking-wider text-[#D4AF37]">
+                        <span className="font-mono tabular-nums text-[10px] font-bold uppercase tracking-wider text-primary">
                           Step 2
                         </span>
-                        <ListChecks className="w-3.5 h-3.5 text-[#D4AF37]" />
+                        <ListChecks className="w-3.5 h-3.5 text-primary shrink-0" />
                       </div>
                       <p className="text-xs font-bold mt-0.5 truncate">Topic Drills</p>
                       <p
                         className={`text-[10px] font-mono tabular-nums truncate ${
-                          activeTab === "topics" ? "text-[#A1A1AA]" : "text-[#71717A]"
+                          activeTab === "topics" ? "opacity-75" : "text-muted-foreground"
                         }`}
                       >
-                        {effectiveTopicCount} syllabus modules
+                        {effectiveTopicCount} modules
                       </p>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleTabChange("quizzes")}
-                      className={`text-left p-2.5 rounded-lg border transition-all cursor-pointer ${
+                      className={`text-left p-2.5 sm:p-3 rounded-lg border transition-all cursor-pointer min-h-[56px] ${
                         activeTab === "quizzes"
-                          ? "bg-[#18181B] text-[#FAF8F5] border-[#18181B] shadow-2xs"
-                          : "bg-white text-[#18181B] border-[#E6E0D4] hover:border-[#D4AF37]"
+                          ? "bg-foreground text-background border-foreground"
+                          : "bg-card text-foreground border-border hover:border-primary/60"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-1">
-                        <span className="font-mono tabular-nums text-[10px] font-bold uppercase tracking-wider text-[#D4AF37]">
+                        <span className="font-mono tabular-nums text-[10px] font-bold uppercase tracking-wider text-primary">
                           Step 3
                         </span>
-                        <ClipboardList className="w-3.5 h-3.5 text-[#D4AF37]" />
+                        <ClipboardList className="w-3.5 h-3.5 text-primary shrink-0" />
                       </div>
                       <p className="text-xs font-bold mt-0.5 truncate">CBT Exam</p>
                       <p
                         className={`text-[10px] font-mono tabular-nums truncate ${
-                          activeTab === "quizzes" ? "text-[#A1A1AA]" : "text-[#71717A]"
+                          activeTab === "quizzes" ? "opacity-75" : "text-muted-foreground"
                         }`}
                       >
-                        {effectiveQuizCount} timed simulations
+                        {effectiveQuizCount} exams
                       </p>
                     </button>
                   </div>
@@ -526,24 +526,35 @@ const CourseWorkspace = () => {
                 onValueChange={(v) => handleTabChange(v as "materials" | "topics" | "quizzes")}
                 className="w-full"
               >
-                <TabsList className="w-full grid grid-cols-3 bg-[#EFECE6] p-1 rounded-xl h-11 border border-[#E6E0D4]">
+                <TabsList className="w-full grid grid-cols-3 bg-secondary/80 p-1 rounded-xl h-12 border border-border">
                   <TabsTrigger
                     value="materials"
-                    className="rounded-lg font-bold text-xs data-[state=active]:bg-white data-[state=active]:text-[#18181B] data-[state=active]:shadow-2xs cursor-pointer"
+                    className="rounded-lg font-bold text-xs min-h-[40px] whitespace-nowrap truncate data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-2xs cursor-pointer"
                   >
-                    1. Notes ({totalNotesCount})
+                    <span>1. Notes</span>
+                    <span className="ml-1 font-mono tabular-nums text-[11px] opacity-75">
+                      ({totalNotesCount})
+                    </span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="topics"
-                    className="rounded-lg font-bold text-xs data-[state=active]:bg-white data-[state=active]:text-[#18181B] data-[state=active]:shadow-2xs cursor-pointer"
+                    className="rounded-lg font-bold text-xs min-h-[40px] whitespace-nowrap truncate data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-2xs cursor-pointer"
                   >
-                    2. Topic Drills ({effectiveTopicCount})
+                    <span className="sm:hidden">2. Drills</span>
+                    <span className="hidden sm:inline">2. Topic Drills</span>
+                    <span className="ml-1 font-mono tabular-nums text-[11px] opacity-75">
+                      ({effectiveTopicCount})
+                    </span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="quizzes"
-                    className="rounded-lg font-bold text-xs data-[state=active]:bg-white data-[state=active]:text-[#18181B] data-[state=active]:shadow-2xs cursor-pointer"
+                    className="rounded-lg font-bold text-xs min-h-[40px] whitespace-nowrap truncate data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-2xs cursor-pointer"
                   >
-                    3. CBT Exam ({effectiveQuizCount})
+                    <span className="sm:hidden">3. CBT</span>
+                    <span className="hidden sm:inline">3. CBT Exam</span>
+                    <span className="ml-1 font-mono tabular-nums text-[11px] opacity-75">
+                      ({effectiveQuizCount})
+                    </span>
                   </TabsTrigger>
                 </TabsList>
 
@@ -808,10 +819,10 @@ const CourseWorkspace = () => {
                                 return (
                                   <div
                                     key={m.id}
-                                    className="overflow-hidden rounded-2xl border border-[#E6E0D4] bg-white hover:border-[#D4AF37] transition-all shadow-2xs flex flex-col sm:flex-row group"
+                                    className="overflow-hidden rounded-2xl border border-border bg-card hover:border-primary/60 transition-all flex flex-col sm:flex-row group"
                                   >
                                     <div
-                                      className="relative sm:w-44 h-32 sm:h-auto shrink-0 overflow-hidden bg-[#18181B] cursor-pointer"
+                                      className="relative sm:w-44 h-36 sm:h-auto shrink-0 overflow-hidden bg-[#18181B] cursor-pointer"
                                       onClick={() =>
                                         setSelectedNote({
                                           id: m.id,
@@ -836,17 +847,17 @@ const CourseWorkspace = () => {
                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-75"
                                       />
                                       <div className="absolute inset-0 bg-gradient-to-t from-[#18181B]/90 via-[#18181B]/30 to-transparent" />
-                                      <div className="absolute top-2.5 left-2.5">
-                                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#D4AF37] text-[#18181B] flex items-center gap-1">
+                                      <div className="absolute bottom-2.5 left-2.5">
+                                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-primary text-primary-foreground flex items-center gap-1">
                                           <FileText className="w-2.5 h-2.5" />
                                           PDF Document
                                         </span>
                                       </div>
                                     </div>
 
-                                    <div className="p-4 flex-1 flex flex-col justify-between gap-3">
+                                    <div className="p-4 flex-1 min-w-0 flex flex-col justify-between gap-3">
                                       <div>
-                                        <div className="flex flex-wrap items-center gap-1.5 text-xs text-[#71717A] mb-1">
+                                        <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground mb-1">
                                           {sizeStr && (
                                             <span className="font-mono tabular-nums">{sizeStr}</span>
                                           )}
@@ -859,25 +870,25 @@ const CourseWorkspace = () => {
                                           {m.owner_name && (
                                             <>
                                               <span>·</span>
-                                              <span className="text-[#9A7B1C] font-semibold">
+                                              <span className="text-primary font-semibold">
                                                 {m.owner_name}
                                               </span>
                                             </>
                                           )}
                                         </div>
 
-                                        <h5 className="font-bold text-sm sm:text-base text-[#18181B] leading-snug">
+                                        <h5 className="font-display font-bold text-sm sm:text-base text-foreground leading-snug">
                                           {m.title}
                                         </h5>
 
                                         {m.description && (
-                                          <p className="text-xs text-[#52525B] mt-1 line-clamp-2">
+                                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                                             {m.description}
                                           </p>
                                         )}
                                       </div>
 
-                                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#EFECE6]">
+                                      <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 pt-2.5 border-t border-border/80">
                                         <Button
                                           size="sm"
                                           onClick={() =>
@@ -897,9 +908,9 @@ const CourseWorkspace = () => {
                                               index: mIdx,
                                             })
                                           }
-                                          className="h-8 px-3.5 text-xs font-bold rounded-xl bg-[#D4AF37] hover:bg-[#C59F2D] text-[#18181B] flex items-center gap-1.5 cursor-pointer"
+                                          className="col-span-2 sm:col-span-1 min-h-[40px] h-10 px-4 text-xs font-bold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
                                         >
-                                          <Eye className="w-3.5 h-3.5" />
+                                          <Eye className="w-3.5 h-3.5 shrink-0" />
                                           <span>Read Document</span>
                                         </Button>
 
@@ -907,9 +918,9 @@ const CourseWorkspace = () => {
                                           size="sm"
                                           variant="outline"
                                           onClick={() => handleExplain(m.title, m.description)}
-                                          className="h-8 px-2.5 text-xs font-bold rounded-xl border-[#D4AF37]/50 text-[#9A7B1C] bg-[#FAF8F5] hover:bg-[#D4AF37]/15 flex items-center gap-1 cursor-pointer"
+                                          className="min-h-[40px] h-10 px-3 text-xs font-bold rounded-xl border-primary/40 text-primary bg-background hover:bg-primary/10 flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
                                         >
-                                          <Sparkles className="w-3.5 h-3.5 text-[#B48A1E]" />
+                                          <Sparkles className="w-3.5 h-3.5 shrink-0" />
                                           <span>AI Explain</span>
                                         </Button>
 
@@ -927,10 +938,10 @@ const CourseWorkspace = () => {
                                               description: m.description,
                                             })
                                           }
-                                          className="h-8 px-3 text-xs font-bold rounded-xl border-[#18181B]/20 text-[#18181B] bg-white hover:bg-[#FAF8F5] flex items-center gap-1.5 cursor-pointer ml-auto shadow-2xs"
+                                          className="min-h-[40px] h-10 px-3 text-xs font-bold rounded-xl border-border text-foreground bg-card hover:bg-secondary flex items-center justify-center gap-1.5 cursor-pointer sm:ml-auto whitespace-nowrap"
                                           title="Download Document to Device"
                                         >
-                                          <Download className="w-3.5 h-3.5 text-[#B48A1E]" />
+                                          <Download className="w-3.5 h-3.5 text-primary shrink-0" />
                                           <span>Download</span>
                                         </Button>
                                       </div>

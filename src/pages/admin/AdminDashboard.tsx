@@ -485,12 +485,12 @@ const AdminDashboard = () => {
               </div>
 
               {/* Right: Actions, Campus Switcher, Triage Badge & Profile */}
-              <div className="flex items-center gap-2 sm:gap-2.5">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 {/* Mobile Search Trigger */}
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="sm:hidden h-8 w-8 text-muted-foreground hover:text-foreground"
+                  className="sm:hidden h-9 w-9 text-muted-foreground hover:text-foreground"
                   onClick={() => setCommandPaletteOpen(true)}
                   title="Search & Command Palette (Cmd+K)"
                 >
@@ -502,7 +502,7 @@ const AdminDashboard = () => {
                   current={adminEnv.current}
                   options={adminEnv.options}
                   onSelect={adminEnv.select}
-                  className="h-8 text-xs px-2.5 rounded-lg border-border/70 bg-card hover:bg-muted/50 text-foreground"
+                  className="h-9 text-xs px-2 sm:px-2.5 rounded-lg border-border/70 bg-card hover:bg-muted/50 text-foreground"
                 />
 
                 {/* Triage / Action Center Trigger Button */}
@@ -510,9 +510,9 @@ const AdminDashboard = () => {
                   variant={totalPendingActionItems > 0 ? "outline" : "ghost"}
                   size="sm"
                   onClick={() => setTriageDrawerOpen(true)}
-                  className={`h-8 text-xs font-medium gap-1.5 rounded-lg border ${
+                  className={`h-9 px-2.5 text-xs font-medium gap-1.5 rounded-lg border ${
                     totalPendingActionItems > 0
-                      ? "border-amber-400/50 bg-amber-500/10 text-amber-900 dark:text-amber-300 hover:bg-amber-500/20"
+                      ? "border-primary/50 bg-primary/10 text-foreground hover:bg-primary/20"
                       : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   }`}
                   title="Open Action Queue"
@@ -520,23 +520,24 @@ const AdminDashboard = () => {
                   <Bell className="w-3.5 h-3.5" />
                   <span className="hidden md:inline">Triage</span>
                   {totalPendingActionItems > 0 && (
-                    <span className="font-mono text-[11px] font-bold px-1.5 py-0.2 rounded-full bg-amber-500 text-white leading-tight">
+                    <span className="font-mono tabular-nums text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground leading-none">
                       {totalPendingActionItems}
                     </span>
                   )}
                 </Button>
 
-                {/* Primary Upload Materials Button (Always Visible) */}
+                {/* Primary Upload Materials Button (Always Visible, Compact on Mobile) */}
                 <Button
                   size="sm"
                   onClick={() => {
                     setActiveTab("materials");
                     setSearchParams({ tab: "materials" }, { replace: true });
                   }}
-                  className="h-8 px-3 text-xs font-extrabold gap-1.5 rounded-lg bg-[#D4AF37] hover:bg-[#C59F2D] text-[#18181B] shadow-2xs cursor-pointer"
+                  className="h-9 px-2.5 sm:px-3.5 text-xs font-extrabold gap-1.5 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer whitespace-nowrap"
                 >
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>Upload Materials</span>
+                  <Upload className="w-3.5 h-3.5 shrink-0" />
+                  <span className="hidden sm:inline">Upload Materials</span>
+                  <span className="sm:hidden">Upload</span>
                 </Button>
 
                 {/* Quick Actions Dropdown */}
@@ -545,7 +546,7 @@ const AdminDashboard = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-8 text-xs font-semibold gap-1 rounded-lg border-border/80 bg-background hover:bg-muted/50 hidden md:inline-flex"
+                      className="h-9 text-xs font-semibold gap-1 rounded-lg border-border/80 bg-background hover:bg-muted/50 hidden md:inline-flex"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>New</span>
@@ -585,7 +586,7 @@ const AdminDashboard = () => {
                       <SuggestOpportunityDialog
                         trigger={
                           <button className="w-full flex items-center gap-2 px-2 py-1.5 text-xs text-foreground hover:bg-muted rounded-md text-left transition-colors">
-                            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                            <Sparkles className="w-3.5 h-3.5 text-primary" />
                             <span>Post Student Opportunity</span>
                           </button>
                         }
@@ -594,12 +595,12 @@ const AdminDashboard = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                {/* Density Switcher */}
+                {/* Density Switcher (Hidden on tiny phones to prevent header crowding) */}
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={handleDensityToggle}
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  className="hidden sm:inline-flex h-9 w-9 text-muted-foreground hover:text-foreground"
                   title={`Toggle density: currently ${density}`}
                 >
                   {density === "comfortable" ? (
@@ -615,7 +616,7 @@ const AdminDashboard = () => {
                   size="icon"
                   onClick={handleRefresh}
                   disabled={isRefreshing}
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  className="hidden sm:inline-flex h-9 w-9 text-muted-foreground hover:text-foreground"
                   title="Refresh statistics"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
@@ -668,34 +669,34 @@ const AdminDashboard = () => {
         <section className="border-b border-border/70 bg-card/60 backdrop-blur-xs py-4">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-4">
             {/* Prominent Academic Session Material Upload Callout Banner */}
-            <div className="rounded-2xl border-2 border-[#D4AF37] bg-[#18181B] text-[#FAF8F5] p-4 sm:p-5 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="flex items-start sm:items-center gap-3.5">
-                <div className="w-11 h-11 rounded-2xl bg-[#D4AF37] text-[#18181B] flex items-center justify-center shrink-0 font-bold">
+            <div className="rounded-2xl border border-primary/50 bg-[#18181B] text-[#FAF8F5] p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+                <div className="w-11 h-11 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shrink-0 font-bold">
                   <Upload className="w-5 h-5" />
                 </div>
-                <div>
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#D4AF37] font-bold block">
+                <div className="min-w-0">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-primary font-bold block">
                     Academic Session Curriculum Uploader · Step-by-Step Guide
                   </span>
-                  <h2 className="font-display text-base sm:text-lg font-extrabold text-[#FAF8F5]">
+                  <h2 className="font-display text-base sm:text-lg font-extrabold text-[#FAF8F5] leading-snug">
                     Upload Course Handouts, Notes &amp; Past Questions (1st &amp; 2nd Semester)
                   </h2>
                   <p className="text-xs text-[#A1A1AA] mt-0.5">
-                    Simple 3-step process: 1. Choose 1st or 2nd Semester → 2. Add or Pick Course → 3. Upload PDF, Notes, or CBT Questions.
+                    1. Choose 1st or 2nd Semester → 2. Add or Pick Course → 3. Upload PDF, Notes, or CBT Questions.
                   </p>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 shrink-0">
                 <Button
                   size="sm"
                   onClick={() => {
                     setActiveTab("materials");
                     setSearchParams({ tab: "materials", semester: "1st" }, { replace: true });
                   }}
-                  className="h-10 px-4 rounded-xl bg-[#D4AF37] hover:bg-[#C59F2D] text-[#18181B] font-extrabold text-xs cursor-pointer"
+                  className="min-h-[42px] h-10 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-extrabold text-xs cursor-pointer whitespace-nowrap"
                 >
-                  <Upload className="w-3.5 h-3.5 mr-1.5" />
+                  <Upload className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                   <span>Upload 1st Semester</span>
                 </Button>
 
@@ -705,9 +706,9 @@ const AdminDashboard = () => {
                     setActiveTab("materials");
                     setSearchParams({ tab: "materials", semester: "2nd" }, { replace: true });
                   }}
-                  className="h-10 px-4 rounded-xl bg-white hover:bg-[#FAF8F5] text-[#18181B] font-extrabold text-xs cursor-pointer"
+                  className="min-h-[42px] h-10 px-4 rounded-xl bg-[#FAF8F5] hover:bg-white text-[#18181B] font-extrabold text-xs cursor-pointer whitespace-nowrap"
                 >
-                  <Upload className="w-3.5 h-3.5 mr-1.5 text-[#B48A1E]" />
+                  <Upload className="w-3.5 h-3.5 mr-1.5 text-primary shrink-0" />
                   <span>Upload 2nd Semester</span>
                 </Button>
 
@@ -715,9 +716,9 @@ const AdminDashboard = () => {
                   size="sm"
                   variant="outline"
                   onClick={() => navigate("/admin/bulk-upload")}
-                  className="h-10 px-3.5 rounded-xl border-[#3F3F46] bg-[#27272A] hover:bg-[#3F3F46] text-[#FAF8F5] font-bold text-xs cursor-pointer"
+                  className="min-h-[42px] h-10 px-3.5 rounded-xl border-[#3F3F46] bg-[#27272A] hover:bg-[#3F3F46] text-[#FAF8F5] font-bold text-xs cursor-pointer whitespace-nowrap"
                 >
-                  <ExternalLink className="w-3.5 h-3.5 mr-1.5 text-[#D4AF37]" />
+                  <ExternalLink className="w-3.5 h-3.5 mr-1.5 text-primary shrink-0" />
                   <span>Full-Screen Studio</span>
                 </Button>
               </div>

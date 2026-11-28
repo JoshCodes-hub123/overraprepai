@@ -1,220 +1,218 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Phase 6 mobile polish — disable double-tap zoom on tap targets and
-   prevent rubber-band overscroll on long chat / audio scroll areas. */
+/* Mobile & tablet ergonomics — zero horizontal overflow, clean touch response,
+   accessible focus rings, and balanced display headings. */
 @layer base {
-  html { -webkit-text-size-adjust: 100%; touch-action: manipulation; }
-  button, a, [role="button"] { touch-action: manipulation; }
-  body { overscroll-behavior-y: contain; }
-  /* Improve tap-target affordance on tiny phones without restyling */
-  @media (max-width: 480px) {
-    button:not(:disabled), [role="button"] { min-height: 36px; }
+  html {
+    -webkit-text-size-adjust: 100%;
+    touch-action: manipulation;
+    overflow-x: clip;
+  }
+  button, a, [role="button"] {
+    touch-action: manipulation;
+  }
+  body {
+    overscroll-behavior-y: contain;
+    overflow-x: clip;
+  }
+  @media (max-width: 640px) {
+    button:not(:disabled):not([data-compact="true"]),
+    [role="button"]:not([data-compact="true"]) {
+      min-height: 40px;
+    }
   }
 }
 
 @layer base {
   :root,
   [data-theme="light"] {
-    /* Navy + Gold premium system (light mode = clean white surfaces, navy text) */
-    --background: 0 0% 100%;
-    --foreground: 220 45% 12%;
+    /* Refined Ivory, Obsidian & Burnished Gold editorial system (60-30-10) */
+    --background: 36 33% 97%;         /* Warm Academic Ivory #FAF8F5 */
+    --foreground: 240 6% 10%;         /* Deep Obsidian #18181B */
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 45% 12%;
+    --card: 0 0% 100%;                /* Crisp Alabaster #FFFFFF */
+    --card-foreground: 240 6% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 45% 12%;
+    --popover-foreground: 240 6% 10%;
 
-    /* Gold accent — refined, not yellow */
-    --primary: 43 78% 52%;
-    --primary-foreground: 220 45% 12%;
+    /* Burnished Gold primary accent */
+    --primary: 44 67% 47%;            /* #C89D28 */
+    --primary-foreground: 240 6% 10%;
 
-    --secondary: 220 25% 96%;
-    --secondary-foreground: 220 45% 12%;
+    --secondary: 38 25% 94%;          /* Soft Linen #F2EFE9 */
+    --secondary-foreground: 240 6% 10%;
 
-    --muted: 220 20% 95%;
-    --muted-foreground: 220 15% 42%;
+    --muted: 38 22% 93%;
+    --muted-foreground: 240 4% 40%;
 
-    /* Deep navy as accent — matches hero/splash brand */
-    --accent: 220 45% 18%;
-    --accent-foreground: 0 0% 100%;
+    /* Obsidian structural ink accent */
+    --accent: 240 6% 10%;
+    --accent-foreground: 36 33% 97%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 347 82% 41%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 45%;
+    --success: 142 72% 29%;
     --success-foreground: 0 0% 100%;
 
-    --border: 220 20% 90%;
-    --input: 220 20% 90%;
-    --ring: 43 78% 52%;
+    --border: 39 27% 87%;             /* Hairline Warm Stone #E6E0D4 */
+    --input: 39 27% 87%;
+    --ring: 44 67% 47%;
 
     --radius: 0.75rem;
 
-    --gradient-primary: linear-gradient(135deg, hsl(43 82% 58%) 0%, hsl(40 75% 50%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(220 45% 18%) 0%, hsl(220 50% 10%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(45 60% 97%) 60%, hsl(43 55% 94%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 25% 99%) 100%);
-    --gradient-glass: linear-gradient(135deg, hsl(0 0% 100% / 0.9) 0%, hsl(0 0% 100% / 0.5) 100%);
-    --gradient-mesh: radial-gradient(ellipse 80% 80% at 50% -20%, hsl(43 78% 52% / 0.08), transparent),
-                     radial-gradient(ellipse 80% 80% at 80% 50%, hsl(220 45% 18% / 0.06), transparent),
-                     radial-gradient(ellipse 80% 80% at 20% 80%, hsl(43 78% 52% / 0.05), transparent);
+    --gradient-primary: linear-gradient(135deg, hsl(44 74% 52%) 0%, hsl(42 68% 44%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(240 6% 12%) 0%, hsl(240 8% 7%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(36 33% 97%) 0%, hsl(38 30% 95%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(36 33% 98%) 100%);
+    --gradient-glass: linear-gradient(135deg, hsl(36 33% 97% / 0.92) 0%, hsl(0 0% 100% / 0.72) 100%);
+    --gradient-mesh: radial-gradient(ellipse 75% 65% at 50% -15%, hsl(44 67% 47% / 0.08), transparent),
+                     radial-gradient(ellipse 65% 60% at 85% 45%, hsl(240 6% 10% / 0.04), transparent);
 
-    --shadow-sm: 0 1px 2px 0 hsl(220 45% 12% / 0.04);
-    --shadow-md: 0 4px 6px -1px hsl(220 45% 12% / 0.07), 0 2px 4px -2px hsl(220 45% 12% / 0.05);
-    --shadow-lg: 0 10px 15px -3px hsl(220 45% 12% / 0.08), 0 4px 6px -4px hsl(220 45% 12% / 0.05);
-    --shadow-xl: 0 20px 25px -5px hsl(220 45% 12% / 0.1), 0 8px 10px -6px hsl(220 45% 12% / 0.05);
-    --shadow-2xl: 0 25px 50px -12px hsl(220 45% 12% / 0.2);
-    --shadow-glow: 0 0 40px hsl(43 78% 52% / 0.25), 0 0 80px hsl(43 78% 52% / 0.1);
-    --shadow-accent-glow: 0 0 40px hsl(220 45% 18% / 0.18), 0 0 80px hsl(220 45% 18% / 0.08);
-    --shadow-card: 0 4px 20px hsl(220 45% 12% / 0.06), 0 0 0 1px hsl(220 20% 90% / 0.6);
-    --shadow-card-hover: 0 20px 40px hsl(220 45% 12% / 0.1), 0 0 0 1px hsl(43 78% 52% / 0.18);
+    --shadow-sm: 0 1px 2px 0 hsl(240 6% 10% / 0.04);
+    --shadow-md: 0 4px 10px -2px hsl(240 6% 10% / 0.06);
+    --shadow-lg: 0 10px 20px -4px hsl(240 6% 10% / 0.07);
+    --shadow-xl: 0 18px 28px -8px hsl(240 6% 10% / 0.09);
+    --shadow-2xl: 0 24px 48px -12px hsl(240 6% 10% / 0.14);
+    --shadow-glow: 0 0 32px hsl(44 67% 47% / 0.18);
+    --shadow-accent-glow: 0 0 32px hsl(240 6% 10% / 0.12);
+    --shadow-card: 0 1px 3px hsl(240 6% 10% / 0.04);
+    --shadow-card-hover: 0 12px 24px -10px hsl(240 6% 10% / 0.1);
 
-    /* Space Grotesk display headings + DM Sans body (premium, modern) */
-    --font-display: 'Space Grotesk', sans-serif;
-    --font-body: 'DM Sans', sans-serif;
+    /* Strict 2+1 Editorial Typography */
+    --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-body: 'DM Sans', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 
-    --sidebar-background: 220 45% 10%;
-    --sidebar-foreground: 0 0% 96%;
-    --sidebar-primary: 43 78% 52%;
-    --sidebar-primary-foreground: 220 45% 12%;
-    --sidebar-accent: 220 40% 14%;
-    --sidebar-accent-foreground: 0 0% 96%;
-    --sidebar-border: 220 35% 18%;
-    --sidebar-ring: 43 78% 52%;
+    --sidebar-background: 240 6% 10%;
+    --sidebar-foreground: 36 33% 97%;
+    --sidebar-primary: 44 67% 47%;
+    --sidebar-primary-foreground: 240 6% 10%;
+    --sidebar-accent: 240 5% 16%;
+    --sidebar-accent-foreground: 36 33% 97%;
+    --sidebar-border: 240 5% 20%;
+    --sidebar-ring: 44 67% 47%;
   }
 
   .dark,
   [data-theme="dark"] {
-    /* Deep navy dark mode */
-    --background: 220 50% 7%;
-    --foreground: 0 0% 96%;
+    /* Deep Obsidian & Luminous Gold dark mode */
+    --background: 240 12% 5%;         /* #0B0B0E */
+    --foreground: 36 33% 97%;         /* #FAF8F5 */
 
-    --card: 220 45% 10%;
-    --card-foreground: 0 0% 96%;
+    --card: 240 10% 9%;               /* #141418 */
+    --card-foreground: 36 33% 97%;
 
-    --popover: 220 45% 10%;
-    --popover-foreground: 0 0% 96%;
+    --popover: 240 10% 9%;
+    --popover-foreground: 36 33% 97%;
 
-    --primary: 43 82% 58%;
-    --primary-foreground: 220 50% 8%;
+    --primary: 45 75% 56%;            /* #E2B93B */
+    --primary-foreground: 240 12% 5%;
 
-    --secondary: 220 40% 14%;
-    --secondary-foreground: 0 0% 96%;
+    --secondary: 240 9% 13%;
+    --secondary-foreground: 36 33% 97%;
 
-    --muted: 220 35% 16%;
-    --muted-foreground: 220 15% 65%;
+    --muted: 240 9% 14%;
+    --muted-foreground: 240 5% 66%;
 
-    --accent: 43 82% 58%;
-    --accent-foreground: 220 50% 8%;
+    --accent: 45 75% 56%;
+    --accent-foreground: 240 12% 5%;
 
-    --destructive: 0 62% 50%;
+    --destructive: 347 77% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 50%;
+    --success: 142 65% 45%;
     --success-foreground: 0 0% 100%;
 
-    --border: 220 35% 18%;
-    --input: 220 35% 18%;
-    --ring: 43 82% 58%;
+    --border: 240 8% 18%;             /* #2A2A32 */
+    --input: 240 8% 18%;
+    --ring: 45 75% 56%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(43 82% 58%) 0%, hsl(40 75% 50%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(220 45% 18%) 0%, hsl(220 50% 10%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(220 50% 7%) 0%, hsl(220 50% 5%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(220 45% 10%) 0%, hsl(220 45% 12%) 100%);
-    --gradient-glass: linear-gradient(135deg, hsl(220 40% 14% / 0.8) 0%, hsl(220 45% 10% / 0.4) 100%);
-    --gradient-mesh: radial-gradient(ellipse 80% 80% at 50% -20%, hsl(43 82% 58% / 0.15), transparent),
-                     radial-gradient(ellipse 80% 80% at 80% 50%, hsl(220 45% 30% / 0.1), transparent),
-                     radial-gradient(ellipse 80% 80% at 20% 80%, hsl(43 82% 58% / 0.08), transparent);
+    --gradient-primary: linear-gradient(135deg, hsl(45 78% 58%) 0%, hsl(43 72% 48%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(240 10% 14%) 0%, hsl(240 12% 8%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(240 12% 5%) 0%, hsl(240 10% 8%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(240 10% 9%) 0%, hsl(240 10% 11%) 100%);
+    --gradient-glass: linear-gradient(135deg, hsl(240 10% 11% / 0.88) 0%, hsl(240 12% 7% / 0.65) 100%);
+    --gradient-mesh: radial-gradient(ellipse 75% 65% at 50% -15%, hsl(45 75% 56% / 0.12), transparent),
+                     radial-gradient(ellipse 65% 60% at 85% 45%, hsl(240 10% 24% / 0.12), transparent);
 
-    --shadow-card: 0 4px 20px hsl(0 0% 0% / 0.3), 0 0 0 1px hsl(43 82% 58% / 0.1);
-    --shadow-card-hover: 0 20px 40px hsl(0 0% 0% / 0.4), 0 0 0 1px hsl(43 82% 58% / 0.22);
+    --shadow-card: 0 2px 10px hsl(0 0% 0% / 0.35);
+    --shadow-card-hover: 0 14px 28px hsl(0 0% 0% / 0.45);
 
-    --sidebar-background: 220 50% 7%;
-    --sidebar-foreground: 0 0% 96%;
-    --sidebar-primary: 43 82% 58%;
-    --sidebar-primary-foreground: 220 50% 8%;
-    --sidebar-accent: 220 40% 14%;
-    --sidebar-accent-foreground: 0 0% 96%;
-    --sidebar-border: 220 35% 18%;
-    --sidebar-ring: 43 82% 58%;
+    --sidebar-background: 240 12% 5%;
+    --sidebar-foreground: 36 33% 97%;
+    --sidebar-primary: 45 75% 56%;
+    --sidebar-primary-foreground: 240 12% 5%;
+    --sidebar-accent: 240 9% 13%;
+    --sidebar-accent-foreground: 36 33% 97%;
+    --sidebar-border: 240 8% 18%;
+    --sidebar-ring: 45 75% 56%;
   }
 }
 
 /* ==========================================================================
-   OverraPrep AI — Mobile rebrand token layer (White · Premium Gold · Black)
-   Additive only. Existing tokens above are untouched so current screens keep
-   rendering exactly as they do today while screens migrate progressively.
+   Harmonized Brand Token Layer (Ivory · Obsidian · Burnished Gold)
    ========================================================================== */
 @layer base {
   :root,
   [data-theme="light"] {
-    /* Core rebrand surfaces */
-    --brand-surface: 0 0% 100%;
-    --brand-surface-soft: 40 33% 98%;
-    --brand-ink: 0 0% 7%;
-    --brand-ink-soft: 0 0% 38%;
-    --brand-line: 40 20% 90%;
-    --brand-gold: 42 74% 48%;
-    --brand-gold-soft: 44 90% 96%;
-    --brand-gold-line: 42 60% 82%;
-    --brand-on-gold: 0 0% 7%;
+    --brand-surface: 36 33% 97%;
+    --brand-surface-soft: 38 25% 94%;
+    --brand-ink: 240 6% 10%;
+    --brand-ink-soft: 240 4% 40%;
+    --brand-line: 39 27% 87%;
+    --brand-gold: 44 67% 47%;
+    --brand-gold-soft: 44 70% 95%;
+    --brand-gold-line: 43 52% 80%;
+    --brand-on-gold: 240 6% 10%;
 
-    /* Academic environment accent — swapped by [data-env] below.
-       Both worlds stay OverraPrep AI; only the accent + chip differ. */
     --env-accent: var(--brand-gold);
     --env-accent-soft: var(--brand-gold-soft);
     --env-accent-line: var(--brand-gold-line);
     --env-on-accent: var(--brand-on-gold);
 
-    /* Spacing / radius / elevation rhythm for the new primitives */
     --brand-radius-sm: 0.625rem;
     --brand-radius: 1rem;
     --brand-radius-lg: 1.375rem;
     --brand-gutter: 1.25rem;
     --brand-section-gap: 2rem;
-    --brand-elev: 0 1px 2px hsl(0 0% 7% / 0.04);
-    --brand-elev-lifted: 0 12px 30px -18px hsl(0 0% 7% / 0.24);
+    --brand-elev: 0 1px 2px hsl(240 6% 10% / 0.04);
+    --brand-elev-lifted: 0 12px 28px -16px hsl(240 6% 10% / 0.2);
   }
 
   .dark,
   [data-theme="dark"] {
-    /* Rebrand tokens dark mode */
-    --brand-surface: 220 50% 7%;
-    --brand-surface-soft: 220 45% 10%;
-    --brand-ink: 0 0% 96%;
-    --brand-ink-soft: 220 15% 65%;
-    --brand-line: 220 35% 18%;
-    --brand-gold: 43 82% 58%;
-    --brand-gold-soft: 220 40% 16%;
-    --brand-gold-line: 43 70% 30%;
-    --brand-on-gold: 220 50% 8%;
+    --brand-surface: 240 12% 5%;
+    --brand-surface-soft: 240 10% 9%;
+    --brand-ink: 36 33% 97%;
+    --brand-ink-soft: 240 5% 66%;
+    --brand-line: 240 8% 18%;
+    --brand-gold: 45 75% 56%;
+    --brand-gold-soft: 44 30% 14%;
+    --brand-gold-line: 44 50% 30%;
+    --brand-on-gold: 240 12% 5%;
 
-    --brand-elev: 0 1px 3px hsl(0 0% 0% / 0.5);
-    --brand-elev-lifted: 0 12px 30px -10px hsl(0 0% 0% / 0.6);
+    --brand-elev: 0 1px 3px hsl(0 0% 0% / 0.45);
+    --brand-elev-lifted: 0 12px 28px -10px hsl(0 0% 0% / 0.55);
   }
 
-  /* University world — gold. */
   [data-env="university"] {
-    --env-accent: 42 74% 48%;
-    --env-accent-soft: 44 90% 96%;
-    --env-accent-line: 42 60% 82%;
-    --env-on-accent: 0 0% 7%;
+    --env-accent: 44 67% 47%;
+    --env-accent-soft: 44 70% 95%;
+    --env-accent-line: 43 52% 80%;
+    --env-on-accent: 240 6% 10%;
   }
 
-  /* JAMB / UTME world — deep ink with a gold edge, clearly a separate place. */
   [data-env="jamb"] {
-    --env-accent: 0 0% 10%;
-    --env-accent-soft: 40 14% 96%;
-    --env-accent-line: 0 0% 84%;
-    --env-on-accent: 0 0% 100%;
+    --env-accent: 240 6% 10%;
+    --env-accent-soft: 38 25% 94%;
+    --env-accent-line: 39 27% 84%;
+    --env-on-accent: 36 33% 97%;
   }
 }
-
 
 @layer base {
   * {
@@ -229,6 +227,15 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
     @apply tracking-tight font-bold;
+  }
+
+  h1, h2 {
+    text-wrap: balance;
+  }
+
+  .dark body,
+  .dark {
+    letter-spacing: 0.005em;
   }
 }
 
@@ -448,12 +455,12 @@
    Use: <div class="ai-prose"><ReactMarkdown>…</ReactMarkdown></div>
    ============================================================ */
 .ai-prose {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 15px;
   line-height: 1.72;
   letter-spacing: -0.005em;
   color: hsl(var(--foreground));
-  font-feature-settings: "ss01", "cv11", "kern", "liga";
+  font-feature-settings: "kern", "liga";
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   word-break: break-word;
@@ -461,40 +468,40 @@
 .ai-prose > * + * { margin-top: 0.85em; }
 .ai-prose p { margin: 0.5em 0; }
 .ai-prose h1, .ai-prose h2, .ai-prose h3, .ai-prose h4 {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: hsl(var(--accent));
+  color: hsl(var(--foreground));
   margin: 1.1em 0 0.4em;
   line-height: 1.25;
 }
 .ai-prose h1 { font-size: 1.35em; }
 .ai-prose h2 { font-size: 1.18em; }
 .ai-prose h3 { font-size: 1.05em; }
-.ai-prose h4 { font-size: 0.98em; text-transform: uppercase; letter-spacing: 0.04em; color: hsl(var(--muted-foreground)); }
-.ai-prose strong { color: hsl(var(--accent)); font-weight: 600; }
+.ai-prose h4 { font-size: 0.98em; letter-spacing: 0.01em; color: hsl(var(--muted-foreground)); }
+.ai-prose strong { color: hsl(var(--foreground)); font-weight: 600; }
 .ai-prose em { color: hsl(var(--foreground) / 0.85); font-style: italic; }
 .ai-prose a { color: hsl(var(--primary)); font-weight: 500; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
-.ai-prose a:hover { color: hsl(var(--accent)); }
+.ai-prose a:hover { color: hsl(var(--foreground)); }
 .ai-prose ul, .ai-prose ol { padding-left: 1.15em; margin: 0.4em 0; }
 .ai-prose li { margin: 0.18em 0; padding-left: 0.15em; }
 .ai-prose ul > li::marker { color: hsl(var(--primary)); }
 .ai-prose ol > li::marker { color: hsl(var(--primary)); font-weight: 600; }
 .ai-prose blockquote {
   margin: 0.8em 0;
-  padding: 0.5em 0.9em;
-  border-left: 3px solid hsl(var(--primary));
-  background: hsl(var(--primary) / 0.05);
-  border-radius: 0 0.5rem 0.5rem 0;
-  color: hsl(var(--foreground) / 0.85);
+  padding: 0.65em 1em;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--muted) / 0.6);
+  border-radius: 0.75rem;
+  color: hsl(var(--foreground) / 0.88);
   font-style: italic;
 }
 .ai-prose code {
-  font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 0.88em;
   padding: 0.12em 0.4em;
-  background: hsl(var(--primary) / 0.08);
-  color: hsl(var(--accent));
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--foreground));
   border-radius: 0.3rem;
 }
 .ai-prose pre {

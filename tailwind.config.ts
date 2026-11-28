@@ -89,8 +89,9 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        display: ["var(--font-display)", "Space Grotesk", "sans-serif"],
-        body: ["var(--font-body)", "DM Sans", "sans-serif"],
+        display: ["var(--font-display)", "Plus Jakarta Sans", "system-ui", "sans-serif"],
+        body: ["var(--font-body)", "DM Sans", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "JetBrains Mono", "ui-monospace", "monospace"],
       },
       keyframes: {
         "accordion-down": {
