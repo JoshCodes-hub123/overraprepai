@@ -16,6 +16,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { SEO } from "@/components/seo/SEO";
 import { resolveCourseSemester, type AcademicSemester } from "@/lib/cleanSlateManager";
 import { getAutomaticCourseImage } from "@/lib/courseImages";
+import {
+  isUuid,
+  courseCodeToDeterministicUuid,
+  normalizeCourseCode,
+} from "@/lib/courseIdentity";
 
 import { Screen, Section } from "@/components/ui-kit";
 import { BrandTopBar } from "@/components/dashboard/mobile/BrandTopBar";
@@ -191,23 +196,44 @@ export default function StudentDashboard() {
       if (!studentId || courses.length === 0) return {};
 
       const courseIds = courses.map((c) => c.id);
+      const validCourseUuids = Array.from(
+        new Set(
+          courses
+            .flatMap((c) => [
+              isUuid(c.id) ? c.id : null,
+              courseCodeToDeterministicUuid(c.code),
+            ])
+            .filter(Boolean) as string[]
+        )
+      );
+      if (validCourseUuids.length === 0) return {};
+
+      const uuidToCardId = new Map<string, string>();
+      for (const c of courses) {
+        uuidToCardId.set(c.id, c.id);
+        const det = courseCodeToDeterministicUuid(c.code);
+        if (det) uuidToCardId.set(det, c.id);
+      }
+
       const [{ data: topics }, { data: progress }] = await Promise.all([
-        supabase.from("topics").select("id, course_id").in("course_id", courseIds),
+        supabase.from("topics").select("id, course_id").in("course_id", validCourseUuids),
         (supabase as any)
           .from("user_topic_progress")
           .select("course_id, topic_id, is_completed, mastery_score")
           .eq("user_id", studentId)
-          .in("course_id", courseIds),
+          .in("course_id", validCourseUuids),
       ]);
 
       const map: Record<string, { completed: number; total: number; percent: number }> = {};
       for (const cid of courseIds) map[cid] = { completed: 0, total: 0, percent: 0 };
       for (const t of topics ?? []) {
-        if (t.course_id && map[t.course_id]) map[t.course_id].total += 1;
+        const cardId = t.course_id ? uuidToCardId.get(t.course_id) : undefined;
+        if (cardId && map[cardId]) map[cardId].total += 1;
       }
       for (const p of progress ?? []) {
-        if (p.course_id && map[p.course_id] && (p.is_completed || (p.mastery_score ?? 0) >= 60)) {
-          map[p.course_id].completed += 1;
+        const cardId = p.course_id ? uuidToCardId.get(p.course_id) : undefined;
+        if (cardId && map[cardId] && (p.is_completed || (p.mastery_score ?? 0) >= 60)) {
+          map[cardId].completed += 1;
         }
       }
       for (const cid of courseIds) {
@@ -222,7 +248,13 @@ export default function StudentDashboard() {
 
   const courseById = useMemo(() => {
     const map = new Map<string, (typeof courses)[number]>();
-    for (const c of courses) map.set(c.id, c);
+    for (const c of courses) {
+      map.set(c.id, c);
+      const det = courseCodeToDeterministicUuid(c.code);
+      if (det && !map.has(det)) map.set(det, c);
+      const norm = normalizeCourseCode(c.code);
+      if (norm && !map.has(norm)) map.set(norm, c);
+    }
     return map;
   }, [courses]);
 
@@ -234,23 +266,35 @@ export default function StudentDashboard() {
     for (const c of courses) {
       map[c.id] = { materialsCount: 0, quizzesCount: 0, questionsCount: 0 };
     }
+    const resolveTargetCardId = (rawCourseId?: string | null, rawCode?: string | null) => {
+      if (rawCourseId && map[rawCourseId]) return rawCourseId;
+      const byDet = rawCourseId ? courseById.get(rawCourseId) : undefined;
+      if (byDet) return byDet.id;
+      const norm = normalizeCourseCode(rawCode);
+      const byCode = norm ? courseById.get(norm) : undefined;
+      if (byCode) return byCode.id;
+      return rawCourseId || null;
+    };
+
     for (const m of liveMaterials) {
-      if (!m.course_id) continue;
-      if (!map[m.course_id]) {
-        map[m.course_id] = { materialsCount: 0, quizzesCount: 0, questionsCount: 0 };
+      const targetId = resolveTargetCardId(m.course_id, m.course_code);
+      if (!targetId) continue;
+      if (!map[targetId]) {
+        map[targetId] = { materialsCount: 0, quizzesCount: 0, questionsCount: 0 };
       }
-      map[m.course_id].materialsCount += 1;
+      map[targetId].materialsCount += 1;
     }
     for (const q of liveQuizzes) {
-      if (!q.course_id) continue;
-      if (!map[q.course_id]) {
-        map[q.course_id] = { materialsCount: 0, quizzesCount: 0, questionsCount: 0 };
+      const targetId = resolveTargetCardId(q.course_id, q.course_code);
+      if (!targetId) continue;
+      if (!map[targetId]) {
+        map[targetId] = { materialsCount: 0, quizzesCount: 0, questionsCount: 0 };
       }
-      map[q.course_id].quizzesCount += 1;
-      map[q.course_id].questionsCount += q.question_count ?? 0;
+      map[targetId].quizzesCount += 1;
+      map[targetId].questionsCount += q.question_count ?? 0;
     }
     return map;
-  }, [courses, liveMaterials, liveQuizzes]);
+  }, [courses, courseById, liveMaterials, liveQuizzes]);
 
   const semesterCounts = useMemo(() => {
     let first = 0;
@@ -399,16 +443,18 @@ export default function StudentDashboard() {
 
     for (const m of prioritizedMaterials.slice(0, 4)) {
       if (!m.title) continue;
-      const matchedCourse = courseById.get(m.course_id);
+      const matchedCourse =
+        courseById.get(m.course_id) ||
+        (m.course_code ? courseById.get(normalizeCourseCode(m.course_code)) : undefined);
       const ext = (m.file_type || "PDF").toUpperCase();
       items.push({
         id: m.id,
         kind: "material",
         title: m.title,
-        courseId: m.course_id,
+        courseId: matchedCourse?.id || m.course_id,
         courseCode: m.course_code || matchedCourse?.code || null,
         metaLabel: `${ext} Study Material`,
-        to: `/courses/${m.course_id}?tab=materials`,
+        to: `/courses/${matchedCourse?.id || m.course_id}?tab=materials`,
       });
     }
 

@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  supabase,
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY,
+} from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +35,10 @@ import { toast } from "sonner";
 import { extractTextFromFile } from "@/lib/extractText";
 import { uploadLargeFileChunked } from "@/lib/chunkedFileUploader";
 import { uploadFileToSupabaseStorage } from "@/lib/pdfResolver";
+import {
+  collectCandidateCourseUuids,
+  persistMaterialToLiveSupabase,
+} from "@/lib/courseIdentity";
 import { CascadeSelection } from "./InstitutionalCascadeSelector";
 
 export interface LectureMaterialItem {
@@ -89,11 +97,19 @@ export const LectureNotesModule: React.FC<Props> = ({ cascade }) => {
         setTopics([]);
         return;
       }
+      const uuidKeys = collectCandidateCourseUuids({
+        courseId: cascade.courseId,
+        courseCode: cascade.courseCode,
+      });
+      if (uuidKeys.length === 0) {
+        setTopics([]);
+        return;
+      }
       try {
         const { data } = await supabase
           .from("topics")
           .select("id, name, order_index")
-          .eq("course_id", cascade.courseId)
+          .in("course_id", uuidKeys)
           .order("order_index", { ascending: true });
 
         setTopics((data as any) || []);
@@ -102,7 +118,7 @@ export const LectureNotesModule: React.FC<Props> = ({ cascade }) => {
       }
     }
     fetchCourseTopics();
-  }, [cascade.courseId]);
+  }, [cascade.courseId, cascade.courseCode]);
 
   // Load existing materials for active course
   const loadMaterials = useCallback(async () => {
@@ -139,60 +155,69 @@ export const LectureNotesModule: React.FC<Props> = ({ cascade }) => {
         console.warn("Could not load server materials:", sErr);
       }
 
-      // 2. Query study_materials
-      let dbRows: LectureMaterialItem[] = [];
-      try {
-        const { data, error } = await supabase
-          .from("study_materials")
-          .select("*")
-          .eq("course_id", cascade.courseId)
-          .order("created_at", { ascending: false });
+      const uuidKeys = collectCandidateCourseUuids({
+        courseId: cascade.courseId,
+        courseCode: cascade.courseCode,
+      });
 
-        if (!error && data) {
-          dbRows = data.map((m: any) => ({
-            id: m.id,
-            course_id: m.course_id,
-            topic_id: m.topic_id,
-            title: m.title,
-            description: m.description,
-            file_url: m.file_url,
-            file_type: m.file_type || "pdf",
-            file_size: m.file_size || 0,
-            visibility: (m.visibility === "draft" ? "draft" : "published") as any,
-            created_at: m.created_at,
-            tags: m.tags || [],
-          }));
+      // 2. Query study_materials (strictly UUID keys so PostgreSQL never throws 22P02)
+      let dbRows: LectureMaterialItem[] = [];
+      if (uuidKeys.length > 0) {
+        try {
+          const { data, error } = await supabase
+            .from("study_materials")
+            .select("*")
+            .in("course_id", uuidKeys)
+            .order("created_at", { ascending: false });
+
+          if (!error && data) {
+            dbRows = data.map((m: any) => ({
+              id: m.id,
+              course_id: m.course_id,
+              topic_id: m.topic_id,
+              title: m.title,
+              description: m.description,
+              file_url: m.file_url,
+              file_type: m.file_type || "pdf",
+              file_size: m.file_size || 0,
+              visibility: (m.visibility === "draft" ? "draft" : "published") as any,
+              created_at: m.created_at,
+              tags: m.tags || [],
+            }));
+          }
+        } catch (err) {
+          console.warn("study_materials query notice:", err);
         }
-      } catch (err) {
-        console.warn("study_materials query notice:", err);
       }
 
-      // 3. Query lecture_notes
+      // 3. Query lecture_notes (strictly UUID keys)
       let lnRows: LectureMaterialItem[] = [];
-      try {
-        const { data: lnData, error: lnErr } = await supabase
-          .from("lecture_notes")
-          .select("*")
-          .eq("course_id", cascade.courseId)
-          .order("created_at", { ascending: false });
+      if (uuidKeys.length > 0) {
+        try {
+          const { data: lnData, error: lnErr } = await supabase
+            .from("lecture_notes")
+            .select("*")
+            .in("course_id", uuidKeys)
+            .order("created_at", { ascending: false });
 
-        if (!lnErr && lnData) {
-          lnRows = lnData.map((m: any) => ({
-            id: m.id,
-            course_id: m.course_id || cascade.courseId,
-            topic_id: m.topic_id,
-            title: m.title,
-            description: m.description,
-            file_url: m.file_url,
-            file_type: m.file_type || "pdf",
-            file_size: m.file_size_bytes || 0,
-            visibility: (m.is_published ? "published" : "draft") as any,
-            created_at: m.created_at,
-            tags: [],
-          }));
+          if (!lnErr && lnData) {
+            lnRows = lnData.map((m: any) => ({
+              id: m.id,
+              course_id: m.course_id || cascade.courseId,
+              topic_id: m.topic_id,
+              title: m.title,
+              description: m.description,
+              file_url: m.file_url,
+              file_type: m.file_type || "pdf",
+              file_size: m.file_size_bytes || 0,
+              visibility: (m.is_published ? "published" : "draft") as any,
+              created_at: m.created_at,
+              tags: [],
+            }));
+          }
+        } catch (err) {
+          console.warn("lecture_notes query notice:", err);
         }
-      } catch (err) {
-        console.warn("lecture_notes query notice:", err);
       }
 
       // Merge and deduplicate by URL or ID
@@ -215,7 +240,7 @@ export const LectureNotesModule: React.FC<Props> = ({ cascade }) => {
     } finally {
       setLoading(false);
     }
-  }, [cascade.courseId]);
+  }, [cascade.courseId, cascade.courseCode]);
 
   useEffect(() => {
     loadMaterials();
@@ -327,62 +352,71 @@ export const LectureNotesModule: React.FC<Props> = ({ cascade }) => {
           ? crypto.randomUUID()
           : `mat_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
-      const payload = {
-        id: matId,
-        course_id: cascade.courseId,
-        topic_id: assignedTopicId,
-        title: materialTitle.trim(),
-        description:
-          materialDescription.trim() ||
-          (extractedText ? extractedText.slice(0, 300) + "…" : `Lecture material for ${cascade.courseCode}`),
-        file_path: permanentFilePath || `${user?.id || "admin"}/${cascade.courseId}/${Date.now()}_note.md`,
-        file_url: publicFileUrl,
-        file_type: fileExtension,
-        file_size: fileSize,
-        visibility: isPublished ? "public" : "private",
-        owner_id: user?.id || "admin_operator",
-        owner_name: "Course Administrator",
-        tags,
-      };
+      const descriptionText =
+        materialDescription.trim() ||
+        (extractedText ? extractedText.slice(0, 300) + "…" : `Lecture material for ${cascade.courseCode}`);
+      const safeFilePath =
+        permanentFilePath || `${user?.id || "admin"}/${cascade.courseId}/${Date.now()}_note.md`;
 
-      // A. Save to server persistent course materials API
+      // A. Persist directly to live Supabase PostgreSQL (`study_materials` & `lecture_notes`) with valid UUID course_id
+      const cloudWrite = await persistMaterialToLiveSupabase(
+        supabase,
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY,
+        {
+          id: matId,
+          courseId: cascade.courseId,
+          courseCode: cascade.courseCode,
+          courseName: cascade.courseName,
+          department: cascade.department,
+          level: cascade.level,
+          university: cascade.university,
+          topicId: assignedTopicId,
+          title: materialTitle.trim(),
+          description: descriptionText,
+          fileUrl: publicFileUrl,
+          filePath: safeFilePath,
+          fileType: fileExtension,
+          fileSize,
+          userId: user?.id ?? null,
+          isPublished,
+        }
+      );
+
+      if (!cloudWrite.ok) {
+        toast.error(
+          cloudWrite.error ||
+            "Uploaded file to cloud storage, but failed saving to the live website database."
+        );
+        return;
+      }
+
+      // B. Non-fatal mirror to local Express course materials API
       try {
-        await fetch(`/api/courses/${encodeURIComponent(cascade.courseId)}/materials`, {
+        await fetch(`/api/courses/${encodeURIComponent(cloudWrite.courseUuid)}/materials`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({
+            id: matId,
+            course_id: cloudWrite.courseUuid,
+            course_code: cascade.courseCode,
+            topic_id: assignedTopicId,
+            title: materialTitle.trim(),
+            description: descriptionText,
+            file_path: safeFilePath,
+            file_url: publicFileUrl,
+            file_type: fileExtension,
+            file_size: fileSize,
+            visibility: isPublished ? "public" : "private",
+            tags,
+          }),
         });
       } catch (saveErr) {
-        console.warn("Failed to save to server materials API:", saveErr);
-      }
-
-      // B. Save to study_materials table
-      try {
-        await supabase.from("study_materials").insert(payload as any);
-      } catch (err) {
-        console.warn("study_materials insert warning:", err);
-      }
-
-      // C. Save to lecture_notes table (for cross-table compatibility)
-      try {
-        await supabase.from("lecture_notes").insert({
-          course_id: cascade.courseId,
-          topic_id: assignedTopicId,
-          title: payload.title,
-          description: payload.description,
-          file_url: publicFileUrl,
-          file_path: publicFileUrl,
-          file_type: fileExtension,
-          file_size_bytes: fileSize,
-          is_published: isPublished,
-          tutor_id: user?.id || "admin",
-        } as any);
-      } catch (lnErr) {
-        console.warn("lecture_notes insert warning:", lnErr);
+        console.warn("Failed to mirror to server materials API:", saveErr);
       }
 
       toast.success(
-        `Material "${materialTitle}" ${isPublished ? "published" : "saved as draft"} successfully!`
+        `Material "${materialTitle}" ${isPublished ? "published to the live website" : "saved as draft"} successfully!`
       );
 
       // Reset form
@@ -393,6 +427,8 @@ export const LectureNotesModule: React.FC<Props> = ({ cascade }) => {
       setRichTextContent("");
       loadMaterials();
       queryClient.invalidateQueries({ queryKey: ["course-materials"] });
+      queryClient.invalidateQueries({ queryKey: ["material-courses"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-materials-meta"] });
     } catch (err: any) {
       console.error("Upload material error:", err);
       toast.error(err.message || "Failed to save lecture material");

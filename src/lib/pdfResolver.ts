@@ -360,9 +360,9 @@ export async function uploadFileToSupabaseStorage(
     file.type || (isPdf ? "application/pdf" : "application/octet-stream");
 
   const uploadBuckets: Array<{ id: string; isPublic: boolean }> = [
-    { id: "lecture-notes", isPublic: false },
-    { id: "study-materials", isPublic: false },
+    { id: "lecture-notes", isPublic: true },
     { id: "post-media", isPublic: true },
+    { id: "study-materials", isPublic: false },
   ];
 
   const attemptErrors: string[] = [];
@@ -400,11 +400,30 @@ export async function uploadFileToSupabaseStorage(
       let resolvedUrl = "";
       if (isPublic) {
         const { data: pub } = supabase.storage.from(bucket).getPublicUrl(objectKey);
-        resolvedUrl = pub?.publicUrl || "";
-      } else {
+        const candidatePublicUrl = pub?.publicUrl || "";
+        // Verify the public HTTPS URL is directly readable without expiring tokens
+        if (candidatePublicUrl) {
+          try {
+            const pubRes = await fetch(candidatePublicUrl);
+            if (pubRes.ok) {
+              const pubBlob = await pubRes.blob();
+              if (
+                !(await isHtmlOrJsonErrorBlob(pubBlob)) &&
+                (!isPdf || (await isValidPdfBlob(pubBlob)))
+              ) {
+                resolvedUrl = candidatePublicUrl;
+              }
+            }
+          } catch {
+            // Fall through to signed URL if bucket is configured private
+          }
+        }
+      }
+
+      if (!resolvedUrl) {
         const { data: signed } = await supabase.storage
           .from(bucket)
-          .createSignedUrl(objectKey, 60 * 60 * 24 * 30);
+          .createSignedUrl(objectKey, 60 * 60 * 24 * 365);
         resolvedUrl = signed?.signedUrl || "";
       }
 

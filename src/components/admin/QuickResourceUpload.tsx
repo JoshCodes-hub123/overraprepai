@@ -36,7 +36,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  supabase,
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY,
+} from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminEnvironment } from "@/hooks/useAdminEnvironment";
 import {
@@ -56,6 +60,13 @@ import {
   verifyMaterialAccessible,
 } from "@/lib/pdfResolver";
 import { downloadMaterialExternally } from "@/lib/downloadMaterial";
+import {
+  resolveCanonicalCourseUuid,
+  persistMaterialToLiveSupabase,
+  fetchDirectCloudMaterialIds,
+  courseCodeToDeterministicUuid,
+  normalizeCourseCode,
+} from "@/lib/courseIdentity";
 
 interface CourseRecord {
   id: string;
@@ -490,7 +501,26 @@ export const QuickResourceUpload: React.FC = () => {
     setLoadingMaterials(true);
     try {
       const courseMap = new Map<string, CourseRecord>();
-      courses.forEach((c) => courseMap.set(c.id, c));
+      courses.forEach((c) => {
+        courseMap.set(c.id, c);
+        const detUuid = courseCodeToDeterministicUuid(c.code);
+        if (detUuid && !courseMap.has(detUuid)) {
+          courseMap.set(detUuid, c);
+        }
+        const normCode = normalizeCourseCode(c.code);
+        if (normCode && !courseMap.has(normCode)) {
+          courseMap.set(normCode, c);
+        }
+      });
+
+      const resolveCourseMeta = (cid?: string | null, rawCode?: string | null) => {
+        if (cid && courseMap.has(cid)) return courseMap.get(cid);
+        const norm = normalizeCourseCode(rawCode || cid);
+        if (norm && courseMap.has(norm)) return courseMap.get(norm);
+        const det = courseCodeToDeterministicUuid(rawCode || cid);
+        if (det && courseMap.has(det)) return courseMap.get(det);
+        return undefined;
+      };
 
       let serverList: any[] = [];
       let serverQuizzes: any[] = [];
@@ -508,7 +538,7 @@ export const QuickResourceUpload: React.FC = () => {
           }),
       ]);
 
-      const [smRes, lnRes, dbQuizzesRes, qCountRes] = await Promise.all([
+      const [smRes, lnRes, dbQuizzesRes, qCountRes, directCloudIds] = await Promise.all([
         supabase
           .from("study_materials")
           .select("id, course_id, title, description, file_url, file_path, file_type, file_size, created_at")
@@ -530,6 +560,7 @@ export const QuickResourceUpload: React.FC = () => {
           .order("created_at", { ascending: false })
           .limit(300),
         supabase.from("questions").select("id", { count: "exact", head: true }),
+        fetchDirectCloudMaterialIds(supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY),
       ]);
 
       const dbStudyMats = smRes.data || [];
@@ -540,7 +571,7 @@ export const QuickResourceUpload: React.FC = () => {
       const mergedMats = new Map<string, ManagedMaterialRow>();
 
       for (const m of serverList) {
-        const cObj = courseMap.get(m.course_id);
+        const cObj = resolveCourseMeta(m.course_id, m.course_code);
         const code = m.course_code || cObj?.code || "COURSE";
         mergedMats.set(m.id, {
           id: m.id,
@@ -555,15 +586,16 @@ export const QuickResourceUpload: React.FC = () => {
           file_path: m.file_path ?? null,
           file_type: m.file_type || "pdf",
           file_size: m.file_size || 0,
-          source: "server",
+          source: directCloudIds.has(m.id) ? "supabase+server" : "server",
           created_at: m.created_at || new Date().toISOString(),
         });
       }
 
       for (const m of dbStudyMats as any[]) {
-        const cObj = courseMap.get(m.course_id);
+        const cObj = resolveCourseMeta(m.course_id, m.course_code);
         const existing = mergedMats.get(m.id);
         const code = cObj?.code || existing?.course_code || "COURSE";
+        const isLiveInCloud = directCloudIds.has(m.id);
         mergedMats.set(m.id, {
           id: m.id,
           course_id: m.course_id,
@@ -577,14 +609,16 @@ export const QuickResourceUpload: React.FC = () => {
           file_path: m.file_path ?? existing?.file_path ?? null,
           file_type: m.file_type || "pdf",
           file_size: m.file_size || 0,
-          source: existing ? "supabase+server" : "supabase",
+          source: isLiveInCloud ? (existing ? "supabase+server" : "supabase") : "server",
           created_at: m.created_at || new Date().toISOString(),
         });
       }
 
       for (const ln of dbLectureNotes as any[]) {
-        if (!mergedMats.has(ln.id)) {
-          const cObj = courseMap.get(ln.course_id);
+        const existing = mergedMats.get(ln.id);
+        const isLiveInCloud = directCloudIds.has(ln.id);
+        if (!existing) {
+          const cObj = resolveCourseMeta(ln.course_id, ln.course_code);
           const code = cObj?.code || "COURSE";
           mergedMats.set(ln.id, {
             id: ln.id,
@@ -599,9 +633,11 @@ export const QuickResourceUpload: React.FC = () => {
             file_path: ln.file_path ?? null,
             file_type: ln.file_type || "pdf",
             file_size: ln.file_size_bytes || 0,
-            source: "supabase",
+            source: isLiveInCloud ? "supabase" : "server",
             created_at: ln.created_at || new Date().toISOString(),
           });
+        } else if (isLiveInCloud && existing.source === "server") {
+          existing.source = "supabase+server";
         }
       }
 
@@ -796,30 +832,30 @@ export const QuickResourceUpload: React.FC = () => {
     }
   };
 
-  // Helper: Resolve a course's real Supabase UUID (even if the selected course came from a slug ID)
-  const resolveSupabaseCourseUuid = async (courseId: string, courseCode: string): Promise<string> => {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (uuidRegex.test(courseId)) return courseId;
-
-    try {
-      const { data: found } = await supabase
-        .from("courses")
-        .select("id")
-        .ilike("code", courseCode.trim())
-        .maybeSingle();
-      if (found?.id && uuidRegex.test(found.id)) {
-        return found.id;
-      }
-    } catch {
-      // ignore
-    }
-    return courseId;
+  // Helper: Resolve a guaranteed valid Supabase UUID for a course (never returns a non-UUID slug)
+  const resolveSupabaseCourseUuid = async (
+    courseId: string,
+    courseCode: string,
+    courseMeta?: { name?: string | null; department?: string | null; level?: string | null }
+  ): Promise<string> => {
+    return resolveCanonicalCourseUuid(supabase, {
+      courseId,
+      courseCode,
+      courseName: courseMeta?.name || selectedCourse?.name,
+      department: courseMeta?.department || selectedCourse?.department,
+      level: courseMeta?.level || selectedCourse?.level,
+      university: activeInstitution,
+    });
   };
 
-  // Helper: Persist a verified material to Server Store + Supabase (`study_materials` with visibility='public' + `lecture_notes`)
+  // Helper: Persist a verified material directly to live Supabase PostgreSQL (`study_materials` & `lecture_notes`) + Server mirror
   const persistMaterialDualSync = async (params: {
+    id?: string;
     courseId: string;
     courseCode: string;
+    courseName?: string | null;
+    department?: string | null;
+    level?: string | null;
     title: string;
     description: string;
     fileUrl: string;
@@ -828,11 +864,12 @@ export const QuickResourceUpload: React.FC = () => {
     verified?: boolean;
     fileType: string;
     fileSize: number;
-  }): Promise<string> => {
+  }): Promise<{ id: string; courseUuid: string; cloudSynced: boolean; cloudError?: string }> => {
     const matId =
-      typeof crypto !== "undefined" && "randomUUID" in crypto
+      params.id ||
+      (typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
-        : `mat_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        : `mat_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
 
     let authUid = user?.id ?? null;
     if (!authUid) {
@@ -844,65 +881,69 @@ export const QuickResourceUpload: React.FC = () => {
       }
     }
 
-    const dbCourseId = await resolveSupabaseCourseUuid(params.courseId, params.courseCode);
+    const dbCourseId = await resolveSupabaseCourseUuid(params.courseId, params.courseCode, {
+      name: params.courseName,
+      department: params.department,
+      level: params.level,
+    });
     const safeFilePath =
       params.filePath ||
       `${authUid || "admin"}/${dbCourseId}/${Date.now()}_${params.title.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
 
-    await fetch(`/api/courses/${encodeURIComponent(dbCourseId)}/materials`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    // 1. Direct write to live Supabase PostgreSQL (bypasses localStorage fake-201 mirror)
+    const cloudWrite = await persistMaterialToLiveSupabase(
+      supabase,
+      SUPABASE_URL,
+      SUPABASE_PUBLISHABLE_KEY,
+      {
         id: matId,
-        course_id: dbCourseId,
-        course_code: params.courseCode,
+        courseId: dbCourseId,
+        courseCode: params.courseCode,
+        courseName: params.courseName || selectedCourse?.name,
+        department: params.department || selectedCourse?.department,
+        level: params.level || selectedCourse?.level,
+        university: activeInstitution,
         title: params.title,
         description: params.description,
-        file_url: params.fileUrl,
-        file_path: safeFilePath,
-        storage_bucket: params.storageBucket ?? null,
-        verified: Boolean(params.verified),
-        file_type: params.fileType,
-        file_size: params.fileSize,
-        visibility: "public",
-      }),
-    });
+        fileUrl: params.fileUrl,
+        filePath: safeFilePath,
+        fileType: params.fileType,
+        fileSize: params.fileSize,
+        userId: authUid,
+        isPublished: true,
+      }
+    );
 
+    // 2. Non-fatal mirror to local Express server store for Preview fast-cache
     try {
-      await (supabase as any).from("study_materials").insert({
-        id: matId,
-        course_id: dbCourseId,
-        title: params.title,
-        description: params.description,
-        file_url: params.fileUrl,
-        file_path: safeFilePath,
-        file_type: params.fileType,
-        file_size: params.fileSize,
-        owner_id: authUid,
-        visibility: "public",
+      await fetch(`/api/courses/${encodeURIComponent(cloudWrite.courseUuid)}/materials`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: matId,
+          course_id: cloudWrite.courseUuid,
+          course_code: params.courseCode,
+          title: params.title,
+          description: params.description,
+          file_url: params.fileUrl,
+          file_path: safeFilePath,
+          storage_bucket: params.storageBucket ?? null,
+          verified: Boolean(params.verified),
+          file_type: params.fileType,
+          file_size: params.fileSize,
+          visibility: "public",
+        }),
       });
     } catch {
       // non-fatal
     }
 
-    try {
-      await (supabase as any).from("lecture_notes").insert({
-        id: matId,
-        course_id: dbCourseId,
-        title: params.title,
-        description: params.description,
-        file_url: params.fileUrl,
-        file_path: safeFilePath,
-        file_type: params.fileType,
-        file_size_bytes: params.fileSize,
-        tutor_id: authUid,
-        is_published: true,
-      });
-    } catch {
-      // non-fatal
-    }
-
-    return matId;
+    return {
+      id: matId,
+      courseUuid: cloudWrite.courseUuid,
+      cloudSynced: cloudWrite.ok,
+      cloudError: cloudWrite.error,
+    };
   };
 
   // Mode 1 Handler: Select PDFs/Docs (Supports bulk multi-file selection with live cloud verification)
@@ -930,7 +971,7 @@ export const QuickResourceUpload: React.FC = () => {
     e.target.value = "";
   };
 
-  // Mode 1 Publish: Verifiable Permanent Cloud Upload Route (uploads to Supabase Storage -> reads back & verifies %PDF- bytes -> publishes with public visibility)
+  // Mode 1 Publish: Verifiable Permanent Cloud Upload Route (uploads to Supabase Storage -> reads back & verifies %PDF- bytes -> writes directly to live Supabase DB)
   const handlePublishFiles = async () => {
     if (!selectedCourseId || !selectedCourse) {
       toast.error("Please select or create a course in Step 2 first.");
@@ -994,7 +1035,7 @@ export const QuickResourceUpload: React.FC = () => {
               ? {
                   ...q,
                   progressPercent: 75,
-                  progressLabel: `Verified ${formatBytesReadable(cloudResult.verifiedBytes || item.file.size)} in cloud · Publishing to students…`,
+                  progressLabel: `Verified ${formatBytesReadable(cloudResult.verifiedBytes || item.file.size)} in cloud · Saving to live website database…`,
                 }
               : q
           )
@@ -1007,9 +1048,12 @@ export const QuickResourceUpload: React.FC = () => {
           // non-fatal
         }
 
-        const matId = await persistMaterialDualSync({
+        const syncResult = await persistMaterialDualSync({
           courseId: selectedCourseId,
           courseCode: selectedCourse.code,
+          courseName: selectedCourse.name,
+          department: selectedCourse.department,
+          level: selectedCourse.level,
           title: item.title.trim() || item.file.name,
           description: item.description.trim(),
           fileUrl: cloudResult.fileUrl,
@@ -1020,9 +1064,29 @@ export const QuickResourceUpload: React.FC = () => {
           fileSize: cloudResult.verifiedBytes || item.file.size,
         });
 
+        if (!syncResult.cloudSynced) {
+          failedCount++;
+          const errMsg =
+            syncResult.cloudError ||
+            "File uploaded to storage, but saving to the live website database failed. Please ensure you are signed in as Admin or Tutor.";
+          setFileQueue((prev) =>
+            prev.map((q, idx) =>
+              idx === i
+                ? {
+                    ...q,
+                    status: "error",
+                    progressPercent: 0,
+                    errorMessage: errMsg,
+                  }
+                : q
+            )
+          );
+          continue;
+        }
+
         const publishedRow: ManagedMaterialRow = {
-          id: matId,
-          course_id: selectedCourseId,
+          id: syncResult.id,
+          course_id: syncResult.courseUuid,
           course_code: selectedCourse.code,
           course_name: selectedCourse.name,
           semester: selectedCourse.semester,
@@ -1056,20 +1120,21 @@ export const QuickResourceUpload: React.FC = () => {
 
       if (publishedCount > 0 && failedCount === 0) {
         toast.success(
-          `Verified & published ${publishedCount} document(s) permanently to cloud storage for ${selectedCourse.code}! Students can open and download them immediately.`
+          `Verified & published ${publishedCount} document(s) to the live website for ${selectedCourse.code}! Students on the live link can open and download them immediately.`
         );
       } else if (publishedCount > 0 && failedCount > 0) {
         toast.warning(
-          `Verified & published ${publishedCount} document(s), while ${failedCount} file(s) failed verification (see error details in the list).`
+          `Published ${publishedCount} document(s) to the live website, while ${failedCount} file(s) failed verification (see error details below).`
         );
       } else if (failedCount > 0) {
         toast.error(
-          `Upload verification failed for ${failedCount} file(s). Nothing broken was published — see details below.`
+          `Live publish failed for ${failedCount} file(s). See the error message below and ensure you are signed in as Admin or Tutor.`
         );
       }
 
       void queryClient.invalidateQueries({ queryKey: ["course-materials"] });
       void queryClient.invalidateQueries({ queryKey: ["material-courses"] });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard-materials-meta"] });
       await loadMaterialsAndStats();
     } catch (err: any) {
       toast.error(err?.message || "Failed uploading one or more files.");
@@ -1078,7 +1143,7 @@ export const QuickResourceUpload: React.FC = () => {
     }
   };
 
-  // Mode 2 Publish: Save Pasted Summary Note & Formulas directly
+  // Mode 2 Publish: Save Pasted Summary Note & Formulas directly to Live Cloud
   const handlePublishPastedNote = async () => {
     if (!selectedCourseId || !selectedCourse) {
       toast.error("Please select or create a course in Step 2 first.");
@@ -1103,40 +1168,58 @@ export const QuickResourceUpload: React.FC = () => {
         .filter(Boolean)
         .join("\n");
 
-      const base64 = `data:text/markdown;base64,${btoa(unescape(encodeURIComponent(fullContent)))}`;
       const safeFilename = `${selectedCourse.code.replace(/\s+/g, "_")}_${noteTitle
         .trim()
         .slice(0, 30)
         .replace(/[^a-zA-Z0-9]+/g, "_")}.md`;
 
-      const upRes = await fetch("/api/upload-file", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filename: safeFilename,
-          base64,
-          contentType: "text/markdown",
-        }),
-      });
-      const upJson = await upRes.json();
+      // Upload markdown file to Supabase Storage so the live website link has a permanent cloud URL
+      let permanentUrl = `data:text/markdown;charset=utf-8,${encodeURIComponent(fullContent)}`;
+      let permanentPath: string | null = null;
+      try {
+        const mdFile = new File([fullContent], safeFilename, { type: "text/markdown" });
+        const cloudMd = await uploadFileToSupabaseStorage(mdFile, {
+          courseId: selectedCourseId,
+          userId: user?.id ?? null,
+        });
+        if (cloudMd.ok && cloudMd.fileUrl && cloudMd.filePath) {
+          permanentUrl = cloudMd.fileUrl;
+          permanentPath = cloudMd.filePath;
+        }
+      } catch {
+        // Fallback to portable inline data URI (works on live website too)
+      }
 
-      await persistMaterialDualSync({
+      const syncResult = await persistMaterialDualSync({
         courseId: selectedCourseId,
         courseCode: selectedCourse.code,
+        courseName: selectedCourse.name,
+        department: selectedCourse.department,
+        level: selectedCourse.level,
         title: noteTitle.trim(),
         description: fullContent,
-        fileUrl: upJson.url || "",
+        fileUrl: permanentUrl,
+        filePath: permanentPath,
         fileType: "markdown",
         fileSize: fullContent.length,
       });
+
+      if (!syncResult.cloudSynced) {
+        throw new Error(
+          syncResult.cloudError ||
+            "Could not save note to the live website database. Make sure you are signed in as Admin or Tutor."
+        );
+      }
 
       setNoteTitle("");
       setNoteSummary("");
       setNoteFormulas("");
       toast.success(
-        `Saved note "${noteTitle.trim()}" to ${selectedCourse.code} (${semLabel})!`
+        `Published note "${noteTitle.trim()}" live to ${selectedCourse.code} (${semLabel})!`
       );
       void queryClient.invalidateQueries({ queryKey: ["course-materials"] });
+      void queryClient.invalidateQueries({ queryKey: ["material-courses"] });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard-materials-meta"] });
       await loadMaterialsAndStats();
     } catch (err: any) {
       toast.error(err?.message || "Could not save pasted note.");
@@ -1765,40 +1848,51 @@ export const QuickResourceUpload: React.FC = () => {
       const finalPath = cloudResult.filePath;
       const finalSize = cloudResult.verifiedBytes || file.size;
 
-      await fetch(`/api/materials/${encodeURIComponent(target.id)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          file_url: finalUrl,
-          file_path: finalPath,
-          file_type: ext,
-          file_size: finalSize,
-          visibility: "public",
-        }),
-      });
+      const cloudWrite = await persistMaterialToLiveSupabase(
+        supabase,
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY,
+        {
+          id: target.id,
+          courseId: target.course_id,
+          courseCode: target.course_code,
+          courseName: target.course_name,
+          level: target.level,
+          university: activeInstitution,
+          title: target.title,
+          description: target.description,
+          fileUrl: finalUrl,
+          filePath: finalPath,
+          fileType: ext,
+          fileSize: finalSize,
+          userId: user?.id ?? null,
+          isPublished: true,
+        }
+      );
 
-      await Promise.allSettled([
-        supabase
-          .from("study_materials")
-          .update({
+      if (!cloudWrite.ok) {
+        throw new Error(
+          cloudWrite.error ||
+            "Uploaded PDF to cloud storage, but failed updating the live website database."
+        );
+      }
+
+      try {
+        await fetch(`/api/materials/${encodeURIComponent(target.id)}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            course_id: cloudWrite.courseUuid,
             file_url: finalUrl,
             file_path: finalPath,
             file_type: ext,
             file_size: finalSize,
             visibility: "public",
-          })
-          .eq("id", target.id),
-        supabase
-          .from("lecture_notes")
-          .update({
-            file_url: finalUrl,
-            file_path: finalPath,
-            file_type: ext,
-            file_size_bytes: finalSize,
-            is_published: true,
-          })
-          .eq("id", target.id),
-      ]);
+          }),
+        });
+      } catch {
+        // non-fatal
+      }
 
       setVerifiedMap((prev) => ({
         ...prev,
@@ -1894,28 +1988,132 @@ export const QuickResourceUpload: React.FC = () => {
   const handleSyncAllToSupabase = async () => {
     setSyncingDb(true);
     try {
-      const serverOnly = materials.filter((m) => m.source === "server");
-      for (const item of serverOnly) {
-        await Promise.allSettled([
-          (supabase as any).from("study_materials").upsert({
+      // Collect Preview-only materials from current view AND any browser localStorage RLS mirror rows
+      const pendingById = new Map<
+        string,
+        {
+          id: string;
+          course_id: string;
+          course_code?: string | null;
+          course_name?: string | null;
+          level?: string | null;
+          title: string;
+          description?: string | null;
+          file_url: string;
+          file_path?: string | null;
+          file_type?: string | null;
+          file_size?: number;
+        }
+      >();
+
+      for (const m of materials) {
+        if (m.source === "server" && m.file_url) {
+          pendingById.set(m.id, m);
+        }
+      }
+
+      if (typeof window !== "undefined") {
+        for (const storageKey of [
+          "overra_rls_mirror_study_materials",
+          "overra_rls_mirror_lecture_notes",
+        ]) {
+          try {
+            const raw = window.localStorage.getItem(storageKey);
+            const parsed = raw ? JSON.parse(raw) : [];
+            if (Array.isArray(parsed)) {
+              for (const row of parsed) {
+                if (row?.id && row?.file_url && !pendingById.has(row.id)) {
+                  const matchedCourse = courses.find(
+                    (c) =>
+                      c.id === row.course_id ||
+                      courseCodeToDeterministicUuid(c.code) === row.course_id
+                  );
+                  pendingById.set(row.id, {
+                    id: String(row.id),
+                    course_id: String(row.course_id || ""),
+                    course_code: row.course_code || matchedCourse?.code || null,
+                    course_name: matchedCourse?.name || null,
+                    level: matchedCourse?.level || null,
+                    title: String(row.title || "Course Material"),
+                    description: row.description ?? null,
+                    file_url: String(row.file_url),
+                    file_path: row.file_path ?? null,
+                    file_type: row.file_type || "pdf",
+                    file_size: Number(row.file_size || row.file_size_bytes || 0),
+                  });
+                }
+              }
+            }
+          } catch {
+            // ignore malformed localStorage
+          }
+        }
+      }
+
+      const itemsToSync = Array.from(pendingById.values());
+      let syncedCount = 0;
+      let failedCount = 0;
+      let lastError = "";
+
+      for (const item of itemsToSync) {
+        const res = await persistMaterialToLiveSupabase(
+          supabase,
+          SUPABASE_URL,
+          SUPABASE_PUBLISHABLE_KEY,
+          {
             id: item.id,
-            course_id: item.course_id,
+            courseId: item.course_id,
+            courseCode: item.course_code,
+            courseName: item.course_name,
+            level: item.level,
+            university: activeInstitution,
             title: item.title,
             description: item.description,
-            file_url: item.file_url,
-            file_type: item.file_type,
-            file_size: item.file_size,
-          }),
-        ]);
+            fileUrl: item.file_url,
+            filePath:
+              item.file_path ||
+              `${user?.id || "admin"}/${item.course_id}/${Date.now()}_${item.title.replace(/[^a-zA-Z0-9._-]/g, "_")}`,
+            fileType: item.file_type || "pdf",
+            fileSize: item.file_size || 0,
+            userId: user?.id ?? null,
+            isPublished: true,
+          }
+        );
+
+        if (res.ok) {
+          syncedCount++;
+        } else {
+          failedCount++;
+          if (res.error) lastError = res.error;
+        }
       }
+
       await loadMaterialsAndStats();
       void queryClient.invalidateQueries({ queryKey: ["course-materials"] });
+      void queryClient.invalidateQueries({ queryKey: ["material-courses"] });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard-materials-meta"] });
       void queryClient.invalidateQueries({ queryKey: ["course-quizzes"] });
-      toast.success(
-        "Database synchronized — all materials and CBT quizzes verified across Supabase & Server!"
-      );
-    } catch {
-      toast.error("Sync encountered a warning.");
+
+      if (failedCount > 0 && syncedCount === 0) {
+        toast.error(
+          lastError ||
+            `Could not sync ${failedCount} Preview-only document(s) to the live website database. Make sure you are signed in as Admin or Tutor.`
+        );
+      } else if (syncedCount > 0 && failedCount > 0) {
+        toast.warning(
+          `Synced ${syncedCount} document(s) to the live website, while ${failedCount} failed (${lastError || "check permissions"}).`
+        );
+      } else if (syncedCount > 0) {
+        toast.success(
+          `Synced ${syncedCount} document(s) to the live website cloud database! Students on the live link can see them immediately.`
+        );
+      } else {
+        toast.success(
+          "Database verified — all uploaded materials and CBT quizzes are already live on the website!"
+        );
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Sync encountered an error.");
     } finally {
       setSyncingDb(false);
     }
@@ -3347,6 +3545,15 @@ export const QuickResourceUpload: React.FC = () => {
                           </span>
                           <span className="text-muted-foreground">· {row.level}</span>
                           <span className="uppercase text-muted-foreground">· {row.file_type}</span>
+                          {row.source === "server" ? (
+                            <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-800 dark:text-amber-300 font-sans font-bold text-[10px]">
+                              Preview Only — Click Sync
+                            </span>
+                          ) : (
+                            <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-sans font-bold text-[10px]">
+                              Live on Website
+                            </span>
+                          )}
                         </div>
                         <p className="font-display font-bold text-sm text-foreground leading-snug">
                           {row.title}
@@ -3472,7 +3679,18 @@ export const QuickResourceUpload: React.FC = () => {
                           </span>
                         </td>
                         <td className="py-3 px-3 align-top max-w-md">
-                          <p className="font-bold text-foreground leading-snug">{row.title}</p>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <p className="font-bold text-foreground leading-snug">{row.title}</p>
+                            {row.source === "server" ? (
+                              <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-800 dark:text-amber-300 font-bold text-[10px]">
+                                Preview Only — Click Sync
+                              </span>
+                            ) : (
+                              <span className="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold text-[10px]">
+                                Live on Website
+                              </span>
+                            )}
+                          </div>
                           {row.description && (
                             <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
                               {row.description}

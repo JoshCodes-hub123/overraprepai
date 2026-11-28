@@ -50,6 +50,12 @@ import { ExplainConceptSheet } from "@/components/courses/ExplainConceptSheet";
 import { LectureNoteReaderModal } from "@/components/courses/LectureNoteReaderModal";
 import { InAppDocViewer } from "@/components/viewer/InAppDocViewer";
 import { downloadMaterialExternally } from "@/lib/downloadMaterial";
+import {
+  isUuid,
+  normalizeCourseCode,
+  courseCodeToDeterministicUuid,
+  collectCandidateCourseUuids,
+} from "@/lib/courseIdentity";
 
 const VALID_TABS = ["syllabus", "documents", "quizzes", "flashcards", "ai", "images", "discuss"] as const;
 type TabValue = typeof VALID_TABS[number];
@@ -103,19 +109,25 @@ const CourseHub = () => {
     queryKey: ["course", user?.id, courseId],
     enabled: !!courseId && !!user,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("courses")
-        .select("id, code, name, department, level, description, created_by, university")
-        .eq("id", courseId)
-        .maybeSingle();
-      if (data && !error) return data;
+      if (isUuid(courseId)) {
+        const { data, error } = await supabase
+          .from("courses")
+          .select("id, code, name, department, level, description, created_by, university")
+          .eq("id", courseId)
+          .maybeSingle();
+        if (data && !error) return data;
+      }
 
-      const { data: byCode } = await supabase
-        .from("courses")
-        .select("id, code, name, department, level, description, created_by, university")
-        .ilike("code", courseId)
-        .maybeSingle();
-      if (byCode) return byCode;
+      const normCode = normalizeCourseCode(courseId);
+      if (normCode) {
+        const { data: byCode } = await supabase
+          .from("courses")
+          .select("id, code, name, department, level, description, created_by, university")
+          .ilike("code", normCode)
+          .limit(1)
+          .maybeSingle();
+        if (byCode) return byCode;
+      }
 
       try {
         const sRes = await fetch("/api/courses");
@@ -127,7 +139,14 @@ const CourseHub = () => {
             const cid = String(c.id || "").toLowerCase();
             const ccode = String(c.code || "").toLowerCase();
             const ccodeNoSpace = ccode.replace(/[\s-_]/g, "");
-            return cid === target || ccode === target || ccodeNoSpace === targetNoSpace;
+            const detUuid = courseCodeToDeterministicUuid(c.code)?.toLowerCase();
+            return (
+              cid === target ||
+              detUuid === target ||
+              ccode === target ||
+              ccodeNoSpace === targetNoSpace ||
+              (normCode && normalizeCourseCode(c.code) === normCode)
+            );
           });
           if (found) return found;
         }
@@ -138,15 +157,21 @@ const CourseHub = () => {
     },
   });
 
-  // Fetch DB topics for this course
+  // Fetch DB topics for this course (strictly valid UUIDs so PostgreSQL never throws 22P02)
   const { data: dbTopics = [] } = useQuery({
-    queryKey: ["course-db-topics", courseId],
+    queryKey: ["course-db-topics", courseId, course?.id, course?.code],
     enabled: !!courseId,
     queryFn: async () => {
+      const uuidKeys = collectCandidateCourseUuids({
+        courseId,
+        courseMetaId: course?.id,
+        courseCode: course?.code,
+      });
+      if (uuidKeys.length === 0) return [];
       const { data } = await supabase
         .from("topics")
         .select("id, name, description, order_index")
-        .eq("course_id", courseId)
+        .in("course_id", uuidKeys)
         .order("order_index", { ascending: true });
       return data ?? [];
     },
@@ -157,18 +182,11 @@ const CourseHub = () => {
     queryKey: ["course-docs", courseId, course?.id, course?.code, topicFilter],
     enabled: !!courseId,
     queryFn: async () => {
-      const courseKeys = Array.from(
-        new Set(
-          [
-            courseId,
-            course?.id,
-            course?.code,
-            course?.code
-              ? `course-${course.code.toLowerCase().replace(/\s+/g, "-")}`
-              : null,
-          ].filter(Boolean)
-        )
-      ) as string[];
+      const uuidCourseKeys = collectCandidateCourseUuids({
+        courseId,
+        courseMetaId: course?.id,
+        courseCode: course?.code,
+      });
 
       const [apiMatsRes, studyMatsRes, lectureNotesRes] = await Promise.all([
         fetch(
@@ -178,14 +196,18 @@ const CourseHub = () => {
         )
           .then((r) => (r.ok ? r.json() : { materials: [] }))
           .catch(() => ({ materials: [] })),
-        supabase
-          .from("study_materials")
-          .select("id, title, description, file_url, file_path, file_type, created_at, topic_id")
-          .in("course_id", courseKeys),
-        supabase
-          .from("lecture_notes")
-          .select("id, title, description, file_url, file_path, file_type, created_at, view_count, download_count, topic_id")
-          .in("course_id", courseKeys),
+        uuidCourseKeys.length > 0
+          ? supabase
+              .from("study_materials")
+              .select("id, title, description, file_url, file_path, file_type, created_at, topic_id")
+              .in("course_id", uuidCourseKeys)
+          : Promise.resolve({ data: [] }),
+        uuidCourseKeys.length > 0
+          ? supabase
+              .from("lecture_notes")
+              .select("id, title, description, file_url, file_path, file_type, created_at, view_count, download_count, topic_id")
+              .in("course_id", uuidCourseKeys)
+          : Promise.resolve({ data: [] }),
       ]);
 
       const mergedMap = new Map<string, any>();
@@ -255,18 +277,11 @@ const CourseHub = () => {
     queryKey: ["course-quizzes", courseId, course?.id, course?.code, topicFilter],
     enabled: !!courseId,
     queryFn: async () => {
-      const courseKeys = Array.from(
-        new Set(
-          [
-            courseId,
-            course?.id,
-            course?.code,
-            course?.code
-              ? `course-${course.code.toLowerCase().replace(/\s+/g, "-")}`
-              : null,
-          ].filter(Boolean)
-        )
-      ) as string[];
+      const uuidCourseKeys = collectCandidateCourseUuids({
+        courseId,
+        courseMetaId: course?.id,
+        courseCode: course?.code,
+      });
 
       const [apiQuizzesRes, dbQuizzesRes] = await Promise.all([
         fetch(
@@ -276,12 +291,14 @@ const CourseHub = () => {
         )
           .then((r) => (r.ok ? r.json() : { quizzes: [] }))
           .catch(() => ({ quizzes: [] })),
-        supabase
-          .from("quizzes")
-          .select("id, title, description, duration_minutes, question_count, is_premium, token_cost, topic_id, tutor_id, created_at")
-          .in("course_id", courseKeys)
-          .eq("is_active", true)
-          .order("created_at", { ascending: false }),
+        uuidCourseKeys.length > 0
+          ? supabase
+              .from("quizzes")
+              .select("id, title, description, duration_minutes, question_count, is_premium, token_cost, topic_id, tutor_id, created_at")
+              .in("course_id", uuidCourseKeys)
+              .eq("is_active", true)
+              .order("created_at", { ascending: false })
+          : Promise.resolve({ data: [] }),
       ]);
 
       const mergedQuizzes = new Map<string, any>();
@@ -338,23 +355,17 @@ const CourseHub = () => {
     queryKey: ["course-flashcards", courseId, course?.id, course?.code, topicFilter],
     enabled: !!courseId,
     queryFn: async () => {
-      const courseKeys = Array.from(
-        new Set(
-          [
-            courseId,
-            course?.id,
-            course?.code,
-            course?.code
-              ? `course-${course.code.toLowerCase().replace(/\s+/g, "-")}`
-              : null,
-          ].filter(Boolean)
-        )
-      ) as string[];
+      const uuidCourseKeys = collectCandidateCourseUuids({
+        courseId,
+        courseMetaId: course?.id,
+        courseCode: course?.code,
+      });
+      if (uuidCourseKeys.length === 0) return [];
 
       let q = supabase
         .from("flashcards")
         .select("id, front, back, subject, topic, created_at, topic_id")
-        .in("course_id", courseKeys)
+        .in("course_id", uuidCourseKeys)
         .order("created_at", { ascending: false })
         .limit(200);
       if (topicFilter) q = q.eq("topic_id", topicFilter);
@@ -365,13 +376,19 @@ const CourseHub = () => {
 
   // Fetch images
   const { data: images = [] } = useQuery({
-    queryKey: ["course-images", user?.id, courseId],
+    queryKey: ["course-images", user?.id, courseId, course?.id, course?.code],
     enabled: !!courseId && !!user,
     queryFn: async () => {
+      const uuidCourseKeys = collectCandidateCourseUuids({
+        courseId,
+        courseMetaId: course?.id,
+        courseCode: course?.code,
+      });
+      if (uuidCourseKeys.length === 0) return [];
       const { data } = await supabase
         .from("course_images")
         .select("id, storage_path, url, caption, created_at")
-        .eq("course_id", courseId)
+        .in("course_id", uuidCourseKeys)
         .order("created_at", { ascending: false });
       return Promise.all((data ?? []).map(async (image) => {
         const marker = "/storage/v1/object/public/course-images/";

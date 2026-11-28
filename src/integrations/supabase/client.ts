@@ -3,26 +3,7 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 import { brokeredPreviewStorage } from "./previewAuthStorage";
-import {
-  clearLocalMaterialMirrorsAndCaches,
-  getCleanSlateCutoff,
-  MATERIALS_PURGE_CUTOFF_ISO,
-  MATERIALS_PURGE_VERSION_KEY,
-} from "@/lib/cleanSlateManager";
-
-const MATERIALS_PURGE_CUTOFF_MS = Date.parse(MATERIALS_PURGE_CUTOFF_ISO);
-
-if (typeof window !== "undefined") {
-  try {
-    const status = localStorage.getItem(MATERIALS_PURGE_VERSION_KEY);
-    if (status !== "local_done" && status !== "db_done") {
-      clearLocalMaterialMirrorsAndCaches();
-      localStorage.setItem(MATERIALS_PURGE_VERSION_KEY, "local_done");
-    }
-  } catch {
-    // ignore storage access issues
-  }
-}
+import { getCleanSlateCutoff } from "@/lib/cleanSlateManager";
 
 const DEFAULT_SUPABASE_Project_ID = "vfbxyldwtjwwecpbgezu";
 const DEFAULT_SUPABASE_URL = "https://vfbxyldwtjwwecpbgezu.supabase.co";
@@ -248,6 +229,11 @@ const cleanSlateFetch: typeof fetch = async (input, init) => {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
+    }
+
+    const directHeader = getHeaderValue(init?.headers, reqObj, "x-overra-direct");
+    if (directHeader === "1") {
+      return fetch(input, init);
     }
 
     const match = urlObj.pathname.match(/\/rest\/v1\/([a-zA-Z0-9_]+)$/);
@@ -687,16 +673,7 @@ const cleanSlateFetch: typeof fetch = async (input, init) => {
         }
       }
 
-      let finalRows = Array.from(mergedMap.values());
-      if (table === "study_materials" || table === "lecture_notes") {
-        finalRows = finalRows.filter((row) => {
-          const ts = row?.created_at ? Date.parse(String(row.created_at)) : Date.now();
-          if (Number.isFinite(ts) && ts < MATERIALS_PURGE_CUTOFF_MS) {
-            return false;
-          }
-          return true;
-        });
-      }
+      const finalRows = Array.from(mergedMap.values());
       return buildPostgrestResponse(finalRows, acceptHeader, 200);
     }
   } catch {
@@ -722,48 +699,11 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   },
 });
 
-// Remove any legacy v1 cutoff key from previous sessions on startup without deleting new data,
-// and execute the one-time database purge of pre-cutoff corrupted materials once authenticated.
+// Clean up any legacy v1 cutoff key without ever deleting uploaded cloud materials.
 if (typeof window !== "undefined") {
   try {
     localStorage.removeItem("overra_clean_slate_cutoff_v1");
   } catch {
     // ignore
   }
-
-  let dbPurgeInFlight = false;
-  const runPreCutoffMaterialDbPurge = async () => {
-    if (dbPurgeInFlight) return;
-    try {
-      if (localStorage.getItem(MATERIALS_PURGE_VERSION_KEY) === "db_done") return;
-    } catch {
-      return;
-    }
-    dbPurgeInFlight = true;
-    try {
-      const { data } = await supabase.auth.getSession();
-      if (!data?.session?.user) return;
-      await Promise.allSettled([
-        supabase.from("study_materials").delete().lt("created_at", MATERIALS_PURGE_CUTOFF_ISO),
-        supabase.from("lecture_notes").delete().lt("created_at", MATERIALS_PURGE_CUTOFF_ISO),
-      ]);
-      clearLocalMaterialMirrorsAndCaches();
-      try {
-        localStorage.setItem(MATERIALS_PURGE_VERSION_KEY, "db_done");
-      } catch {
-        // ignore
-      }
-    } catch {
-      // retry on next session load
-    } finally {
-      dbPurgeInFlight = false;
-    }
-  };
-
-  void runPreCutoffMaterialDbPurge();
-  supabase.auth.onAuthStateChange((_event, session) => {
-    if (session?.user) {
-      void runPreCutoffMaterialDbPurge();
-    }
-  });
 }

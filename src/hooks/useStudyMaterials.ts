@@ -3,6 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import useEnvironment from "@/hooks/useEnvironment";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveCourseSemester, type AcademicSemester } from "@/lib/cleanSlateManager";
+import {
+  isUuid,
+  normalizeCourseCode,
+  courseCodeToDeterministicUuid,
+  collectCandidateCourseUuids,
+} from "@/lib/courseIdentity";
 
 /**
  * Student-facing view of all uploaded course documents across the Express server
@@ -71,6 +77,19 @@ export function useMaterialCourses() {
         }
       >();
 
+      const courseAliasToCanonicalId = new Map<string, string>();
+      const registerCourseAlias = (canonicalId: string, code?: string | null) => {
+        courseAliasToCanonicalId.set(canonicalId, canonicalId);
+        const norm = normalizeCourseCode(code);
+        if (norm && !courseAliasToCanonicalId.has(norm)) {
+          courseAliasToCanonicalId.set(norm, canonicalId);
+        }
+        const det = courseCodeToDeterministicUuid(code);
+        if (det && !courseAliasToCanonicalId.has(det)) {
+          courseAliasToCanonicalId.set(det, canonicalId);
+        }
+      };
+
       for (const c of Array.isArray(apiCoursesRes?.courses) ? apiCoursesRes.courses : []) {
         if (!c?.id || c.is_active === false) continue;
         courseMap.set(c.id, {
@@ -82,11 +101,14 @@ export function useMaterialCourses() {
           description: c.description || null,
           semester: c.semester || null,
         });
+        registerCourseAlias(c.id, c.code);
       }
 
       for (const c of (dbCoursesRes.data ?? []) as any[]) {
         if (!c?.id || c.is_active === false) continue;
-        const existing = courseMap.get(c.id);
+        const norm = normalizeCourseCode(c.code);
+        const existingId = (norm && courseAliasToCanonicalId.get(norm)) || c.id;
+        const existing = courseMap.get(existingId) || courseMap.get(c.id);
         courseMap.set(c.id, {
           id: c.id,
           code: c.code || existing?.code || "COURSE",
@@ -98,6 +120,14 @@ export function useMaterialCourses() {
           description: c.description ?? existing?.description ?? null,
           semester: (c as any).semester ?? existing?.semester ?? null,
         });
+        // Prefer the real Supabase UUID as canonical when available
+        courseAliasToCanonicalId.set(c.id, c.id);
+        if (existingId && existingId !== c.id) {
+          courseAliasToCanonicalId.set(existingId, c.id);
+        }
+        if (norm) courseAliasToCanonicalId.set(norm, c.id);
+        const det = courseCodeToDeterministicUuid(c.code);
+        if (det) courseAliasToCanonicalId.set(det, c.id);
       }
 
       // Deduplicate all uploaded materials per course across Server + study_materials + lecture_notes
@@ -109,7 +139,12 @@ export function useMaterialCourses() {
 
       const registerMaterial = (m: any) => {
         if (!m?.course_id) return;
-        const cid = String(m.course_id);
+        const rawCid = String(m.course_id);
+        const rawCodeNorm = normalizeCourseCode(m.course_code || m.courseCode);
+        const cid =
+          courseAliasToCanonicalId.get(rawCid) ||
+          (rawCodeNorm ? courseAliasToCanonicalId.get(rawCodeNorm) : undefined) ||
+          rawCid;
         const dedupeKey = m.id || m.title || m.file_url;
         if (!seenPerCourse.has(cid)) seenPerCourse.set(cid, new Set());
         if (dedupeKey) seenPerCourse.get(cid)!.add(String(dedupeKey));
@@ -175,16 +210,18 @@ export function useCourseMaterials(courseId?: string) {
     enabled: !!courseId,
     staleTime: 20_000,
     queryFn: async (): Promise<{ course: { code: string; name: string } | null; groups: MaterialsByTopic[] }> => {
-      // 1. Fetch course metadata (Supabase + Server Store) and syllabus topics
+      // 1. Fetch course metadata (Supabase + Server Store) without ever passing a non-UUID slug to UUID columns
       const target = String(courseId || "").trim().toLowerCase();
       const targetNoSpace = target.replace(/[\s-_]/g, "");
+      const targetCode = normalizeCourseCode(courseId);
 
-      const [courseRes, apiCoursesRes, topicsRes] = await Promise.all([
-        supabase.from("courses").select("id, code, name").eq("id", courseId!).maybeSingle(),
+      const [courseRes, apiCoursesRes] = await Promise.all([
+        isUuid(courseId)
+          ? supabase.from("courses").select("id, code, name").eq("id", courseId!).maybeSingle()
+          : Promise.resolve({ data: null }),
         fetch("/api/courses")
           .then((r) => (r.ok ? r.json() : { courses: [] }))
           .catch(() => ({ courses: [] })),
-        supabase.from("topics").select("id, name").eq("course_id", courseId!),
       ]);
 
       const srvCourse = (Array.isArray(apiCoursesRes?.courses) ? apiCoursesRes.courses : []).find(
@@ -192,45 +229,47 @@ export function useCourseMaterials(courseId?: string) {
           const cid = String(c?.id || "").trim().toLowerCase();
           const ccode = String(c?.code || "").trim().toLowerCase();
           const ccodeNoSpace = ccode.replace(/[\s-_]/g, "");
-          return cid === target || ccode === target || ccodeNoSpace === targetNoSpace;
+          const detUuid = courseCodeToDeterministicUuid(c?.code)?.toLowerCase();
+          return (
+            cid === target ||
+            detUuid === target ||
+            ccode === target ||
+            ccodeNoSpace === targetNoSpace ||
+            (targetCode && normalizeCourseCode(c?.code) === targetCode)
+          );
         }
       );
 
-      let courseMeta = courseRes.data as any;
+      let courseMeta = (courseRes as any).data as any;
       if (!courseMeta) {
-        const { data: byCode } = await supabase
-          .from("courses")
-          .select("id, code, name")
-          .ilike("code", courseId!)
-          .maybeSingle();
-        if (byCode) courseMeta = byCode;
+        const lookupCode = normalizeCourseCode(srvCourse?.code || courseId);
+        if (lookupCode) {
+          const { data: byCode } = await supabase
+            .from("courses")
+            .select("id, code, name")
+            .ilike("code", lookupCode)
+            .limit(1)
+            .maybeSingle();
+          if (byCode) courseMeta = byCode;
+        }
       }
 
       const course =
         courseMeta ??
         (srvCourse ? { code: srvCourse.code, name: srvCourse.name } : null);
-      const topics = topicsRes.data ?? [];
 
-      const isUuid = (v: unknown): v is string =>
-        typeof v === "string" &&
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v.trim());
+      const uuidCourseKeys = collectCandidateCourseUuids({
+        courseId,
+        courseMetaId: courseMeta?.id,
+        srvCourseId: srvCourse?.id,
+        courseCode: course?.code || srvCourse?.code,
+      });
 
-      const courseKeys = Array.from(
-        new Set(
-          [
-            courseId,
-            course?.code,
-            courseMeta?.id,
-            srvCourse?.id,
-            srvCourse?.code,
-            srvCourse?.code
-              ? `course-${srvCourse.code.toLowerCase().replace(/\s+/g, "-")}`
-              : null,
-          ].filter(Boolean)
-        )
-      ) as string[];
-
-      const uuidCourseKeys = courseKeys.filter(isUuid);
+      const topicsRes =
+        uuidCourseKeys.length > 0
+          ? await supabase.from("topics").select("id, name").in("course_id", uuidCourseKeys)
+          : { data: [] };
+      const topics = (topicsRes as any).data ?? [];
 
       // 2. Fetch materials from local server store (always available & reliable for admin uploads)
       let serverMaterials: any[] = [];

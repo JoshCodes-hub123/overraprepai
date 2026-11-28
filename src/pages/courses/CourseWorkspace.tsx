@@ -41,6 +41,12 @@ import { CourseNoteReaderDialog } from "@/components/viewer/CourseNoteReaderDial
 import { getCoverImage } from "@/lib/courseCovers";
 import { Button } from "@/components/ui/button";
 import { downloadMaterialExternally } from "@/lib/downloadMaterial";
+import {
+  isUuid,
+  normalizeCourseCode,
+  courseCodeToDeterministicUuid,
+  collectCandidateCourseUuids,
+} from "@/lib/courseIdentity";
 
 /**
  * Guided 3-Step Course Workspace (/courses/:courseId)
@@ -111,33 +117,46 @@ const CourseWorkspace = () => {
     queryFn: async () => {
       const target = courseId.trim().toLowerCase();
       const targetNoSpace = target.replace(/[\s-_]/g, "");
+      const normCode = normalizeCourseCode(courseId);
 
       const [dbRes, apiRes] = await Promise.all([
-        supabase
-          .from("courses")
-          .select("id, code, name, level, department, university_code")
-          .eq("id", courseId)
-          .maybeSingle(),
+        isUuid(courseId)
+          ? supabase
+              .from("courses")
+              .select("id, code, name, level, department, university_code")
+              .eq("id", courseId)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
         fetch("/api/courses")
           .then((r) => (r.ok ? r.json() : { courses: [] }))
           .catch(() => ({ courses: [] })),
       ]);
 
-      if (dbRes.data) return dbRes.data;
+      if ((dbRes as any).data) return (dbRes as any).data;
 
-      const { data: byCode } = await supabase
-        .from("courses")
-        .select("id, code, name, level, department, university_code")
-        .ilike("code", courseId)
-        .maybeSingle();
-      if (byCode) return byCode;
+      if (normCode) {
+        const { data: byCode } = await supabase
+          .from("courses")
+          .select("id, code, name, level, department, university_code")
+          .ilike("code", normCode)
+          .limit(1)
+          .maybeSingle();
+        if (byCode) return byCode;
+      }
 
       const srvCourse = (Array.isArray(apiRes?.courses) ? apiRes.courses : []).find(
         (c: any) => {
           const cid = String(c?.id || "").toLowerCase();
           const ccode = String(c?.code || "").toLowerCase();
           const ccodeNoSpace = ccode.replace(/[\s-_]/g, "");
-          return cid === target || ccode === target || ccodeNoSpace === targetNoSpace;
+          const detUuid = courseCodeToDeterministicUuid(c?.code)?.toLowerCase();
+          return (
+            cid === target ||
+            detUuid === target ||
+            ccode === target ||
+            ccodeNoSpace === targetNoSpace ||
+            (normCode && normalizeCourseCode(c?.code) === normCode)
+          );
         }
       );
       if (srvCourse) {
@@ -164,18 +183,11 @@ const CourseWorkspace = () => {
     staleTime: 30_000,
     queryFn: async () => {
       const mergedMap = new Map<string, any>();
-      const courseKeys = Array.from(
-        new Set(
-          [
-            courseId,
-            course?.id,
-            course?.code,
-            course?.code
-              ? `course-${course.code.toLowerCase().replace(/\s+/g, "-")}`
-              : null,
-          ].filter(Boolean)
-        )
-      ) as string[];
+      const uuidCourseKeys = collectCandidateCourseUuids({
+        courseId,
+        courseMetaId: course?.id,
+        courseCode: course?.code,
+      });
 
       try {
         const queryCode = course?.code || "";
@@ -203,22 +215,24 @@ const CourseWorkspace = () => {
         // ignore server fetch error
       }
 
-      try {
-        const { data } = await supabase
-          .from("quizzes")
-          .select("id, title, question_count, duration_minutes, is_simulation, created_at")
-          .in("course_id", courseKeys)
-          .eq("is_active", true)
-          .order("created_at", { ascending: false });
-        if (Array.isArray(data)) {
-          for (const row of data) {
-            if (!mergedMap.has(row.id)) {
-              mergedMap.set(row.id, row);
+      if (uuidCourseKeys.length > 0) {
+        try {
+          const { data } = await supabase
+            .from("quizzes")
+            .select("id, title, question_count, duration_minutes, is_simulation, created_at")
+            .in("course_id", uuidCourseKeys)
+            .eq("is_active", true)
+            .order("created_at", { ascending: false });
+          if (Array.isArray(data)) {
+            for (const row of data) {
+              if (!mergedMap.has(row.id)) {
+                mergedMap.set(row.id, row);
+              }
             }
           }
+        } catch {
+          // ignore
         }
-      } catch {
-        // ignore
       }
 
       return Array.from(mergedMap.values()).sort(
