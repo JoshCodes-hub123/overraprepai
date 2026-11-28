@@ -25,14 +25,15 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
-import { getCachedMaterial, cacheMaterialOffline } from "@/lib/offlineLibraryCache";
+import { getCachedMaterial, cacheMaterialOffline, removeCachedMaterial } from "@/lib/offlineLibraryCache";
+import { fetchVerifiedPdfBlob, isValidPdfBlob } from "@/lib/pdfResolver";
 
 // Import react-pdf styling
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 
-// Configure PDF.js worker using unpkg matched to the installed pdfjs version
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+// Use local PDF.js worker served by our Express server to eliminate CDN/version failures
+pdfjs.GlobalWorkerOptions.workerSrc = "/api/pdf-worker.js";
 
 const SW_CACHE_NAME = "offline-pdf-cache-v1";
 
@@ -42,6 +43,8 @@ export interface LibraryPdfViewerProps {
   documentId: string;
   title: string;
   sourceUrl?: string | null;
+  filePath?: string | null;
+  isResolvingUrl?: boolean;
   mime?: string | null;
   courseCode?: string | null;
   initialBlob?: Blob | null;
@@ -57,6 +60,8 @@ export function LibraryPdfViewer({
   documentId,
   title,
   sourceUrl,
+  filePath,
+  isResolvingUrl = false,
   mime,
   courseCode,
   initialBlob,
@@ -73,6 +78,8 @@ export function LibraryPdfViewer({
 
   // Offline / ServiceWorker Caching State
   const [pdfSource, setPdfSource] = useState<string | Blob | null>(null);
+  const [nativeFallbackUrl, setNativeFallbackUrl] = useState<string | null>(null);
+  const [useNativeFallback, setUseNativeFallback] = useState<boolean>(false);
   const [isSwCached, setIsSwCached] = useState<boolean>(false);
   const [isCaching, setIsCaching] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
@@ -126,32 +133,51 @@ export function LibraryPdfViewer({
     let isMounted = true;
     let objectUrlToRevoke: string | null = null;
 
+    const applyValidBlob = (blob: Blob) => {
+      const normalized =
+        blob.type === "application/pdf"
+          ? blob
+          : new Blob([blob], { type: "application/pdf" });
+      objectUrlToRevoke = URL.createObjectURL(normalized);
+      if (isMounted) {
+        setPdfSource(normalized);
+        setNativeFallbackUrl(objectUrlToRevoke);
+        setLoading(false);
+      }
+    };
+
     async function loadPdfDocument() {
       setLoading(true);
       setLoadError(null);
+      setUseNativeFallback(false);
+      setNativeFallbackUrl(null);
+      setPageNumber(1);
 
       try {
         // 1. Direct Blob provided
-        if (initialBlob) {
-          if (isMounted) {
-            setPdfSource(initialBlob);
-            setLoading(false);
-          }
+        if (initialBlob && (await isValidPdfBlob(initialBlob))) {
+          applyValidBlob(initialBlob);
           return;
         }
 
-        // 2. Check IndexedDB offline library cache
+        // 2. Check IndexedDB offline library cache (validate %PDF-)
         const localCached = await getCachedMaterial(documentId);
         if (localCached?.blob) {
-          if (isMounted) {
-            setIsSwCached(true);
-            setPdfSource(localCached.blob);
-            setLoading(false);
+          if (await isValidPdfBlob(localCached.blob)) {
+            if (isMounted) setIsSwCached(true);
+            applyValidBlob(localCached.blob);
+            return;
+          } else {
+            await removeCachedMaterial(documentId).catch(() => {});
           }
+        }
+
+        // Wait if parent is still asynchronously resolving a signed URL
+        if (!sourceUrl && isResolvingUrl) {
           return;
         }
 
-        // 3. Check ServiceWorker CacheStorage
+        // 3. Check ServiceWorker CacheStorage (validate %PDF- and purge corrupt entries)
         if (sourceUrl && "caches" in window) {
           const cached = await checkServiceWorkerCache(sourceUrl);
           if (cached) {
@@ -159,39 +185,45 @@ export function LibraryPdfViewer({
             const response = await cache.match(sourceUrl);
             if (response) {
               const blob = await response.blob();
-              if (isMounted) {
-                setIsSwCached(true);
-                setPdfSource(blob);
-                setLoading(false);
+              if (await isValidPdfBlob(blob)) {
+                if (isMounted) setIsSwCached(true);
+                applyValidBlob(blob);
                 return;
+              } else {
+                await cache.delete(sourceUrl).catch(() => {});
               }
             }
           }
         }
 
-        // 4. Online Fetch with Automatic ServiceWorker Caching
-        if (sourceUrl) {
-          const res = await fetch(sourceUrl);
-          if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-          const blob = await res.blob();
+        // 4. Verified online fetch (handles proxy, direct, refreshed Supabase signed URL)
+        if (sourceUrl || filePath) {
+          const { blob } = await fetchVerifiedPdfBlob({
+            id: documentId,
+            title,
+            courseCode,
+            fileUrl: sourceUrl,
+            filePath,
+            allowGeneratedFallback: false,
+          });
 
-          // Store in ServiceWorker cache for offline access
-          if ("caches" in window) {
+          // Store verified PDF in ServiceWorker cache for offline access
+          if ("caches" in window && sourceUrl) {
             try {
               const cache = await caches.open(SW_CACHE_NAME);
-              await cache.put(sourceUrl, new Response(blob.slice(), {
-                headers: { "Content-Type": "application/pdf" },
-              }));
+              await cache.put(
+                sourceUrl,
+                new Response(blob.slice(), {
+                  headers: { "Content-Type": "application/pdf" },
+                })
+              );
               if (isMounted) setIsSwCached(true);
             } catch (swErr) {
               console.warn("[SW Cache] Error caching document:", swErr);
             }
           }
 
-          if (isMounted) {
-            setPdfSource(blob);
-            setLoading(false);
-          }
+          applyValidBlob(blob);
         } else {
           throw new Error("No PDF source URL available");
         }
@@ -214,7 +246,7 @@ export function LibraryPdfViewer({
       isMounted = false;
       if (objectUrlToRevoke) URL.revokeObjectURL(objectUrlToRevoke);
     };
-  }, [isOpen, documentId, sourceUrl, initialBlob]);
+  }, [isOpen, documentId, sourceUrl, filePath, isResolvingUrl, initialBlob, title, courseCode]);
 
   // ServiceWorker Cache & Offline Download handler
   const handleCacheForOffline = async () => {
@@ -556,6 +588,14 @@ export function LibraryPdfViewer({
               )}
             </div>
           </div>
+        ) : useNativeFallback && nativeFallbackUrl ? (
+          <div className="w-full max-w-5xl h-[calc(100vh-8rem)] rounded-xl overflow-hidden shadow-2xl border border-border bg-white">
+            <iframe
+              src={`${nativeFallbackUrl}#toolbar=1&navpanes=0&view=FitH`}
+              title={title}
+              className="w-full h-full border-0"
+            />
+          </div>
         ) : pdfSource ? (
           <div
             className={cn(
@@ -571,8 +611,13 @@ export function LibraryPdfViewer({
                 setLoading(false);
               }}
               onLoadError={(err) => {
-                console.error("react-pdf onLoadError:", err);
-                setLoadError("Failed to parse PDF document structure.");
+                console.warn("react-pdf onLoadError, switching to native PDF renderer:", err);
+                if (nativeFallbackUrl) {
+                  setUseNativeFallback(true);
+                  setLoadError(null);
+                } else {
+                  setLoadError("Failed to parse PDF document structure.");
+                }
                 setLoading(false);
               }}
               loading={

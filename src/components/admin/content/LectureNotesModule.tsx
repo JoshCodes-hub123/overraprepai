@@ -30,6 +30,7 @@ import {
 import { toast } from "sonner";
 import { extractTextFromFile } from "@/lib/extractText";
 import { uploadLargeFileChunked } from "@/lib/chunkedFileUploader";
+import { uploadFileToSupabaseStorage } from "@/lib/pdfResolver";
 import { CascadeSelection } from "./InstitutionalCascadeSelector";
 
 export interface LectureMaterialItem {
@@ -265,6 +266,7 @@ export const LectureNotesModule: React.FC<Props> = ({ cascade }) => {
     setUploading(true);
     try {
       let publicFileUrl = "";
+      let permanentFilePath: string | null = null;
       let fileSize = 0;
       let fileExtension = "pdf";
 
@@ -278,35 +280,24 @@ export const LectureNotesModule: React.FC<Props> = ({ cascade }) => {
         fileSize = selectedFile.size;
         fileExtension = selectedFile.name.split(".").pop()?.toLowerCase() || "pdf";
 
-        // 1. Upload via 4MB binary chunks to applet server to support arbitrarily large files
-        try {
-          const uJson = await uploadLargeFileChunked(selectedFile);
-          if (uJson.ok && uJson.url) {
-            publicFileUrl = uJson.url;
-          }
-        } catch (serverUpErr) {
-          console.warn("Server file upload warning:", serverUpErr);
+        // 1. Upload permanently to Supabase Storage with live byte-level readback verification
+        const cloudResult = await uploadFileToSupabaseStorage(selectedFile, {
+          courseId: cascade.courseId,
+          userId: user?.id ?? null,
+        });
+        if (!cloudResult.ok || !cloudResult.fileUrl || !cloudResult.filePath) {
+          toast.error(cloudResult.error || "Cloud upload failed verification. Please try again.");
+          setUploading(false);
+          return;
         }
+        publicFileUrl = cloudResult.fileUrl;
+        permanentFilePath = cloudResult.filePath;
 
-        // 2. Fallback to storage bucket if server upload didn't set URL
-        if (!publicFileUrl) {
-          const filePath = `${cascade.university}/${cascade.courseCode}/${Date.now()}_${selectedFile.name.replace(/\s+/g, "_")}`;
-          try {
-            const { error: storageError } = await supabase.storage
-              .from("course_materials")
-              .upload(filePath, selectedFile, { cacheControl: "3600", upsert: true });
-
-            if (!storageError) {
-              const { data: publicUrlData } = supabase.storage
-                .from("course_materials")
-                .getPublicUrl(filePath);
-              publicFileUrl = publicUrlData?.publicUrl || filePath;
-            } else {
-              publicFileUrl = URL.createObjectURL(selectedFile);
-            }
-          } catch {
-            publicFileUrl = URL.createObjectURL(selectedFile);
-          }
+        // 2. Optional fast local mirror cache (non-blocking)
+        try {
+          await uploadLargeFileChunked(selectedFile);
+        } catch {
+          // non-fatal — cloud storage is the verified permanent source
         }
       } else {
         // Rich text note
@@ -331,19 +322,24 @@ export const LectureNotesModule: React.FC<Props> = ({ cascade }) => {
         isPublished ? "published" : "draft",
       ].filter(Boolean);
 
+      const matId =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `mat_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
       const payload = {
-        id: `mat_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        id: matId,
         course_id: cascade.courseId,
         topic_id: assignedTopicId,
         title: materialTitle.trim(),
         description:
           materialDescription.trim() ||
           (extractedText ? extractedText.slice(0, 300) + "…" : `Lecture material for ${cascade.courseCode}`),
-        file_path: publicFileUrl,
+        file_path: permanentFilePath || `${user?.id || "admin"}/${cascade.courseId}/${Date.now()}_note.md`,
         file_url: publicFileUrl,
         file_type: fileExtension,
         file_size: fileSize,
-        visibility: isPublished ? "published" : "draft",
+        visibility: isPublished ? "public" : "private",
         owner_id: user?.id || "admin_operator",
         owner_name: "Course Administrator",
         tags,

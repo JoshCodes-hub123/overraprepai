@@ -9,7 +9,9 @@ const isChunkLoadError = (err: unknown): boolean => {
   const msg = (err as any)?.message ?? "";
   return (
     typeof msg === "string" &&
-    /Loading chunk|Failed to fetch dynamically imported module|Importing a module script failed|ChunkLoadError/i.test(msg)
+    /Loading chunk|Failed to fetch dynamically imported module|Importing a module script failed|ChunkLoadError|Invalid hook call|Cannot read properties of null \(reading '(?:useMemo|useState|useEffect|useContext|useRef|useCallback|useReducer|useLayoutEffect)'\)/i.test(
+      msg
+    )
   );
 };
 

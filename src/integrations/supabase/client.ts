@@ -3,7 +3,26 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 import { brokeredPreviewStorage } from "./previewAuthStorage";
-import { getCleanSlateCutoff } from "@/lib/cleanSlateManager";
+import {
+  clearLocalMaterialMirrorsAndCaches,
+  getCleanSlateCutoff,
+  MATERIALS_PURGE_CUTOFF_ISO,
+  MATERIALS_PURGE_VERSION_KEY,
+} from "@/lib/cleanSlateManager";
+
+const MATERIALS_PURGE_CUTOFF_MS = Date.parse(MATERIALS_PURGE_CUTOFF_ISO);
+
+if (typeof window !== "undefined") {
+  try {
+    const status = localStorage.getItem(MATERIALS_PURGE_VERSION_KEY);
+    if (status !== "local_done" && status !== "db_done") {
+      clearLocalMaterialMirrorsAndCaches();
+      localStorage.setItem(MATERIALS_PURGE_VERSION_KEY, "local_done");
+    }
+  } catch {
+    // ignore storage access issues
+  }
+}
 
 const DEFAULT_SUPABASE_Project_ID = "vfbxyldwtjwwecpbgezu";
 const DEFAULT_SUPABASE_URL = "https://vfbxyldwtjwwecpbgezu.supabase.co";
@@ -300,6 +319,7 @@ const cleanSlateFetch: typeof fetch = async (input, init) => {
                 title: r.title,
                 description: r.description ?? null,
                 file_url: r.file_url ?? "",
+                file_path: r.file_path ?? null,
                 file_type: r.file_type || "pdf",
                 file_size: r.file_size ?? r.file_size_bytes ?? 0,
                 created_at: r.created_at,
@@ -372,6 +392,17 @@ const cleanSlateFetch: typeof fetch = async (input, init) => {
           updatedRows.push(updated);
           if (table === "courses" && row.id && typeof window !== "undefined") {
             void fetch(`/api/courses/${encodeURIComponent(row.id)}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(updates),
+            }).catch(() => {});
+          }
+          if (
+            (table === "study_materials" || table === "lecture_notes") &&
+            row.id &&
+            typeof window !== "undefined"
+          ) {
+            void fetch(`/api/materials/${encodeURIComponent(row.id)}`, {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(updates),
@@ -489,6 +520,7 @@ const cleanSlateFetch: typeof fetch = async (input, init) => {
                     title: m.title,
                     description: m.description ?? null,
                     file_url: m.file_url ?? "",
+                    file_path: m.file_path ?? null,
                     file_type: m.file_type || "pdf",
                     file_size: m.file_size ?? m.file_size_bytes ?? 0,
                     created_at: m.created_at,
@@ -500,10 +532,18 @@ const cleanSlateFetch: typeof fetch = async (input, init) => {
               for (const m of currentMirror) byId.set(m.id, m);
               for (const sm of srvJson.materials) {
                 if (!sm?.id) continue;
+                const prev = byId.get(sm.id);
+                const prevHasCloud =
+                  typeof prev?.file_url === "string" && /^https:\/\/.*supabase\./i.test(prev.file_url);
+                const smHasCloud =
+                  typeof sm?.file_url === "string" && /^https:\/\/.*supabase\./i.test(sm.file_url);
                 byId.set(sm.id, {
+                  ...prev,
                   ...sm,
-                  file_size: sm.file_size ?? 0,
-                  file_size_bytes: sm.file_size ?? sm.file_size_bytes ?? 0,
+                  file_url: smHasCloud ? sm.file_url : prevHasCloud ? prev.file_url : sm.file_url ?? prev?.file_url ?? "",
+                  file_path: sm.file_path || prev?.file_path || null,
+                  file_size: sm.file_size ?? prev?.file_size ?? 0,
+                  file_size_bytes: sm.file_size ?? sm.file_size_bytes ?? prev?.file_size_bytes ?? 0,
                   is_published: true,
                 });
               }
@@ -601,8 +641,20 @@ const cleanSlateFetch: typeof fetch = async (input, init) => {
       for (const sr of supabaseRows) {
         if (!sr) continue;
         const key = sr.id || `${sr.student_id}_${sr.course_id}` || JSON.stringify(sr);
-        if (!mergedMap.has(key)) {
+        const existing = mergedMap.get(key);
+        if (!existing) {
           mergedMap.set(key, sr);
+        } else if (table === "study_materials" || table === "lecture_notes") {
+          const srHasCloud =
+            typeof sr.file_url === "string" && /^https:\/\/.*supabase\./i.test(sr.file_url);
+          const exHasCloud =
+            typeof existing.file_url === "string" && /^https:\/\/.*supabase\./i.test(existing.file_url);
+          mergedMap.set(key, {
+            ...existing,
+            ...sr,
+            file_url: srHasCloud ? sr.file_url : exHasCloud ? existing.file_url : sr.file_url || existing.file_url,
+            file_path: sr.file_path || existing.file_path || null,
+          });
         }
       }
 
@@ -635,7 +687,16 @@ const cleanSlateFetch: typeof fetch = async (input, init) => {
         }
       }
 
-      const finalRows = Array.from(mergedMap.values());
+      let finalRows = Array.from(mergedMap.values());
+      if (table === "study_materials" || table === "lecture_notes") {
+        finalRows = finalRows.filter((row) => {
+          const ts = row?.created_at ? Date.parse(String(row.created_at)) : Date.now();
+          if (Number.isFinite(ts) && ts < MATERIALS_PURGE_CUTOFF_MS) {
+            return false;
+          }
+          return true;
+        });
+      }
       return buildPostgrestResponse(finalRows, acceptHeader, 200);
     }
   } catch {
@@ -661,11 +722,48 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   },
 });
 
-// Remove any legacy v1 cutoff key from previous sessions on startup without deleting data
+// Remove any legacy v1 cutoff key from previous sessions on startup without deleting new data,
+// and execute the one-time database purge of pre-cutoff corrupted materials once authenticated.
 if (typeof window !== "undefined") {
   try {
     localStorage.removeItem("overra_clean_slate_cutoff_v1");
   } catch {
     // ignore
   }
+
+  let dbPurgeInFlight = false;
+  const runPreCutoffMaterialDbPurge = async () => {
+    if (dbPurgeInFlight) return;
+    try {
+      if (localStorage.getItem(MATERIALS_PURGE_VERSION_KEY) === "db_done") return;
+    } catch {
+      return;
+    }
+    dbPurgeInFlight = true;
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (!data?.session?.user) return;
+      await Promise.allSettled([
+        supabase.from("study_materials").delete().lt("created_at", MATERIALS_PURGE_CUTOFF_ISO),
+        supabase.from("lecture_notes").delete().lt("created_at", MATERIALS_PURGE_CUTOFF_ISO),
+      ]);
+      clearLocalMaterialMirrorsAndCaches();
+      try {
+        localStorage.setItem(MATERIALS_PURGE_VERSION_KEY, "db_done");
+      } catch {
+        // ignore
+      }
+    } catch {
+      // retry on next session load
+    } finally {
+      dbPurgeInFlight = false;
+    }
+  };
+
+  void runPreCutoffMaterialDbPurge();
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (session?.user) {
+      void runPreCutoffMaterialDbPurge();
+    }
+  });
 }

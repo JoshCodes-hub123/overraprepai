@@ -26,6 +26,7 @@ export interface StudyMaterial {
   file_type: string;
   file_size: number;
   file_url: string;
+  file_path?: string | null;
   topic_id: string | null;
   created_at: string;
   owner_name?: string | null;
@@ -175,8 +176,11 @@ export function useCourseMaterials(courseId?: string) {
     staleTime: 20_000,
     queryFn: async (): Promise<{ course: { code: string; name: string } | null; groups: MaterialsByTopic[] }> => {
       // 1. Fetch course metadata (Supabase + Server Store) and syllabus topics
+      const target = String(courseId || "").trim().toLowerCase();
+      const targetNoSpace = target.replace(/[\s-_]/g, "");
+
       const [courseRes, apiCoursesRes, topicsRes] = await Promise.all([
-        supabase.from("courses").select("code, name").eq("id", courseId!).maybeSingle(),
+        supabase.from("courses").select("id, code, name").eq("id", courseId!).maybeSingle(),
         fetch("/api/courses")
           .then((r) => (r.ok ? r.json() : { courses: [] }))
           .catch(() => ({ courses: [] })),
@@ -184,17 +188,59 @@ export function useCourseMaterials(courseId?: string) {
       ]);
 
       const srvCourse = (Array.isArray(apiCoursesRes?.courses) ? apiCoursesRes.courses : []).find(
-        (c: any) => c?.id === courseId
+        (c: any) => {
+          const cid = String(c?.id || "").trim().toLowerCase();
+          const ccode = String(c?.code || "").trim().toLowerCase();
+          const ccodeNoSpace = ccode.replace(/[\s-_]/g, "");
+          return cid === target || ccode === target || ccodeNoSpace === targetNoSpace;
+        }
       );
+
+      let courseMeta = courseRes.data as any;
+      if (!courseMeta) {
+        const { data: byCode } = await supabase
+          .from("courses")
+          .select("id, code, name")
+          .ilike("code", courseId!)
+          .maybeSingle();
+        if (byCode) courseMeta = byCode;
+      }
+
       const course =
-        (courseRes.data as any) ??
+        courseMeta ??
         (srvCourse ? { code: srvCourse.code, name: srvCourse.name } : null);
       const topics = topicsRes.data ?? [];
+
+      const isUuid = (v: unknown): v is string =>
+        typeof v === "string" &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v.trim());
+
+      const courseKeys = Array.from(
+        new Set(
+          [
+            courseId,
+            course?.code,
+            courseMeta?.id,
+            srvCourse?.id,
+            srvCourse?.code,
+            srvCourse?.code
+              ? `course-${srvCourse.code.toLowerCase().replace(/\s+/g, "-")}`
+              : null,
+          ].filter(Boolean)
+        )
+      ) as string[];
+
+      const uuidCourseKeys = courseKeys.filter(isUuid);
 
       // 2. Fetch materials from local server store (always available & reliable for admin uploads)
       let serverMaterials: any[] = [];
       try {
-        const sRes = await fetch(`/api/courses/${encodeURIComponent(courseId!)}/materials`);
+        const queryCode = course?.code || srvCourse?.code || "";
+        const sRes = await fetch(
+          `/api/courses/${encodeURIComponent(srvCourse?.id || courseId!)}/materials?code=${encodeURIComponent(
+            queryCode
+          )}`
+        );
         if (sRes.ok) {
           const sJson = await sRes.json();
           if (sJson.ok && Array.isArray(sJson.materials)) {
@@ -205,44 +251,49 @@ export function useCourseMaterials(courseId?: string) {
         console.warn("Could not fetch server materials:", err);
       }
 
-      // 3. Fetch from study_materials table
+      // 3. Fetch from study_materials table (strictly UUID course_ids so PostgreSQL never throws 22P02)
       let dbStudyMaterials: any[] = [];
-      try {
-        const { data, error } = await supabase
-          .from("study_materials")
-          .select("id, title, description, file_type, file_size, file_url, topic_id, created_at, owner_id")
-          .eq("course_id", courseId!)
-          .order("created_at", { ascending: false });
-        if (!error && Array.isArray(data)) {
-          dbStudyMaterials = data;
+      if (uuidCourseKeys.length > 0) {
+        try {
+          const { data, error } = await supabase
+            .from("study_materials")
+            .select("id, title, description, file_type, file_size, file_url, file_path, topic_id, created_at, owner_id")
+            .in("course_id", uuidCourseKeys)
+            .order("created_at", { ascending: false });
+          if (!error && Array.isArray(data)) {
+            dbStudyMaterials = data;
+          }
+        } catch (err) {
+          console.warn("study_materials fetch notice:", err);
         }
-      } catch (err) {
-        console.warn("study_materials fetch notice:", err);
       }
 
-      // 4. Fetch from lecture_notes table
+      // 4. Fetch from lecture_notes table (strictly UUID course_ids so PostgreSQL never throws 22P02)
       let dbLectureNotes: any[] = [];
-      try {
-        const { data, error } = await supabase
-          .from("lecture_notes")
-          .select("id, title, description, file_type, file_size_bytes, file_url, topic_id, created_at, tutor_id")
-          .eq("course_id", courseId!)
-          .order("created_at", { ascending: false });
-        if (!error && Array.isArray(data)) {
-          dbLectureNotes = data.map((ln) => ({
-            id: ln.id,
-            title: ln.title,
-            description: ln.description,
-            file_type: ln.file_type || "pdf",
-            file_size: ln.file_size_bytes || 0,
-            file_url: ln.file_url,
-            topic_id: ln.topic_id,
-            created_at: ln.created_at,
-            owner_id: ln.tutor_id,
-          }));
+      if (uuidCourseKeys.length > 0) {
+        try {
+          const { data, error } = await supabase
+            .from("lecture_notes")
+            .select("id, title, description, file_type, file_size_bytes, file_url, file_path, topic_id, created_at, tutor_id")
+            .in("course_id", uuidCourseKeys)
+            .order("created_at", { ascending: false });
+          if (!error && Array.isArray(data)) {
+            dbLectureNotes = data.map((ln) => ({
+              id: ln.id,
+              title: ln.title,
+              description: ln.description,
+              file_type: ln.file_type || "pdf",
+              file_size: ln.file_size_bytes || 0,
+              file_url: ln.file_url,
+              file_path: (ln as any).file_path ?? null,
+              topic_id: ln.topic_id,
+              created_at: ln.created_at,
+              owner_id: ln.tutor_id,
+            }));
+          }
+        } catch (err) {
+          console.warn("lecture_notes fetch notice:", err);
         }
-      } catch (err) {
-        console.warn("lecture_notes fetch notice:", err);
       }
 
       // 5. Merge and deduplicate all items by URL or ID
@@ -258,6 +309,7 @@ export function useCourseMaterials(courseId?: string) {
           file_type: m.file_type || "pdf",
           file_size: m.file_size || 0,
           file_url: m.file_url,
+          file_path: m.file_path ?? null,
           topic_id: m.topic_id ?? null,
           created_at: m.created_at || new Date().toISOString(),
           owner_name: m.owner_name || "Course Administrator",
@@ -275,6 +327,7 @@ export function useCourseMaterials(courseId?: string) {
             file_type: m.file_type || "pdf",
             file_size: m.file_size || 0,
             file_url: m.file_url,
+            file_path: m.file_path ?? null,
             topic_id: m.topic_id ?? null,
             created_at: m.created_at,
             owner_name: "Course Instructor",
@@ -293,6 +346,7 @@ export function useCourseMaterials(courseId?: string) {
             file_type: m.file_type || "pdf",
             file_size: m.file_size || 0,
             file_url: m.file_url,
+            file_path: m.file_path ?? null,
             topic_id: m.topic_id ?? null,
             created_at: m.created_at,
             owner_name: "Course Instructor",

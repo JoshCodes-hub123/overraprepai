@@ -48,6 +48,7 @@ import { MathMarkdown } from "@/components/quiz/MathMarkdown";
 import { getOrCreateCourseSyllabus, SyllabusTopic } from "@/data/accreditedSyllabi";
 import { ExplainConceptSheet } from "@/components/courses/ExplainConceptSheet";
 import { LectureNoteReaderModal } from "@/components/courses/LectureNoteReaderModal";
+import { InAppDocViewer } from "@/components/viewer/InAppDocViewer";
 import { downloadMaterialExternally } from "@/lib/downloadMaterial";
 
 const VALID_TABS = ["syllabus", "documents", "quizzes", "flashcards", "ai", "images", "discuss"] as const;
@@ -77,6 +78,16 @@ const CourseHub = () => {
   const [readerTitle, setReaderTitle] = useState("");
   const [readerContent, setReaderContent] = useState("");
 
+  // Verified In-App PDF/Document Viewer state
+  const [previewDoc, setPreviewDoc] = useState<{
+    id?: string;
+    url: string;
+    filePath?: string | null;
+    title: string;
+    fileType?: string | null;
+    description?: string | null;
+  } | null>(null);
+
   // Custom concept search in AI tab
   const [customConceptQuery, setCustomConceptQuery] = useState("");
 
@@ -97,8 +108,33 @@ const CourseHub = () => {
         .select("id, code, name, department, level, description, created_by, university")
         .eq("id", courseId)
         .maybeSingle();
-      if (error) throw error;
-      return data;
+      if (data && !error) return data;
+
+      const { data: byCode } = await supabase
+        .from("courses")
+        .select("id, code, name, department, level, description, created_by, university")
+        .ilike("code", courseId)
+        .maybeSingle();
+      if (byCode) return byCode;
+
+      try {
+        const sRes = await fetch("/api/courses");
+        if (sRes.ok) {
+          const sJson = await sRes.json();
+          const target = courseId.toLowerCase().trim();
+          const targetNoSpace = target.replace(/[\s-_]/g, "");
+          const found = (sJson.courses || []).find((c: any) => {
+            const cid = String(c.id || "").toLowerCase();
+            const ccode = String(c.code || "").toLowerCase();
+            const ccodeNoSpace = ccode.replace(/[\s-_]/g, "");
+            return cid === target || ccode === target || ccodeNoSpace === targetNoSpace;
+          });
+          if (found) return found;
+        }
+      } catch {
+        // ignore
+      }
+      return null;
     },
   });
 
@@ -118,15 +154,38 @@ const CourseHub = () => {
 
   // Fetch uploaded lecture notes across Server Store, study_materials, and lecture_notes
   const { data: documents = [] } = useQuery({
-    queryKey: ["course-docs", user?.id, courseId, topicFilter],
-    enabled: !!courseId && !!user,
+    queryKey: ["course-docs", courseId, course?.id, course?.code, topicFilter],
+    enabled: !!courseId,
     queryFn: async () => {
+      const courseKeys = Array.from(
+        new Set(
+          [
+            courseId,
+            course?.id,
+            course?.code,
+            course?.code
+              ? `course-${course.code.toLowerCase().replace(/\s+/g, "-")}`
+              : null,
+          ].filter(Boolean)
+        )
+      ) as string[];
+
       const [apiMatsRes, studyMatsRes, lectureNotesRes] = await Promise.all([
-        fetch(`/api/courses/${encodeURIComponent(courseId)}/materials`)
+        fetch(
+          `/api/courses/${encodeURIComponent(course?.id || courseId)}/materials?code=${encodeURIComponent(
+            course?.code || ""
+          )}`
+        )
           .then((r) => (r.ok ? r.json() : { materials: [] }))
           .catch(() => ({ materials: [] })),
-        supabase.from("study_materials").select("id, title, description, file_url, file_type, created_at, topic_id").eq("course_id", courseId),
-        supabase.from("lecture_notes").select("id, title, description, file_url, file_type, created_at, view_count, download_count, topic_id").eq("course_id", courseId),
+        supabase
+          .from("study_materials")
+          .select("id, title, description, file_url, file_path, file_type, created_at, topic_id")
+          .in("course_id", courseKeys),
+        supabase
+          .from("lecture_notes")
+          .select("id, title, description, file_url, file_path, file_type, created_at, view_count, download_count, topic_id")
+          .in("course_id", courseKeys),
       ]);
 
       const mergedMap = new Map<string, any>();
@@ -138,6 +197,7 @@ const CourseHub = () => {
           title: m.title || "Course Document",
           description: m.description || null,
           file_url: m.file_url || null,
+          file_path: m.file_path || null,
           file_type: m.file_type || "pdf",
           created_at: m.created_at || new Date().toISOString(),
           view_count: m.view_count || 0,
@@ -155,6 +215,7 @@ const CourseHub = () => {
             title: m.title,
             description: m.description,
             file_url: m.file_url || null,
+            file_path: m.file_path || null,
             file_type: m.file_type || "pdf",
             created_at: m.created_at,
             view_count: 0,
@@ -173,6 +234,7 @@ const CourseHub = () => {
             title: m.title,
             description: m.description,
             file_url: m.file_url || null,
+            file_path: m.file_path || null,
             file_type: m.file_type || "pdf",
             created_at: m.created_at,
             view_count: m.view_count || 0,
@@ -190,18 +252,48 @@ const CourseHub = () => {
 
   // Fetch course quizzes
   const { data: quizzes = [] } = useQuery({
-    queryKey: ["course-quizzes", user?.id, courseId, topicFilter],
-    enabled: !!courseId && !!user,
+    queryKey: ["course-quizzes", courseId, course?.id, course?.code, topicFilter],
+    enabled: !!courseId,
     queryFn: async () => {
-      let q = supabase
-        .from("quizzes")
-        .select("id, title, description, duration_minutes, question_count, is_premium, token_cost, topic_id, tutor_id, created_at")
-        .eq("course_id", courseId)
-        .eq("is_active", true)
-        .order("created_at", { ascending: false });
-      if (topicFilter) q = q.eq("topic_id", topicFilter);
-      const { data } = await q;
-      const rows = data ?? [];
+      const courseKeys = Array.from(
+        new Set(
+          [
+            courseId,
+            course?.id,
+            course?.code,
+            course?.code
+              ? `course-${course.code.toLowerCase().replace(/\s+/g, "-")}`
+              : null,
+          ].filter(Boolean)
+        )
+      ) as string[];
+
+      const [apiQuizzesRes, dbQuizzesRes] = await Promise.all([
+        fetch(
+          `/api/courses/${encodeURIComponent(course?.id || courseId)}/quizzes?code=${encodeURIComponent(
+            course?.code || ""
+          )}`
+        )
+          .then((r) => (r.ok ? r.json() : { quizzes: [] }))
+          .catch(() => ({ quizzes: [] })),
+        supabase
+          .from("quizzes")
+          .select("id, title, description, duration_minutes, question_count, is_premium, token_cost, topic_id, tutor_id, created_at")
+          .in("course_id", courseKeys)
+          .eq("is_active", true)
+          .order("created_at", { ascending: false }),
+      ]);
+
+      const mergedQuizzes = new Map<string, any>();
+      for (const q of Array.isArray(apiQuizzesRes?.quizzes) ? apiQuizzesRes.quizzes : []) {
+        if (topicFilter && q.topic_id && q.topic_id !== topicFilter) continue;
+        mergedQuizzes.set(q.id, {
+          ...q,
+          is_simulation: true,
+        });
+      }
+
+      const rows = (dbQuizzesRes.data ?? []) as any[];
       const tutorIds = [...new Set(rows.map((r: any) => r.tutor_id).filter(Boolean))] as string[];
       const tutorMap = new Map<string, any>();
       if (tutorIds.length) {
@@ -211,31 +303,58 @@ const CourseHub = () => {
           .in("id", tutorIds);
         (tutors ?? []).forEach((t: any) => tutorMap.set(t.id, t));
       }
-      return rows.map((r: any) => ({
-        ...r,
-        tutor: r.tutor_id ? (() => {
-          const t = tutorMap.get(r.tutor_id);
-          return t ? {
-            id: t.id,
-            full_name: t.full_name,
-            avatar_url: t.avatar_url || t.profile_image_url,
-            organisation_name: t.organisation_name,
-            organisation_logo_url: t.organisation_logo_url,
-          } : null;
-        })() : null,
-      }));
+
+      for (const r of rows) {
+        if (topicFilter && r.topic_id && r.topic_id !== topicFilter) continue;
+        if (!mergedQuizzes.has(r.id)) {
+          mergedQuizzes.set(r.id, {
+            ...r,
+            tutor: r.tutor_id
+              ? (() => {
+                  const t = tutorMap.get(r.tutor_id);
+                  return t
+                    ? {
+                        id: t.id,
+                        full_name: t.full_name,
+                        avatar_url: t.avatar_url || t.profile_image_url,
+                        organisation_name: t.organisation_name,
+                        organisation_logo_url: t.organisation_logo_url,
+                      }
+                    : null;
+                })()
+              : null,
+          });
+        }
+      }
+
+      return Array.from(mergedQuizzes.values()).sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
     },
   });
 
   // Fetch flashcards
   const { data: flashDecks = [] } = useQuery({
-    queryKey: ["course-flashcards", user?.id, courseId, topicFilter],
-    enabled: !!courseId && !!user,
+    queryKey: ["course-flashcards", courseId, course?.id, course?.code, topicFilter],
+    enabled: !!courseId,
     queryFn: async () => {
+      const courseKeys = Array.from(
+        new Set(
+          [
+            courseId,
+            course?.id,
+            course?.code,
+            course?.code
+              ? `course-${course.code.toLowerCase().replace(/\s+/g, "-")}`
+              : null,
+          ].filter(Boolean)
+        )
+      ) as string[];
+
       let q = supabase
         .from("flashcards")
         .select("id, front, back, subject, topic, created_at, topic_id")
-        .eq("course_id", courseId)
+        .in("course_id", courseKeys)
         .order("created_at", { ascending: false })
         .limit(200);
       if (topicFilter) q = q.eq("topic_id", topicFilter);
@@ -727,10 +846,22 @@ const CourseHub = () => {
                           </p>
                         )}
                         <div className="mt-2.5 flex gap-1.5 flex-wrap">
-                          <Button asChild size="sm" variant="outline" className="h-7 px-2 text-xs rounded-lg">
-                            <a href={d.file_url} target="_blank" rel="noopener noreferrer">
-                              <ExternalLink className="w-3 h-3 mr-1" /> Open
-                            </a>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-xs rounded-lg cursor-pointer"
+                            onClick={() =>
+                              setPreviewDoc({
+                                id: d.id,
+                                url: d.file_url || "",
+                                filePath: d.file_path,
+                                title: d.title,
+                                fileType: d.file_type,
+                                description: d.description,
+                              })
+                            }
+                          >
+                            <ExternalLink className="w-3 h-3 mr-1" /> Open
                           </Button>
                           <Button
                             size="sm"
@@ -742,6 +873,7 @@ const CourseHub = () => {
                                 title: d.title,
                                 courseCode: course.code,
                                 fileUrl: d.file_url,
+                                filePath: d.file_path,
                                 fileType: d.file_type,
                                 description: d.description,
                               })
@@ -978,6 +1110,21 @@ const CourseHub = () => {
           navigate(`/practice?course=${course.id}`);
         }}
       />
+
+      {/* Verified In-App Document Viewer */}
+      {previewDoc && (
+        <InAppDocViewer
+          open={!!previewDoc}
+          onOpenChange={(open) => !open && setPreviewDoc(null)}
+          id={previewDoc.id}
+          url={previewDoc.url}
+          filePath={previewDoc.filePath}
+          title={previewDoc.title}
+          courseCode={course.code}
+          description={previewDoc.description}
+          fileType={previewDoc.fileType}
+        />
+      )}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -41,6 +41,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAdminEnvironment } from "@/hooks/useAdminEnvironment";
 import {
   executeFullCleanSlateWipe,
+  executeMaterialsOnlyWipe,
   resolveCourseSemester,
   setCourseSemester,
   type AcademicSemester,
@@ -49,6 +50,12 @@ import {
   uploadLargeFileChunked,
   formatBytesReadable,
 } from "@/lib/chunkedFileUploader";
+import { InAppDocViewer } from "@/components/viewer/InAppDocViewer";
+import {
+  uploadFileToSupabaseStorage,
+  verifyMaterialAccessible,
+} from "@/lib/pdfResolver";
+import { downloadMaterialExternally } from "@/lib/downloadMaterial";
 
 interface CourseRecord {
   id: string;
@@ -71,6 +78,10 @@ interface QueuedFileItem {
   status: "pending" | "uploading" | "success" | "error";
   progressPercent?: number;
   progressLabel?: string;
+  errorMessage?: string;
+  verifiedBucket?: string;
+  verifiedBytes?: number;
+  publishedRow?: ManagedMaterialRow;
 }
 
 export interface ManagedMaterialRow {
@@ -83,6 +94,7 @@ export interface ManagedMaterialRow {
   title: string;
   description: string | null;
   file_url: string;
+  file_path?: string | null;
   file_type: string;
   file_size: number;
   source: "supabase+server" | "supabase" | "server";
@@ -313,6 +325,12 @@ export const QuickResourceUpload: React.FC = () => {
   );
   const [managerCourseFilter, setManagerCourseFilter] = useState<string>("all");
   const [managerSearch, setManagerSearch] = useState("");
+  const [previewRow, setPreviewRow] = useState<ManagedMaterialRow | null>(null);
+  const [replacingRow, setReplacingRow] = useState<ManagedMaterialRow | null>(null);
+  const [replacingBusyId, setReplacingBusyId] = useState<string | null>(null);
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const [verifiedMap, setVerifiedMap] = useState<Record<string, { ok: boolean; label: string }>>({});
+  const replaceFileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Edit Material Dialog State
   const [editingItem, setEditingItem] = useState<ManagedMaterialRow | null>(null);
@@ -332,9 +350,11 @@ export const QuickResourceUpload: React.FC = () => {
   const [editQuizCourseId, setEditQuizCourseId] = useState("");
   const [savingQuizEdit, setSavingQuizEdit] = useState(false);
 
-  // Confirm Wipe All Data Dialog State
+  // Confirm Wipe Dialog States
   const [confirmWipeOpen, setConfirmWipeOpen] = useState(false);
   const [isWipingAll, setIsWipingAll] = useState(false);
+  const [confirmMaterialsWipeOpen, setConfirmMaterialsWipeOpen] = useState(false);
+  const [isWipingMaterials, setIsWipingMaterials] = useState(false);
 
   // Database Sync Stats
   const [dbStats, setDbStats] = useState({
@@ -491,13 +511,13 @@ export const QuickResourceUpload: React.FC = () => {
       const [smRes, lnRes, dbQuizzesRes, qCountRes] = await Promise.all([
         supabase
           .from("study_materials")
-          .select("id, course_id, title, description, file_url, file_type, file_size, created_at")
+          .select("id, course_id, title, description, file_url, file_path, file_type, file_size, created_at")
           .order("created_at", { ascending: false })
           .limit(300),
         supabase
           .from("lecture_notes")
           .select(
-            "id, course_id, title, description, file_url, file_type, file_size_bytes, created_at"
+            "id, course_id, title, description, file_url, file_path, file_type, file_size_bytes, created_at"
           )
           .order("created_at", { ascending: false })
           .limit(300),
@@ -532,6 +552,7 @@ export const QuickResourceUpload: React.FC = () => {
           title: m.title,
           description: m.description ?? null,
           file_url: m.file_url || "",
+          file_path: m.file_path ?? null,
           file_type: m.file_type || "pdf",
           file_size: m.file_size || 0,
           source: "server",
@@ -552,7 +573,8 @@ export const QuickResourceUpload: React.FC = () => {
           level: cObj?.level ? `${String(cObj.level).replace(/\D/g, "")}L` : "100L",
           title: m.title,
           description: m.description ?? null,
-          file_url: m.file_url || "",
+          file_url: m.file_url || existing?.file_url || "",
+          file_path: m.file_path ?? existing?.file_path ?? null,
           file_type: m.file_type || "pdf",
           file_size: m.file_size || 0,
           source: existing ? "supabase+server" : "supabase",
@@ -574,6 +596,7 @@ export const QuickResourceUpload: React.FC = () => {
             title: ln.title,
             description: ln.description ?? null,
             file_url: ln.file_url || "",
+            file_path: ln.file_path ?? null,
             file_type: ln.file_type || "pdf",
             file_size: ln.file_size_bytes || 0,
             source: "supabase",
@@ -773,47 +796,90 @@ export const QuickResourceUpload: React.FC = () => {
     }
   };
 
-  // Helper: Persist a single material to BOTH Server Store and Supabase (`study_materials` + `lecture_notes`)
+  // Helper: Resolve a course's real Supabase UUID (even if the selected course came from a slug ID)
+  const resolveSupabaseCourseUuid = async (courseId: string, courseCode: string): Promise<string> => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(courseId)) return courseId;
+
+    try {
+      const { data: found } = await supabase
+        .from("courses")
+        .select("id")
+        .ilike("code", courseCode.trim())
+        .maybeSingle();
+      if (found?.id && uuidRegex.test(found.id)) {
+        return found.id;
+      }
+    } catch {
+      // ignore
+    }
+    return courseId;
+  };
+
+  // Helper: Persist a verified material to Server Store + Supabase (`study_materials` with visibility='public' + `lecture_notes`)
   const persistMaterialDualSync = async (params: {
     courseId: string;
     courseCode: string;
     title: string;
     description: string;
     fileUrl: string;
+    filePath?: string | null;
+    storageBucket?: string | null;
+    verified?: boolean;
     fileType: string;
     fileSize: number;
-  }) => {
+  }): Promise<string> => {
     const matId =
       typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
         : `mat_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-    await fetch(`/api/courses/${encodeURIComponent(params.courseId)}/materials`, {
+    let authUid = user?.id ?? null;
+    if (!authUid) {
+      try {
+        const { data } = await supabase.auth.getUser();
+        authUid = data?.user?.id ?? null;
+      } catch {
+        authUid = null;
+      }
+    }
+
+    const dbCourseId = await resolveSupabaseCourseUuid(params.courseId, params.courseCode);
+    const safeFilePath =
+      params.filePath ||
+      `${authUid || "admin"}/${dbCourseId}/${Date.now()}_${params.title.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+
+    await fetch(`/api/courses/${encodeURIComponent(dbCourseId)}/materials`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         id: matId,
-        course_id: params.courseId,
+        course_id: dbCourseId,
         course_code: params.courseCode,
         title: params.title,
         description: params.description,
         file_url: params.fileUrl,
+        file_path: safeFilePath,
+        storage_bucket: params.storageBucket ?? null,
+        verified: Boolean(params.verified),
         file_type: params.fileType,
         file_size: params.fileSize,
-        visibility: "published",
+        visibility: "public",
       }),
     });
 
     try {
       await (supabase as any).from("study_materials").insert({
         id: matId,
-        course_id: params.courseId,
+        course_id: dbCourseId,
         title: params.title,
         description: params.description,
         file_url: params.fileUrl,
+        file_path: safeFilePath,
         file_type: params.fileType,
         file_size: params.fileSize,
-        owner_id: user?.id ?? null,
+        owner_id: authUid,
+        visibility: "public",
       });
     } catch {
       // non-fatal
@@ -822,20 +888,24 @@ export const QuickResourceUpload: React.FC = () => {
     try {
       await (supabase as any).from("lecture_notes").insert({
         id: matId,
-        course_id: params.courseId,
+        course_id: dbCourseId,
         title: params.title,
         description: params.description,
         file_url: params.fileUrl,
+        file_path: safeFilePath,
         file_type: params.fileType,
         file_size_bytes: params.fileSize,
-        tutor_id: user?.id ?? null,
+        tutor_id: authUid,
+        is_published: true,
       });
     } catch {
       // non-fatal
     }
+
+    return matId;
   };
 
-  // Mode 1 Handler: Select PDFs/Docs (Supports large textbooks & bulk multi-file selection)
+  // Mode 1 Handler: Select PDFs/Docs (Supports bulk multi-file selection with live cloud verification)
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawFiles = e.target.files;
     if (!rawFiles || rawFiles.length === 0) return;
@@ -860,7 +930,7 @@ export const QuickResourceUpload: React.FC = () => {
     e.target.value = "";
   };
 
-  // Mode 1 Publish: Upload all queued files via 4MB binary chunks & dual-sync
+  // Mode 1 Publish: Verifiable Permanent Cloud Upload Route (uploads to Supabase Storage -> reads back & verifies %PDF- bytes -> publishes with public visibility)
   const handlePublishFiles = async () => {
     if (!selectedCourseId || !selectedCourse) {
       toast.error("Please select or create a course in Step 2 first.");
@@ -873,6 +943,7 @@ export const QuickResourceUpload: React.FC = () => {
 
     setIsPublishingFiles(true);
     let publishedCount = 0;
+    let failedCount = 0;
 
     try {
       for (let i = 0; i < fileQueue.length; i++) {
@@ -885,54 +956,120 @@ export const QuickResourceUpload: React.FC = () => {
               ? {
                   ...q,
                   status: "uploading",
-                  progressPercent: 1,
-                  progressLabel: `0 KB / ${q.sizeLabel}`,
+                  errorMessage: undefined,
+                  progressPercent: 15,
+                  progressLabel: `Uploading & verifying in cloud storage… (${q.sizeLabel})`,
                 }
               : q
           )
         );
 
-        const upJson = await uploadLargeFileChunked(item.file, (prog) => {
+        // 1. Upload to permanent Supabase Cloud Storage AND verify readback bytes (%PDF- check)
+        const cloudResult = await uploadFileToSupabaseStorage(item.file, {
+          courseId: selectedCourseId,
+          userId: user?.id ?? null,
+        });
+
+        if (!cloudResult.ok || !cloudResult.fileUrl || !cloudResult.filePath) {
+          failedCount++;
+          const errMsg = cloudResult.error || "Cloud upload verification failed.";
           setFileQueue((prev) =>
             prev.map((q, idx) =>
               idx === i
                 ? {
                     ...q,
-                    status: "uploading",
-                    progressPercent: prog.percent,
-                    progressLabel: `${formatBytesReadable(prog.uploadedBytes)} / ${formatBytesReadable(prog.totalBytes)} (${prog.percent}%)`,
+                    status: "error",
+                    progressPercent: 0,
+                    errorMessage: errMsg,
                   }
                 : q
             )
           );
-        });
+          continue;
+        }
 
-        await persistMaterialDualSync({
+        setFileQueue((prev) =>
+          prev.map((q, idx) =>
+            idx === i
+              ? {
+                  ...q,
+                  progressPercent: 75,
+                  progressLabel: `Verified ${formatBytesReadable(cloudResult.verifiedBytes || item.file.size)} in cloud · Publishing to students…`,
+                }
+              : q
+          )
+        );
+
+        // 2. Optional local server cache mirror (non-fatal if skipped; cloud storage is canonical)
+        try {
+          await uploadLargeFileChunked(item.file);
+        } catch {
+          // non-fatal
+        }
+
+        const matId = await persistMaterialDualSync({
           courseId: selectedCourseId,
           courseCode: selectedCourse.code,
           title: item.title.trim() || item.file.name,
           description: item.description.trim(),
-          fileUrl: upJson.url,
+          fileUrl: cloudResult.fileUrl,
+          filePath: cloudResult.filePath,
+          storageBucket: cloudResult.bucket || null,
+          verified: true,
           fileType: item.ext,
-          fileSize: upJson.size || item.file.size,
+          fileSize: cloudResult.verifiedBytes || item.file.size,
         });
+
+        const publishedRow: ManagedMaterialRow = {
+          id: matId,
+          course_id: selectedCourseId,
+          course_code: selectedCourse.code,
+          course_name: selectedCourse.name,
+          semester: selectedCourse.semester,
+          level: selectedCourse.level ? `${String(selectedCourse.level).replace(/\D/g, "")}L` : "100L",
+          title: item.title.trim() || item.file.name,
+          description: item.description.trim(),
+          file_url: cloudResult.fileUrl,
+          file_path: cloudResult.filePath,
+          file_type: item.ext,
+          file_size: cloudResult.verifiedBytes || item.file.size,
+          source: "supabase+server",
+          created_at: new Date().toISOString(),
+        };
 
         publishedCount++;
         setFileQueue((prev) =>
           prev.map((q, idx) =>
             idx === i
-              ? { ...q, status: "success", progressPercent: 100 }
+              ? {
+                  ...q,
+                  status: "success",
+                  progressPercent: 100,
+                  verifiedBucket: cloudResult.bucket,
+                  verifiedBytes: cloudResult.verifiedBytes || item.file.size,
+                  publishedRow,
+                }
               : q
           )
         );
       }
 
-      toast.success(
-        `Published ${publishedCount} material(s) to ${selectedCourse.code} (${
-          selectedCourse.semester === "1st" ? "1st Semester" : "2nd Semester"
-        })!`
-      );
+      if (publishedCount > 0 && failedCount === 0) {
+        toast.success(
+          `Verified & published ${publishedCount} document(s) permanently to cloud storage for ${selectedCourse.code}! Students can open and download them immediately.`
+        );
+      } else if (publishedCount > 0 && failedCount > 0) {
+        toast.warning(
+          `Verified & published ${publishedCount} document(s), while ${failedCount} file(s) failed verification (see error details in the list).`
+        );
+      } else if (failedCount > 0) {
+        toast.error(
+          `Upload verification failed for ${failedCount} file(s). Nothing broken was published — see details below.`
+        );
+      }
+
       void queryClient.invalidateQueries({ queryKey: ["course-materials"] });
+      void queryClient.invalidateQueries({ queryKey: ["material-courses"] });
       await loadMaterialsAndStats();
     } catch (err: any) {
       toast.error(err?.message || "Failed uploading one or more files.");
@@ -1591,6 +1728,154 @@ export const QuickResourceUpload: React.FC = () => {
     }
   };
 
+  const triggerReplaceFile = (row: ManagedMaterialRow) => {
+    setReplacingRow(row);
+    if (replaceFileInputRef.current) {
+      replaceFileInputRef.current.value = "";
+      replaceFileInputRef.current.click();
+    }
+  };
+
+  const handleReplaceMaterialFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const target = replacingRow;
+    e.target.value = "";
+    if (!file || !target) return;
+
+    setReplacingBusyId(target.id);
+    const toastId = toast.loading(`Uploading & verifying "${file.name}" in cloud storage…`);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "pdf";
+      const cloudResult = await uploadFileToSupabaseStorage(file, {
+        courseId: target.course_id,
+        userId: user?.id ?? null,
+      });
+
+      if (!cloudResult.ok || !cloudResult.fileUrl || !cloudResult.filePath) {
+        throw new Error(cloudResult.error || "Cloud upload verification failed.");
+      }
+
+      try {
+        await uploadLargeFileChunked(file);
+      } catch {
+        // non-fatal — cloud storage is canonical
+      }
+
+      const finalUrl = cloudResult.fileUrl;
+      const finalPath = cloudResult.filePath;
+      const finalSize = cloudResult.verifiedBytes || file.size;
+
+      await fetch(`/api/materials/${encodeURIComponent(target.id)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          file_url: finalUrl,
+          file_path: finalPath,
+          file_type: ext,
+          file_size: finalSize,
+          visibility: "public",
+        }),
+      });
+
+      await Promise.allSettled([
+        supabase
+          .from("study_materials")
+          .update({
+            file_url: finalUrl,
+            file_path: finalPath,
+            file_type: ext,
+            file_size: finalSize,
+            visibility: "public",
+          })
+          .eq("id", target.id),
+        supabase
+          .from("lecture_notes")
+          .update({
+            file_url: finalUrl,
+            file_path: finalPath,
+            file_type: ext,
+            file_size_bytes: finalSize,
+            is_published: true,
+          })
+          .eq("id", target.id),
+      ]);
+
+      setVerifiedMap((prev) => ({
+        ...prev,
+        [target.id]: {
+          ok: true,
+          label: `Verified (${formatBytesReadable(finalSize)})`,
+        },
+      }));
+
+      toast.success(
+        `Replaced & verified "${target.title}" (${formatBytesReadable(finalSize)}) in permanent cloud storage!`,
+        { id: toastId }
+      );
+      void queryClient.invalidateQueries({ queryKey: ["course-materials"] });
+      void queryClient.invalidateQueries({ queryKey: ["material-courses"] });
+      await loadMaterialsAndStats();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to replace PDF file.", { id: toastId });
+    } finally {
+      setReplacingBusyId(null);
+      setReplacingRow(null);
+    }
+  };
+
+  const handleVerifyMaterialLive = async (row: ManagedMaterialRow) => {
+    setVerifyingId(row.id);
+    const toastId = toast.loading(`Verifying "${row.title}" from student view…`);
+    try {
+      const check = await verifyMaterialAccessible({
+        id: row.id,
+        title: row.title,
+        courseCode: row.course_code,
+        fileUrl: row.file_url,
+        filePath: row.file_path,
+        fileType: row.file_type,
+      });
+      if (check.ok) {
+        const sizeLabel = formatBytesReadable(check.bytes || row.file_size || 0);
+        setVerifiedMap((prev) => ({
+          ...prev,
+          [row.id]: { ok: true, label: `Verified (${sizeLabel})` },
+        }));
+        toast.success(
+          `Verified! "${row.title}" loads cleanly (${sizeLabel}, source: ${check.source}).`,
+          { id: toastId }
+        );
+      } else {
+        setVerifiedMap((prev) => ({
+          ...prev,
+          [row.id]: { ok: false, label: "Missing — Re-upload" },
+        }));
+        toast.error(check.error || "File failed live verification.", { id: toastId });
+      }
+    } finally {
+      setVerifyingId(null);
+    }
+  };
+
+  const handleWipeMaterialsOnly = async () => {
+    setIsWipingMaterials(true);
+    try {
+      await executeMaterialsOnlyWipe(supabase);
+      setMaterials([]);
+      setFileQueue([]);
+      setVerifiedMap({});
+      setConfirmMaterialsWipeOpen(false);
+      void queryClient.invalidateQueries({ queryKey: ["course-materials"] });
+      void queryClient.invalidateQueries({ queryKey: ["material-courses"] });
+      await loadMaterialsAndStats();
+      toast.success("All materials wiped cleanly! Your courses and CBT quizzes were preserved.");
+    } catch (err: any) {
+      toast.error(err?.message || "Could not wipe materials.");
+    } finally {
+      setIsWipingMaterials(false);
+    }
+  };
+
   const handleDeleteMaterial = async (row: ManagedMaterialRow) => {
     try {
       await Promise.allSettled([
@@ -1771,6 +2056,16 @@ export const QuickResourceUpload: React.FC = () => {
             >
               <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${syncingDb ? "animate-spin" : ""}`} />
               <span>{syncingDb ? "Syncing Database…" : "Sync & Verify Database"}</span>
+            </Button>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setConfirmMaterialsWipeOpen(true)}
+              className="border-amber-500/60 bg-amber-950/40 hover:bg-amber-900/60 text-amber-200 font-bold text-xs h-9 px-3.5 rounded-xl shrink-0 cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1.5 text-amber-400" />
+              <span>Wipe Materials Only</span>
             </Button>
 
             <Button
@@ -2240,7 +2535,7 @@ export const QuickResourceUpload: React.FC = () => {
                     </strong>
                   </p>
                   <p className="text-[11px] font-mono text-[#9A7B1C] font-bold mt-1">
-                    Chunked High-Capacity Upload Engine · Supports Large Textbooks &amp; Multi-File Batches (Up to 500MB+ per file)
+                    Verified Permanent Cloud Storage · Every PDF is integrity-checked (%PDF header + live readback) before publishing to students (Max 50 MB per file)
                   </p>
                   <span className="mt-3.5 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#D4AF37] text-[#18181B] text-xs font-extrabold shadow-2xs">
                     Select Bulk PDF / Document Files
@@ -2298,19 +2593,57 @@ export const QuickResourceUpload: React.FC = () => {
                             />
                           </div>
 
-                          <div className="flex items-center gap-2 shrink-0">
+                          <div className="flex flex-wrap items-center gap-2 shrink-0">
                             <span className="font-mono tabular-nums text-[11px] text-[#71717A]">
                               {item.status === "uploading" && item.progressLabel
                                 ? item.progressLabel
                                 : item.sizeLabel}
                             </span>
                             {item.status === "success" ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-800 text-xs font-bold">
-                                <CheckCircle2 className="w-3.5 h-3.5" /> Published
+                              <div className="inline-flex items-center gap-1.5">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-800 text-xs font-bold">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  Verified{item.verifiedBucket ? ` · ${item.verifiedBucket}` : ""}
+                                </span>
+                                {item.publishedRow && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => setPreviewRow(item.publishedRow!)}
+                                      className="px-2 py-1 rounded-lg border border-[#E6E0D4] bg-[#FAF8F5] hover:border-[#D4AF37] text-[#18181B] text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer"
+                                      title="Test opening as a student"
+                                    >
+                                      <Eye className="w-3 h-3" />
+                                      <span>Test Open</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        void downloadMaterialExternally({
+                                          id: item.publishedRow!.id,
+                                          title: item.publishedRow!.title,
+                                          courseCode: item.publishedRow!.course_code,
+                                          fileUrl: item.publishedRow!.file_url,
+                                          filePath: item.publishedRow!.file_path,
+                                          fileType: item.publishedRow!.file_type,
+                                        })
+                                      }
+                                      className="px-2 py-1 rounded-lg border border-[#E6E0D4] bg-[#FAF8F5] hover:border-[#D4AF37] text-[#18181B] text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer"
+                                      title="Test downloading as a student"
+                                    >
+                                      <Download className="w-3 h-3" />
+                                      <span>Test Download</span>
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            ) : item.status === "error" ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-500/15 text-rose-700 text-xs font-bold">
+                                Failed Verification
                               </span>
                             ) : item.status === "uploading" ? (
                               <span className="px-2.5 py-1 rounded-lg bg-[#D4AF37]/20 text-[#9A7B1C] font-mono tabular-nums text-xs font-bold">
-                                Uploading {item.progressPercent ?? 0}%
+                                Verifying {item.progressPercent ?? 0}%
                               </span>
                             ) : (
                               <button
@@ -2325,6 +2658,12 @@ export const QuickResourceUpload: React.FC = () => {
                             )}
                           </div>
                         </div>
+
+                        {item.status === "error" && item.errorMessage && (
+                          <p className="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-2.5 py-1.5">
+                            {item.errorMessage}
+                          </p>
+                        )}
 
                         {item.status === "uploading" && (
                           <div className="w-full h-1.5 rounded-full bg-[#EFECE6] overflow-hidden">
@@ -3020,17 +3359,69 @@ export const QuickResourceUpload: React.FC = () => {
                         {row.file_type}
                       </td>
                       <td className="py-3 px-3 whitespace-nowrap align-top text-right">
-                        <div className="inline-flex items-center gap-1.5">
-                          {row.file_url && (
-                            <a
-                              href={row.file_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="p-1.5 rounded-lg border border-[#E6E0D4] bg-white hover:border-[#D4AF37] text-[#18181B]"
-                              title="Open / Preview File"
+                        <div className="inline-flex flex-wrap items-center justify-end gap-1.5">
+                          {verifiedMap[row.id] && (
+                            <span
+                              className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                                verifiedMap[row.id].ok
+                                  ? "bg-emerald-500/15 text-emerald-800"
+                                  : "bg-rose-500/15 text-rose-700"
+                              }`}
                             >
-                              <Eye className="w-3.5 h-3.5" />
-                            </a>
+                              {verifiedMap[row.id].label}
+                            </span>
+                          )}
+                          {(row.file_url || row.file_path) && (
+                            <>
+                              <button
+                                type="button"
+                                disabled={verifyingId === row.id}
+                                onClick={() => void handleVerifyMaterialLive(row)}
+                                className="px-2 py-1 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                                title="Run live verification check on this document"
+                              >
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span>{verifyingId === row.id ? "Checking…" : "Verify"}</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setPreviewRow(row)}
+                                className="p-1.5 rounded-lg border border-[#E6E0D4] bg-white hover:border-[#D4AF37] text-[#18181B] cursor-pointer"
+                                title="Open / Preview File"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  void downloadMaterialExternally({
+                                    id: row.id,
+                                    title: row.title,
+                                    courseCode: row.course_code,
+                                    fileUrl: row.file_url,
+                                    filePath: row.file_path,
+                                    fileType: row.file_type,
+                                    description: row.description,
+                                  })
+                                }
+                                className="p-1.5 rounded-lg border border-[#E6E0D4] bg-white hover:border-[#D4AF37] text-[#18181B] cursor-pointer"
+                                title="Download File to Device"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          )}
+                          {row.file_type !== "markdown" && row.file_type !== "md" && (
+                            <button
+                              type="button"
+                              disabled={replacingBusyId === row.id}
+                              onClick={() => triggerReplaceFile(row)}
+                              className="px-2 py-1 rounded-lg border border-[#E6E0D4] bg-white hover:border-[#D4AF37] text-[#18181B] font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                              title="Re-upload / Replace PDF file into permanent cloud storage"
+                            >
+                              <Upload className="w-3 h-3 text-[#9A7B1C]" />
+                              <span>{replacingBusyId === row.id ? "Uploading…" : "Replace PDF"}</span>
+                            </button>
                           )}
                           <button
                             type="button"
@@ -3433,6 +3824,61 @@ export const QuickResourceUpload: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Wipe Materials Only Confirmation Modal (Preserves Courses & CBT Quizzes) */}
+      <Dialog open={confirmMaterialsWipeOpen} onOpenChange={setConfirmMaterialsWipeOpen}>
+        <DialogContent className="max-w-md rounded-2xl border-[#E6E0D4] bg-[#FAF8F5] text-[#18181B]">
+          <DialogHeader>
+            <DialogTitle className="font-display text-base font-extrabold text-[#18181B]">
+              Wipe All Uploaded Materials &amp; Notes Only?
+            </DialogTitle>
+            <DialogDescription className="text-xs text-[#52525B] leading-relaxed">
+              This removes all uploaded PDFs and lecture notes across Supabase, the server store, and offline caches so you start fresh. Your courses and CBT quizzes will stay untouched.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex justify-end gap-2 pt-3">
+            <Button
+              variant="ghost"
+              onClick={() => setConfirmMaterialsWipeOpen(false)}
+              className="h-9 text-xs font-semibold"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleWipeMaterialsOnly}
+              disabled={isWipingMaterials}
+              className="h-9 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs cursor-pointer"
+            >
+              {isWipingMaterials ? "Wiping Materials…" : "Yes, Wipe All Materials"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Hidden file input for one-click Replace / Re-upload PDF */}
+      <input
+        ref={replaceFileInputRef}
+        type="file"
+        accept=".pdf,.doc,.docx,.ppt,.pptx"
+        onChange={handleReplaceMaterialFile}
+        className="hidden"
+      />
+
+      {/* Verified In-App Document Viewer */}
+      {previewRow && (
+        <InAppDocViewer
+          open={!!previewRow}
+          onOpenChange={(open) => !open && setPreviewRow(null)}
+          id={previewRow.id}
+          url={previewRow.file_url}
+          filePath={previewRow.file_path}
+          title={previewRow.title}
+          courseCode={previewRow.course_code}
+          description={previewRow.description}
+          fileType={previewRow.file_type}
+        />
+      )}
     </div>
   );
 };

@@ -24,8 +24,10 @@ import { cn } from "@/lib/utils";
 import {
   getCachedMaterial,
   cacheMaterialOffline,
+  removeCachedMaterial,
   type CachedMaterial,
 } from "@/lib/offlineLibraryCache";
+import { fetchVerifiedPdfBlob, isValidPdfBlob } from "@/lib/pdfResolver";
 import { Haptics, ImpactStyle } from "@capacitor/haptics";
 
 interface BuiltInPdfReaderProps {
@@ -84,29 +86,48 @@ export function BuiltInPdfReader({
       setError(null);
 
       try {
-        // 1. Check if material is already cached offline in IndexedDB
+        // 1. Check if material is already cached offline in IndexedDB (verify it is a real PDF)
         const cached = await getCachedMaterial(documentId);
-        if (cached?.blob && active) {
-          setIsCachedOffline(true);
-          createdUrl = URL.createObjectURL(cached.blob);
-          setBlobUrl(createdUrl);
-          setLoading(false);
+        if (cached?.blob && (await isValidPdfBlob(cached.blob))) {
+          if (active) {
+            setIsCachedOffline(true);
+            createdUrl = URL.createObjectURL(
+              cached.blob.type === "application/pdf"
+                ? cached.blob
+                : new Blob([cached.blob], { type: "application/pdf" })
+            );
+            setBlobUrl(createdUrl);
+            setLoading(false);
+          }
           return;
+        } else if (cached?.blob) {
+          // Purge corrupt non-PDF cache entry
+          await removeCachedMaterial(documentId).catch(() => {});
         }
 
         // 2. Check if an initialBlob was passed (e.g. freshly uploaded)
-        if (initialBlob && active) {
-          createdUrl = URL.createObjectURL(initialBlob);
-          setBlobUrl(createdUrl);
-          setLoading(false);
+        if (initialBlob && (await isValidPdfBlob(initialBlob))) {
+          if (active) {
+            createdUrl = URL.createObjectURL(
+              initialBlob.type === "application/pdf"
+                ? initialBlob
+                : new Blob([initialBlob], { type: "application/pdf" })
+            );
+            setBlobUrl(createdUrl);
+            setLoading(false);
+          }
           return;
         }
 
-        // 3. Fallback to sourceUrl
+        // 3. Fallback to verified PDF resolver (proxy, direct, refreshed signed URL)
         if (sourceUrl) {
-          const res = await fetch(sourceUrl);
-          if (!res.ok) throw new Error(`Failed to load file (${res.status})`);
-          const blob = await res.blob();
+          const { blob } = await fetchVerifiedPdfBlob({
+            id: documentId,
+            title,
+            courseCode,
+            fileUrl: sourceUrl,
+            allowGeneratedFallback: false,
+          });
           if (active) {
             createdUrl = URL.createObjectURL(blob);
             setBlobUrl(createdUrl);
@@ -136,7 +157,7 @@ export function BuiltInPdfReader({
         URL.revokeObjectURL(createdUrl);
       }
     };
-  }, [isOpen, documentId, sourceUrl, initialBlob]);
+  }, [isOpen, documentId, sourceUrl, initialBlob, title, courseCode]);
 
   // Save to offline storage handler
   const handleSaveOffline = async () => {

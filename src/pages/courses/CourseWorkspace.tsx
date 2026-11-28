@@ -78,9 +78,12 @@ const CourseWorkspace = () => {
     null
   );
   const [viewerDoc, setViewerDoc] = useState<{
+    id?: string;
     url: string;
+    filePath?: string | null;
     title: string;
     fileType?: string;
+    description?: string | null;
   } | null>(null);
   const [selectedNote, setSelectedNote] = useState<{
     id?: string;
@@ -90,6 +93,7 @@ const CourseWorkspace = () => {
     topicName?: string;
     description?: string | null;
     fileUrl?: string;
+    filePath?: string | null;
     fileType?: string;
     fileSize?: number;
     ownerName?: string;
@@ -105,6 +109,9 @@ const CourseWorkspace = () => {
     enabled: !!courseId,
     staleTime: 30_000,
     queryFn: async () => {
+      const target = courseId.trim().toLowerCase();
+      const targetNoSpace = target.replace(/[\s-_]/g, "");
+
       const [dbRes, apiRes] = await Promise.all([
         supabase
           .from("courses")
@@ -118,8 +125,20 @@ const CourseWorkspace = () => {
 
       if (dbRes.data) return dbRes.data;
 
+      const { data: byCode } = await supabase
+        .from("courses")
+        .select("id, code, name, level, department, university_code")
+        .ilike("code", courseId)
+        .maybeSingle();
+      if (byCode) return byCode;
+
       const srvCourse = (Array.isArray(apiRes?.courses) ? apiRes.courses : []).find(
-        (c: any) => c?.id === courseId
+        (c: any) => {
+          const cid = String(c?.id || "").toLowerCase();
+          const ccode = String(c?.code || "").toLowerCase();
+          const ccodeNoSpace = ccode.replace(/[\s-_]/g, "");
+          return cid === target || ccode === target || ccodeNoSpace === targetNoSpace;
+        }
       );
       if (srvCourse) {
         return {
@@ -140,14 +159,31 @@ const CourseWorkspace = () => {
 
   // Quizzes published for this course (merged from Server Store + Supabase)
   const { data: quizzes = [], isLoading: quizzesLoading } = useQuery({
-    queryKey: ["course-quizzes", courseId],
+    queryKey: ["course-quizzes", courseId, course?.id, course?.code],
     enabled: !!courseId,
     staleTime: 30_000,
     queryFn: async () => {
       const mergedMap = new Map<string, any>();
+      const courseKeys = Array.from(
+        new Set(
+          [
+            courseId,
+            course?.id,
+            course?.code,
+            course?.code
+              ? `course-${course.code.toLowerCase().replace(/\s+/g, "-")}`
+              : null,
+          ].filter(Boolean)
+        )
+      ) as string[];
 
       try {
-        const srvRes = await fetch(`/api/courses/${encodeURIComponent(courseId)}/quizzes`);
+        const queryCode = course?.code || "";
+        const srvRes = await fetch(
+          `/api/courses/${encodeURIComponent(course?.id || courseId)}/quizzes?code=${encodeURIComponent(
+            queryCode
+          )}`
+        );
         if (srvRes.ok) {
           const srvJson = await srvRes.json();
           if (Array.isArray(srvJson.quizzes)) {
@@ -171,7 +207,7 @@ const CourseWorkspace = () => {
         const { data } = await supabase
           .from("quizzes")
           .select("id, title, question_count, duration_minutes, is_simulation, created_at")
-          .eq("course_id", courseId)
+          .in("course_id", courseKeys)
           .eq("is_active", true)
           .order("created_at", { ascending: false });
         if (Array.isArray(data)) {
@@ -309,6 +345,7 @@ const CourseWorkspace = () => {
           topicName={selectedNote.topicName}
           description={selectedNote.description}
           fileUrl={selectedNote.fileUrl}
+          filePath={selectedNote.filePath}
           fileType={selectedNote.fileType}
           fileSize={selectedNote.fileSize}
           ownerName={selectedNote.ownerName}
@@ -322,8 +359,12 @@ const CourseWorkspace = () => {
         <InAppDocViewer
           open={!!viewerDoc}
           onOpenChange={(open) => !open && setViewerDoc(null)}
+          id={viewerDoc.id}
           url={viewerDoc.url}
+          filePath={viewerDoc.filePath}
           title={viewerDoc.title}
+          courseCode={course?.code}
+          description={viewerDoc.description}
           fileType={viewerDoc.fileType}
         />
       )}
@@ -780,6 +821,7 @@ const CourseWorkspace = () => {
                                           topicName: group.topicName,
                                           description: m.description,
                                           fileUrl: m.file_url,
+                                          filePath: m.file_path,
                                           fileType: m.file_type,
                                           fileSize: m.file_size,
                                           ownerName: m.owner_name || "Course Lecturer",
@@ -847,6 +889,7 @@ const CourseWorkspace = () => {
                                               topicName: group.topicName,
                                               description: m.description,
                                               fileUrl: m.file_url,
+                                              filePath: m.file_path,
                                               fileType: m.file_type,
                                               fileSize: m.file_size,
                                               ownerName: m.owner_name || "Course Lecturer",
@@ -879,6 +922,7 @@ const CourseWorkspace = () => {
                                               title: m.title,
                                               courseCode: course?.code,
                                               fileUrl: m.file_url,
+                                              filePath: m.file_path,
                                               fileType: m.file_type,
                                               description: m.description,
                                             })

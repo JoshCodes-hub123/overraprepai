@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
   FileText,
@@ -16,10 +16,16 @@ import {
   ExternalLink,
   HelpCircle,
   Award,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getCoverImage } from "@/lib/courseCovers";
 import { downloadMaterialExternally } from "@/lib/downloadMaterial";
+import {
+  fetchVerifiedPdfBlob,
+  isUploadedBinaryFile,
+  PdfFileMissingError,
+} from "@/lib/pdfResolver";
 
 interface Props {
   open: boolean;
@@ -31,6 +37,7 @@ interface Props {
   topicName?: string;
   description?: string | null;
   fileUrl?: string;
+  filePath?: string | null;
   fileType?: string;
   fileSize?: number;
   ownerName?: string;
@@ -49,6 +56,7 @@ export function CourseNoteReaderDialog({
   topicName,
   description,
   fileUrl,
+  filePath,
   fileType = "application/pdf",
   fileSize,
   ownerName = "Course Lecturer",
@@ -58,10 +66,69 @@ export function CourseNoteReaderDialog({
 }: Props) {
   const [fontSize, setFontSize] = useState<"sm" | "base" | "lg">("base");
   const [fullscreen, setFullscreen] = useState(false);
-  const [readProgress, setReadProgress] = useState(15);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   const coverImage = getCoverImage("note", title, courseCode, index);
-  const isPdf = fileType?.toLowerCase().includes("pdf") || fileUrl?.toLowerCase().endsWith(".pdf");
+  const cleanUrl = (fileUrl || "").trim();
+  const isMarkdownOrText =
+    /markdown|text\/plain/i.test(fileType || "") ||
+    /\.(md|txt)(\?|$)/i.test(cleanUrl) ||
+    cleanUrl.startsWith("data:text/");
+  const isPdf =
+    !isMarkdownOrText &&
+    ((fileType?.toLowerCase().includes("pdf") ?? false) ||
+      /\.pdf(\?|$)/i.test(cleanUrl));
+
+  useEffect(() => {
+    if (!open || !isPdf || (!cleanUrl && !filePath)) {
+      setPdfBlobUrl(null);
+      setPdfLoading(false);
+      setPdfError(null);
+      return;
+    }
+
+    let active = true;
+    let objectUrl: string | null = null;
+    setPdfLoading(true);
+    setPdfError(null);
+
+    fetchVerifiedPdfBlob({
+      id,
+      title,
+      courseCode,
+      fileUrl: cleanUrl,
+      filePath,
+      fileType,
+      description,
+      allowGeneratedFallback: !isUploadedBinaryFile(cleanUrl, fileType),
+    })
+      .then(({ blob }) => {
+        if (!active) return;
+        objectUrl = URL.createObjectURL(blob);
+        setPdfBlobUrl(objectUrl);
+        setPdfLoading(false);
+      })
+      .catch((err) => {
+        if (!active) return;
+        if (err instanceof PdfFileMissingError || err?.code === "FILE_MISSING") {
+          setPdfError(
+            "The original uploaded PDF file is missing from temporary server storage. An admin needs to re-upload this PDF in the Upload Studio so it saves permanently to cloud storage."
+          );
+        } else {
+          setPdfError("Inline PDF preview is unavailable. Use Download to open on your device.");
+        }
+        setPdfLoading(false);
+      });
+
+    return () => {
+      active = false;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [open, isPdf, cleanUrl, filePath, id, title, courseCode, fileType, description]);
 
   const formattedSize = fileSize
     ? fileSize > 1024 * 1024
@@ -160,6 +227,7 @@ export function CourseNoteReaderDialog({
                   title,
                   courseCode,
                   fileUrl,
+                  filePath,
                   fileType,
                   description,
                 })
@@ -333,31 +401,63 @@ export function CourseNoteReaderDialog({
               </div>
             </div>
 
-            {/* Embedded Document View if URL exists */}
-            {fileUrl && (
+            {/* Embedded Document View when verified PDF exists */}
+            {isPdf && (cleanUrl || filePath) && (
               <div className="mt-6 pt-4 border-t border-neutral-200 dark:border-neutral-800 space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-sm text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
                     <FileText className="w-4 h-4 text-amber-600" />
                     <span>Embedded Document Viewer</span>
                   </h3>
-                  <a
-                    href={fileUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs text-amber-700 dark:text-amber-400 font-semibold hover:underline flex items-center gap-1"
-                  >
-                    <span>Open in new window</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
+                  {pdfBlobUrl && (
+                    <a
+                      href={pdfBlobUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-amber-700 dark:text-amber-400 font-semibold hover:underline flex items-center gap-1"
+                    >
+                      <span>Open in new window</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
                 </div>
 
-                <div className="w-full h-96 rounded-2xl overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900">
-                  <iframe
-                    src={fileUrl}
-                    title={title}
-                    className="w-full h-full border-0"
-                  />
+                <div className="w-full h-[520px] rounded-2xl overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center">
+                  {pdfLoading ? (
+                    <div className="flex flex-col items-center gap-2 text-neutral-500">
+                      <Loader2 className="w-6 h-6 animate-spin text-amber-600" />
+                      <span className="text-xs font-medium">Loading PDF document…</span>
+                    </div>
+                  ) : pdfError ? (
+                    <div className="p-6 text-center space-y-2 max-w-sm">
+                      <p className="text-xs text-neutral-600 dark:text-neutral-400">{pdfError}</p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          void downloadMaterialExternally({
+                            id,
+                            title,
+                            courseCode,
+                            fileUrl,
+                            filePath,
+                            fileType,
+                            description,
+                          })
+                        }
+                        className="rounded-xl text-xs font-bold"
+                      >
+                        <Download className="w-3.5 h-3.5 mr-1.5 text-amber-600" />
+                        Download PDF
+                      </Button>
+                    </div>
+                  ) : pdfBlobUrl ? (
+                    <iframe
+                      src={`${pdfBlobUrl}#toolbar=1&navpanes=0&view=FitH`}
+                      title={title}
+                      className="w-full h-full border-0"
+                    />
+                  ) : null}
                 </div>
               </div>
             )}
@@ -381,6 +481,7 @@ export function CourseNoteReaderDialog({
                       title,
                       courseCode,
                       fileUrl,
+                      filePath,
                       fileType,
                       description,
                     })

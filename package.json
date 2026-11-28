@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "bun server.ts || tsx server.ts",
+    "dev": "tsx server.ts",
     "start": "node server.ts",
     "build": "vite build",
     "build:dev": "vite build --mode development",

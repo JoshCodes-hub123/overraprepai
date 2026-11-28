@@ -73,6 +73,7 @@ export const Library = () => {
   // Built-in Reader State
   const [readerResource, setReaderResource] = useState<UserResource | null>(null);
   const [readerUrl, setReaderUrl] = useState<string | null>(null);
+  const [isResolvingReaderUrl, setIsResolvingReaderUrl] = useState(false);
   const [isDownloadingOffline, setIsDownloadingOffline] = useState<string | null>(null);
 
   // Flashcards state
@@ -180,13 +181,23 @@ export const Library = () => {
       }
     }
 
+    setReaderUrl(null);
     setReaderResource(r);
     // Get signed URL if online, or reader will automatically read from IndexedDB if offline
     if (navigator.onLine) {
-      getResourceSignedUrl(r.storage_path, 7200).then((url) => {
-        setReaderUrl(url);
-      });
+      setIsResolvingReaderUrl(true);
+      getResourceSignedUrl(r.storage_path, 7200)
+        .then((url) => {
+          setReaderUrl(url);
+        })
+        .catch(() => {
+          setReaderUrl(null);
+        })
+        .finally(() => {
+          setIsResolvingReaderUrl(false);
+        });
     } else {
+      setIsResolvingReaderUrl(false);
       setReaderUrl(null);
     }
   };
@@ -596,11 +607,14 @@ export const Library = () => {
           onClose={() => {
             setReaderResource(null);
             setReaderUrl(null);
+            setIsResolvingReaderUrl(false);
             refreshCachedIds();
           }}
           documentId={readerResource.id}
           title={readerResource.title}
           sourceUrl={readerUrl}
+          filePath={readerResource.storage_path}
+          isResolvingUrl={isResolvingReaderUrl}
           mime={readerResource.mime}
           courseCode={readerResource.folder !== "General" ? readerResource.folder : undefined}
           isReadLater={readLaterIds.has(readerResource.id)}

@@ -149,7 +149,19 @@ async function startServer() {
   app.use(express.json({ limit: "500mb" }));
   app.use(express.urlencoded({ limit: "500mb", extended: true }));
   app.use(express.raw({ type: "application/octet-stream", limit: "100mb" }));
-  app.use("/uploads", express.static(path.resolve(__dirname, "public", "uploads")));
+  app.use(
+    "/uploads",
+    express.static(path.resolve(__dirname, "public", "uploads"), {
+      setHeaders: (res, filePath) => {
+        if (filePath.toLowerCase().endsWith(".pdf")) {
+          res.setHeader("Content-Type", "application/pdf");
+          res.setHeader("Content-Disposition", "inline");
+          res.setHeader("Accept-Ranges", "bytes");
+          res.setHeader("X-Content-Type-Options", "nosniff");
+        }
+      },
+    })
+  );
 
   // Health check endpoint
   app.get("/api/health", (_req: Request, res: Response) => {
@@ -423,7 +435,7 @@ async function startServer() {
       topic_id: null,
       title: "MTH 101 — Complete 1st Semester Lecture Notes: Algebra, Binomial Theorem & Trigonometry",
       description: `### [1st Semester] MTH 101 Lecture Summary & Key Formulas\n\n#### 1. Set Theory & Principle of Inclusion-Exclusion\nFor any finite sets $A$ and $B$:\n$$n(A \\cup B) = n(A) + n(B) - n(A \\cap B)$$\nDe Morgan's Laws: $(A \\cup B)' = A' \\cap B'$ and $(A \\cap B)' = A' \\cup B'$.\n\n#### 2. Theory of Quadratic Equations\nFor $ax^2 + bx + c = 0$ ($a \\neq 0$) with roots $\\alpha, \\beta$:\n- Sum of roots: $\\alpha + \\beta = -\\frac{b}{a}$\n- Product of roots: $\\alpha \\beta = \\frac{c}{a}$\n- Symmetric identity: $\\alpha^2 + \\beta^2 = (\\alpha + \\beta)^2 - 2\\alpha\\beta$\n\n#### 3. Binomial Theorem & Complex Numbers\n- General term in $(a + b)^n$: $T_{r+1} = \\binom{n}{r} a^{n-r} b^r$\n- De Moivre's Theorem: $[r(\\cos\\theta + i\\sin\\theta)]^n = r^n(\\cos n\\theta + i\\sin n\\theta)$`,
-      file_url: "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+      file_url: "",
       file_type: "markdown",
       file_size: 48200,
       created_at: "2026-01-21T10:00:00.000Z",
@@ -438,7 +450,7 @@ async function startServer() {
       topic_id: null,
       title: "PHY 101 — 1st Semester Mechanics, Kinematics & Thermal Physics Handout",
       description: `### [1st Semester] PHY 101 Core Syllabus Notes & Equations\n\n#### 1. Kinematics & Projectile Motion\n- Equations of motion under constant acceleration $a$: $v = u + at$, $s = ut + \\frac{1}{2}at^2$, $v^2 = u^2 + 2as$\n- Projectile Time of Flight: $T = \\frac{2u\\sin\\theta}{g}$\n- Maximum Height: $H = \\frac{u^2\\sin^2\\theta}{2g}$\n- Horizontal Range: $R = \\frac{u^2\\sin 2\\theta}{g}$ (maximum at $\\theta = 45^\\circ$)\n\n#### 2. Newton's Laws, Momentum & Work-Energy\n- Linear Momentum: $\\vec{p} = m\\vec{v}$, Impulse $J = F\\Delta t = \\Delta p$\n- Work-Energy Theorem: $W_{\\text{net}} = \\Delta K = \\frac{1}{2}mv^2 - \\frac{1}{2}mu^2$\n- Universal Gravitation: $F = \\frac{G m_1 m_2}{r^2}$, Escape Velocity $v_e = \\sqrt{2gR}$`,
-      file_url: "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+      file_url: "",
       file_type: "markdown",
       file_size: 52400,
       created_at: "2026-01-22T11:00:00.000Z",
@@ -453,7 +465,7 @@ async function startServer() {
       topic_id: null,
       title: "CHE 101 — 1st Semester Atomic Structure, Gas Laws & Stoichiometry Guide",
       description: `### [1st Semester] CHE 101 Physical & Inorganic Chemistry Handout\n\n#### 1. Ideal Gas Law & Kinetic Theory\n- Ideal Gas Equation: $PV = nRT$\n- Graham's Law of Diffusion: $\\frac{r_1}{r_2} = \\sqrt{\\frac{M_2}{M_1}}$\n\n#### 2. Quantum Numbers & Electronic Configuration\n- Principal ($n$), Azimuthal ($l = 0 \\dots n-1$), Magnetic ($m_l = -l \\dots +l$), Spin ($m_s = \\pm \\frac{1}{2}$)\n- Aufbau Principle, Pauli Exclusion Principle, and Hund's Rule of Maximum Multiplicity.`,
-      file_url: "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+      file_url: "",
       file_type: "markdown",
       file_size: 44100,
       created_at: "2026-01-23T12:00:00.000Z",
@@ -468,7 +480,7 @@ async function startServer() {
       topic_id: null,
       title: "CSC 101 — 1st Semester Number Systems, Boolean Logic & Computer Architecture",
       description: `### [1st Semester] CSC 101 Digital Systems & Computing Fundamentals\n\n#### 1. Number Base Conversions & Binary Arithmetic\n- Binary (Base 2), Octal (Base 8), Decimal (Base 10), and Hexadecimal (Base 16).\n- Two's Complement representation for signed integers.\n\n#### 2. CPU Architecture & Memory Hierarchy\n- Von Neumann Architecture: Control Unit (CU), Arithmetic Logic Unit (ALU), Registers, RAM/ROM, and I/O Buses.`,
-      file_url: "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+      file_url: "",
       file_type: "markdown",
       file_size: 39800,
       created_at: "2026-01-24T13:00:00.000Z",
@@ -484,7 +496,7 @@ async function startServer() {
       topic_id: null,
       title: "MTH 102 — 2nd Semester Differential & Integral Calculus Comprehensive Notes",
       description: `### [2nd Semester] MTH 102 Differential & Integral Calculus Handout\n\n#### 1. Limits, Continuity & L'Hôpital's Rule\n- Standard trigonometric limit: $\\lim_{x \\to 0} \\frac{\\sin x}{x} = 1$\n- Continuity at $x = a$: $\\lim_{x \\to a^-} f(x) = \\lim_{x \\to a^+} f(x) = f(a)$\n\n#### 2. Differentiation Rules & Stationary Points\n- Product Rule: $\\frac{d}{dx}(uv) = u\\frac{dv}{dx} + v\\frac{du}{dx}$\n- Quotient Rule: $\\frac{d}{dx}\\left(\\frac{u}{v}\\right) = \\frac{v\\frac{du}{dx} - u\\frac{dv}{dx}}{v^2}$\n- Integration by Parts: $\\int u\\,dv = uv - \\int v\\,du$`,
-      file_url: "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+      file_url: "",
       file_type: "markdown",
       file_size: 56900,
       created_at: "2026-02-20T09:00:00.000Z",
@@ -499,7 +511,7 @@ async function startServer() {
       topic_id: null,
       title: "MTS 102 — 2nd Semester Calculus, Conic Sections & Differential Equations",
       description: `### [2nd Semester] MTS 102 Calculus & Analytic Geometry Revision Pack\n\n#### 1. Analytic Geometry of Conic Sections\n- Circle: $(x - h)^2 + (y - k)^2 = r^2$\n- Parabola: $y^2 = 4ax$ (Focus $(a, 0)$, Directrix $x = -a$)\n- Ellipse: $\\frac{x^2}{a^2} + \\frac{y^2}{b^2} = 1$, Eccentricity $e = \\sqrt{1 - \\frac{b^2}{a^2}} < 1$\n\n#### 2. Definite Integrals & Area Under Curves\n- Fundamental Theorem: $\\int_a^b f(x)\\,dx = [F(x)]_a^b = F(b) - F(a)$\n- Volume of Revolution about the x-axis: $V = \\pi \\int_a^b y^2\\,dx$`,
-      file_url: "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+      file_url: "",
       file_type: "markdown",
       file_size: 54300,
       created_at: "2026-02-21T10:00:00.000Z",
@@ -514,7 +526,7 @@ async function startServer() {
       topic_id: null,
       title: "PHY 102 — 2nd Semester Electricity, Magnetism & Modern Physics Notes",
       description: `### [2nd Semester] PHY 102 Electricity & Magnetism Lecture Handout\n\n#### 1. Electrostatics, Electric Field & Potential\n- Coulomb's Law: $F = \\frac{1}{4\\pi\\varepsilon_0} \\frac{|q_1 q_2|}{r^2}$\n- Electric Field Intensity: $E = \\frac{F}{q} = -\\frac{dV}{dr}$\n- Energy Stored in a Capacitor: $U = \\frac{1}{2}CV^2 = \\frac{Q^2}{2C}$\n\n#### 2. Direct Current Circuits & Electromagnetism\n- Kirchhoff's Current Law (KCL): $\\sum I_{\\text{in}} = \\sum I_{\\text{out}}$\n- Kirchhoff's Voltage Law (KVL): $\\sum \\Delta V = 0$ around any closed loop\n- Magnetic Force on Moving Charge: $\\vec{F} = q(\\vec{v} \\times \\vec{B})$`,
-      file_url: "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+      file_url: "",
       file_type: "markdown",
       file_size: 61200,
       created_at: "2026-02-22T11:00:00.000Z",
@@ -529,7 +541,7 @@ async function startServer() {
       topic_id: null,
       title: "CHE 102 — 2nd Semester Organic Chemistry, Equilibrium & Electrochemistry",
       description: `### [2nd Semester] CHE 102 General Chemistry II Study Handout\n\n#### 1. Chemical Equilibrium & Acids/Bases\n- Equilibrium Constant: $K_c = \\frac{[C]^c[D]^d}{[A]^a[B]^b}$, $K_p = K_c(RT)^{\\Delta n}$\n- Henderson-Hasselbalch Equation: $\\text{pH} = \\text{p}K_a + \\log\\left(\\frac{[\\text{Conjugate Base}]}{[\\text{Weak Acid}]}\\right)$\n\n#### 2. Organic Chemistry & Hybridization\n- Alkanes ($sp^3$, $109.5^\\circ$, tetrahedral), Alkenes ($sp^2$, $120^\\circ$, trigonal planar), Alkynes ($sp$, $180^\\circ$, linear).\n- Functional groups, homologous series, and IUPAC nomenclature rules.`,
-      file_url: "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+      file_url: "",
       file_type: "markdown",
       file_size: 53800,
       created_at: "2026-02-23T12:00:00.000Z",
@@ -544,7 +556,7 @@ async function startServer() {
       topic_id: null,
       title: "CSC 102 — 2nd Semester Structured Programming, Algorithms & Data Types",
       description: `### [2nd Semester] CSC 102 Problem Solving & Structured Programming\n\n#### 1. Algorithm Design & Control Structures\n- Sequence, Selection (\`if/else\`, \`switch\`), and Iteration (\`for\`, \`while\`, \`do-while\`).\n- Time Complexity fundamentals: $O(1)$, $O(\\log n)$, $O(n)$, $O(n \\log n)$, $O(n^2)$.\n\n#### 2. Functions, Arrays & Modular Design\n- Scope of variables (local vs global), pass-by-value vs pass-by-reference, 1D/2D arrays, and recursion.`,
-      file_url: "/uploads/materials/1794980562120_sesped_mod_3_reading_for_reviews._writing_a_critical_review.metu.pdf",
+      file_url: "",
       file_type: "markdown",
       file_size: 47500,
       created_at: "2026-02-24T13:00:00.000Z",
@@ -901,6 +913,8 @@ async function startServer() {
     }
   }
 
+  const MATERIALS_PURGE_CUTOFF_MS = Date.parse("2026-11-28T02:10:00.000Z");
+
   function readCourseMaterials(): any[] {
     let items: any[] = [];
     try {
@@ -913,59 +927,6 @@ async function startServer() {
       }
     } catch (e) {
       console.warn("Could not read course materials file:", e);
-    }
-
-    let changed = false;
-    if (items.length === 0) {
-      items = [...DEFAULT_SEMESTER_MATERIALS];
-      changed = true;
-    }
-
-    // Auto-discover any physical uploaded files in public/uploads/materials/ that aren't registered yet
-    try {
-      if (fs.existsSync(UPLOADS_DIR)) {
-        const existingUrls = new Set(items.map((m) => String(m.file_url || "").trim()));
-        const filesOnDisk = fs.readdirSync(UPLOADS_DIR);
-        for (const fname of filesOnDisk) {
-          if (!fname || fname.startsWith(".")) continue;
-          const publicUrl = `/uploads/materials/${fname}`;
-          if (!existingUrls.has(publicUrl)) {
-            const fullPath = path.join(UPLOADS_DIR, fname);
-            const stat = fs.statSync(fullPath);
-            if (stat.isFile()) {
-              const ext = path.extname(fname).replace(/^\./, "").toLowerCase() || "pdf";
-              const cleanTitle = fname
-                .replace(/^\d+_/, "")
-                .replace(/\.[^/.]+$/, "")
-                .replace(/[_-]+/g, " ")
-                .trim();
-              items.unshift({
-                id: `mat_disk_${fname.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40)}`,
-                course_id: "course-gns-101",
-                course_code: "GNS 101",
-                topic_id: null,
-                title: cleanTitle || fname,
-                description: "[1st Semester] Uploaded course document recovered from server storage.",
-                file_url: publicUrl,
-                file_type: ext,
-                file_size: stat.size,
-                created_at: stat.mtime.toISOString(),
-                owner_name: "Course Administrator",
-                tags: ["1st Semester", "Uploaded"],
-                visibility: "published",
-              });
-              existingUrls.add(publicUrl);
-              changed = true;
-            }
-          }
-        }
-      }
-    } catch (e) {
-      console.warn("Auto-discover uploads notice:", e);
-    }
-
-    if (changed) {
-      writeCourseMaterials(items);
     }
     return items;
   }
@@ -1187,15 +1148,51 @@ async function startServer() {
     return res.json({ ok: true, materials: all });
   });
 
-  // Get materials for course
+  // Get materials for course (supports ID, course code, and normalized slugs)
   app.get("/api/courses/:courseId/materials", (req: Request, res: Response) => {
     const { courseId } = req.params;
-    const normTarget = String(courseId || "").trim().toLowerCase();
+    const queryCode = String(req.query.code || "").trim();
+    const target = String(courseId || "").trim().toLowerCase();
+    const targetNoSpace = target.replace(/[\s-_]/g, "");
+
+    const courses = readCourses();
+    const matchedCourse = courses.find((c) => {
+      const cid = String(c.id || "").trim().toLowerCase();
+      const ccode = String(c.code || "").trim().toLowerCase();
+      const ccodeNoSpace = ccode.replace(/[\s-_]/g, "");
+      return (
+        cid === target ||
+        ccode === target ||
+        ccodeNoSpace === targetNoSpace ||
+        (queryCode &&
+          (ccode === queryCode.toLowerCase() ||
+            ccodeNoSpace === queryCode.replace(/[\s-_]/g, "").toLowerCase()))
+      );
+    });
+
+    const targetKeys = new Set<string>([target, targetNoSpace]);
+    if (queryCode) {
+      targetKeys.add(queryCode.toLowerCase());
+      targetKeys.add(queryCode.replace(/[\s-_]/g, "").toLowerCase());
+    }
+    if (matchedCourse) {
+      targetKeys.add(String(matchedCourse.id).toLowerCase());
+      targetKeys.add(String(matchedCourse.code).toLowerCase());
+      targetKeys.add(String(matchedCourse.code).replace(/[\s-_]/g, "").toLowerCase());
+    }
+
     const all = readCourseMaterials();
     const courseMats = all.filter((m) => {
       const mCid = String(m.course_id || "").trim().toLowerCase();
+      const mCidNoSpace = mCid.replace(/[\s-_]/g, "");
       const mCode = String(m.course_code || m.courseCode || "").trim().toLowerCase();
-      return mCid === normTarget || (mCode && mCode === normTarget);
+      const mCodeNoSpace = mCode.replace(/[\s-_]/g, "");
+
+      return (
+        targetKeys.has(mCid) ||
+        targetKeys.has(mCidNoSpace) ||
+        (mCode && (targetKeys.has(mCode) || targetKeys.has(mCodeNoSpace)))
+      );
     });
     return res.json({ ok: true, materials: courseMats });
   });
@@ -1208,6 +1205,17 @@ async function startServer() {
       return res.status(400).json({ ok: false, error: "Title is required" });
     }
 
+    // Block stale pre-purge ephemeral local-disk mirror rows from re-populating after a wipe
+    const incomingUrl = String(material.file_url || "").trim();
+    const createdMs = material.created_at ? Date.parse(String(material.created_at)) : Date.now();
+    const isLegacyBrokenLocalRecord =
+      Number.isFinite(createdMs) &&
+      createdMs < MATERIALS_PURGE_CUTOFF_MS &&
+      incomingUrl.startsWith("/uploads/materials/");
+    if (isLegacyBrokenLocalRecord) {
+      return res.json({ ok: true, skipped: true, reason: "legacy_purged_material" });
+    }
+
     const all = readCourseMaterials();
     const newEntry = {
       id: material.id || `mat_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
@@ -1216,16 +1224,24 @@ async function startServer() {
       topic_id: material.topic_id || null,
       title: material.title,
       description: material.description || null,
-      file_url: material.file_url,
+      file_url: incomingUrl,
+      file_path: material.file_path || null,
+      storage_bucket: material.storage_bucket || null,
+      verified: Boolean(material.verified),
       file_type: material.file_type || "pdf",
       file_size: material.file_size || 0,
       created_at: material.created_at || new Date().toISOString(),
       owner_name: material.owner_name || "Course Administrator",
       tags: material.tags || [],
-      visibility: material.visibility || "published",
+      visibility: material.visibility || "public",
     };
 
-    all.unshift(newEntry);
+    const existingIdx = all.findIndex((m) => m.id === newEntry.id);
+    if (existingIdx >= 0) {
+      all[existingIdx] = { ...all[existingIdx], ...newEntry };
+    } else {
+      all.unshift(newEntry);
+    }
     writeCourseMaterials(all);
     return res.json({ ok: true, material: newEntry });
   });
@@ -1246,6 +1262,10 @@ async function startServer() {
           course_id: updates.course_id !== undefined ? updates.course_id : m.course_id,
           course_code: updates.course_code !== undefined ? updates.course_code : m.course_code,
           visibility: updates.visibility !== undefined ? updates.visibility : m.visibility,
+          file_url: updates.file_url !== undefined ? updates.file_url : m.file_url,
+          file_path: updates.file_path !== undefined ? updates.file_path : m.file_path,
+          file_type: updates.file_type !== undefined ? updates.file_type : m.file_type,
+          file_size: updates.file_size !== undefined ? updates.file_size : m.file_size,
         };
         return updatedItem;
       }
@@ -1312,7 +1332,7 @@ async function startServer() {
     };
 
     const headerLines = [
-      `OVERRAPREP UNIVERSITY STUDY HANDOUT — ${courseCode || "COURSE"}`,
+      `${courseCode ? courseCode.trim() + " — " : ""}STUDY HANDOUT`,
       title || "Lecture Notes & Study Guide",
       "----------------------------------------------------------------------------------",
       "",
@@ -1377,59 +1397,378 @@ async function startServer() {
       .trim()
       .replace(/\s+/g, "_")
       .slice(0, 90);
-    if (base.toLowerCase().endsWith(`.${ext}`)) return base;
-    return `${base}.${ext}`;
+    const safeExt = ext.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || "pdf";
+    if (base.toLowerCase().endsWith(`.${safeExt}`)) return base;
+    return `${base}.${safeExt}`;
   };
 
+  const PUBLIC_DIR = path.resolve(__dirname, "public");
+  const UPLOADS_ROOT_DIR = path.resolve(__dirname, "public", "uploads");
+
+  const isBufferPdf = (buf: Buffer): boolean => {
+    if (!buf || buf.length < 8) return false;
+    const head = buf.subarray(0, Math.min(buf.length, 1024)).toString("latin1");
+    return head.includes("%PDF-");
+  };
+
+  const isBufferHtmlOrJsonError = (buf: Buffer, contentType = ""): boolean => {
+    if (!buf || buf.length === 0) return true;
+    const ct = contentType.toLowerCase();
+    if (ct.includes("text/html") || ct.includes("application/json")) return true;
+    const head = buf
+      .subarray(0, Math.min(buf.length, 512))
+      .toString("utf8")
+      .trim()
+      .toLowerCase();
+    return (
+      head.startsWith("<!doctype") ||
+      head.startsWith("<html") ||
+      head.startsWith("<head") ||
+      head.startsWith("<body") ||
+      head.startsWith('{"statuscode"') ||
+      head.startsWith('{"error"') ||
+      head.startsWith('{"ok":false')
+    );
+  };
+
+  const ALLOWED_PROXY_HOST_SUFFIXES = [
+    ".supabase.co",
+    ".supabase.in",
+    ".googleapis.com",
+    ".googleusercontent.com",
+    ".cloudinary.com",
+    ".amazonaws.com",
+    ".r2.cloudflarestorage.com",
+    ".run.app",
+  ];
+
+  const isPrivateOrBlockedHost = (hostname: string): boolean => {
+    const h = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+    if (
+      !h ||
+      h === "localhost" ||
+      h === "::1" ||
+      h === "0.0.0.0" ||
+      h.endsWith(".local") ||
+      h.endsWith(".internal") ||
+      h.startsWith("127.") ||
+      h.startsWith("10.") ||
+      h.startsWith("169.254.") ||
+      h.startsWith("192.168.") ||
+      h.startsWith("fc") ||
+      h.startsWith("fd") ||
+      h.startsWith("fe80:")
+    ) {
+      return true;
+    }
+    const octets = h.split(".");
+    if (octets.length === 4 && octets.every((o) => /^\d+$/.test(o))) {
+      const [a, b] = octets.map(Number);
+      if (a === 172 && b >= 16 && b <= 31) return true;
+      if (a === 0 || a === 100 && b >= 64 && b <= 127) return true;
+    }
+    return false;
+  };
+
+  const isSafeProxyUrl = (rawUrl: string): URL | null => {
+    try {
+      const parsed = new URL(rawUrl);
+      if (parsed.protocol !== "https:") return null;
+      if (parsed.username || parsed.password) return null;
+      const host = parsed.hostname.toLowerCase();
+      if (isPrivateOrBlockedHost(host)) return null;
+      const allowed = ALLOWED_PROXY_HOST_SUFFIXES.some(
+        (suffix) => host.endsWith(suffix) && host.length > suffix.length
+      );
+      return allowed ? parsed : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const resolveConfinedLocalFile = (rawFileUrl: string): string | null => {
+    if (!rawFileUrl || /^https?:\/\//i.test(rawFileUrl) || rawFileUrl.startsWith("data:") || rawFileUrl.startsWith("blob:")) {
+      return null;
+    }
+
+    let cleanPath = rawFileUrl.split("?")[0].split("#")[0];
+    try {
+      cleanPath = decodeURIComponent(cleanPath);
+    } catch {
+      // keep raw cleanPath if malformed percent encoding
+    }
+
+    // 1. Direct lookup inside UPLOADS_DIR by basename (confined)
+    const baseName = path.basename(cleanPath);
+    if (baseName && baseName !== "." && baseName !== "..") {
+      const directCandidate = path.resolve(UPLOADS_DIR, baseName);
+      if (
+        directCandidate.startsWith(UPLOADS_DIR + path.sep) &&
+        fs.existsSync(directCandidate) &&
+        fs.statSync(directCandidate).isFile()
+      ) {
+        return directCandidate;
+      }
+
+      // 2. Fuzzy suffix match inside UPLOADS_DIR (ignoring timestamp prefix)
+      if (fs.existsSync(UPLOADS_DIR)) {
+        const strippedTarget = baseName.replace(/^\d+_/, "").toLowerCase();
+        if (strippedTarget.length >= 4) {
+          const entries = fs.readdirSync(UPLOADS_DIR);
+          const matched = entries.find((entry) => {
+            const lower = entry.toLowerCase();
+            return (
+              lower === baseName.toLowerCase() ||
+              lower.replace(/^\d+_/, "") === strippedTarget
+            );
+          });
+          if (matched) {
+            const fuzzyCandidate = path.resolve(UPLOADS_DIR, matched);
+            if (
+              fuzzyCandidate.startsWith(UPLOADS_DIR + path.sep) &&
+              fs.existsSync(fuzzyCandidate) &&
+              fs.statSync(fuzzyCandidate).isFile()
+            ) {
+              return fuzzyCandidate;
+            }
+          }
+        }
+      }
+    }
+
+    // 3. Confined lookup inside PUBLIC_DIR (never allows traversal or index.html)
+    const rel = cleanPath.replace(/^\/+/, "");
+    if (rel && !rel.toLowerCase().endsWith("index.html")) {
+      const pubCandidate = path.resolve(PUBLIC_DIR, rel);
+      if (
+        (pubCandidate.startsWith(UPLOADS_ROOT_DIR + path.sep) ||
+          pubCandidate.startsWith(PUBLIC_DIR + path.sep)) &&
+        fs.existsSync(pubCandidate) &&
+        fs.statSync(pubCandidate).isFile()
+      ) {
+        return pubCandidate;
+      }
+    }
+
+    return null;
+  };
+
+  // Serve local PDF.js worker matching installed react-pdf/pdfjs-dist version (eliminates external CDN failures)
+  app.get("/api/pdf-worker.js", (_req: Request, res: Response) => {
+    const candidates = [
+      path.resolve(__dirname, "node_modules", "react-pdf", "node_modules", "pdfjs-dist", "build", "pdf.worker.min.js"),
+      path.resolve(__dirname, "node_modules", "pdfjs-dist", "build", "pdf.worker.min.js"),
+      path.resolve(__dirname, "node_modules", "pdfjs-dist", "build", "pdf.worker.min.mjs"),
+    ];
+    for (const candidate of candidates) {
+      if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+        res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+        res.setHeader("Cache-Control", "public, max-age=86400");
+        return res.sendFile(candidate);
+      }
+    }
+    return res.status(404).json({ ok: false, error: "PDF worker script not found" });
+  });
+
+  // Fallback for missing /uploads/* files so Express NEVER falls through to Vite SPA index.html
+  // and NEVER fabricates a deceptive 3-line stub PDF for a missing uploaded document.
+  app.get("/uploads/*", (req: Request, res: Response) => {
+    try {
+      const localFile = resolveConfinedLocalFile(req.path);
+      if (localFile) {
+        if (localFile.toLowerCase().endsWith(".pdf")) {
+          res.setHeader("Content-Type", "application/pdf");
+          res.setHeader("Content-Disposition", "inline");
+          res.setHeader("X-Content-Type-Options", "nosniff");
+        }
+        return res.sendFile(localFile);
+      }
+
+      return res.status(404).json({
+        ok: false,
+        code: "FILE_MISSING",
+        error: "The original uploaded file is no longer in temporary server storage and needs to be re-uploaded.",
+      });
+    } catch (err) {
+      console.error("Uploads fallback error:", err);
+      return res.status(404).json({ ok: false, code: "FILE_MISSING", error: "File unavailable" });
+    }
+  });
+
+  const isTextOrMarkdownNoteRecord = (mat: any, effectiveUrl: string): boolean => {
+    const ft = String(mat?.file_type || "").toLowerCase();
+    if (ft === "markdown" || ft === "md" || ft === "text" || ft === "text/plain") {
+      return true;
+    }
+    if (!effectiveUrl) return true;
+    if (/^data:text\//i.test(effectiveUrl) || /\.(md|txt)(\?|$)/i.test(effectiveUrl)) {
+      return true;
+    }
+    return false;
+  };
+
+  // Inline verified PDF viewer proxy (resolves local disk or allowlisted HTTPS URLs and validates %PDF- magic bytes)
+  app.get("/api/view-pdf", async (req: Request, res: Response) => {
+    try {
+      const fileUrl = String(req.query.url || "").trim();
+      const materialId = String(req.query.id || "").trim();
+      const title = String(req.query.title || "Course_Document");
+      const courseCode = String(req.query.courseCode || "");
+
+      let mat: any = null;
+      if (materialId) {
+        mat = readCourseMaterials().find((m) => m.id === materialId) || null;
+      }
+      const effectiveUrl = fileUrl || String(mat?.file_url || "").trim();
+
+      // 1. Local confined file resolution
+      if (effectiveUrl) {
+        const localFile = resolveConfinedLocalFile(effectiveUrl);
+        if (localFile) {
+          const buf = fs.readFileSync(localFile);
+          if (isBufferPdf(buf)) {
+            const safeName = formatSafeDownloadName(title || mat?.title || "Document", courseCode || mat?.course_code, "pdf");
+            res.setHeader("Content-Type", "application/pdf");
+            res.setHeader("Content-Disposition", `inline; filename="${safeName}"`);
+            res.setHeader("X-Content-Type-Options", "nosniff");
+            res.setHeader("Cache-Control", "private, max-age=300");
+            return res.send(buf);
+          }
+        }
+      }
+
+      // 2. Remote allowlisted HTTPS fetch with strict SSRF and magic-byte validation
+      if (effectiveUrl && /^https:\/\//i.test(effectiveUrl)) {
+        const safeRemote = isSafeProxyUrl(effectiveUrl);
+        if (safeRemote) {
+          const upstream = await fetch(safeRemote.toString());
+          if (upstream.ok) {
+            const arrayBuffer = await upstream.arrayBuffer();
+            const buf = Buffer.from(arrayBuffer);
+            const ct = upstream.headers.get("content-type") || "";
+            if (!isBufferHtmlOrJsonError(buf, ct) && isBufferPdf(buf)) {
+              const safeName = formatSafeDownloadName(title || mat?.title || "Document", courseCode || mat?.course_code, "pdf");
+              res.setHeader("Content-Type", "application/pdf");
+              res.setHeader("Content-Disposition", `inline; filename="${safeName}"`);
+              res.setHeader("X-Content-Type-Options", "nosniff");
+              res.setHeader("Cache-Control", "private, max-age=300");
+              return res.send(buf);
+            }
+          }
+        }
+      }
+
+      // 3. ONLY synthesize a handout PDF for genuine text/markdown notes — NEVER for missing uploaded binary PDFs
+      if (mat && isTextOrMarkdownNoteRecord(mat, effectiveUrl) && mat.description) {
+        const pdfBuf = buildValidPdfBuffer(
+          mat.title || title || "Course Material",
+          mat.course_code || courseCode || "UNIVERSITY COURSE",
+          mat.description
+        );
+        const safeName = formatSafeDownloadName(mat.title || title, mat.course_code || courseCode, "pdf");
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `inline; filename="${safeName}"`);
+        res.setHeader("X-Content-Type-Options", "nosniff");
+        return res.send(pdfBuf);
+      }
+
+      return res.status(404).json({
+        ok: false,
+        code: "FILE_MISSING",
+        error: "The original uploaded PDF file could not be found in storage.",
+      });
+    } catch (err: any) {
+      console.error("View PDF proxy error:", err);
+      return res.status(500).json({ ok: false, error: "Failed to load PDF document" });
+    }
+  });
+
   // Download a material directly to the student's device by material ID
-  app.get("/api/materials/:materialId/download", (req: Request, res: Response) => {
+  app.get("/api/materials/:materialId/download", async (req: Request, res: Response) => {
     try {
       const { materialId } = req.params;
       const all = readCourseMaterials();
       const mat = all.find((m) => m.id === materialId);
-      if (!mat) {
-        return res.status(404).json({ ok: false, error: "Material not found" });
-      }
 
-      const fileUrl = String(mat.file_url || "");
-      const isMarkdownSeed =
-        String(mat.file_type || "").toLowerCase() === "markdown" &&
-        mat.description &&
-        String(mat.description).length > 80;
+      const fileUrl = String(req.query.fileUrl || mat?.file_url || "").trim();
+      const title = String(req.query.title || mat?.title || "Course Material");
+      const courseCode = String(req.query.courseCode || mat?.course_code || "");
+      const description = String(mat?.description || "");
 
-      // If it's a real uploaded file in /uploads/materials/ and not a synthetic markdown note, stream the physical file
-      if (!isMarkdownSeed && fileUrl.startsWith("/uploads/materials/")) {
-        const filenameOnDisk = path.basename(fileUrl.split("?")[0]);
-        const fullPath = path.join(UPLOADS_DIR, filenameOnDisk);
-        if (fs.existsSync(fullPath)) {
-          const extMatch = filenameOnDisk.match(/\.([a-zA-Z0-9]{2,5})$/);
+      // 1. If a confined local file exists on disk matching fileUrl, stream the real physical file
+      if (fileUrl) {
+        const localFile = resolveConfinedLocalFile(fileUrl);
+        if (localFile) {
+          const extMatch = localFile.match(/\.([a-zA-Z0-9]{2,5})$/);
           const ext = extMatch ? extMatch[1].toLowerCase() : "pdf";
-          const downloadName = formatSafeDownloadName(mat.title, mat.course_code, ext);
-          res.setHeader("Content-Disposition", `attachment; filename="${downloadName}"`);
-          return res.sendFile(fullPath);
+          const buf = fs.readFileSync(localFile);
+          if (ext !== "pdf" || isBufferPdf(buf)) {
+            const downloadName = formatSafeDownloadName(title, courseCode, ext);
+            if (ext === "pdf") res.setHeader("Content-Type", "application/pdf");
+            res.setHeader("Content-Disposition", `attachment; filename="${downloadName}"`);
+            res.setHeader("X-Content-Type-Options", "nosniff");
+            return res.send(buf);
+          }
         }
       }
 
-      // Otherwise generate a clean PDF handout from the material's title & description/notes
-      const pdfBuf = buildValidPdfBuffer(
-        mat.title || "Course Material",
-        mat.course_code || "UNIVERSITY COURSE",
-        mat.description || mat.title || "University Lecture Handout"
-      );
-      const downloadName = formatSafeDownloadName(mat.title, mat.course_code, "pdf");
-      res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename="${downloadName}"`);
-      return res.send(pdfBuf);
+      // 2. If it's an allowlisted remote HTTPS URL, validate and stream it (never return HTML/JSON errors)
+      if (fileUrl && /^https:\/\//i.test(fileUrl)) {
+        const safeRemote = isSafeProxyUrl(fileUrl);
+        if (safeRemote) {
+          const upstream = await fetch(safeRemote.toString());
+          if (upstream.ok) {
+            const buf = Buffer.from(await upstream.arrayBuffer());
+            const ct = upstream.headers.get("content-type") || "application/octet-stream";
+            const urlPath = fileUrl.split("?")[0];
+            const extMatch = urlPath.match(/\.([a-zA-Z0-9]{2,5})$/);
+            const ext = extMatch ? extMatch[1].toLowerCase() : "pdf";
+            const validContent =
+              !isBufferHtmlOrJsonError(buf, ct) && (ext !== "pdf" || isBufferPdf(buf));
+            if (validContent) {
+              const downloadName = formatSafeDownloadName(title, courseCode, ext);
+              res.setHeader("Content-Type", ext === "pdf" ? "application/pdf" : ct);
+              res.setHeader("Content-Disposition", `attachment; filename="${downloadName}"`);
+              res.setHeader("X-Content-Type-Options", "nosniff");
+              return res.send(buf);
+            }
+          }
+        }
+      }
+
+      if (!mat && !fileUrl) {
+        return res.status(404).json({ ok: false, code: "FILE_MISSING", error: "Material not found" });
+      }
+
+      // 3. ONLY synthesize a handout PDF for genuine text/markdown notes — NEVER fabricate a stub for a missing uploaded PDF
+      if (isTextOrMarkdownNoteRecord(mat, fileUrl) && description) {
+        const pdfBuf = buildValidPdfBuffer(
+          title || "Course Material",
+          courseCode || "UNIVERSITY COURSE",
+          description
+        );
+        const downloadName = formatSafeDownloadName(title, courseCode, "pdf");
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `attachment; filename="${downloadName}"`);
+        res.setHeader("X-Content-Type-Options", "nosniff");
+        return res.send(pdfBuf);
+      }
+
+      return res.status(404).json({
+        ok: false,
+        code: "FILE_MISSING",
+        error: "The original uploaded PDF file is missing from server storage and needs to be re-uploaded.",
+      });
     } catch (err: any) {
       console.error("Material download error:", err);
       return res.status(500).json({ ok: false, error: "Failed to download material" });
     }
   });
 
-  // Download any local or remote file URL with Content-Disposition: attachment
+  // Download any local or allowlisted remote file URL with Content-Disposition: attachment
   app.get("/api/download-file", async (req: Request, res: Response) => {
     try {
-      const fileUrl = String(req.query.url || "");
+      const fileUrl = String(req.query.url || "").trim();
       const title = String(req.query.title || "Course_Document");
       const courseCode = String(req.query.courseCode || "");
 
@@ -1437,30 +1776,43 @@ async function startServer() {
         return res.status(400).json({ ok: false, error: "Missing url query parameter" });
       }
 
-      if (fileUrl.startsWith("/uploads/materials/")) {
-        const filenameOnDisk = path.basename(fileUrl.split("?")[0]);
-        const fullPath = path.join(UPLOADS_DIR, filenameOnDisk);
-        if (fs.existsSync(fullPath)) {
-          const extMatch = filenameOnDisk.match(/\.([a-zA-Z0-9]{2,5})$/);
-          const ext = extMatch ? extMatch[1].toLowerCase() : "pdf";
+      const localFile = resolveConfinedLocalFile(fileUrl);
+      if (localFile) {
+        const extMatch = localFile.match(/\.([a-zA-Z0-9]{2,5})$/);
+        const ext = extMatch ? extMatch[1].toLowerCase() : "pdf";
+        const buf = fs.readFileSync(localFile);
+        if (ext !== "pdf" || isBufferPdf(buf)) {
           const downloadName = formatSafeDownloadName(title, courseCode, ext);
+          if (ext === "pdf") res.setHeader("Content-Type", "application/pdf");
           res.setHeader("Content-Disposition", `attachment; filename="${downloadName}"`);
-          return res.sendFile(fullPath);
+          res.setHeader("X-Content-Type-Options", "nosniff");
+          return res.send(buf);
         }
       }
 
-      if (/^https?:\/\//i.test(fileUrl)) {
-        const upstream = await fetch(fileUrl);
+      if (/^https:\/\//i.test(fileUrl)) {
+        const safeRemote = isSafeProxyUrl(fileUrl);
+        if (!safeRemote) {
+          return res.status(400).json({ ok: false, error: "Unsupported remote file host" });
+        }
+        const upstream = await fetch(safeRemote.toString());
         if (upstream.ok) {
-          const arrayBuffer = await upstream.arrayBuffer();
+          const buf = Buffer.from(await upstream.arrayBuffer());
           const contentType = upstream.headers.get("content-type") || "application/octet-stream";
           const urlPath = fileUrl.split("?")[0];
           const extMatch = urlPath.match(/\.([a-zA-Z0-9]{2,5})$/);
           const ext = extMatch ? extMatch[1].toLowerCase() : "pdf";
+          if (isBufferHtmlOrJsonError(buf, contentType)) {
+            return res.status(404).json({ ok: false, error: "Upstream did not return a valid file" });
+          }
+          if (ext === "pdf" && !isBufferPdf(buf)) {
+            return res.status(422).json({ ok: false, error: "Upstream PDF payload is invalid" });
+          }
           const downloadName = formatSafeDownloadName(title, courseCode, ext);
-          res.setHeader("Content-Type", contentType);
+          res.setHeader("Content-Type", ext === "pdf" ? "application/pdf" : contentType);
           res.setHeader("Content-Disposition", `attachment; filename="${downloadName}"`);
-          return res.send(Buffer.from(arrayBuffer));
+          res.setHeader("X-Content-Type-Options", "nosniff");
+          return res.send(buf);
         }
       }
 
@@ -1511,13 +1863,52 @@ async function startServer() {
     return res.json({ ok: true, quiz: found });
   });
 
-  // Get all quizzes for a specific course
+  // Get all quizzes for a specific course (supports course ID, code, and normalized slugs)
   app.get("/api/courses/:courseId/quizzes", (req: Request, res: Response) => {
     const { courseId } = req.params;
+    const queryCode = String(req.query.code || "").trim();
+    const target = String(courseId || "").trim().toLowerCase();
+    const targetNoSpace = target.replace(/[\s-_]/g, "");
+
+    const courses = readCourses();
+    const matchedCourse = courses.find((c) => {
+      const cid = String(c.id || "").trim().toLowerCase();
+      const ccode = String(c.code || "").trim().toLowerCase();
+      const ccodeNoSpace = ccode.replace(/[\s-_]/g, "");
+      return (
+        cid === target ||
+        ccode === target ||
+        ccodeNoSpace === targetNoSpace ||
+        (queryCode &&
+          (ccode === queryCode.toLowerCase() ||
+            ccodeNoSpace === queryCode.replace(/[\s-_]/g, "").toLowerCase()))
+      );
+    });
+
+    const targetKeys = new Set<string>([target, targetNoSpace]);
+    if (queryCode) {
+      targetKeys.add(queryCode.toLowerCase());
+      targetKeys.add(queryCode.replace(/[\s-_]/g, "").toLowerCase());
+    }
+    if (matchedCourse) {
+      targetKeys.add(String(matchedCourse.id).toLowerCase());
+      targetKeys.add(String(matchedCourse.code).toLowerCase());
+      targetKeys.add(String(matchedCourse.code).replace(/[\s-_]/g, "").toLowerCase());
+    }
+
     const all = readCourseQuizzes();
-    const courseQuizzes = all.filter(
-      (q) => q.course_id === courseId || q.course_code === courseId
-    );
+    const courseQuizzes = all.filter((q) => {
+      const qCid = String(q.course_id || "").trim().toLowerCase();
+      const qCidNoSpace = qCid.replace(/[\s-_]/g, "");
+      const qCode = String(q.course_code || q.courseCode || "").trim().toLowerCase();
+      const qCodeNoSpace = qCode.replace(/[\s-_]/g, "");
+
+      return (
+        targetKeys.has(qCid) ||
+        targetKeys.has(qCidNoSpace) ||
+        (qCode && (targetKeys.has(qCode) || targetKeys.has(qCodeNoSpace)))
+      );
+    });
     return res.json({ ok: true, quizzes: courseQuizzes });
   });
 
@@ -1786,6 +2177,32 @@ REQUIREMENTS:
         ok: false,
         error: err?.message || "Failed to generate CBT questions from notes",
       });
+    }
+  });
+
+  // Wipe ONLY study materials and uploaded files while keeping courses & CBT quizzes intact
+  app.post("/api/materials/wipe-materials", (req: Request, res: Response) => {
+    try {
+      if (req.body?.confirmMaterialsWipe !== true) {
+        return res.status(403).json({
+          ok: false,
+          error: "Explicit confirmation is required to wipe materials.",
+        });
+      }
+      writeCourseMaterials([]);
+      if (fs.existsSync(UPLOADS_DIR)) {
+        const files = fs.readdirSync(UPLOADS_DIR);
+        for (const f of files) {
+          try {
+            fs.unlinkSync(path.join(UPLOADS_DIR, f));
+          } catch {
+            // ignore individual file errors
+          }
+        }
+      }
+      return res.json({ ok: true });
+    } catch (err: any) {
+      return res.status(500).json({ ok: false, error: err?.message || "Failed to wipe materials" });
     }
   });
 

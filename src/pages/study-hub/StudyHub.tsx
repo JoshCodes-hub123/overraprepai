@@ -145,39 +145,46 @@ const StudyHub = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: Math.min(i * 0.04, 0.4) }}
               >
-                <Link to={`/study-hub/${c.id}`}>
-                  <Card className="group relative h-full overflow-hidden border border-amber-100/60 bg-gradient-to-br from-white via-white to-amber-50/30 shadow-[0_2px_12px_-4px_rgba(180,140,40,0.18)] hover:shadow-[0_12px_36px_-12px_rgba(180,140,40,0.35)] hover:-translate-y-0.5 transition-all cursor-pointer">
-                    <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-amber-300/60 via-amber-500/60 to-transparent" />
-                    <div className="pointer-events-none absolute -top-12 -right-10 h-32 w-32 rounded-full bg-gradient-to-br from-amber-200/40 to-amber-400/10 blur-3xl" />
-                    <CardHeader>
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <Badge variant="outline" className="mb-2 border-amber-200 text-amber-800 bg-amber-50/60">{c.code}</Badge>
-                          <CardTitle className="font-serif text-lg group-hover:text-amber-800 transition-colors line-clamp-2">
-                            {c.name}
-                          </CardTitle>
-                        </div>
-                        <div className="h-10 w-10 rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 flex items-center justify-center shrink-0">
-                          <BookOpen className="w-5 h-5 text-amber-700" />
-                        </div>
+                <Card
+                  onClick={() => navigate(`/study-hub/${c.id}`)}
+                  className="group relative h-full overflow-hidden border border-amber-100/60 bg-gradient-to-br from-white via-white to-amber-50/30 shadow-[0_2px_12px_-4px_rgba(180,140,40,0.18)] hover:shadow-[0_12px_36px_-12px_rgba(180,140,40,0.35)] hover:-translate-y-0.5 transition-all cursor-pointer"
+                >
+                  <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-amber-300/60 via-amber-500/60 to-transparent" />
+                  <div className="pointer-events-none absolute -top-12 -right-10 h-32 w-32 rounded-full bg-gradient-to-br from-amber-200/40 to-amber-400/10 blur-3xl" />
+                  <CardHeader>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <Badge variant="outline" className="mb-2 border-amber-200 text-amber-800 bg-amber-50/60">{c.code}</Badge>
+                        <CardTitle className="font-serif text-lg group-hover:text-amber-800 transition-colors line-clamp-2">
+                          {c.name}
+                        </CardTitle>
                       </div>
-                      {c.description && (
-                        <CardDescription className="line-clamp-2 pt-1">{c.description}</CardDescription>
-                      )}
-                    </CardHeader>
-                    <CardContent className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-1.5 text-muted-foreground">
-                        <FileText className="w-4 h-4" />
-                        {matCount} {matCount === 1 ? "material" : "materials"}
-                      </span>
-                      <Button variant="ghost" size="sm" asChild onClick={(e) => e.stopPropagation()} className="text-amber-700 hover:text-amber-800 hover:bg-amber-50">
-                        <Link to={`/pq-intelligence/${c.id}`}>
-                          <TrendingUp className="w-4 h-4" /> PQ Trends
-                        </Link>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Link>
+                      <div className="h-10 w-10 rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 flex items-center justify-center shrink-0">
+                        <BookOpen className="w-5 h-5 text-amber-700" />
+                      </div>
+                    </div>
+                    {c.description && (
+                      <CardDescription className="line-clamp-2 pt-1">{c.description}</CardDescription>
+                    )}
+                  </CardHeader>
+                  <CardContent className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                      <FileText className="w-4 h-4" />
+                      {matCount} {matCount === 1 ? "material" : "materials"}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      asChild
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-amber-700 hover:text-amber-800 hover:bg-amber-50"
+                    >
+                      <Link to={`/pq-intelligence/${c.id}`}>
+                        <TrendingUp className="w-4 h-4" /> PQ Trends
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
               </motion.div>
             );
           })}

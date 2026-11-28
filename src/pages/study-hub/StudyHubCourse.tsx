@@ -26,6 +26,7 @@ interface Material {
   file_type: string;
   file_size: number;
   file_url?: string | null;
+  file_path?: string | null;
   visibility: "public" | "private";
   owner_id: string;
   created_at: string;
@@ -50,17 +51,70 @@ const StudyHubCourse = () => {
   }, [authLoading, user, navigate]);
 
   const load = async () => {
-    if (!courseId) return;
-    const [courseRes, apiMatsRes, studyMatsRes, lectureNotesRes] = await Promise.all([
+    const target = courseId.trim().toLowerCase();
+    const targetNoSpace = target.replace(/[\s-_]/g, "");
+
+    const [dbCourseRes, apiCoursesRes] = await Promise.all([
       supabase.from("courses").select("id, code, name").eq("id", courseId).maybeSingle(),
-      fetch(`/api/courses/${encodeURIComponent(courseId)}/materials`)
-        .then((r) => (r.ok ? r.json() : { materials: [] }))
-        .catch(() => ({ materials: [] })),
-      supabase.from("study_materials").select("*").eq("course_id", courseId),
-      supabase.from("lecture_notes").select("*").eq("course_id", courseId),
+      fetch("/api/courses")
+        .then((r) => (r.ok ? r.json() : { courses: [] }))
+        .catch(() => ({ courses: [] })),
     ]);
 
-    if (courseRes.data) setCourse(courseRes.data as Course);
+    let resolvedCourse: Course | null = dbCourseRes.data as Course | null;
+    if (!resolvedCourse) {
+      const { data: byCode } = await supabase
+        .from("courses")
+        .select("id, code, name")
+        .ilike("code", courseId)
+        .maybeSingle();
+      if (byCode) resolvedCourse = byCode as Course;
+    }
+
+    if (!resolvedCourse) {
+      const srvFound = (Array.isArray(apiCoursesRes?.courses) ? apiCoursesRes.courses : []).find(
+        (c: any) => {
+          const cid = String(c?.id || "").toLowerCase();
+          const ccode = String(c?.code || "").toLowerCase();
+          const ccodeNoSpace = ccode.replace(/[\s-_]/g, "");
+          return cid === target || ccode === target || ccodeNoSpace === targetNoSpace;
+        }
+      );
+      if (srvFound) {
+        resolvedCourse = {
+          id: srvFound.id,
+          code: srvFound.code,
+          name: srvFound.name,
+        };
+      }
+    }
+
+    if (resolvedCourse) setCourse(resolvedCourse);
+
+    const courseKeys = Array.from(
+      new Set(
+        [
+          courseId,
+          resolvedCourse?.id,
+          resolvedCourse?.code,
+          resolvedCourse?.code
+            ? `course-${resolvedCourse.code.toLowerCase().replace(/\s+/g, "-")}`
+            : null,
+        ].filter(Boolean)
+      )
+    ) as string[];
+
+    const [apiMatsRes, studyMatsRes, lectureNotesRes] = await Promise.all([
+      fetch(
+        `/api/courses/${encodeURIComponent(resolvedCourse?.id || courseId)}/materials?code=${encodeURIComponent(
+          resolvedCourse?.code || ""
+        )}`
+      )
+        .then((r) => (r.ok ? r.json() : { materials: [] }))
+        .catch(() => ({ materials: [] })),
+      supabase.from("study_materials").select("*").in("course_id", courseKeys),
+      supabase.from("lecture_notes").select("*").in("course_id", courseKeys),
+    ]);
 
     const mergedMap = new Map<string, Material>();
 
@@ -76,6 +130,7 @@ const StudyHubCourse = () => {
         owner_id: m.owner_id || user?.id || "",
         created_at: m.created_at || new Date().toISOString(),
         file_url: m.file_url || null,
+        file_path: m.file_path || null,
       });
     }
 
@@ -93,6 +148,7 @@ const StudyHubCourse = () => {
           owner_id: m.owner_id || "",
           created_at: m.created_at,
           file_url: m.file_url || null,
+          file_path: m.file_path || null,
         });
       }
     }
@@ -111,6 +167,7 @@ const StudyHubCourse = () => {
           owner_id: m.tutor_id || m.owner_id || "",
           created_at: m.created_at,
           file_url: m.file_url || null,
+          file_path: m.file_path || null,
         });
       }
     }
@@ -269,6 +326,7 @@ const StudyHubCourse = () => {
                                 title: m.title,
                                 courseCode: course.code,
                                 fileUrl: m.file_url,
+                                filePath: m.file_path,
                                 fileType: m.file_type,
                                 description: m.description,
                               });

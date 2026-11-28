@@ -3,6 +3,7 @@ import { FileText, Download, FolderOpen } from "lucide-react";
 import { SEO } from "@/components/seo/SEO";
 import { Screen, ScreenHeader, Section, EmptyState, BrandSkeleton } from "@/components/ui-kit";
 import { useCourseMaterials } from "@/hooks/useStudyMaterials";
+import { downloadMaterialExternally } from "@/lib/downloadMaterial";
 
 const prettySize = (bytes?: number) => {
   if (!bytes || bytes <= 0) return null;
@@ -55,22 +56,35 @@ const MaterialsCourse = () => {
                     new Date(m.created_at).toLocaleDateString(),
                   ].filter(Boolean);
                   return (
-                    <a
+                    <button
                       key={m.id}
-                      href={m.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex w-full items-center gap-3 rounded-brand border border-brand-line bg-brand-surface px-4 py-3.5 text-left transition-colors hover:bg-brand-soft"
+                      type="button"
+                      onClick={() =>
+                        void downloadMaterialExternally({
+                          id: m.id,
+                          title: m.title,
+                          courseCode: data?.course?.code,
+                          fileUrl: m.file_url,
+                          filePath: m.file_path,
+                          fileType: m.file_type,
+                          description: m.description,
+                        })
+                      }
+                      className="flex w-full items-center gap-3 rounded-brand border border-brand-line bg-brand-surface px-4 py-3.5 text-left transition-colors hover:bg-brand-soft cursor-pointer group"
                     >
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-brand-sm bg-env-soft text-env">
                         <FileText className="h-5 w-5" />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[15px] font-semibold text-brand-ink">{m.title}</span>
-                        <span className="mt-0.5 block truncate text-[13px] text-brand-ink-soft">{bits.join(" · ")}</span>
+                        <span className="block truncate text-[15px] font-semibold text-brand-ink group-hover:text-amber-800 transition-colors">
+                          {m.title}
+                        </span>
+                        <span className="mt-0.5 block truncate text-[13px] text-brand-ink-soft">
+                          {bits.join(" · ")}
+                        </span>
                       </span>
-                      <Download className="h-4 w-4 shrink-0 text-brand-ink-soft/60" />
-                    </a>
+                      <Download className="h-4 w-4 shrink-0 text-brand-ink-soft/60 group-hover:text-amber-700 transition-colors" />
+                    </button>
                   );
                 })}
               </div>

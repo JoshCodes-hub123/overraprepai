@@ -1,5 +1,7 @@
 const LEGACY_CLEAN_SLATE_CUTOFF_KEY = "overra_clean_slate_cutoff_v1";
 const MANUAL_RESET_CUTOFF_KEY = "overra_manual_reset_cutoff_v2";
+export const MATERIALS_PURGE_VERSION_KEY = "overra_materials_purge_v2026_11_28";
+export const MATERIALS_PURGE_CUTOFF_ISO = "2026-11-28T02:10:00.000Z";
 
 /**
  * Legacy export kept for compatibility; no longer applied automatically as a
@@ -66,6 +68,7 @@ export function clearAllBrowserStudyCaches(): void {
   // Clear IndexedDB offline caches if present
   try {
     if (typeof indexedDB !== "undefined") {
+      indexedDB.deleteDatabase("overra-offline-library");
       indexedDB.deleteDatabase("overra_offline_library_v1");
       indexedDB.deleteDatabase("overra_offline_quiz_db");
       indexedDB.deleteDatabase("overra-offline-quizzes");
@@ -73,6 +76,62 @@ export function clearAllBrowserStudyCaches(): void {
   } catch {
     // ignore
   }
+}
+
+/**
+ * Clears ONLY locally cached material mirrors and offline PDF blobs (preserves courses & CBT quizzes).
+ */
+export function clearLocalMaterialMirrorsAndCaches(): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem("overra_rls_mirror_study_materials");
+    localStorage.removeItem("overra_rls_mirror_lecture_notes");
+    localStorage.removeItem("overra_offline_pack");
+  } catch {
+    // ignore
+  }
+  try {
+    if (typeof indexedDB !== "undefined") {
+      indexedDB.deleteDatabase("overra-offline-library");
+      indexedDB.deleteDatabase("overra_offline_library_v1");
+    }
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Wipes ONLY uploaded study materials & lecture notes across:
+ * 1. Express server store (`POST /api/materials/wipe-materials`)
+ * 2. Supabase `study_materials` & `lecture_notes` tables
+ * 3. Browser localStorage mirrors & IndexedDB offline PDF cache
+ * Keeps all Courses and CBT Quizzes intact.
+ */
+export async function executeMaterialsOnlyWipe(supabaseClient: any): Promise<{ ok: boolean }> {
+  clearLocalMaterialMirrorsAndCaches();
+
+  try {
+    await fetch("/api/materials/wipe-materials", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ confirmMaterialsWipe: true }),
+    });
+  } catch (err) {
+    console.warn("Server materials-only wipe notice:", err);
+  }
+
+  for (const table of ["study_materials", "lecture_notes"]) {
+    try {
+      await supabaseClient
+        .from(table)
+        .delete()
+        .neq("id", "00000000-0000-0000-0000-000000000000");
+    } catch {
+      // continue if RLS blocks some rows
+    }
+  }
+
+  return { ok: true };
 }
 
 /**
